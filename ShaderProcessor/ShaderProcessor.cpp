@@ -4,10 +4,6 @@
 
 //////////////////////////////////////////////////////////////////////
 
-DXPtr<ID3D11DeviceContext> context;
-
-//////////////////////////////////////////////////////////////////////
-
 bool OpenD3D()
 {
 	D3D_FEATURE_LEVEL levels[] =
@@ -17,16 +13,16 @@ bool OpenD3D()
 
 	D3D_FEATURE_LEVEL level_we_got;
 
-	DXB(D3D11CreateDevice(NULL,
-		D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_REFERENCE,
-		NULL,
-		D3D11_CREATE_DEVICE_DEBUG,
-		levels,
-		ARRAYSIZE(levels),
-		D3D11_SDK_VERSION,
-		&gDevice,
-		&level_we_got,
-		&context));
+	DXB(D3D11CreateDevice(null,
+							D3D_DRIVER_TYPE::D3D_DRIVER_TYPE_REFERENCE,
+							null,
+							D3D11_CREATE_DEVICE_DEBUG,
+							levels,
+							ARRAYSIZE(levels),
+							D3D11_SDK_VERSION,
+							&gDevice,
+							&level_we_got,
+							&gContext));
 
 	return true;
 }
@@ -35,7 +31,11 @@ bool OpenD3D()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	context.Release();
+	if(OpenD3D())
+	{
+
+	}
+	gContext.Release();
 	gDevice.Release();
 	return 0;
 }
