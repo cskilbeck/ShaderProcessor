@@ -26,6 +26,15 @@
     <ClInclude Include="D3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WinResource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -38,6 +47,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WinResource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

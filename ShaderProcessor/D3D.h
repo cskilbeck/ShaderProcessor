@@ -57,14 +57,6 @@ extern HRESULT __hr;
 #define DXB(x) __hr = (x); if(FAILED(__hr)) return false;
 #endif
 
-inline void SetDebugName(ID3D11DeviceChild* child, tchar const *name)
-{
-	if(child != null && name != null)
-	{
-		child->SetPrivateData(WKPDID_D3DDebugObjectName, (UINT)_tcslen(name), name);
-	}
-}
-
 //////////////////////////////////////////////////////////////////////
 
 template<typename T> struct DXPtr
@@ -156,5 +148,23 @@ template<typename T> struct DXPtr
 	T *p;
 };
 
+//////////////////////////////////////////////////////////////////////
+
 extern DXPtr<ID3D11Device> gDevice;
 extern DXPtr<ID3D11DeviceContext> gContext;
+
+//////////////////////////////////////////////////////////////////////
+
+namespace D3D
+{
+	bool Open();
+	void Close();
+
+#if defined(_DEBUG)
+	void SetDebugName(ID3D11DeviceChild *child, tchar const *name);
+#else
+#define SetDebugName if(false) {} else
+#endif
+
+}
+

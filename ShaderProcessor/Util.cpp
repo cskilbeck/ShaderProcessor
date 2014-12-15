@@ -82,7 +82,7 @@ uint8 *LoadFile(tchar const *filename, size_t *size)
 		uint32 len = ftell(f);
 		fseek(f, 0, SEEK_SET);
 
-		buf = new uint8[len + 2];
+		buf = new uint8[len + sizeof(tchar)];
 
 		if(buf != null)
 		{
@@ -95,7 +95,7 @@ uint8 *LoadFile(tchar const *filename, size_t *size)
 			}
 			else
 			{
-				*((tchar *)(((tchar *)buf) + len)) = (tchar)'\0';
+				*((tchar *)(((uint8 *)buf) + len)) = (tchar)'\0';
 				if(size != null)
 				{
 					*size = len;
@@ -114,18 +114,18 @@ uint8 *LoadFile(tchar const *filename, size_t *size)
 
 //////////////////////////////////////////////////////////////////////
 
-tstring Format(tchar const *fmt, ...)
+wstring Format(wchar const *fmt, ...)
 {
-	tchar buffer[1024];
+	wchar buffer[1024];
 	va_list v;
 	va_start(v, fmt);
 	_vstprintf_s(buffer, fmt, v);
-	return tstring(buffer);
+	return wstring(buffer);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-string cFormat(char const *fmt, ...)
+string Format(char const *fmt, ...)
 {
 	char buffer[1024];
 	va_list v;
@@ -185,3 +185,14 @@ tstring GetCurrentFolder()
 	return Format(TEXT("%s"), &s[0]);
 }
 
+//////////////////////////////////////////////////////////////////////
+
+tstring GetFilename(tchar const *path)
+{
+	tchar Drive[MAX_PATH];
+	tchar Dir[MAX_PATH];
+	tchar Name[MAX_PATH];
+	tchar Ext[MAX_PATH];
+	_tsplitpath_s(path, Drive, Dir, Name, Ext);
+	return Name;
+}
