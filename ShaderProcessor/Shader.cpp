@@ -15,8 +15,8 @@ static string const &GetFrom(ISMap const &map, int x)
 
 static ISMap shader_input_type_names =
 {
-	{ D3D_SIT_CBUFFER, "cbuffer" },
-	{ D3D_SIT_TBUFFER, "tbuffer" },
+	{ D3D_SIT_CBUFFER, "ConstantBuffer" },
+	{ D3D_SIT_TBUFFER, "TextureBuffer" },
 	{ D3D_SIT_TEXTURE, "Texture" },
 	{ D3D_SIT_SAMPLER, "SamplerState" },
 	{ D3D_SIT_UAV_RWTYPED, "UnorderedAccessViewRWTyped" },
@@ -32,7 +32,7 @@ static ISMap shader_input_type_names =
 static ISMap shader_input_dimension_names =
 {
 	{ D3D_SRV_DIMENSION_UNKNOWN, "" },
-	{ D3D_SRV_DIMENSION_BUFFER, "buffer" },
+	{ D3D_SRV_DIMENSION_BUFFER, "Buffer" },
 	{ D3D_SRV_DIMENSION_TEXTURE1D, "1D" },
 	{ D3D_SRV_DIMENSION_TEXTURE1DARRAY, "1DArray" },
 	{ D3D_SRV_DIMENSION_TEXTURE2D, "2D" },
@@ -90,6 +90,8 @@ void Shader::DeleteConstantBuffers()
 
 HRESULT Shader::CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
+	string typeName = GetFrom(shader_input_type_names, desc.Type);
+	Print("\tstruct %s_t : %s", desc.Name, typeName.c_str());
 	Print("\n\t{\n");
 	ConstantBuffer *cb = new ConstantBuffer();
 	uint i = desc.BindPoint;
@@ -97,20 +99,21 @@ HRESULT Shader::CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 	mConstBufferIDs[string(cb->Name)] = i;
 	AddAt(mConstantBuffers, i, cb);
 	AddAt(mBuffers, i, cb->mConstantBuffer);
-	Print("\t}\n");
+	Print("\t};\n\tstruct %s_t %s;\n", desc.Name, desc.Name);
 	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
+// No type information in TextureBuffer available from D3DReflection!?
 
 HRESULT Shader::CreateTextureBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
+	Print("\t%s %s", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
 	Print("\n\t{\n");
 	TextureBuffer *tp = new TextureBuffer();
 	uint i = desc.BindPoint;
 	mTextureBufferIDs[string(desc.Name)] = i;
 	AddAt(mTextureBuffers, i, tp);
-//	AddAt(mBuffers, i, cb->mConstantBuffer);
 	Print("\t}\n");
 	return S_OK;
 }
@@ -156,7 +159,7 @@ HRESULT Shader::CreateBindings()
 
 HRESULT Shader::CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	Print("\n");
+	Print("\t%s%s *%s;\n", GetFrom(shader_input_type_names, desc.Type).c_str(), GetFrom(shader_input_dimension_names, desc.Dimension).c_str(), desc.Name);
 	AddAt(mTextures, desc.BindPoint, (ID3D11ShaderResourceView *)null);
 	mTextureIDs[string(desc.Name)] = desc.BindPoint;
 	return S_OK;
@@ -166,7 +169,7 @@ HRESULT Shader::CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 HRESULT Shader::CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	Print("\n");
+	Print("\t%s%s *%s;\n", GetFrom(shader_input_type_names, desc.Type).c_str(), GetFrom(shader_input_dimension_names, desc.Dimension).c_str(), desc.Name);
 	AddAt(mSamplers, desc.BindPoint, (ID3D11SamplerState *)null);
 	mSamplerIDs[desc.Name] = desc.BindPoint;
 	return S_OK;
@@ -176,7 +179,6 @@ HRESULT Shader::CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 HRESULT Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	Print("\t%s%s %s", GetFrom(shader_input_type_names, desc.Type).c_str(), GetFrom(shader_input_dimension_names, desc.Dimension).c_str(), desc.Name);
 	switch(desc.Type)
 	{
 		case D3D_SHADER_INPUT_TYPE::D3D10_SIT_TEXTURE: return CreateTextureBinding(desc);
