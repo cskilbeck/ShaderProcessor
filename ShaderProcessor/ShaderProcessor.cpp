@@ -2,26 +2,17 @@
 
 #include "stdafx.h"
 
-#define DEFINE_CBUFFERS
+#define HLSL_DEFINE_CONSTANT_BUFFERS
 
 #include "temp.h"
 
-//////////////////////////////////////////////////////////////////////
+using namespace DirectX;
 
-float foo[4];
+//////////////////////////////////////////////////////////////////////
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	using namespace HLSL;
-
-	PixelShader.ColourModifiers.ChannelMask[X] = 10;
-
-	Vec4f bob;
-
-	foo = bob;
-
-	Float4 &f = PixelShader.ColourModifiers.GetAddressOf<Float4>("ChannelMask");
-	f[X] = 10;
 
 	int rc = 0;
 	if(D3D::Open())

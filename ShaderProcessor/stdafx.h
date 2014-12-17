@@ -1,7 +1,3 @@
-// stdafx.h : include file for standard system include files,
-// or project specific include files that are used frequently, but
-// are changed infrequently
-//
 
 #pragma once
 
@@ -28,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <map>
@@ -37,6 +34,8 @@
 #include "WinResource.h"
 #include "D3D.h"
 #include "CBuffer.h"
+
+#include "hlsltypes.h"
 #include "Shader.h"
 
 #define Print printf

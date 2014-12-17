@@ -8,8 +8,12 @@ namespace HLSL
 		uint32 offset;
 	};
 
-	template<typename T, uint32 OffsetCount, CBufferOffset const Offsets[]> struct ConstantBuffer : T
+	template<typename T, uint32 OffsetCount, CBufferOffset const Offsets[]> struct ConstantBuffer: T
 	{
+		ConstantBuffer()
+		{
+		}
+
 		ConstantBuffer(uint32 const *defaults)
 		{
 			memcpy(this, defaults, sizeof(T));	// !
@@ -28,13 +32,45 @@ namespace HLSL
 		}
 	};
 
-	struct Shader
+	struct VertexShader
 	{
-		// blah blah
 	};
 
-	struct SamplerState;
-	struct Texture2D;
+	struct PixelShader
+	{
+	};
+
+	struct SamplerState : Reportable
+	{
+		void StaticsOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+		}
+
+		void MemberOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+
+		}
+
+		void ConstructorOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+
+		}
+	};
+
+	struct Texture2D : Reportable
+	{
+		void StaticsOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+		}
+
+		void MemberOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+		}
+
+		void ConstructorOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override
+		{
+		}
+	};
 
 } // HLSL
 
@@ -42,55 +78,71 @@ namespace HLSL
 
 namespace HLSL
 {
-	#if defined(DEFINE_CBUFFERS)
+#pragma pack(push, 4)
 
-		extern CBufferOffset const PixelShader_ColourModifiers_OffsetTable[2] =
-		{
-			{ "ChannelMask", 0 },
-			{ "ColorOffset", 16 }
-		};
-
-		extern CBufferOffset const PixelShader_GridStuff_OffsetTable[4] =
-		{
-			{ "GridColor0", 0 },
-			{ "GridColor1", 16 },
-			{ "GridSize", 32 },
-			{ "GridSize2", 40 }
-		};
-
-		uint32 const PixelShader_ColourModifiers_ValuesTable[8] =
-		{
-			0x89734783, 0x89734783, 0x89734783, 0x89734783,
-			0x89734783, 0x89734783, 0x89734783, 0x89734783
-		};
-
-		uint32 const PixelShader_GridStuff_ValuesTable[12] =
-		{
-			0x89734783, 0x89734783, 0x89734783, 0x89734783,
-			0x89734783, 0x89734783, 0x89734783, 0x89734783,
-			0x89734783, 0x89734783,
-			0x89734783, 0x89734783
-		};
-
-	#else
-
-		extern CBufferOffset const PixelShader_ColourModifiers_OffsetTable[2];
-		extern CBufferOffset const PixelShader_GridStuff_OffsetTable[4];
-		extern uint32 const PixelShader_ColourModifiers_ValuesTable[8];
-		extern uint32 const PixelShader_GridStuff_ValuesTable[12];
-
-	#endif
-
-	#pragma pack(push, 4)
-
-	struct PixelShader_t
+	// $Globals Offsets
+	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_$Globals_OffsetTable[1] =
 	{
+		{ "off", 0 }
+	};
+
+	// $Globals Defaults
+	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_$Globals_DefaultsTable[1] =
+	{
+		0x00000000
+	};
+
+	// ColourModifiers Offsets
+	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_ColourModifiers_OffsetTable[2] =
+	{
+		{ "ChannelMask", 0 },
+		{ "ColorOffset", 16 }
+	};
+
+	// ColourModifiers Defaults
+	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_ColourModifiers_DefaultsTable[8] =
+	{
+		0x89734783, 0x89734783, 0x89734783, 0x89734783,
+		0x89734783, 0x89734783, 0x89734783, 0x89734783
+	};
+
+	// GridStuff Offsets
+	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_GridStuff_OffsetTable[4] =
+	{
+		{ "GridColor0", 0 },
+		{ "GridColor1", 16 },
+		{ "GridSize", 32 },
+		{ "GridSize2", 40 }
+	};
+
+	// GridStuff Defaults
+	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_GridStuff_DefaultsTable[12] =
+	{
+		0x89734783, 0x89734783, 0x89734783, 0x89734783,
+		0x89734783, 0x89734783, 0x89734783, 0x89734783,
+		0x89734783, 0x89734783,
+		0x89734783, 0x89734783
+	};
+
+	// SimplePixelShader
+	struct SimplePixelShader_t : PixelShader
+	{
+		// $Globals
+		struct $Globals_t
+		{
+			Float4 off;
+		};
+		ConstantBuffer <$Globals_t, 1, SimplePixelShader_$Globals_OffsetTable> $Globals;
+
+		// ColourModifiers
 		struct ColourModifiers_t
 		{
 			Float4 ChannelMask;
 			Float4 ColorOffset;
 		};
+		ConstantBuffer<ColourModifiers_t, 4, SimplePixelShader_ColourModifiers_OffsetTable> ColourModifiers;
 
+		// GridStuff
 		struct GridStuff_t
 		{
 			Float4 GridColor0;
@@ -98,30 +150,27 @@ namespace HLSL
 			Float2 GridSize;
 			Float2 GridSize2;
 		};
+		ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_OffsetTable> GridStuff;
 
-		PixelShader_t(SamplerState *s = null, Texture2D *t = null) :
-			samplerState(s),
-			picture(t),
-			ColourModifiers(PixelShader_ColourModifiers_ValuesTable),
-			GridStuff(PixelShader_GridStuff_ValuesTable)
+		// Samplers
+		SamplerState *samplerState;
+
+		// Textures
+		Texture2D *picture;
+
+		// Constructor
+		SimplePixelShader_t()
+			: $Globals(SimplePixelShader_$Globals_DefaultsTable)
+			, ColourModifiers(SimplePixelShader_ColourModifiers_DefaultsTable)
+			, GridStuff(SimplePixelShader_GridStuff_DefaultsTable)
+			, samplerState(null)
+			, picture(null)
 		{
 		}
-
-		using GridStuff_s = ConstantBuffer<GridStuff_t, 2, PixelShader_GridStuff_OffsetTable>;
-		using ColourModifiers_s = ConstantBuffer<ColourModifiers_t, 4, PixelShader_ColourModifiers_OffsetTable>;
-
-		SamplerState *samplerState;
-		Texture2D *picture;
-		ColourModifiers_s ColourModifiers;
-		GridStuff_s GridStuff;
 	};
 
-	#pragma pack(pop)
+	DECLSPEC_SELECTANY SimplePixelShader_t SimplePixelShader;
 
-	#if defined(DEFINE_CBUFFERS)
-		PixelShader_t PixelShader;
-	#else
-		extern PixelShader_t PixelShader;
-	#endif
+#pragma pack(pop)
 
 } // HLSL

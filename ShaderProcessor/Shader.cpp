@@ -8,7 +8,7 @@ using ISMap = std::map < int, string >;
 
 static string const &GetFrom(ISMap const &map, int x)
 {
-	static string const &unknown("");
+	static string const unknown("");
 	auto i = map.find(x);
 	return (i != map.end()) ? i->second : unknown;
 }
@@ -91,16 +91,60 @@ void Shader::DeleteConstantBuffers()
 HRESULT Shader::CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
 	string typeName = GetFrom(shader_input_type_names, desc.Type);
-	Print("\tstruct %s_t : %s", desc.Name, typeName.c_str());
-	Print("\n\t{\n");
 	ConstantBuffer *cb = new ConstantBuffer();
 	uint i = desc.BindPoint;
 	DX(cb->Create(mReflector->GetConstantBufferByIndex(i)));
 	mConstBufferIDs[string(cb->Name)] = i;
 	AddAt(mConstantBuffers, i, cb);
 	AddAt(mBuffers, i, cb->mConstantBuffer);
-	Print("\t};\n\tstruct %s_t %s;\n", desc.Name, desc.Name);
 	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void Shader::Output()
+{
+	string header = R"(
+//////////////////////////////////////////////////////////////////////
+
+namespace HLSL
+{
+#pragma pack(push, 4)
+
+)";
+
+	string footer = R"(
+#pragma pack(pop)
+
+} // HLSL
+)";
+
+	string constructor = R"(		// Constructor
+		$s_t()
+)";
+
+	// output header
+	Print("%s", header.c_str());
+
+	// call StaticsOutput for each ConstantBuffer
+
+	Print("\tstruct %s_t", mName.c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
+	Print("\n\t{\n");
+
+	// call MemberOutput for each ConstantBuffer, Texture and Sampler
+
+	// output constructor preamble
+	Print(constructor.c_str(), mName.c_str());
+
+	// call ConstructorOutput for each ConstantBuffer, Texture and Sampler, use : for 1st one and , for subsequent
+	char const *pre = ":";
+	
+	
+
+	Print("\t};\n\tstruct %s_t %s;\n", mName.c_str(), mName.c_str());
+
+	// output footer
+	Print("%s", footer.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -108,14 +152,24 @@ HRESULT Shader::CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 HRESULT Shader::CreateTextureBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	Print("\t%s %s", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
-	Print("\n\t{\n");
 	TextureBuffer *tp = new TextureBuffer();
 	uint i = desc.BindPoint;
 	mTextureBufferIDs[string(desc.Name)] = i;
 	AddAt(mTextureBuffers, i, tp);
+	Print("\t%s %s", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
+	Print("\n\t{\n");
 	Print("\t}\n");
 	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+template <typename T> static void CallOutput(std::vector<T *> &vec)
+{
+	for(auto i = vec.begin(); i != vec.end(); ++i)
+	{
+		(*i)->Output();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -125,6 +179,7 @@ HRESULT Shader::Create(void const *blob, size_t size)
 	DX(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
 	DX(CreateBindings());
+	Output();
 	return S_OK;
 }
 

@@ -4,27 +4,14 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct Buffer
-{
-	Buffer()
-	{
-	}
-
-	~Buffer()
-	{
-	}
-};
-
-//////////////////////////////////////////////////////////////////////
-
 struct TextureBuffer
 {
-
+	// Huh? Can't get reflection for these structs
 };
 
 //////////////////////////////////////////////////////////////////////
 
-struct ConstantBuffer
+struct ConstantBuffer : Reportable
 {
 	ConstantBuffer();
 	~ConstantBuffer();
@@ -43,7 +30,12 @@ struct ConstantBuffer
 	char const *	Name;
 	size_t			TotalSizeInBytes;
 	Ptr<byte>		Buffer;
+	Ptr<byte>		Defaults;
 	ID3D11Buffer *	mConstantBuffer;
+
+	void StaticsOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override;
+	void MemberOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override;
+	void ConstructorOutput(D3D11_SHADER_INPUT_BIND_DESC desc) override;
 
 private:
 

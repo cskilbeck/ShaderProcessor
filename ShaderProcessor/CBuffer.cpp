@@ -131,8 +131,23 @@ HRESULT ConstantBuffer::Create(ID3D11ShaderReflectionConstantBuffer *b)
 		DX(var->GetDesc(&v));
 		DX(type->GetDesc(&t));
 		Parameters[v.Name] = cbVar;
+		// copy the default value, if there is one, into the Defaults buffer
+		uint offset = v.StartOffset;
+		byte *p = Defaults.get() + offset;
+		if(v.DefaultValue != null)
+		{
+			if(Defaults == null)
+			{
+				Defaults.reset(new byte[sbDesc.Size]);
+				memset(Defaults.get(), 0, sbDesc.Size);
+			}
+			memcpy(p, v.DefaultValue, v.Size);
+		}
+
+		// OUTPUT
 		string typeName = Format("%s%s%d", typeNames[t.Type], isMatrix[t.Class] ? Format("%dx", t.Rows).c_str() : "", t.Columns);
 		Print("\t\t%s %s;\n", typeName.c_str(), v.Name);
+
 	}
 
 	// now create the name lookup table
@@ -141,3 +156,6 @@ HRESULT ConstantBuffer::Create(ID3D11ShaderReflectionConstantBuffer *b)
 	return S_OK;
 }
 
+void ConstantBuffer::MemberOutput(D3D11_SHADER_INPUT_BIND_DESC desc)
+{
+}
