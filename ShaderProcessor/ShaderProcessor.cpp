@@ -47,6 +47,5 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 	}
 	D3D::Close();
-	getchar();
 	return rc;
 }

@@ -33,7 +33,11 @@
 #include "Util.h"
 #include "WinResource.h"
 #include "D3D.h"
+#include "Reportable.h"
+#include "TBuffer.h"
 #include "CBuffer.h"
+#include "Texture.h"
+#include "SamplerState.h"
 
 #include "hlsltypes.h"
 #include "Shader.h"

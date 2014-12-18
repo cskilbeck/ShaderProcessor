@@ -142,10 +142,14 @@
     <ClInclude Include="CBuffer.h" />
     <ClInclude Include="D3D.h" />
     <ClInclude Include="hlsltypes.h" />
+    <ClInclude Include="Reportable.h" />
+    <ClInclude Include="SamplerState.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="TBuffer.h" />
     <ClInclude Include="temp.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="WinResource.h" />

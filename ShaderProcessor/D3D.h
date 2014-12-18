@@ -168,12 +168,3 @@ namespace D3D
 
 }
 
-//////////////////////////////////////////////////////////////////////
-
-struct Reportable
-{
-	virtual void StaticsOutput(D3D11_SHADER_INPUT_BIND_DESC desc) = 0;
-	virtual void MemberOutput(D3D11_SHADER_INPUT_BIND_DESC desc) = 0;
-	virtual void ConstructorOutput(D3D11_SHADER_INPUT_BIND_DESC desc) = 0;
-};
-

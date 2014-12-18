@@ -4,6 +4,18 @@
 
 //////////////////////////////////////////////////////////////////////
 
+struct VertexShader
+{
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct PixelShader
+{
+};
+
+//////////////////////////////////////////////////////////////////////
+
 struct Shader
 {
 	//////////////////////////////////////////////////////////////////////
@@ -13,14 +25,12 @@ struct Shader
 	//////////////////////////////////////////////////////////////////////
 
 	uint								mStartIndex;
-	vector<ID3D11Buffer *>				mBuffers;
 
 	DXPtr<ID3D11ShaderReflection>		mReflector;
 	D3D11_SHADER_DESC					mShaderDesc;
 
-	vector<ID3D11SamplerState *>		mSamplers;	// client fills these in
-	vector<ID3D11ShaderResourceView *>	mTextures;
-
+	vector<SamplerState *>				mSamplers;
+	vector<Texture2D *>					mTextures;
 	vector<ConstantBuffer *>			mConstantBuffers;
 	vector<TextureBuffer *>				mTextureBuffers;
 
@@ -30,6 +40,13 @@ struct Shader
 	IntMap								mTextureIDs;
 
 	tstring								mName;
+
+	vector<Reportable *>				mBindings;
+
+	string Name() const
+	{
+		return StringFromWideString(mName);
+	}
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -41,21 +58,16 @@ struct Shader
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
 	int GetConstantBufferIndex(string const &name) const;
-
-	void SetTexture(int index, ID3D11ShaderResourceView *t);
-	void SetTexture(string const &name, ID3D11ShaderResourceView *t);
-
-	void SetSampler(int index, ID3D11SamplerState *s);
-	void SetSampler(string const &name, ID3D11SamplerState *s);
+	int GetTextureBufferIndex(string const &name) const;
 
 	uint GetConstantBufferCount() const;
 	ConstantBuffer *GetCB(string const &name);
 	ConstantBuffer *GetConstantBuffer(int index);
 
-	HRESULT CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
-	HRESULT CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	HRESULT CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	HRESULT CreateTextureBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Reportable *CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Reportable *CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Reportable *CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Reportable *CreateTextureBufferBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 
 	void DeleteConstantBuffers();
 
@@ -63,7 +75,7 @@ struct Shader
 	virtual HRESULT Destroy();
 
 	HRESULT CreateBindings();
-	HRESULT CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Reportable *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 	void DestroyBindings();
 };
 
@@ -94,40 +106,6 @@ inline int Shader::GetSamplerIndex(string const &name) const
 inline int Shader::GetConstantBufferIndex(string const &name) const
 {
 	return GetIndex(name, mConstBufferIDs);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline void Shader::SetTexture(int index, ID3D11ShaderResourceView *t)
-{
-	if(index >= 0)
-	{
-		mTextures[index] = t;
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline void Shader::SetTexture(string const &name, ID3D11ShaderResourceView *t)
-{
-	SetTexture(GetTextureIndex(name), t);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline void Shader::SetSampler(int index, ID3D11SamplerState *s)
-{
-	if(index >= 0)
-	{
-		mSamplers[index] = s;
-	}
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline void Shader::SetSampler(string const &name, ID3D11SamplerState *s)
-{
-	SetSampler(GetSamplerIndex(name), s);
 }
 
 //////////////////////////////////////////////////////////////////////
