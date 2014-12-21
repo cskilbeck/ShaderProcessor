@@ -142,6 +142,7 @@
     <ClInclude Include="CBuffer.h" />
     <ClInclude Include="D3D.h" />
     <ClInclude Include="hlsltypes.h" />
+    <ClInclude Include="output.h" />
     <ClInclude Include="Reportable.h" />
     <ClInclude Include="SamplerState.h" />
     <ClInclude Include="Shader.h" />

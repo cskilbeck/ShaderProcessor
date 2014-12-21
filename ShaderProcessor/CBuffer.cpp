@@ -101,17 +101,31 @@ ConstantBuffer::ConstantBuffer(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc, ID3
 	mParameterIDs.clear();
 	TotalSizeInBytes = mDesc.Size;
 
-	// get the details of the parameters
-	for(uint j = 0; j < mDesc.Variables; ++j)
+	uint varCount = mDesc.Variables;
+
+	for(uint j = 0; j < varCount; ++j)
 	{
 		ID3D11ShaderReflectionVariable *var = b->GetVariableByIndex(j);
 		ID3D11ShaderReflectionType *type = var->GetType();
-		ConstantBuffer::Parameter *cbVar = new ConstantBuffer::Parameter();
+		Parameter *cbVar = new ConstantBuffer::Parameter();
 		D3D11_SHADER_VARIABLE_DESC &v = cbVar->Variable;
 		D3D11_SHADER_TYPE_DESC &t = cbVar->Type;
 		DXV(var->GetDesc(&v));
 		DXV(type->GetDesc(&t));
 		mParameters.push_back(cbVar);
+	}
+
+	// get the details of the parameters
+	for(uint j = 0; j < varCount; ++j)
+	{
+		Parameter *cbVar = mParameters[j];
+		D3D11_SHADER_VARIABLE_DESC &v = cbVar->Variable;
+		D3D11_SHADER_TYPE_DESC &t = cbVar->Type;
+
+		uint end = (j < varCount - 1) ? mParameters[j + 1]->Variable.StartOffset : mDesc.Size;
+
+		cbVar->padding = end - (v.StartOffset + v.Size);
+
 		mParameterIDs[v.Name] = j;
 
 		// copy the default value, if there is one, into the Defaults buffer
@@ -149,7 +163,8 @@ void ConstantBuffer::StaticsOutput()
 		D3D11_SHADER_VARIABLE_DESC &v = p->Variable;
 		D3D11_SHADER_TYPE_DESC &t = p->Type;
 		//string typeName = Format("%s%s%d", typeNames[t.Type], isMatrix[t.Class] ? Format("%dx", t.Rows).c_str() : "", t.Columns);
-		Print("\t\t{ \"%s\", %d }", v.Name, v.StartOffset);
+		printf("\t\t{ \"%s\", %d }", v.Name, v.StartOffset);
+
 		if(++i == mParameters.end())
 		{
 			printf("\n");
@@ -166,43 +181,23 @@ void ConstantBuffer::StaticsOutput()
 	{
 		printf("\t// %s Defaults\n", mDesc.Name);
 		printf("\tDECLSPEC_SELECTANY extern uint32 const %s_%s_Defaults[%d] = \n\t{\n", mShader->Name().c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
-		i = mParameters.begin();
-		while(true)
+		uint varCount = (uint)mParameters.size();
+		for(uint i = 0; i < varCount; ++i)
 		{
-			Parameter *p = *i++;
+			Parameter *p = mParameters[i];
 			D3D11_SHADER_VARIABLE_DESC &v = p->Variable;
-			D3D11_SHADER_TYPE_DESC &t = p->Type;
 			printf("\t\t");
 			uint32 *data = (uint32 *)(Defaults.get() + v.StartOffset);
-
-			uint slots = v.Size;
-			uint endOfThisOne = v.StartOffset + v.Size;
-			uint startOfNextOne = endOfThisOne;
-
-			if(i != mParameters.end())
-			{
-				startOfNextOne = (*i)->Variable.StartOffset;
-			}
-			else if(endOfThisOne < mDesc.Size)
-			{
-				startOfNextOne = mDesc.Size;
-			}
-			uint padding = (startOfNextOne - endOfThisOne);
-
-			slots += padding;
-
-			slots /= sizeof(uint32);
+			bool lastOne = i == (varCount - 1);
+			uint end = (lastOne) ? mDesc.Size : mParameters[i + 1]->Variable.StartOffset;
+			uint pad = (end - (v.StartOffset + v.Size));
+			uint slots = (v.Size + pad) / sizeof(uint32);
 
 			for(uint j = 0; j < slots; ++j)
 			{
-				printf("0x%08x%s", *data++, (j < slots - 1) ? "," : Format("%s // %s", (i != mParameters.end()) ? "," : " ", v.Name).c_str());
+				printf("0x%08x%s", *data++, (j < slots - 1) ? "," : Format("%s // %s", lastOne ? " " : ",", v.Name).c_str());
 			}
 			printf("\n");
-
-			if(i == mParameters.end())
-			{
-				break;
-			}
 		}
 		printf("\t};\n\n");
 	}
@@ -212,26 +207,34 @@ void ConstantBuffer::StaticsOutput()
 
 void ConstantBuffer::MemberOutput()
 {
-	Print("\t\tstruct %s_t\n\t\t{\n", mDesc.Name);
+	// need to track the size of the struct and insert padding so no member crosses a 1x4 register boundary...
+
+	uint padID = 0;
+	printf("\t\tstruct %s_t\n\t\t{\n", mDesc.Name);
 	for(auto i = mParameters.begin(); i != mParameters.end(); ++i)
 	{
 		Parameter *p = (*i);
 		D3D11_SHADER_VARIABLE_DESC &v = p->Variable;
 		D3D11_SHADER_TYPE_DESC &t = p->Type;
 		string typeName = Format("%s%s%d", typeNames[t.Type], isMatrix[t.Class] ? Format("%dx", t.Rows).c_str() : "", t.Columns);
-		Print("\t\t\t%s %s;\n", typeName.c_str(), v.Name);
+		printf("\t\t\t%s %s;", typeName.c_str(), v.Name);
+		if(p->padding != 0)
+		{
+			printf("\t\t\tbyte pad%d[%d];", padID++, p->padding);
+		}
+		printf("\n");
 	}
 
 	//ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
 	string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, mShader->Name().c_str(), mDesc.Name, mDesc.Name);
-	Print("\t\t};\n\t\t%s;\n", s.c_str());
+	printf("\t\t};\n\t\t%s;\n", s.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void ConstantBuffer::ConstructorOutput()
 {
-	Print("%s(%s)\n", mDesc.Name, Defaults == null ? "" : Format("%s_%s_Defaults", mShader->Name().c_str(), mDesc.Name).c_str());
+	printf("%s(%s)\n", mDesc.Name, Defaults == null ? "" : Format("%s_%s_Defaults", mShader->Name().c_str(), mDesc.Name).c_str());
 }
 
 //////////////////////////////////////////////////////////////////////

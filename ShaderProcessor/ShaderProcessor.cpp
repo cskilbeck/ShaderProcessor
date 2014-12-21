@@ -1,10 +1,12 @@
 //////////////////////////////////////////////////////////////////////
+// detect ps/vs etc and make it derive from the right thing
+// support everything (Buffers<> especially)
+// fix texturebuffers by doing the '3 types' of thing split
+// deal with anonymous cbuffers and tbuffers (index instead of name)
+// test alignment/padding etc
+// deal with Buffers of structs (no padding)
 
 #include "stdafx.h"
-
-#define HLSL_DEFINE_CONSTANT_BUFFERS
-
-#include "temp.h"
 
 using namespace DirectX;
 
@@ -13,6 +15,16 @@ using namespace DirectX;
 int _tmain(int argc, _TCHAR* argv[])
 {
 	using namespace HLSL;
+
+	Float2 &bob = SimplePixelShader.GridStuff.GridSize2;
+	printf("%f,%f\n", bob.x, bob.y);
+
+	Float4 *GridSize2 = (Float4 *)SimplePixelShader.GridStuff.GetAddressOf("GridSize2");
+	printf("%f,%f\n", GridSize2->x, GridSize2->y);
+
+	printf("%d\n", sizeof(ConstBufferOffset));
+
+	SimplePixelShader.samplerState = null;
 
 	int rc = 0;
 	if(D3D::Open())

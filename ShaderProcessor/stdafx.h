@@ -29,6 +29,9 @@
 #include <unordered_map>
 #include <map>
 
+#define ALIGNED(x) __declspec(align(x))
+#define WEAKSYM __declspec(selectany)
+
 #include "Types.h"
 #include "Util.h"
 #include "WinResource.h"
@@ -42,4 +45,6 @@
 #include "hlsltypes.h"
 #include "Shader.h"
 
-#define Print printf
+#include "temp.h"
+#include "output.h"
+

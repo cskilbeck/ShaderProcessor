@@ -8,8 +8,14 @@ struct ConstantBuffer : Reportable
 {
 	struct Parameter
 	{
+		Parameter(uint paddingAmount = 0)
+			: padding(paddingAmount)
+		{
+		}
+
 		D3D11_SHADER_VARIABLE_DESC	Variable;
 		D3D11_SHADER_TYPE_DESC		Type;
+		uint						padding;
 	};
 
 	using IntMap = std::unordered_map<string, int>;

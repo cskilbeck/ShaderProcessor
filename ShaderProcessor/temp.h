@@ -2,138 +2,122 @@
 
 namespace HLSL
 {
-	struct CBufferOffset
+	//////////////////////////////////////////////////////////////////////
+
+	struct ConstBufferOffset
 	{
 		char const *name;
-		uint32 offset;
+		size_t offset;
 	};
+	
+	//////////////////////////////////////////////////////////////////////
 
-	template<typename T, uint32 OffsetCount, CBufferOffset const Offsets[]> struct ConstantBuffer: T
+	template<typename T, uint32 OffsetCount, ConstBufferOffset const OffsetTable[]> struct ConstBuffer: T
 	{
-		ConstantBuffer()
+		//////////////////////////////////////////////////////////////////////
+
+		ConstBuffer()
 		{
+			memset(this, 0, sizeof(T));
 		}
 
-		ConstantBuffer(uint32 const *defaults)
+		//////////////////////////////////////////////////////////////////////
+
+		ConstBuffer(uint32 const *defaults)
 		{
-			memcpy(this, defaults, sizeof(T));	// !
+			memcpy(this, defaults, sizeof(T));
 		}
 
-		template<typename T> T &GetAddressOf(char const *name)
+		//////////////////////////////////////////////////////////////////////
+
+		void const *Buffer() const
+		{
+			return this;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		ConstBufferOffset const * const Offsets() const
+		{
+			return OffsetTable;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		int GetOffset(char const *name) const
 		{
 			for(int i = 0; i < OffsetCount; ++i)
 			{
-				if(strcmp(name, Offsets[i].name) == 0)
+				if(strcmp(OffsetTable[i].name, name) == 0)
 				{
-					return (T &)(*((byte *)this + Offsets[i].offset));
+					return OffsetTable[i].offset;
 				}
 			}
-			return (T &)null;
+			return -1;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void *GetAddressOf(char const *name) const
+		{
+			for(int i = 0; i < OffsetCount; ++i)
+			{
+				if(strcmp(OffsetTable[i].name, name) == 0)
+				{
+					return (byte *)this + OffsetTable[i].offset;
+				}
+			}
+			return null;
 		}
 	};
 
-} // HLSL
+	//////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////
-
-namespace HLSL
-{
-#pragma pack(push, 4)
-
-	// $Globals Offsets
-	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_$Globals_Offsets[1] =
+	struct PixelShaderBase
 	{
-		{ "off", 0 }
-	};
+		uint32 SamplerCount;
+		uint32 ResourceCount;
+		uint32 ConstBufferCount;
+		char const * const *SamplerNames;
+		char const * const *ResourceNames;
+		char const * const *ConstBufferNames;
+		uint32 const * const ConstBufferOffsets;
 
-	// $Globals Defaults
-	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_$Globals_Defaults[1] =
-	{
-		0x00000000
-	};
-
-	// ColourModifiers Offsets
-	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_ColourModifiers_Offsets[2] =
-	{
-		{ "ChannelMask", 0 },
-		{ "ColorOffset", 16 }
-	};
-
-	// ColourModifiers Defaults
-	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_ColourModifiers_Defaults[8] =
-	{
-		0x89734783, 0x89734783, 0x89734783, 0x89734783,
-		0x89734783, 0x89734783, 0x89734783, 0x89734783
-	};
-
-	// GridStuff Offsets
-	DECLSPEC_SELECTANY extern CBufferOffset const SimplePixelShader_GridStuff_Offsets[4] =
-	{
-		{ "GridColor0", 0 },
-		{ "GridColor1", 16 },
-		{ "GridSize", 32 },
-		{ "GridSize2", 40 }
-	};
-
-	// GridStuff Defaults
-	DECLSPEC_SELECTANY extern uint32 const SimplePixelShader_GridStuff_Defaults[12] =
-	{
-		0x89734783, 0x89734783, 0x89734783, 0x89734783,
-		0x89734783, 0x89734783, 0x89734783, 0x89734783,
-		0x89734783, 0x89734783,
-		0x89734783, 0x89734783
-	};
-
-	// SimplePixelShader
-	struct SimplePixelShader_t : PixelShader
-	{
-		// $Globals
-		struct $Globals_t
-		{
-			Float4 off;
-		};
-		ConstantBuffer <$Globals_t, 1, SimplePixelShader_$Globals_Offsets> $Globals;
-
-		// ColourModifiers
-		struct ColourModifiers_t
-		{
-			Float4 ChannelMask;
-			Float4 ColorOffset;
-		};
-		ConstantBuffer<ColourModifiers_t, 4, SimplePixelShader_ColourModifiers_Offsets> ColourModifiers;
-
-		// GridStuff
-		struct GridStuff_t
-		{
-			Float4 GridColor0;
-			Float4 GridColor1;
-			Float2 GridSize;
-			Float2 GridSize2;
-		};
-		ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
-
-		// Samplers
-		SamplerState *samplerState;
-
-		// Textures
-		Texture2D *picture;
-
-		// Constructor
-		SimplePixelShader_t()
-			: $Globals(SimplePixelShader_$Globals_Defaults)
-			, ColourModifiers(SimplePixelShader_ColourModifiers_Defaults)
-			, GridStuff(SimplePixelShader_GridStuff_Defaults)
-			, samplerState(null)
-			, picture(null)
+		PixelShaderBase(uint32 samplerCount,
+						uint32 resourceCount,
+						uint32 constBufferCount,
+						char const * const *samplerNames,
+						char const * const *resourceNames,
+						char const * const *constBufferNames,
+						uint32 const * const constBufferOffsets)
+			: SamplerCount(samplerCount)
+			, ResourceCount(resourceCount)
+			, ConstBufferCount(constBufferCount)
+			, SamplerNames(samplerNames)
+			, ResourceNames(resourceNames)
+			, ConstBufferNames(constBufferNames)
+			, ConstBufferOffsets(constBufferOffsets)
 		{
 		}
+
+		template<typename T> bool GetConstBuffer(char const *name, T * &ptr)
+		{
+			for(uint i = 0; i < ConstBufferCount; ++i)
+			{
+				if(strcmp(ConstBufferNames[i], name) == 0)
+				{
+					ptr = (T *)((byte *)this + ConstBufferOffsets[i]);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// Same for Resources and SamplerStates
+
 	};
 
-	DECLSPEC_SELECTANY SimplePixelShader_t SimplePixelShader;
-
-#pragma pack(pop)
 
 } // HLSL
-
 
 
