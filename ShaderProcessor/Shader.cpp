@@ -23,18 +23,18 @@ static ISMap constant_buffer_type_names =
 
 static ISMap shader_input_type_names =
 {
-	{ D3D_SIT_CBUFFER, "ConstantBuffer" },										// has 'Constant Buffer'
-	{ D3D_SIT_TBUFFER, "TextureBuffer" },										// has 'Constant Buffer'
-	{ D3D_SIT_TEXTURE, "Texture" },
-	{ D3D_SIT_SAMPLER, "SamplerState" },
-	{ D3D_SIT_UAV_RWTYPED, "RW_UAVTyped" },
-	{ D3D_SIT_STRUCTURED, "StructuredInput" },									// has 'Constant Buffer'
-	{ D3D_SIT_UAV_RWSTRUCTURED, "RW_UAVStructured" },
-	{ D3D_SIT_BYTEADDRESS, "ByteAddress" },
-	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },
-	{ D3D_SIT_UAV_APPEND_STRUCTURED, "AppendStructured" },						// has 'Constant Buffer'
-	{ D3D_SIT_UAV_CONSUME_STRUCTURED, "ConsumeStructured" },					// has 'Constant Buffer'
-	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_AUVStructuredWithCounter" }	// has 'Constant Buffer'
+	{ D3D_SIT_CBUFFER, "ConstantBuffer" },										// has 'Constant Buffer'	// ConstantBuffer
+	{ D3D_SIT_TBUFFER, "TextureBuffer" },										// has 'Constant Buffer'	// Resource
+	{ D3D_SIT_TEXTURE, "Texture" },												//							// Resource
+	{ D3D_SIT_SAMPLER, "SamplerState" },										//							// SamplerState
+	{ D3D_SIT_UAV_RWTYPED, "RW_UAVTyped" },										//							// Resource
+	{ D3D_SIT_STRUCTURED, "StructuredInput" },									// has 'Constant Buffer'	// Resource
+	{ D3D_SIT_UAV_RWSTRUCTURED, "RW_UAVStructured" },														// Resource
+	{ D3D_SIT_BYTEADDRESS, "ByteAddress" },																	// Resource
+	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },														// Resource
+	{ D3D_SIT_UAV_APPEND_STRUCTURED, "AppendStructured" },						// has 'Constant Buffer'	// Resource
+	{ D3D_SIT_UAV_CONSUME_STRUCTURED, "ConsumeStructured" },					// has 'Constant Buffer'	// Resource
+	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_AUVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource
 };
 
 static ISMap shader_input_dimension_names =
