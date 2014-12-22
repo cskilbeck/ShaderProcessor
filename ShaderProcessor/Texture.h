@@ -4,10 +4,10 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct Texture2D: Reportable
+struct Texture2D: Binding
 {
 	Texture2D(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
-		: Reportable(s, desc)
+		: Binding(s, desc)
 	{
 	}
 

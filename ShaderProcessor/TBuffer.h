@@ -4,10 +4,10 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct TextureBuffer: Reportable
+struct TextureBuffer: Binding
 {
 	TextureBuffer(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
-		: Reportable(s, desc)
+		: Binding(s, desc)
 	{
 	}
 

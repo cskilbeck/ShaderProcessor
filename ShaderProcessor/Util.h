@@ -22,6 +22,10 @@ HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
 wstring WideStringFromString(string const &str);
 wstring WideStringFromTString(tstring const &str);
 string StringFromWideString(wstring const &str);
+
+string StringFromTString(tstring const &str);
+tstring TStringFromString(string const &str);
+
 wstring Format(wchar const *fmt, ...);
 string Format(char const *fmt, ...);
 tstring GetCurrentFolder();

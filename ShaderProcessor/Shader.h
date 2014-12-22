@@ -29,9 +29,13 @@ struct Shader
 	DXPtr<ID3D11ShaderReflection>		mReflector;
 	D3D11_SHADER_DESC					mShaderDesc;
 
+	// These can be referenced by ConstantBuffers, TextureBuffers, StructuredBuffers etc
+	vector<TypeDefinition *>			mDefinitions;
+	IntMap								mDefinitionIDs;	// map names of Definitions to the mDefinitions vector
+
 	vector<SamplerState *>				mSamplers;
 	vector<Texture2D *>					mTextures;
-	vector<ConstantBuffer *>			mConstantBuffers;
+	vector<ConstantBufferBinding *>		mConstantBuffers;
 	vector<TextureBuffer *>				mTextureBuffers;
 
 	IntMap								mTextureBufferIDs;
@@ -39,13 +43,13 @@ struct Shader
 	IntMap								mSamplerIDs;
 	IntMap								mTextureIDs;
 
-	tstring								mName;
+	string								mName;
 
-	vector<Reportable *>				mBindings;
+	vector<Binding *>					mBindings;
 
 	string Name() const
 	{
-		return StringFromWideString(mName);
+		return mName;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -61,13 +65,15 @@ struct Shader
 	int GetTextureBufferIndex(string const &name) const;
 
 	uint GetConstantBufferCount() const;
-	ConstantBuffer *GetCB(string const &name);
-	ConstantBuffer *GetConstantBuffer(int index);
+	ConstantBufferBinding *GetCB(string const &name);
+	ConstantBufferBinding *GetConstantBuffer(int index);
 
-	Reportable *CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Reportable *CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Reportable *CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Reportable *CreateTextureBufferBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	HRESULT CreateDefinitions();
+
+	Binding *CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Binding *CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Binding *CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Binding *CreateTextureBufferBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 
 	void DeleteConstantBuffers();
 
@@ -75,7 +81,7 @@ struct Shader
 	virtual HRESULT Destroy();
 
 	HRESULT CreateBindings();
-	Reportable *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 	void DestroyBindings();
 };
 
@@ -117,7 +123,7 @@ inline uint Shader::GetConstantBufferCount() const
 
 //////////////////////////////////////////////////////////////////////
 
-inline ConstantBuffer *Shader::GetCB(string const &name)
+inline ConstantBufferBinding *Shader::GetCB(string const &name)
 {
 	int id = GetConstantBufferIndex(name);
 	return (id >= 0) ? mConstantBuffers[id] : null;
@@ -125,7 +131,7 @@ inline ConstantBuffer *Shader::GetCB(string const &name)
 
 //////////////////////////////////////////////////////////////////////
 
-inline ConstantBuffer *Shader::GetConstantBuffer(int index)
+inline ConstantBufferBinding *Shader::GetConstantBuffer(int index)
 {
 	return mConstantBuffers[index];
 }

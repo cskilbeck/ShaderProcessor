@@ -47,13 +47,16 @@
     <ClInclude Include="SamplerState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Reportable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="output.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeDefinition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Binding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -77,6 +80,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeDefinition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Binding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

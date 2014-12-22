@@ -174,6 +174,28 @@ string StringFromWideString(wstring const &str)
 
 //////////////////////////////////////////////////////////////////////
 
+string StringFromTString(tstring const &str)
+{
+#if defined(UNICODE)
+	return StringFromWideString(str);
+#else
+	return str;
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+
+tstring TStringFromString(string const &str)
+{
+#if defined(UNICODE)
+	return WideStringFromString(str);
+#else
+	return str;
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+
 tstring GetCurrentFolder()
 {
 	vector<tchar> s;

@@ -6,12 +6,16 @@
 
 using ISMap = std::map < int, string >;
 
+//////////////////////////////////////////////////////////////////////
+
 static string const &GetFrom(ISMap const &map, int x)
 {
-	static string const unknown("");
+	static string const unknown("?");
 	auto i = map.find(x);
 	return (i != map.end()) ? i->second : unknown;
 }
+
+//////////////////////////////////////////////////////////////////////
 
 static ISMap constant_buffer_type_names =
 {
@@ -21,21 +25,31 @@ static ISMap constant_buffer_type_names =
 	{ D3D_CT_RESOURCE_BIND_INFO, "ResourceBindingInfo" }
 };
 
+// Binding types:
+
+// SamplerStates		// Do not have 'ConstantBuffers'// PSSetSamplers
+// Resources			// May have 'ConstantBuffers'	// D3D11_BIND_SHADER_RESOURCE
+// ConstantBuffers		// Do have 'ConstantBuffers'	// D3D11_BIND_CONSTANT_BUFFER
+
+//////////////////////////////////////////////////////////////////////
+
 static ISMap shader_input_type_names =
 {
 	{ D3D_SIT_CBUFFER, "ConstantBuffer" },										// has 'Constant Buffer'	// ConstantBuffer
 	{ D3D_SIT_TBUFFER, "TextureBuffer" },										// has 'Constant Buffer'	// Resource
 	{ D3D_SIT_TEXTURE, "Texture" },												//							// Resource
 	{ D3D_SIT_SAMPLER, "SamplerState" },										//							// SamplerState
-	{ D3D_SIT_UAV_RWTYPED, "RW_UAVTyped" },										//							// Resource
+	{ D3D_SIT_UAV_RWTYPED, "RW_UAVTyped" },										//							// Resource				// D3D11_BIND_UNORDERED_ACCESS
 	{ D3D_SIT_STRUCTURED, "StructuredInput" },									// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_RWSTRUCTURED, "RW_UAVStructured" },														// Resource
+	{ D3D_SIT_UAV_RWSTRUCTURED, "RW_UAVStructured" },														// Resource				// D3D11_BIND_UNORDERED_ACCESS
 	{ D3D_SIT_BYTEADDRESS, "ByteAddress" },																	// Resource
-	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },														// Resource
+	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },														// Resource				// D3D11_BIND_UNORDERED_ACCESS
 	{ D3D_SIT_UAV_APPEND_STRUCTURED, "AppendStructured" },						// has 'Constant Buffer'	// Resource
 	{ D3D_SIT_UAV_CONSUME_STRUCTURED, "ConsumeStructured" },					// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_AUVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource
+	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_AUVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource				// D3D11_BIND_UNORDERED_ACCESS
 };
+
+//////////////////////////////////////////////////////////////////////
 
 static ISMap shader_input_dimension_names =
 {
@@ -55,74 +69,10 @@ static ISMap shader_input_dimension_names =
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::DeleteConstantBuffers()
+Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	mConstBufferIDs.clear();
-	for(auto i = mConstantBuffers.begin(); i != mConstantBuffers.end(); ++i)
-	{
-		delete (*i);
-	}
-	mConstantBuffers.clear();
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Reportable *Shader::CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
-{
-	// Deal with Buffer dimensions here...
-	//	printf("\t%s%s *%s;\n", GetFrom(shader_input_type_names, desc.Type).c_str(), GetFrom(shader_input_dimension_names, desc.Dimension).c_str(), desc.Name);
-	Texture2D *tb = new Texture2D(this, desc);
-	mTextures.resize(Max(mTextures.size() + 1, (size_t)desc.BindPoint));
-	mTextures.emplace(mTextures.begin() + desc.BindPoint, tb);
-	mTextureIDs[string(desc.Name)] = desc.BindPoint;
-	return tb;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Reportable *Shader::CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
-{
-	//	printf("\t%s%s *%s;\n", GetFrom(shader_input_type_names, desc.Type).c_str(), GetFrom(shader_input_dimension_names, desc.Dimension).c_str(), desc.Name);
-	SamplerState *ss = new SamplerState(this, desc);
-	mSamplers.emplace(mSamplers.begin() + desc.BindPoint, ss);
-	mSamplerIDs[desc.Name] = desc.BindPoint;
-	return ss;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Reportable *Shader::CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc)
-{
-	ConstantBuffer *cb = new ConstantBuffer(this, desc, mReflector->GetConstantBufferByIndex(desc.BindPoint));
-	mConstBufferIDs[desc.Name] = desc.BindPoint;
-	mConstantBuffers.emplace(mConstantBuffers.begin() + desc.BindPoint, cb);
-	return cb;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Reportable *Shader::CreateTextureBufferBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
-{
-	TextureBuffer *tp = new TextureBuffer(this, desc);
-	mTextureBufferIDs[desc.Name] = desc.BindPoint;
-	mTextureBuffers.emplace(mTextureBuffers.begin() + desc.BindPoint, tp);
-	return tp;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Reportable *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
-{
-	TRACE("Binding %s at %d is a %s called %s\n", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.BindPoint, GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
-
-	switch(desc.Type)
-	{
-		case D3D_SHADER_INPUT_TYPE::D3D10_SIT_TEXTURE: return CreateTextureBinding(desc);
-		case D3D_SHADER_INPUT_TYPE::D3D10_SIT_SAMPLER: return CreateSamplerBinding(desc);
-		case D3D_SHADER_INPUT_TYPE::D3D10_SIT_CBUFFER: return CreateConstantBuffer(desc);
-		case D3D_SHADER_INPUT_TYPE::D3D10_SIT_TBUFFER: return CreateTextureBufferBinding(desc);
-		default: return null;
-	}
+	//TRACE("Binding %s at %d is a %s called %s\n", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.BindPoint, GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
+	return new Binding(this, desc);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -153,7 +103,7 @@ HRESULT Shader::CreateBindings()
 	{
 		D3D11_SHADER_INPUT_BIND_DESC d;
 		mReflector->GetResourceBindingDesc(i, &d);
-		Reportable *r = CreateBinding(d);
+		Binding *r = CreateBinding(d);
 		if(r != null)
 		{
 			mBindings.push_back(r);
@@ -163,6 +113,8 @@ HRESULT Shader::CreateBindings()
 
 	delete[] buffers;
 
+	ShowAllBindings();
+
 	return S_OK;
 }
 
@@ -170,7 +122,7 @@ HRESULT Shader::CreateBindings()
 
 Shader::Shader(tstring const &filename)
 	: mStartIndex(0)
-	, mName(filename)
+	, mName(StringFromTString(filename))
 {
 }
 
@@ -228,34 +180,27 @@ template <typename T> static void CallOutput(std::vector<T *> &vec)
 
 //////////////////////////////////////////////////////////////////////
 
+HRESULT Shader::CreateDefinitions()
+{
+	for(uint i = 0; i < mShaderDesc.ConstantBuffers; ++i)
+	{
+		TypeDefinition *def = new TypeDefinition(mReflector, i);
+		mDefinitions.push_back(def);
+		mDefinitionIDs[def->mDesc.Name] = i;
+	}
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 HRESULT Shader::Create(void const *blob, size_t size)
 {
 	DX(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
+	DX(CreateDefinitions());
 	DX(CreateBindings());
 	Output();
 	return S_OK;
-
-	// Shader types:
-	//  Pixel
-	//  Vertex
-	//  Domain
-	//  Geometry
-	//  Hull
-	//  Compute
-
-	// So, each bind point corresponds to one of these:
-
-	// Sampler
-	// Buffer
-	// ConstantBuffer
-
-	// Binding types:
-	//  ShaderResources
-	//  ConstantBuffers
-	//  Samplers
-	//  Buffers [??]
-	//  UnorderedAccessViews	(PS, CS only)
 
 }
 
@@ -264,7 +209,7 @@ HRESULT Shader::Create(void const *blob, size_t size)
 HRESULT Shader::Destroy()
 {
 	mReflector.Release();
-	DeleteConstantBuffers();
+	//DeleteConstantBuffers();
 	mTextureIDs.clear();
 	mSamplerIDs.clear();
 	return S_OK;
