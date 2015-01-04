@@ -29,6 +29,7 @@ namespace HLSL
 	using UInt = uint32;
 	using DWord = uint32;
 	using Float = float;
+	using Void = void;
 
 	enum
 	{
@@ -53,6 +54,7 @@ namespace HLSL
 		};
 
 		Vec4()								{ }
+		Vec4(Vec4<float> const &o)			{ m128 = o.m128; }
 		Vec4(__m128 v)						{ m128 = v; }
 		Vec4<float> &operator = (__m128 v)	{ m128 = v; return *this; }
 		operator __m128() const				{ return m128; }

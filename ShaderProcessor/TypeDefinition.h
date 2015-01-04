@@ -22,7 +22,7 @@ struct TypeDefinition
 
 	TypeDefinition(ID3D11ShaderReflection *reflection, uint index);
 	~TypeDefinition();
-
+	
 	void StaticsOutput(string const &shaderName);
 	void MemberOutput(string const &shaderName);
 

@@ -36,7 +36,7 @@ static bool isMatrix[] =
 
 static char const *typeNames[] =
 {
-	"void",
+	"Void",
 	"Bool",
 	"Int",
 	"Float",
@@ -201,9 +201,9 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 		}
 		printf("\n");
 	}
+	printf("\t\t};\n\n");
 
 	//ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
-	string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, shaderName.c_str(), mDesc.Name, mDesc.Name);
-	printf("\t\t};\n\t\t%s;\n", s.c_str());
+	//string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, shaderName.c_str(), mDesc.Name, mDesc.Name);
+	//printf("\t\t};\n\t\t%s;\n", s.c_str());
 }
-

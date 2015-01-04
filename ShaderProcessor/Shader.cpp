@@ -143,28 +143,37 @@ static string constructor = "\t\t// Constructor\n\t\t%s_t()\n";
 
 void Shader::Output()
 {
+	unsigned __int32 bob = 1;
+	bob = _rotr(bob, 10);
 	printf("%s", header.c_str());
-	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	{
-		(*i)->StaticsOutput();
-	}
+
 	printf("\tstruct %s_t", Name().c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
 	printf("\n\t{\n");
-	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 	{
-		(*i)->MemberOutput();
-		printf("\n");
+		(*i)->MemberOutput(this->Name());
 	}
-	printf(constructor.c_str(), Name().c_str());
-	char const *pre = "\t\t\t: ";
-	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	{
-		printf(pre);
-		(*i)->ConstructorOutput();
-		pre = "\t\t\t, ";
-	}
-	printf("\t\t{\n\t\t}\n");
-	printf("\t};\n\n\tDECLSPEC_SELECTANY %s_t %s;\n", Name().c_str(), Name().c_str());
+	printf("\t};\n");
+
+	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	//{
+	//	(*i)->StaticsOutput();
+	//}
+	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	//{
+	//	(*i)->MemberOutput();
+	//	printf("\n");
+	//}
+	//printf(constructor.c_str(), Name().c_str());
+	//char const *pre = "\t\t\t: ";
+	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	//{
+	//	printf(pre);
+	//	(*i)->ConstructorOutput();
+	//	pre = "\t\t\t, ";
+	//}
+	//printf("\t\t{\n\t\t}\n");
+	//printf("\t};\n\n\tDECLSPEC_SELECTANY %s_t %s;\n", Name().c_str(), Name().c_str());
 	printf("%s", footer.c_str());
 }
 
