@@ -1,4 +1,7 @@
 //////////////////////////////////////////////////////////////////////
+// Make it so it can compile multiple shader types in one run
+// Sort out the semantic name annotation parser & emit InputLayoutDefinitions
+// Make it a proper Compile type in VS2013
 
 #include "stdafx.h"
 
@@ -46,7 +49,7 @@ static ISMap shader_input_type_names =
 	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },														// Resource				// D3D11_BIND_UNORDERED_ACCESS
 	{ D3D_SIT_UAV_APPEND_STRUCTURED, "AppendStructured" },						// has 'Constant Buffer'	// Resource
 	{ D3D_SIT_UAV_CONSUME_STRUCTURED, "ConsumeStructured" },					// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_AUVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource				// D3D11_BIND_UNORDERED_ACCESS
+	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_UAVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource				// D3D11_BIND_UNORDERED_ACCESS
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -108,7 +111,6 @@ HRESULT Shader::CreateBindings()
 		{
 			mBindings.push_back(r);
 		}
-//		printf("\n");
 	}
 
 	delete[] buffers;
@@ -202,25 +204,316 @@ HRESULT Shader::CreateDefinitions()
 
 //////////////////////////////////////////////////////////////////////
 
+uint SizeOfFormatElement(DXGI_FORMAT format)
+{
+	switch(format)
+	{
+		case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+		case DXGI_FORMAT_R32G32B32A32_FLOAT:
+		case DXGI_FORMAT_R32G32B32A32_UINT:
+		case DXGI_FORMAT_R32G32B32A32_SINT:
+			return 128;
+
+		case DXGI_FORMAT_R32G32B32_TYPELESS:
+		case DXGI_FORMAT_R32G32B32_FLOAT:
+		case DXGI_FORMAT_R32G32B32_UINT:
+		case DXGI_FORMAT_R32G32B32_SINT:
+			return 96;
+
+		case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+		case DXGI_FORMAT_R16G16B16A16_UNORM:
+		case DXGI_FORMAT_R16G16B16A16_UINT:
+		case DXGI_FORMAT_R16G16B16A16_SNORM:
+		case DXGI_FORMAT_R16G16B16A16_SINT:
+		case DXGI_FORMAT_R32G32_TYPELESS:
+		case DXGI_FORMAT_R32G32_FLOAT:
+		case DXGI_FORMAT_R32G32_UINT:
+		case DXGI_FORMAT_R32G32_SINT:
+		case DXGI_FORMAT_R32G8X24_TYPELESS:
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
+		case DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+			return 64;
+
+		case DXGI_FORMAT_R10G10B10A2_TYPELESS:
+		case DXGI_FORMAT_R10G10B10A2_UNORM:
+		case DXGI_FORMAT_R10G10B10A2_UINT:
+		case DXGI_FORMAT_R11G11B10_FLOAT:
+		case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+		case DXGI_FORMAT_R8G8B8A8_UINT:
+		case DXGI_FORMAT_R8G8B8A8_SNORM:
+		case DXGI_FORMAT_R8G8B8A8_SINT:
+		case DXGI_FORMAT_R16G16_TYPELESS:
+		case DXGI_FORMAT_R16G16_FLOAT:
+		case DXGI_FORMAT_R16G16_UNORM:
+		case DXGI_FORMAT_R16G16_UINT:
+		case DXGI_FORMAT_R16G16_SNORM:
+		case DXGI_FORMAT_R16G16_SINT:
+		case DXGI_FORMAT_R32_TYPELESS:
+		case DXGI_FORMAT_D32_FLOAT:
+		case DXGI_FORMAT_R32_FLOAT:
+		case DXGI_FORMAT_R32_UINT:
+		case DXGI_FORMAT_R32_SINT:
+		case DXGI_FORMAT_R24G8_TYPELESS:
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+		case DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+		case DXGI_FORMAT_B8G8R8A8_UNORM:
+		case DXGI_FORMAT_B8G8R8X8_UNORM:
+			return 32;
+
+		case DXGI_FORMAT_R8G8_TYPELESS:
+		case DXGI_FORMAT_R8G8_UNORM:
+		case DXGI_FORMAT_R8G8_UINT:
+		case DXGI_FORMAT_R8G8_SNORM:
+		case DXGI_FORMAT_R8G8_SINT:
+		case DXGI_FORMAT_R16_TYPELESS:
+		case DXGI_FORMAT_R16_FLOAT:
+		case DXGI_FORMAT_D16_UNORM:
+		case DXGI_FORMAT_R16_UNORM:
+		case DXGI_FORMAT_R16_UINT:
+		case DXGI_FORMAT_R16_SNORM:
+		case DXGI_FORMAT_R16_SINT:
+		case DXGI_FORMAT_B5G6R5_UNORM:
+		case DXGI_FORMAT_B5G5R5A1_UNORM:
+			return 16;
+
+		case DXGI_FORMAT_R8_TYPELESS:
+		case DXGI_FORMAT_R8_UNORM:
+		case DXGI_FORMAT_R8_UINT:
+		case DXGI_FORMAT_R8_SNORM:
+		case DXGI_FORMAT_R8_SINT:
+		case DXGI_FORMAT_A8_UNORM:
+			return 8;
+
+		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+		case DXGI_FORMAT_BC2_TYPELESS:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_TYPELESS:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC5_TYPELESS:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+			return 128;
+
+		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+		case DXGI_FORMAT_R1_UNORM:
+		case DXGI_FORMAT_BC1_TYPELESS:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC4_TYPELESS:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+			return 64;
+
+		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+		case DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
+			return 32;
+
+		// These are compressed, but bit-size information is unclear.
+		case DXGI_FORMAT_R8G8_B8G8_UNORM:
+		case DXGI_FORMAT_G8R8_G8B8_UNORM:
+			return 32;
+
+		case DXGI_FORMAT_UNKNOWN:
+		default:
+			throw 0;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// Missing some wacky short float types...
+
+enum StorageType
+{
+	Float,
+	Int32,
+	Int16,
+	Int8,
+	UInt32,
+	UInt16,
+	UInt8,
+	Norm32,
+	Norm16,
+	Norm8,
+	UNorm32,
+	UNorm16,
+	UNorm8
+};
+
+uint StorageSize[] =
+{
+	32,		// Float,
+	32,		// Int32,
+	16,		// Int16,
+	 8,		// Int8,
+	32,		// UInt32,
+	16,		// UInt16,
+	 8,		// UInt8,
+	32,		// Norm32,
+	16,		// Norm16,
+	 8,		// Norm8,
+	32,		// UNorm32,
+	16,		// UNorm16,
+	 8,		// UNorm8
+};
+
+struct InputType
+{
+	char const *name;
+	int fieldCount;	// if this is 0, infer from input type
+	StorageType storageType;
+};
+
+InputType type_suffix[] =
+{
+	"float", 0, Float,
+	"int32", 0, Int32,
+	"int16", 0, Int16,
+	"int8", 0, Int8,
+	"uint32", 0, UInt32,
+	"uint16", 0, UInt16,
+	"uint8", 0, UInt8,
+	"norm32", 0, Norm32,
+	"norm16", 0, Norm16,
+	"norm8", 0, Norm8,
+	"unorm32", 0, UNorm32,
+	"unorm16", 0, UNorm16,
+	"unorm8", 0, UNorm8
+};
+
+//////////////////////////////////////////////////////////////////////
+
+static DXGI_FORMAT formats[4][4] =
+{
+	{
+		DXGI_FORMAT_R32_TYPELESS,
+		DXGI_FORMAT_R32_UINT,
+		DXGI_FORMAT_R32_SINT,
+		DXGI_FORMAT_R32_FLOAT
+	},
+	{
+		DXGI_FORMAT_R32G32_TYPELESS,
+		DXGI_FORMAT_R32G32_UINT,
+		DXGI_FORMAT_R32G32_SINT,
+		DXGI_FORMAT_R32G32_FLOAT
+	},
+	{
+		DXGI_FORMAT_R32G32B32_TYPELESS,
+		DXGI_FORMAT_R32G32B32_UINT,
+		DXGI_FORMAT_R32G32B32_SINT,
+		DXGI_FORMAT_R32G32B32_FLOAT
+	},
+	{
+		DXGI_FORMAT_R32G32B32A32_TYPELESS,
+		DXGI_FORMAT_R32G32B32A32_UINT,
+		DXGI_FORMAT_R32G32B32A32_SINT,
+		DXGI_FORMAT_R32G32B32A32_FLOAT
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+HRESULT Shader::CreateInputLayout()
+{
+	int n = mShaderDesc.InputParameters;
+	vector<D3D11_INPUT_ELEMENT_DESC> ied(n);
+	int vertexSize = 0;
+	for(int i = 0; i < n; ++i)
+	{
+		D3D11_SIGNATURE_PARAMETER_DESC desc;
+		DX(mReflector->GetInputParameterDesc(i, &desc));
+		D3D11_INPUT_ELEMENT_DESC &d = ied[i];
+		d.SemanticName = desc.SemanticName;
+		d.SemanticIndex = desc.SemanticIndex;
+		d.InputSlot = 0;
+		d.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		d.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+		d.InstanceDataStepRate = 0;
+		d.Format = DXGI_FORMAT_UNKNOWN;
+
+		// if they ask, try to find the right storage format
+		if(strchr(d.SemanticName, '_') != null)
+		{
+			vector<string> tokens;
+			tokenize(string(d.SemanticName), tokens, string("_"));
+			if(tokens.size() > 1)
+			{
+				int fieldCount;
+				string &type_annotation = tokens[1];
+				for(int i = 0; i < _countof(type_suffix); ++i)
+				{
+					if(type_annotation.compare(type_suffix[i].name) == 0)
+					{
+						int fc = type_suffix[i].fieldCount;
+						fieldCount = (fc == 0) ? CountBits(desc.Mask) : fc;
+					}
+				}
+			}
+		}
+		if(d.Format == DXGI_FORMAT_UNKNOWN)
+		{
+			d.Format = formats[CountBits(desc.Mask) - 1][desc.ComponentType];
+		}
+
+		// if there's no underscore in the semantic name
+		//    if there's a match in the list of InputTypes
+		//       if fieldCount == 0
+		//           Count = input field size
+		//       else
+		//           Count = InputType.fieldCount
+		//           if Count != input field size
+		//              Warn of field count mismatch
+		//    else
+		//       Warn of unknown InputType
+		//       Type = input type
+		// else
+		//    Type = input type
+		// Now we know the type of variable, the Type for storage and the field count
+		// Look it up
+
+		uint size1 = SizeOfFormatElement(d.Format);
+		uint size2 = size1 / 8;
+		vertexSize += size2;
+	}
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 HRESULT Shader::Create(void const *blob, size_t size)
 {
 	DX(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
 	DX(CreateDefinitions());
 	DX(CreateBindings());
+	DX(CreateInputLayout());
 	Output();
 	return S_OK;
-
 }
 
 //////////////////////////////////////////////////////////////////////
 
 HRESULT Shader::Destroy()
 {
-	mReflector.Release();
-	//DeleteConstantBuffers();
-	mTextureIDs.clear();
+	mDefinitions.clear();
+	mDefinitionIDs.clear();
+	mSamplers.clear();
+	mTextures.clear();
+	mConstantBuffers.clear();
+	mTextureBuffers.clear();
+	mTextureBufferIDs.clear();
+	mConstBufferIDs.clear();
 	mSamplerIDs.clear();
+	mTextureIDs.clear();
+	mName.clear();
+	mBindings.clear();
+	mReflector.Release();
 	return S_OK;
 }
 

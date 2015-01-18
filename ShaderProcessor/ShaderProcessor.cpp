@@ -40,7 +40,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				tstring output = SetExtension(argv[1], TEXT("cso"));
 				ID3DBlob *compiledShader;
 				ID3DBlob *errors;
-				if(D3DCompileFromFile(argv[1], null, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_4_0", flags, 0, &compiledShader, &errors) == S_OK)
+				if(D3DCompileFromFile(argv[1], null, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_4_0", flags, 0, &compiledShader, &errors) == S_OK)
 				{
 					::Shader s(GetFilename(argv[1]));
 					s.Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize());

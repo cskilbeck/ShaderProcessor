@@ -158,6 +158,15 @@ inline wstring ToLower(wstring const &s)
 
 //////////////////////////////////////////////////////////////////////
 
+inline int CountBits(uint32 i)
+{
+	i = i - ((i >> 1) & 0x55555555);
+	i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+	return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 inline int HighBit(uint32 x)
 {
 	unsigned long index;
@@ -210,3 +219,26 @@ template<class T> in_reverse<T> reverse(T &l)
 
 //////////////////////////////////////////////////////////////////////
 
+template <class container, class str_t> void tokenize(str_t const &str, container &tokens, str_t const &delimiters)
+{
+	str_t::size_type pos, lastPos = 0;
+
+	using value_type = typename container::value_type;
+	using size_type = typename container::size_type;
+
+	while(true)
+	{
+		pos = str.find_first_of(delimiters, lastPos);
+		if(pos == str_t::npos)
+		{
+			pos = str.length();
+			tokens.push_back(value_type(str.data() + lastPos, (size_type)pos - lastPos));
+			break;
+		}
+		else
+		{
+			tokens.push_back(value_type(str.data() + lastPos, (size_type)pos - lastPos));
+		}
+		lastPos = pos + 1;
+	}
+}

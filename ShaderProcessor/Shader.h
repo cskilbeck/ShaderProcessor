@@ -68,6 +68,7 @@ struct Shader
 	ConstantBufferBinding *GetCB(string const &name);
 	ConstantBufferBinding *GetConstantBuffer(int index);
 
+	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
 
 	Binding *CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
