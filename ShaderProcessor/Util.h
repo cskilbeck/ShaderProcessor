@@ -219,26 +219,21 @@ template<class T> in_reverse<T> reverse(T &l)
 
 //////////////////////////////////////////////////////////////////////
 
-template <class container, class str_t> void tokenize(str_t const &str, container &tokens, str_t const &delimiters)
+template <class container_t, class string_t, class char_t>
+void tokenize(string_t const &str, container_t &tokens, char_t const *delimiters, bool includeEmpty = true)
 {
-	str_t::size_type pos, lastPos = 0;
-
-	using value_type = typename container::value_type;
-	using size_type = typename container::size_type;
-
-	while(true)
+	string_t::size_type end = 0, start = 0, len = str.length();
+	while(end < len)
 	{
-		pos = str.find_first_of(delimiters, lastPos);
-		if(pos == str_t::npos)
+		end = str.find_first_of(delimiters, start);
+		if(end == string_t::npos)
 		{
-			pos = str.length();
-			tokens.push_back(value_type(str.data() + lastPos, (size_type)pos - lastPos));
-			break;
+			end = len;
 		}
-		else
+		if(end != start || includeEmpty)
 		{
-			tokens.push_back(value_type(str.data() + lastPos, (size_type)pos - lastPos));
+			tokens.push_back(container_t::value_type(str.data() + start, end - start));
 		}
-		lastPos = pos + 1;
+		start = end + 1;
 	}
 }

@@ -16,6 +16,14 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	using namespace HLSL;
 
+	string foo("hello world,how are:you??lastbit");
+	std::vector<string> bar;
+	tokenize(foo, bar, " ,:?", false);
+	for(auto i = bar.begin(); i != bar.end(); ++i)
+	{
+		TRACE("%d:[%s]\n", (*i).size(), (*i).c_str());
+	}
+
 	Float2 &bob = SimplePixelShader.GridStuff.GridSize2;
 	printf("%f,%f\n", bob.x, bob.y);
 

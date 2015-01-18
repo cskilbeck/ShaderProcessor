@@ -441,7 +441,7 @@ HRESULT Shader::CreateInputLayout()
 		if(strchr(d.SemanticName, '_') != null)
 		{
 			vector<string> tokens;
-			tokenize(string(d.SemanticName), tokens, string("_"));
+			tokenize(string(d.SemanticName), tokens, "_");
 			if(tokens.size() > 1)
 			{
 				int fieldCount;
