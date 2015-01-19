@@ -219,6 +219,46 @@ template<class T> in_reverse<T> reverse(T &l)
 
 //////////////////////////////////////////////////////////////////////
 
+template <typename T> size_t Length(T const *str)
+{
+	assert(str != null);
+
+	T const *p = str;
+	while(*p++) { }
+	return p - str;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+template <typename T> T const *FindFirstOf(T const *str, T const *find, size_t numDelimiters)
+{
+	assert(str != null);
+	assert(find != null);
+
+	T ch;
+	while((ch = *str))
+	{
+		for(size_t i = 0; i < numDelimiters; ++i)
+		{
+			if(ch == find[i])
+			{
+				return str;
+			}
+		}
+		++str;
+	}
+	return null;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+template <typename T> T const *FindFirstOf(T const *str, T const *find)
+{
+	return FindFirstOf(str, find, Length(find));
+}
+
+//////////////////////////////////////////////////////////////////////
+
 template <class container_t, class string_t, class char_t>
 void tokenize(string_t const &str, container_t &tokens, char_t const *delimiters, bool includeEmpty = true)
 {
@@ -237,3 +277,51 @@ void tokenize(string_t const &str, container_t &tokens, char_t const *delimiters
 		start = end + 1;
 	}
 }
+
+//////////////////////////////////////////////////////////////////////
+
+template <class container_t, class char_t>
+void tokenize(char_t const *str, container_t &tokens, char_t const *delimiters, bool includeEmpty = true)
+{
+	assert(str != null);
+	assert(delimiters != null);
+
+	size_t delimCount = Length(delimiters);
+	size_t len = Length(str);	// LAME
+	char_t const *start = str, *end = str, *stop = start + len;
+	while(start < stop)
+	{
+		end = FindFirstOf(start, delimiters, delimCount);
+		if(end == null)
+		{
+			end = stop;
+		}
+		if(end != start || includeEmpty)
+		{
+			tokens.push_back(container_t::value_type(start, end - start));
+		}
+		start = end + 1;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// in place
+
+template <class T> void ToUpper(T &str)
+{
+	for(auto & c : str)
+	{
+		c = toupper(c);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// return a new one
+
+template <class T> T ToUpper(T const &str)
+{
+	T t(str);
+	ToUpper(t);
+	return t;
+}
+

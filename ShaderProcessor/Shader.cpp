@@ -145,8 +145,6 @@ static string constructor = "\t\t// Constructor\n\t\t%s_t()\n";
 
 void Shader::Output()
 {
-	unsigned __int32 bob = 1;
-	bob = _rotr(bob, 10);
 	printf("%s", header.c_str());
 
 	printf("\tstruct %s_t", Name().c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
@@ -201,8 +199,6 @@ HRESULT Shader::CreateDefinitions()
 	}
 	return S_OK;
 }
-
-//////////////////////////////////////////////////////////////////////
 
 uint SizeOfFormatElement(DXGI_FORMAT format)
 {
@@ -289,7 +285,7 @@ uint SizeOfFormatElement(DXGI_FORMAT format)
 		case DXGI_FORMAT_A8_UNORM:
 			return 8;
 
-		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+			// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
 		case DXGI_FORMAT_BC2_TYPELESS:
 		case DXGI_FORMAT_BC2_UNORM:
 		case DXGI_FORMAT_BC2_UNORM_SRGB:
@@ -301,7 +297,7 @@ uint SizeOfFormatElement(DXGI_FORMAT format)
 		case DXGI_FORMAT_BC5_SNORM:
 			return 128;
 
-		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+			// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
 		case DXGI_FORMAT_R1_UNORM:
 		case DXGI_FORMAT_BC1_TYPELESS:
 		case DXGI_FORMAT_BC1_UNORM:
@@ -311,11 +307,11 @@ uint SizeOfFormatElement(DXGI_FORMAT format)
 		case DXGI_FORMAT_BC4_SNORM:
 			return 64;
 
-		// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
+			// Compressed format; http://msdn2.microsoft.com/en-us/library/bb694531(VS.85).aspx
 		case DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
 			return 32;
 
-		// These are compressed, but bit-size information is unclear.
+			// These are compressed, but bit-size information is unclear.
 		case DXGI_FORMAT_R8G8_B8G8_UNORM:
 		case DXGI_FORMAT_G8R8_G8B8_UNORM:
 			return 32;
@@ -327,11 +323,11 @@ uint SizeOfFormatElement(DXGI_FORMAT format)
 }
 
 //////////////////////////////////////////////////////////////////////
-// Missing some wacky short float types...
 
 enum StorageType
 {
-	Float,
+	Float32,
+	Float16,
 	Int32,
 	Int16,
 	Int8,
@@ -343,12 +339,117 @@ enum StorageType
 	Norm8,
 	UNorm32,
 	UNorm16,
-	UNorm8
+	UNorm8,
+	Typeless32,
+	Typeless16,
+	Typeless8
 };
+
+enum StorageClass
+{
+	Float,
+	Int,
+	UInt,
+	Norm,
+	UNorm,
+	Typeless
+};
+
+struct DXGI_Lookup_t
+{
+	DXGI_FORMAT format;
+	uint fields;
+	StorageType storageType;
+};
+
+DXGI_Lookup_t DXGI_Lookup[] =
+{
+	{ DXGI_FORMAT_R32G32B32A32_FLOAT, 4, Float32 },
+	{ DXGI_FORMAT_R32G32B32_FLOAT, 3, Float32 },
+	{ DXGI_FORMAT_R32G32_FLOAT, 2, Float32 },
+	{ DXGI_FORMAT_R32_FLOAT, 1, Float32 },
+
+	{ DXGI_FORMAT_R16G16B16A16_FLOAT, 4, Float16 },
+	{ DXGI_FORMAT_R16G16_FLOAT, 2, Float16 },
+	{ DXGI_FORMAT_R16_FLOAT, 1, Float16 },
+
+	{ DXGI_FORMAT_R32G32B32A32_TYPELESS, 4, Typeless32 },
+	{ DXGI_FORMAT_R32G32B32_TYPELESS, 3, Typeless32 },
+	{ DXGI_FORMAT_R32G32_TYPELESS, 2, Typeless32 },
+	{ DXGI_FORMAT_R32_TYPELESS, 1, Typeless32 },
+
+	{ DXGI_FORMAT_R16G16B16A16_TYPELESS, 4, Typeless16 },
+	{ DXGI_FORMAT_R16G16_TYPELESS, 2, Typeless16 },
+	{ DXGI_FORMAT_R16_TYPELESS, 1, Typeless16 },
+
+	{ DXGI_FORMAT_R8G8B8A8_TYPELESS, 4, Typeless8 },
+	{ DXGI_FORMAT_R8G8_TYPELESS, 2, Typeless8 },
+	{ DXGI_FORMAT_R8_TYPELESS, 1, Typeless8 },
+
+	{ DXGI_FORMAT_R32G32B32A32_SINT, 4, Int32 },
+	{ DXGI_FORMAT_R32G32B32_SINT, 3, Int32 },
+	{ DXGI_FORMAT_R32G32_SINT, 2, Int32 },
+	{ DXGI_FORMAT_R32_SINT, 1, Int32 },
+
+	{ DXGI_FORMAT_R16G16B16A16_SINT, 4, Int16 },
+	{ DXGI_FORMAT_R16G16_SINT, 2, Int16 },
+	{ DXGI_FORMAT_R16_SINT, 1, Int16 },
+
+	{ DXGI_FORMAT_R8G8B8A8_SINT, 4, Int8 },
+	{ DXGI_FORMAT_R8G8_SINT, 2, Int8 },
+	{ DXGI_FORMAT_R8_SINT, 1, Int8 },
+
+	{ DXGI_FORMAT_R32G32B32A32_UINT, 4, UInt32 },
+	{ DXGI_FORMAT_R32G32B32_UINT, 3, UInt32 },
+	{ DXGI_FORMAT_R32G32_UINT, 2, UInt32 },
+	{ DXGI_FORMAT_R32_UINT, 1, UInt32 },
+
+	{ DXGI_FORMAT_R16G16B16A16_UINT, 4, UInt16 },
+	{ DXGI_FORMAT_R16G16_UINT, 2, UInt16 },
+	{ DXGI_FORMAT_R16_UINT, 1, UInt16 },
+
+	{ DXGI_FORMAT_R8G8B8A8_UINT, 4, UInt8 },
+	{ DXGI_FORMAT_R8G8_UINT, 2, UInt8 },
+	{ DXGI_FORMAT_R8_UINT, 1, UInt8 },
+
+	{ DXGI_FORMAT_R16G16B16A16_UNORM, 4, UNorm16 },
+	{ DXGI_FORMAT_R16G16_UNORM, 2, UNorm16 },
+	{ DXGI_FORMAT_R16_UNORM, 1, UNorm16 },
+
+	{ DXGI_FORMAT_R8G8B8A8_UNORM, 4, UNorm8 },
+	{ DXGI_FORMAT_R8G8_UNORM, 2, UNorm8 },
+	{ DXGI_FORMAT_R8_UNORM, 1, UNorm8 },
+
+	{ DXGI_FORMAT_R16G16B16A16_SNORM, 4, Norm16 },
+	{ DXGI_FORMAT_R16G16_SNORM, 2, Norm16 },
+	{ DXGI_FORMAT_R16_SNORM, 1, Norm16 },
+
+	{ DXGI_FORMAT_R8G8B8A8_SNORM, 4, Norm8 },
+	{ DXGI_FORMAT_R8G8_SNORM, 2, Norm8 },
+	{ DXGI_FORMAT_R8_SNORM, 1, Norm8 }
+};
+
+DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
+{
+	for(uint i = 0; i < _countof(DXGI_Lookup); ++i)
+	{
+		DXGI_Lookup_t &d = DXGI_Lookup[i];
+		if(d.fields == fields && d.storageType == storageType)
+		{
+			return d.format;
+		}
+	}
+	return DXGI_FORMAT_UNKNOWN;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Missing some wacky short float types...
+
 
 uint StorageSize[] =
 {
-	32,		// Float,
+	32,		// Float32,
+	16,		// Float16,
 	32,		// Int32,
 	16,		// Int16,
 	 8,		// Int8,
@@ -361,6 +462,9 @@ uint StorageSize[] =
 	32,		// UNorm32,
 	16,		// UNorm16,
 	 8,		// UNorm8
+	32,		// Typeless32,
+	16,		// Typeless16,
+	 8		// Typeless8,
 };
 
 struct InputType
@@ -372,19 +476,23 @@ struct InputType
 
 InputType type_suffix[] =
 {
-	"float", 0, Float,
-	"int32", 0, Int32,
-	"int16", 0, Int16,
-	"int8", 0, Int8,
-	"uint32", 0, UInt32,
-	"uint16", 0, UInt16,
-	"uint8", 0, UInt8,
-	"norm32", 0, Norm32,
-	"norm16", 0, Norm16,
-	"norm8", 0, Norm8,
-	"unorm32", 0, UNorm32,
-	"unorm16", 0, UNorm16,
-	"unorm8", 0, UNorm8
+	"FLOAT32", 0, Float32,
+	"FLOAT16", 0, Float16,
+	"INT32", 0, Int32,
+	"INT16", 0, Int16,
+	"INT8", 0, Int8,
+	"UINT32", 0, UInt32,
+	"UINT16", 0, UInt16,
+	"UINT8", 0, UInt8,
+	"NORM32", 0, Norm32,
+	"NORM16", 0, Norm16,
+	"NORM8", 0, Norm8,
+	"UNORM32", 0, UNorm32,
+	"UNORM16", 0, UNorm16,
+	"UNORM8", 0, UNorm8,
+	"TYPELESS32", 0, Typeless32,
+	"TYPELESS16", 0, Typeless16,
+	"TYPELESS8", 0, Typeless8
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -438,44 +546,36 @@ HRESULT Shader::CreateInputLayout()
 		d.Format = DXGI_FORMAT_UNKNOWN;
 
 		// if they ask, try to find the right storage format
+		int fieldCount = 0;
+		StorageType storeageType;
 		if(strchr(d.SemanticName, '_') != null)
 		{
+			TRACE("Semantic name: %s\n", d.SemanticName);
 			vector<string> tokens;
-			tokenize(string(d.SemanticName), tokens, "_");
+			tokenize(d.SemanticName, tokens, "_");
 			if(tokens.size() > 1)
 			{
-				int fieldCount;
-				string &type_annotation = tokens[1];
+				string &type_annotation = ToUpper(string(tokens[1]));
 				for(int i = 0; i < _countof(type_suffix); ++i)
 				{
-					if(type_annotation.compare(type_suffix[i].name) == 0)
+					if(strcmp(type_annotation.c_str(), type_suffix[i].name) == 0)
 					{
 						int fc = type_suffix[i].fieldCount;
 						fieldCount = (fc == 0) ? CountBits(desc.Mask) : fc;
+						storeageType = type_suffix[i].storageType;
 					}
+				}
+				if(fieldCount != 0)
+				{
+					d.Format = GetDXGI_Format(fieldCount, storeageType);
 				}
 			}
 		}
 		if(d.Format == DXGI_FORMAT_UNKNOWN)
 		{
-			d.Format = formats[CountBits(desc.Mask) - 1][desc.ComponentType];
+			fieldCount = CountBits(desc.Mask);
+			d.Format = formats[fieldCount - 1][desc.ComponentType];
 		}
-
-		// if there's no underscore in the semantic name
-		//    if there's a match in the list of InputTypes
-		//       if fieldCount == 0
-		//           Count = input field size
-		//       else
-		//           Count = InputType.fieldCount
-		//           if Count != input field size
-		//              Warn of field count mismatch
-		//    else
-		//       Warn of unknown InputType
-		//       Type = input type
-		// else
-		//    Type = input type
-		// Now we know the type of variable, the Type for storage and the field count
-		// Look it up
 
 		uint size1 = SizeOfFormatElement(d.Format);
 		uint size2 = size1 / 8;
