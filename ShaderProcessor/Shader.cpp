@@ -7,7 +7,7 @@
 
 //////////////////////////////////////////////////////////////////////
 
-using ISMap = std::map < int, string >;
+using ISMap = std::map<int, string>;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -70,11 +70,176 @@ static ISMap shader_input_dimension_names =
 	{ D3D_SRV_DIMENSION_BUFFEREX, "BufferEx" }
 };
 
+struct FormatName_t
+{
+	char const *name;
+	DXGI_FORMAT format;
+};
+
+FormatName_t FormatName[] =
+{
+	{ "DXGI_FORMAT_UNKNOWN", DXGI_FORMAT_UNKNOWN },
+	{ "DXGI_FORMAT_R32G32B32A32_TYPELESS", DXGI_FORMAT_R32G32B32A32_TYPELESS },
+	{ "DXGI_FORMAT_R32G32B32A32_FLOAT", DXGI_FORMAT_R32G32B32A32_FLOAT },
+	{ "DXGI_FORMAT_R32G32B32A32_UINT", DXGI_FORMAT_R32G32B32A32_UINT },
+	{ "DXGI_FORMAT_R32G32B32A32_SINT", DXGI_FORMAT_R32G32B32A32_SINT },
+	{ "DXGI_FORMAT_R32G32B32_TYPELESS", DXGI_FORMAT_R32G32B32_TYPELESS },
+	{ "DXGI_FORMAT_R32G32B32_FLOAT", DXGI_FORMAT_R32G32B32_FLOAT },
+	{ "DXGI_FORMAT_R32G32B32_UINT", DXGI_FORMAT_R32G32B32_UINT },
+	{ "DXGI_FORMAT_R32G32B32_SINT", DXGI_FORMAT_R32G32B32_SINT },
+	{ "DXGI_FORMAT_R16G16B16A16_TYPELESS", DXGI_FORMAT_R16G16B16A16_TYPELESS },
+	{ "DXGI_FORMAT_R16G16B16A16_FLOAT", DXGI_FORMAT_R16G16B16A16_FLOAT },
+	{ "DXGI_FORMAT_R16G16B16A16_UNORM", DXGI_FORMAT_R16G16B16A16_UNORM },
+	{ "DXGI_FORMAT_R16G16B16A16_UINT", DXGI_FORMAT_R16G16B16A16_UINT },
+	{ "DXGI_FORMAT_R16G16B16A16_SNORM", DXGI_FORMAT_R16G16B16A16_SNORM },
+	{ "DXGI_FORMAT_R16G16B16A16_SINT", DXGI_FORMAT_R16G16B16A16_SINT },
+	{ "DXGI_FORMAT_R32G32_TYPELESS", DXGI_FORMAT_R32G32_TYPELESS },
+	{ "DXGI_FORMAT_R32G32_FLOAT", DXGI_FORMAT_R32G32_FLOAT },
+	{ "DXGI_FORMAT_R32G32_UINT", DXGI_FORMAT_R32G32_UINT },
+	{ "DXGI_FORMAT_R32G32_SINT", DXGI_FORMAT_R32G32_SINT },
+	{ "DXGI_FORMAT_R32G8X24_TYPELESS", DXGI_FORMAT_R32G8X24_TYPELESS },
+	{ "DXGI_FORMAT_D32_FLOAT_S8X24_UINT", DXGI_FORMAT_D32_FLOAT_S8X24_UINT },
+	{ "DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS", DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS },
+	{ "DXGI_FORMAT_X32_TYPELESS_G8X24_UINT", DXGI_FORMAT_X32_TYPELESS_G8X24_UINT },
+	{ "DXGI_FORMAT_R10G10B10A2_TYPELESS", DXGI_FORMAT_R10G10B10A2_TYPELESS },
+	{ "DXGI_FORMAT_R10G10B10A2_UNORM", DXGI_FORMAT_R10G10B10A2_UNORM },
+	{ "DXGI_FORMAT_R10G10B10A2_UINT", DXGI_FORMAT_R10G10B10A2_UINT },
+	{ "DXGI_FORMAT_R11G11B10_FLOAT", DXGI_FORMAT_R11G11B10_FLOAT },
+	{ "DXGI_FORMAT_R8G8B8A8_TYPELESS", DXGI_FORMAT_R8G8B8A8_TYPELESS },
+	{ "DXGI_FORMAT_R8G8B8A8_UNORM", DXGI_FORMAT_R8G8B8A8_UNORM },
+	{ "DXGI_FORMAT_R8G8B8A8_UNORM_SRGB", DXGI_FORMAT_R8G8B8A8_UNORM_SRGB },
+	{ "DXGI_FORMAT_R8G8B8A8_UINT", DXGI_FORMAT_R8G8B8A8_UINT },
+	{ "DXGI_FORMAT_R8G8B8A8_SNORM", DXGI_FORMAT_R8G8B8A8_SNORM },
+	{ "DXGI_FORMAT_R8G8B8A8_SINT", DXGI_FORMAT_R8G8B8A8_SINT },
+	{ "DXGI_FORMAT_R16G16_TYPELESS", DXGI_FORMAT_R16G16_TYPELESS },
+	{ "DXGI_FORMAT_R16G16_FLOAT", DXGI_FORMAT_R16G16_FLOAT },
+	{ "DXGI_FORMAT_R16G16_UNORM", DXGI_FORMAT_R16G16_UNORM },
+	{ "DXGI_FORMAT_R16G16_UINT", DXGI_FORMAT_R16G16_UINT },
+	{ "DXGI_FORMAT_R16G16_SNORM", DXGI_FORMAT_R16G16_SNORM },
+	{ "DXGI_FORMAT_R16G16_SINT", DXGI_FORMAT_R16G16_SINT },
+	{ "DXGI_FORMAT_R32_TYPELESS", DXGI_FORMAT_R32_TYPELESS },
+	{ "DXGI_FORMAT_D32_FLOAT", DXGI_FORMAT_D32_FLOAT },
+	{ "DXGI_FORMAT_R32_FLOAT", DXGI_FORMAT_R32_FLOAT },
+	{ "DXGI_FORMAT_R32_UINT", DXGI_FORMAT_R32_UINT },
+	{ "DXGI_FORMAT_R32_SINT", DXGI_FORMAT_R32_SINT },
+	{ "DXGI_FORMAT_R24G8_TYPELESS", DXGI_FORMAT_R24G8_TYPELESS },
+	{ "DXGI_FORMAT_D24_UNORM_S8_UINT", DXGI_FORMAT_D24_UNORM_S8_UINT },
+	{ "DXGI_FORMAT_R24_UNORM_X8_TYPELESS", DXGI_FORMAT_R24_UNORM_X8_TYPELESS },
+	{ "DXGI_FORMAT_X24_TYPELESS_G8_UINT", DXGI_FORMAT_X24_TYPELESS_G8_UINT },
+	{ "DXGI_FORMAT_R8G8_TYPELESS", DXGI_FORMAT_R8G8_TYPELESS },
+	{ "DXGI_FORMAT_R8G8_UNORM", DXGI_FORMAT_R8G8_UNORM },
+	{ "DXGI_FORMAT_R8G8_UINT", DXGI_FORMAT_R8G8_UINT },
+	{ "DXGI_FORMAT_R8G8_SNORM", DXGI_FORMAT_R8G8_SNORM },
+	{ "DXGI_FORMAT_R8G8_SINT", DXGI_FORMAT_R8G8_SINT },
+	{ "DXGI_FORMAT_R16_TYPELESS", DXGI_FORMAT_R16_TYPELESS },
+	{ "DXGI_FORMAT_R16_FLOAT", DXGI_FORMAT_R16_FLOAT },
+	{ "DXGI_FORMAT_D16_UNORM", DXGI_FORMAT_D16_UNORM },
+	{ "DXGI_FORMAT_R16_UNORM", DXGI_FORMAT_R16_UNORM },
+	{ "DXGI_FORMAT_R16_UINT", DXGI_FORMAT_R16_UINT },
+	{ "DXGI_FORMAT_R16_SNORM", DXGI_FORMAT_R16_SNORM },
+	{ "DXGI_FORMAT_R16_SINT", DXGI_FORMAT_R16_SINT },
+	{ "DXGI_FORMAT_R8_TYPELESS", DXGI_FORMAT_R8_TYPELESS },
+	{ "DXGI_FORMAT_R8_UNORM", DXGI_FORMAT_R8_UNORM },
+	{ "DXGI_FORMAT_R8_UINT", DXGI_FORMAT_R8_UINT },
+	{ "DXGI_FORMAT_R8_SNORM", DXGI_FORMAT_R8_SNORM },
+	{ "DXGI_FORMAT_R8_SINT", DXGI_FORMAT_R8_SINT },
+	{ "DXGI_FORMAT_A8_UNORM", DXGI_FORMAT_A8_UNORM },
+	{ "DXGI_FORMAT_R1_UNORM", DXGI_FORMAT_R1_UNORM },
+	{ "DXGI_FORMAT_R9G9B9E5_SHAREDEXP", DXGI_FORMAT_R9G9B9E5_SHAREDEXP },
+	{ "DXGI_FORMAT_R8G8_B8G8_UNORM", DXGI_FORMAT_R8G8_B8G8_UNORM },
+	{ "DXGI_FORMAT_G8R8_G8B8_UNORM", DXGI_FORMAT_G8R8_G8B8_UNORM },
+	{ "DXGI_FORMAT_BC1_TYPELESS", DXGI_FORMAT_BC1_TYPELESS },
+	{ "DXGI_FORMAT_BC1_UNORM", DXGI_FORMAT_BC1_UNORM },
+	{ "DXGI_FORMAT_BC1_UNORM_SRGB", DXGI_FORMAT_BC1_UNORM_SRGB },
+	{ "DXGI_FORMAT_BC2_TYPELESS", DXGI_FORMAT_BC2_TYPELESS },
+	{ "DXGI_FORMAT_BC2_UNORM", DXGI_FORMAT_BC2_UNORM },
+	{ "DXGI_FORMAT_BC2_UNORM_SRGB", DXGI_FORMAT_BC2_UNORM_SRGB },
+	{ "DXGI_FORMAT_BC3_TYPELESS", DXGI_FORMAT_BC3_TYPELESS },
+	{ "DXGI_FORMAT_BC3_UNORM", DXGI_FORMAT_BC3_UNORM },
+	{ "DXGI_FORMAT_BC3_UNORM_SRGB", DXGI_FORMAT_BC3_UNORM_SRGB },
+	{ "DXGI_FORMAT_BC4_TYPELESS", DXGI_FORMAT_BC4_TYPELESS },
+	{ "DXGI_FORMAT_BC4_UNORM", DXGI_FORMAT_BC4_UNORM },
+	{ "DXGI_FORMAT_BC4_SNORM", DXGI_FORMAT_BC4_SNORM },
+	{ "DXGI_FORMAT_BC5_TYPELESS", DXGI_FORMAT_BC5_TYPELESS },
+	{ "DXGI_FORMAT_BC5_UNORM", DXGI_FORMAT_BC5_UNORM },
+	{ "DXGI_FORMAT_BC5_SNORM", DXGI_FORMAT_BC5_SNORM },
+	{ "DXGI_FORMAT_B5G6R5_UNORM", DXGI_FORMAT_B5G6R5_UNORM },
+	{ "DXGI_FORMAT_B5G5R5A1_UNORM", DXGI_FORMAT_B5G5R5A1_UNORM },
+	{ "DXGI_FORMAT_B8G8R8A8_UNORM", DXGI_FORMAT_B8G8R8A8_UNORM },
+	{ "DXGI_FORMAT_B8G8R8X8_UNORM", DXGI_FORMAT_B8G8R8X8_UNORM },
+	{ "DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM", DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM },
+	{ "DXGI_FORMAT_B8G8R8A8_TYPELESS", DXGI_FORMAT_B8G8R8A8_TYPELESS },
+	{ "DXGI_FORMAT_B8G8R8A8_UNORM_SRGB", DXGI_FORMAT_B8G8R8A8_UNORM_SRGB },
+	{ "DXGI_FORMAT_B8G8R8X8_TYPELESS", DXGI_FORMAT_B8G8R8X8_TYPELESS },
+	{ "DXGI_FORMAT_B8G8R8X8_UNORM_SRGB", DXGI_FORMAT_B8G8R8X8_UNORM_SRGB },
+	{ "DXGI_FORMAT_BC6H_TYPELESS", DXGI_FORMAT_BC6H_TYPELESS },
+	{ "DXGI_FORMAT_BC6H_UF16", DXGI_FORMAT_BC6H_UF16 },
+	{ "DXGI_FORMAT_BC6H_SF16", DXGI_FORMAT_BC6H_SF16 },
+	{ "DXGI_FORMAT_BC7_TYPELESS", DXGI_FORMAT_BC7_TYPELESS },
+	{ "DXGI_FORMAT_BC7_UNORM", DXGI_FORMAT_BC7_UNORM },
+	{ "DXGI_FORMAT_BC7_UNORM_SRGB", DXGI_FORMAT_BC7_UNORM_SRGB },
+	{ "DXGI_FORMAT_AYUV", DXGI_FORMAT_AYUV },
+	{ "DXGI_FORMAT_Y410", DXGI_FORMAT_Y410 },
+	{ "DXGI_FORMAT_Y416", DXGI_FORMAT_Y416 },
+	{ "DXGI_FORMAT_NV12", DXGI_FORMAT_NV12 },
+	{ "DXGI_FORMAT_P010", DXGI_FORMAT_P010 },
+	{ "DXGI_FORMAT_P016", DXGI_FORMAT_P016 },
+	{ "DXGI_FORMAT_420_OPAQUE", DXGI_FORMAT_420_OPAQUE },
+	{ "DXGI_FORMAT_YUY2", DXGI_FORMAT_YUY2 },
+	{ "DXGI_FORMAT_Y210", DXGI_FORMAT_Y210 },
+	{ "DXGI_FORMAT_Y216", DXGI_FORMAT_Y216 },
+	{ "DXGI_FORMAT_NV11", DXGI_FORMAT_NV11 },
+	{ "DXGI_FORMAT_AI44", DXGI_FORMAT_AI44 },
+	{ "DXGI_FORMAT_IA44", DXGI_FORMAT_IA44 },
+	{ "DXGI_FORMAT_P8", DXGI_FORMAT_P8 },
+	{ "DXGI_FORMAT_A8P8", DXGI_FORMAT_A8P8 },
+	{ "DXGI_FORMAT_B4G4R4A4_UNORM", DXGI_FORMAT_B4G4R4A4_UNORM }
+};
+
+char const *GetFormatName(DXGI_FORMAT format)
+{
+	for(uint i = 0; i < _countof(FormatName); ++i)
+	{
+		if(FormatName[i].format == format)
+		{
+			return FormatName[i].name;
+		}
+	}
+	return "DXGI_FORMAT_UNKNOWN";
+}
+
 //////////////////////////////////////////////////////////////////////
 
 Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
-	//TRACE("Binding %s at %d is a %s called %s\n", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.BindPoint, GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
+	TRACE("Binding %s at %d is a %s called %s\n", GetFrom(shader_input_type_names, desc.Type).c_str(), desc.BindPoint, GetFrom(shader_input_type_names, desc.Type).c_str(), desc.Name);
+	switch(desc.Type)
+	{
+		case D3D_SIT_CBUFFER:
+			return new ConstantBufferBinding(this, desc);
+		case D3D_SIT_TBUFFER:
+			break;
+		case D3D_SIT_TEXTURE:
+			return new ResourceBinding(this, desc);
+		case D3D_SIT_SAMPLER:
+			return new SamplerBinding(this, desc);
+		case D3D_SIT_UAV_RWTYPED:
+			break;
+		case D3D_SIT_STRUCTURED:
+			break;
+		case D3D_SIT_UAV_RWSTRUCTURED:
+			break;
+		case D3D_SIT_BYTEADDRESS:
+			break;
+		case D3D_SIT_UAV_RWBYTEADDRESS:
+			break;
+		case D3D_SIT_UAV_APPEND_STRUCTURED:
+			break;
+		case D3D_SIT_UAV_CONSUME_STRUCTURED:
+			break;
+		case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER:
+			break;
+	}
 	return new Binding(this, desc);
 }
 
@@ -139,7 +304,7 @@ Shader::~Shader()
 
 static string header = "\nnamespace HLSL\n{\n#pragma pack(push, 4)\n\n";
 static string footer = "\n#pragma pack(pop)\n\n} // HLSL\n";
-static string constructor = "\t\t// Constructor\n\t\t%s_t()\n";
+static string constructor = "\t\t// Constructor\n\t\t%s_t()";
 
 //////////////////////////////////////////////////////////////////////
 
@@ -153,28 +318,57 @@ void Shader::Output()
 	{
 		(*i)->MemberOutput(this->Name());
 	}
-	printf("\t};\n");
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	{
+		(*i)->StaticsOutput();
+	}
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	{
+		(*i)->MemberOutput();
+		printf("\n");
+	}
 
-	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	//{
-	//	(*i)->StaticsOutput();
-	//}
-	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	//{
-	//	(*i)->MemberOutput();
-	//	printf("\n");
-	//}
-	//printf(constructor.c_str(), Name().c_str());
-	//char const *pre = "\t\t\t: ";
-	//for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	//{
-	//	printf(pre);
-	//	(*i)->ConstructorOutput();
-	//	pre = "\t\t\t, ";
-	//}
-	//printf("\t\t{\n\t\t}\n");
-	//printf("\t};\n\n\tDECLSPEC_SELECTANY %s_t %s;\n", Name().c_str(), Name().c_str());
+	OutputInputElements();
+
+	// output vertex structure for input
+
+	printf(constructor.c_str(), Name().c_str());
+	char const *sep = ": ";
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	{
+		printf("\n\t\t\t%s", sep);
+		(*i)->ConstructorOutput();
+		sep = ", ";
+	}
+
+	printf("\t\t{\n\t\t}\n");
+	printf("\t};\n\n\tDECLSPEC_SELECTANY %s_t %s;\n", Name().c_str(), Name().c_str());
+
 	printf("%s", footer.c_str());
+}
+
+//////////////////////////////////////////////////////////////////////
+//LPCSTR                     %s                           SemanticName;
+//UINT                       %u                           SemanticIndex;
+//DXGI_FORMAT                %s                           Format;
+//UINT                       0                            InputSlot;
+//UINT                       D3D11_APPEND_ALIGNED_ELEMENT AlignedByteOffset;
+//D3D11_INPUT_CLASSIFICATION D3D11_INPUT_PER_VERTEX_DATA  InputSlotClass;
+//UINT                       0                            InstanceDataStepRate;
+
+void Shader::OutputInputElements()
+{
+	printf("\t\tDECLSPEC_SELECTANY InputElements[%d] =\n\t\t{", mInputElements.size());
+	uint i = 0;
+	char const *sep = "";
+	for(uint i = 0; i < mInputElements.size(); ++i)
+	{
+		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
+		char const *formatName = GetFormatName(d.Format);
+		printf("%s\n\t\t\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
+		sep = ",";
+	}
+	printf("\n\t\t};\n\n");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -355,93 +549,6 @@ enum StorageClass
 	Typeless
 };
 
-struct DXGI_Lookup_t
-{
-	DXGI_FORMAT format;
-	uint fields;
-	StorageType storageType;
-};
-
-DXGI_Lookup_t DXGI_Lookup[] =
-{
-	{ DXGI_FORMAT_R32G32B32A32_FLOAT, 4, Float32 },
-	{ DXGI_FORMAT_R32G32B32_FLOAT, 3, Float32 },
-	{ DXGI_FORMAT_R32G32_FLOAT, 2, Float32 },
-	{ DXGI_FORMAT_R32_FLOAT, 1, Float32 },
-
-	{ DXGI_FORMAT_R16G16B16A16_FLOAT, 4, Float16 },
-	{ DXGI_FORMAT_R16G16_FLOAT, 2, Float16 },
-	{ DXGI_FORMAT_R16_FLOAT, 1, Float16 },
-
-	{ DXGI_FORMAT_R32G32B32A32_TYPELESS, 4, Typeless32 },
-	{ DXGI_FORMAT_R32G32B32_TYPELESS, 3, Typeless32 },
-	{ DXGI_FORMAT_R32G32_TYPELESS, 2, Typeless32 },
-	{ DXGI_FORMAT_R32_TYPELESS, 1, Typeless32 },
-
-	{ DXGI_FORMAT_R16G16B16A16_TYPELESS, 4, Typeless16 },
-	{ DXGI_FORMAT_R16G16_TYPELESS, 2, Typeless16 },
-	{ DXGI_FORMAT_R16_TYPELESS, 1, Typeless16 },
-
-	{ DXGI_FORMAT_R8G8B8A8_TYPELESS, 4, Typeless8 },
-	{ DXGI_FORMAT_R8G8_TYPELESS, 2, Typeless8 },
-	{ DXGI_FORMAT_R8_TYPELESS, 1, Typeless8 },
-
-	{ DXGI_FORMAT_R32G32B32A32_SINT, 4, Int32 },
-	{ DXGI_FORMAT_R32G32B32_SINT, 3, Int32 },
-	{ DXGI_FORMAT_R32G32_SINT, 2, Int32 },
-	{ DXGI_FORMAT_R32_SINT, 1, Int32 },
-
-	{ DXGI_FORMAT_R16G16B16A16_SINT, 4, Int16 },
-	{ DXGI_FORMAT_R16G16_SINT, 2, Int16 },
-	{ DXGI_FORMAT_R16_SINT, 1, Int16 },
-
-	{ DXGI_FORMAT_R8G8B8A8_SINT, 4, Int8 },
-	{ DXGI_FORMAT_R8G8_SINT, 2, Int8 },
-	{ DXGI_FORMAT_R8_SINT, 1, Int8 },
-
-	{ DXGI_FORMAT_R32G32B32A32_UINT, 4, UInt32 },
-	{ DXGI_FORMAT_R32G32B32_UINT, 3, UInt32 },
-	{ DXGI_FORMAT_R32G32_UINT, 2, UInt32 },
-	{ DXGI_FORMAT_R32_UINT, 1, UInt32 },
-
-	{ DXGI_FORMAT_R16G16B16A16_UINT, 4, UInt16 },
-	{ DXGI_FORMAT_R16G16_UINT, 2, UInt16 },
-	{ DXGI_FORMAT_R16_UINT, 1, UInt16 },
-
-	{ DXGI_FORMAT_R8G8B8A8_UINT, 4, UInt8 },
-	{ DXGI_FORMAT_R8G8_UINT, 2, UInt8 },
-	{ DXGI_FORMAT_R8_UINT, 1, UInt8 },
-
-	{ DXGI_FORMAT_R16G16B16A16_UNORM, 4, UNorm16 },
-	{ DXGI_FORMAT_R16G16_UNORM, 2, UNorm16 },
-	{ DXGI_FORMAT_R16_UNORM, 1, UNorm16 },
-
-	{ DXGI_FORMAT_R8G8B8A8_UNORM, 4, UNorm8 },
-	{ DXGI_FORMAT_R8G8_UNORM, 2, UNorm8 },
-	{ DXGI_FORMAT_R8_UNORM, 1, UNorm8 },
-
-	{ DXGI_FORMAT_R16G16B16A16_SNORM, 4, Norm16 },
-	{ DXGI_FORMAT_R16G16_SNORM, 2, Norm16 },
-	{ DXGI_FORMAT_R16_SNORM, 1, Norm16 },
-
-	{ DXGI_FORMAT_R8G8B8A8_SNORM, 4, Norm8 },
-	{ DXGI_FORMAT_R8G8_SNORM, 2, Norm8 },
-	{ DXGI_FORMAT_R8_SNORM, 1, Norm8 }
-};
-
-DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
-{
-	for(uint i = 0; i < _countof(DXGI_Lookup); ++i)
-	{
-		DXGI_Lookup_t &d = DXGI_Lookup[i];
-		if(d.fields == fields && d.storageType == storageType)
-		{
-			return d.format;
-		}
-	}
-	return DXGI_FORMAT_UNKNOWN;
-}
-
 //////////////////////////////////////////////////////////////////////
 // Missing some wacky short float types...
 
@@ -452,19 +559,19 @@ uint StorageSize[] =
 	16,		// Float16,
 	32,		// Int32,
 	16,		// Int16,
-	 8,		// Int8,
+	8,		// Int8,
 	32,		// UInt32,
 	16,		// UInt16,
-	 8,		// UInt8,
+	8,		// UInt8,
 	32,		// Norm32,
 	16,		// Norm16,
-	 8,		// Norm8,
+	8,		// Norm8,
 	32,		// UNorm32,
 	16,		// UNorm16,
-	 8,		// UNorm8
+	8,		// UNorm8
 	32,		// Typeless32,
 	16,		// Typeless16,
-	 8		// Typeless8,
+	8		// Typeless8,
 };
 
 struct InputType
@@ -476,6 +583,8 @@ struct InputType
 
 InputType type_suffix[] =
 {
+	"BYTE", 0, UNorm8,
+	"FLOAT", 0, Float32,
 	"FLOAT32", 0, Float32,
 	"FLOAT16", 0, Float16,
 	"INT32", 0, Int32,
@@ -525,18 +634,108 @@ static DXGI_FORMAT formats[4][4] =
 	}
 };
 
+struct DXGI_Lookup_t
+{
+	DXGI_FORMAT format;
+	uint fields;
+	StorageType storageType;
+};
+
+DXGI_Lookup_t DXGI_Lookup[] =
+{
+	// 32
+	{ DXGI_FORMAT_R32G32B32A32_FLOAT, 4, Float32 },
+	{ DXGI_FORMAT_R32G32B32_FLOAT, 3, Float32 },
+	{ DXGI_FORMAT_R32G32_FLOAT, 2, Float32 },
+	{ DXGI_FORMAT_R32_FLOAT, 1, Float32 },
+
+	{ DXGI_FORMAT_R32G32B32A32_SINT, 4, Int32 },
+	{ DXGI_FORMAT_R32G32B32_SINT, 3, Int32 },
+	{ DXGI_FORMAT_R32G32_SINT, 2, Int32 },
+	{ DXGI_FORMAT_R32_SINT, 1, Int32 },
+
+	{ DXGI_FORMAT_R32G32B32A32_UINT, 4, UInt32 },
+	{ DXGI_FORMAT_R32G32B32_UINT, 3, UInt32 },
+	{ DXGI_FORMAT_R32G32_UINT, 2, UInt32 },
+	{ DXGI_FORMAT_R32_UINT, 1, UInt32 },
+
+	{ DXGI_FORMAT_R32G32B32A32_TYPELESS, 4, Typeless32 },
+	{ DXGI_FORMAT_R32G32B32_TYPELESS, 3, Typeless32 },
+	{ DXGI_FORMAT_R32G32_TYPELESS, 2, Typeless32 },
+	{ DXGI_FORMAT_R32_TYPELESS, 1, Typeless32 },
+
+	// 16
+	{ DXGI_FORMAT_R16G16B16A16_FLOAT, 4, Float16 },
+	{ DXGI_FORMAT_R16G16_FLOAT, 2, Float16 },
+	{ DXGI_FORMAT_R16_FLOAT, 1, Float16 },
+
+	{ DXGI_FORMAT_R16G16B16A16_SINT, 4, Int16 },
+	{ DXGI_FORMAT_R16G16_SINT, 2, Int16 },
+	{ DXGI_FORMAT_R16_SINT, 1, Int16 },
+
+	{ DXGI_FORMAT_R16G16B16A16_UINT, 4, UInt16 },
+	{ DXGI_FORMAT_R16G16_UINT, 2, UInt16 },
+	{ DXGI_FORMAT_R16_UINT, 1, UInt16 },
+
+	{ DXGI_FORMAT_R16G16B16A16_SNORM, 4, Norm16 },
+	{ DXGI_FORMAT_R16G16_SNORM, 2, Norm16 },
+	{ DXGI_FORMAT_R16_SNORM, 1, Norm16 },
+
+	{ DXGI_FORMAT_R16G16B16A16_UNORM, 4, UNorm16 },
+	{ DXGI_FORMAT_R16G16_UNORM, 2, UNorm16 },
+	{ DXGI_FORMAT_R16_UNORM, 1, UNorm16 },
+
+	{ DXGI_FORMAT_R16G16B16A16_TYPELESS, 4, Typeless16 },
+	{ DXGI_FORMAT_R16G16_TYPELESS, 2, Typeless16 },
+	{ DXGI_FORMAT_R16_TYPELESS, 1, Typeless16 },
+
+	// 8
+	{ DXGI_FORMAT_R8G8B8A8_SINT, 4, Int8 },
+	{ DXGI_FORMAT_R8G8_SINT, 2, Int8 },
+	{ DXGI_FORMAT_R8_SINT, 1, Int8 },
+
+	{ DXGI_FORMAT_R8G8B8A8_UINT, 4, UInt8 },
+	{ DXGI_FORMAT_R8G8_UINT, 2, UInt8 },
+	{ DXGI_FORMAT_R8_UINT, 1, UInt8 },
+
+	{ DXGI_FORMAT_R8G8B8A8_SNORM, 4, Norm8 },
+	{ DXGI_FORMAT_R8G8_SNORM, 2, Norm8 },
+	{ DXGI_FORMAT_R8_SNORM, 1, Norm8 },
+
+	{ DXGI_FORMAT_R8G8B8A8_UNORM, 4, UNorm8 },
+	{ DXGI_FORMAT_R8G8_UNORM, 2, UNorm8 },
+	{ DXGI_FORMAT_R8_UNORM, 1, UNorm8 },
+
+	{ DXGI_FORMAT_R8G8B8A8_TYPELESS, 4, Typeless8 },
+	{ DXGI_FORMAT_R8G8_TYPELESS, 2, Typeless8 },
+	{ DXGI_FORMAT_R8_TYPELESS, 1, Typeless8 }
+};
+
+DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
+{
+	for(uint i = 0; i < _countof(DXGI_Lookup); ++i)
+	{
+		DXGI_Lookup_t &d = DXGI_Lookup[i];
+		if(d.fields == fields && d.storageType == storageType)
+		{
+			return d.format;
+		}
+	}
+	return DXGI_FORMAT_UNKNOWN;
+}
+
 //////////////////////////////////////////////////////////////////////
 
 HRESULT Shader::CreateInputLayout()
 {
 	int n = mShaderDesc.InputParameters;
-	vector<D3D11_INPUT_ELEMENT_DESC> ied(n);
+	mInputElements.resize(n);
 	int vertexSize = 0;
 	for(int i = 0; i < n; ++i)
 	{
 		D3D11_SIGNATURE_PARAMETER_DESC desc;
 		DX(mReflector->GetInputParameterDesc(i, &desc));
-		D3D11_INPUT_ELEMENT_DESC &d = ied[i];
+		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		d.SemanticName = desc.SemanticName;
 		d.SemanticIndex = desc.SemanticIndex;
 		d.InputSlot = 0;
@@ -545,9 +744,11 @@ HRESULT Shader::CreateInputLayout()
 		d.InstanceDataStepRate = 0;
 		d.Format = DXGI_FORMAT_UNKNOWN;
 
+		int sourceFields = CountBits(desc.Mask);
+
 		// if they ask, try to find the right storage format
 		int fieldCount = 0;
-		StorageType storeageType;
+		StorageType storageType;
 		if(strchr(d.SemanticName, '_') != null)
 		{
 			TRACE("Semantic name: %s\n", d.SemanticName);
@@ -555,31 +756,34 @@ HRESULT Shader::CreateInputLayout()
 			tokenize(d.SemanticName, tokens, "_");
 			if(tokens.size() > 1)
 			{
-				string &type_annotation = ToUpper(string(tokens[1]));
+				string &type_annotation = ToUpper(string(tokens[0]));
 				for(int i = 0; i < _countof(type_suffix); ++i)
 				{
-					if(strcmp(type_annotation.c_str(), type_suffix[i].name) == 0)
+					if(_stricmp(type_annotation.c_str(), type_suffix[i].name) == 0)
 					{
 						int fc = type_suffix[i].fieldCount;
-						fieldCount = (fc == 0) ? CountBits(desc.Mask) : fc;
-						storeageType = type_suffix[i].storageType;
+						fieldCount = (fc == 0) ? sourceFields : fc;
+						storageType = type_suffix[i].storageType;
+						break;
 					}
 				}
 				if(fieldCount != 0)
 				{
-					d.Format = GetDXGI_Format(fieldCount, storeageType);
+					d.Format = GetDXGI_Format(fieldCount, storageType);
 				}
 			}
 		}
 		if(d.Format == DXGI_FORMAT_UNKNOWN)
 		{
-			fieldCount = CountBits(desc.Mask);
+			fieldCount = sourceFields;
 			d.Format = formats[fieldCount - 1][desc.ComponentType];
 		}
 
-		uint size1 = SizeOfFormatElement(d.Format);
-		uint size2 = size1 / 8;
-		vertexSize += size2;
+		if(fieldCount != sourceFields)
+		{
+			// Error, they specified a format which has a different field count from the source input
+		}
+		vertexSize += SizeOfFormatElement(d.Format) / 8;
 	}
 	return S_OK;
 }

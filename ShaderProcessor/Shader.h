@@ -37,6 +37,7 @@ struct Shader
 	vector<Texture2D *>					mTextures;
 	vector<ConstantBufferBinding *>		mConstantBuffers;
 	vector<TextureBuffer *>				mTextureBuffers;
+	vector<D3D11_INPUT_ELEMENT_DESC>	mInputElements;
 
 	IntMap								mTextureBufferIDs;
 	IntMap								mConstBufferIDs;
@@ -58,6 +59,7 @@ struct Shader
 	virtual ~Shader();
 
 	void Output();
+	void OutputInputElements();
 
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;

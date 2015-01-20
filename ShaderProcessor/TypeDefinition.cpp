@@ -147,24 +147,24 @@ TypeDefinition::~TypeDefinition()
 
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
-	printf("\t// %s Offsets\n", mDesc.Name);
-	printf("\tDECLSPEC_SELECTANY extern CBufferOffset const %s_%s_Offsets[%d] = \n", shaderName.c_str(), mDesc.Name, mDesc.Variables);
-	printf("\t{\n");
+	printf("\t\t// %s Offsets\n", mDesc.Name);
+	printf("\t\tDECLSPEC_SELECTANY extern CBufferOffset const %s_Offsets[%d] = \n", mDesc.Name, mDesc.Variables);
+	printf("\t\t{\n");
 	for(uint i = 0; i < FieldCount; ++i)
 	{
 		D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-		printf("\t\t{ \"%s\", %d }%s", v.Name, v.StartOffset, (i < FieldCount - 1) ? ",\n" : "\n");
+		printf("\t\t\t{ \"%s\", %d }%s", v.Name, v.StartOffset, (i < FieldCount - 1) ? ",\n" : "\n");
 	}
-	printf("\t};\n\n");
+	printf("\t\t};\n\n");
 
 	if(Defaults != null)
 	{
-		printf("\t// %s Defaults\n", mDesc.Name);
-		printf("\tDECLSPEC_SELECTANY extern uint32 const %s_%s_Defaults[%d] = \n\t{\n", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
+		printf("\t\t// %s Defaults\n", mDesc.Name);
+		printf("\t\tDECLSPEC_SELECTANY extern uint32 const %s_Defaults[%d] = \n\t\t{\n", mDesc.Name, mDesc.Size / sizeof(uint32));
 		for(uint i = 0; i < FieldCount; ++i)
 		{
 			D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-			printf("\t\t");
+			printf("\t\t\t");
 			uint32 *data = (uint32 *)(Defaults.get() + v.StartOffset);
 			bool lastOne = i == (FieldCount - 1);
 			uint end = (lastOne) ? mDesc.Size : mFields[i + 1]->Variable.StartOffset;
@@ -176,7 +176,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 			}
 			printf("\n");
 		}
-		printf("\t};\n\n");
+		printf("\t\t};\n\n");
 	}
 }
 
@@ -202,6 +202,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 		printf("\n");
 	}
 	printf("\t\t};\n\n");
+	printf("\t\t%s_t %s;\n\n", mDesc.Name, mDesc.Name);
 
 	//ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
 	//string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, shaderName.c_str(), mDesc.Name, mDesc.Name);

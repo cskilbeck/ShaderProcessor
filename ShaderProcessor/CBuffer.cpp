@@ -13,13 +13,13 @@ void ConstantBufferBinding::StaticsOutput()
 
 void ConstantBufferBinding::MemberOutput()
 {
-	definition->MemberOutput(mShader->Name());
+	//definition->MemberOutput(mShader->Name());
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void ConstantBufferBinding::ConstructorOutput()
 {
-	printf("%s(%s)\n", mDesc.Name, definition->Defaults == null ? "" : Format("%s_%s_Defaults", mShader->Name().c_str(), mDesc.Name).c_str());
+	printf("%s(%s)\n", mDesc.Name, definition->Defaults == null ? "" : Format("%s_Defaults", mDesc.Name).c_str());
 }
 

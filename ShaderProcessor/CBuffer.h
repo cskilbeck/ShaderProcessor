@@ -20,12 +20,19 @@ struct ConstantBufferBinding: Binding
 
 struct ResourceBinding: Binding
 {
+	ResourceBinding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+		: Binding(s, desc)
+	{
+	}
 };
 
 //////////////////////////////////////////////////////////////////////
 
 struct SamplerBinding: Binding
 {
-	// No Definition for SamplerBinding
+	SamplerBinding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+		: Binding(s, desc)
+	{
+	}
 };
 
