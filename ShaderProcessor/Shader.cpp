@@ -516,6 +516,51 @@ uint SizeOfFormatElement(DXGI_FORMAT format)
 	}
 }
 
+// what to 
+
+enum StorageClass
+{
+	Float4,
+	Float3,
+	Float2,
+	Float,
+
+	SFloat4,
+	SFloat3,
+	SFloat2,
+	SFloat,
+
+	Int4,
+	Int3,
+	Int2,
+	Int,
+
+	UInt4,
+	UInt3,
+	UInt2,
+	UInt,
+
+	Short4,
+	Short3,
+	Short2,
+	Short1,
+
+	UShort4,
+	UShort3,
+	UShort2,
+	UShort1,
+
+	SByte4,
+	SByte3,
+	SByte2,
+	SByte1,
+
+	Byte4,
+	Byte3,
+	Byte2,
+	Byte1
+};
+
 //////////////////////////////////////////////////////////////////////
 
 enum StorageType
@@ -539,22 +584,14 @@ enum StorageType
 	Typeless8
 };
 
-enum StorageClass
-{
-	Float,
-	Int,
-	UInt,
-	Norm,
-	UNorm,
-	Typeless
-};
-
 //////////////////////////////////////////////////////////////////////
 // Missing some wacky short float types...
 
 
 uint StorageSize[] =
 {
+	 8,		// Byte,
+	32,		// Float,
 	32,		// Float32,
 	16,		// Float16,
 	32,		// Int32,
@@ -583,25 +620,25 @@ struct InputType
 
 InputType type_suffix[] =
 {
-	"BYTE", 0, UNorm8,
-	"FLOAT", 0, Float32,
-	"FLOAT32", 0, Float32,
-	"FLOAT16", 0, Float16,
-	"INT32", 0, Int32,
-	"INT16", 0, Int16,
-	"INT8", 0, Int8,
-	"UINT32", 0, UInt32,
-	"UINT16", 0, UInt16,
-	"UINT8", 0, UInt8,
-	"NORM32", 0, Norm32,
-	"NORM16", 0, Norm16,
-	"NORM8", 0, Norm8,
-	"UNORM32", 0, UNorm32,
-	"UNORM16", 0, UNorm16,
-	"UNORM8", 0, UNorm8,
-	"TYPELESS32", 0, Typeless32,
-	"TYPELESS16", 0, Typeless16,
-	"TYPELESS8", 0, Typeless8
+	"Byte", 0, UNorm8,
+	"Float", 0, Float32,
+	"Float32", 0, Float32,
+	"Float16", 0, Float16,
+	"Int32", 0, Int32,
+	"Int16", 0, Int16,
+	"Int8", 0, Int8,
+	"UInt32", 0, UInt32,
+	"UInt16", 0, UInt16,
+	"UInt8", 0, UInt8,
+	"Norm32", 0, Norm32,
+	"Norm16", 0, Norm16,
+	"Norm8", 0, Norm8,
+	"UNorm32", 0, UNorm32,
+	"UNorm16", 0, UNorm16,
+	"UNorm8", 0, UNorm8,
+	"Typeless32", 0, Typeless32,
+	"Typeless16", 0, Typeless16,
+	"Typeless8", 0, Typeless8
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -637,78 +674,68 @@ static DXGI_FORMAT formats[4][4] =
 struct DXGI_Lookup_t
 {
 	DXGI_FORMAT format;
+	char const *name;
 	uint fields;
+	uint bitSize;
 	StorageType storageType;
+
+	uint GetTotalSizeInBits() const
+	{
+		return fields * bitSize;
+	}
 };
 
 DXGI_Lookup_t DXGI_Lookup[] =
 {
-	// 32
-	{ DXGI_FORMAT_R32G32B32A32_FLOAT, 4, Float32 },
-	{ DXGI_FORMAT_R32G32B32_FLOAT, 3, Float32 },
-	{ DXGI_FORMAT_R32G32_FLOAT, 2, Float32 },
-	{ DXGI_FORMAT_R32_FLOAT, 1, Float32 },
-
-	{ DXGI_FORMAT_R32G32B32A32_SINT, 4, Int32 },
-	{ DXGI_FORMAT_R32G32B32_SINT, 3, Int32 },
-	{ DXGI_FORMAT_R32G32_SINT, 2, Int32 },
-	{ DXGI_FORMAT_R32_SINT, 1, Int32 },
-
-	{ DXGI_FORMAT_R32G32B32A32_UINT, 4, UInt32 },
-	{ DXGI_FORMAT_R32G32B32_UINT, 3, UInt32 },
-	{ DXGI_FORMAT_R32G32_UINT, 2, UInt32 },
-	{ DXGI_FORMAT_R32_UINT, 1, UInt32 },
-
-	{ DXGI_FORMAT_R32G32B32A32_TYPELESS, 4, Typeless32 },
-	{ DXGI_FORMAT_R32G32B32_TYPELESS, 3, Typeless32 },
-	{ DXGI_FORMAT_R32G32_TYPELESS, 2, Typeless32 },
-	{ DXGI_FORMAT_R32_TYPELESS, 1, Typeless32 },
-
-	// 16
-	{ DXGI_FORMAT_R16G16B16A16_FLOAT, 4, Float16 },
-	{ DXGI_FORMAT_R16G16_FLOAT, 2, Float16 },
-	{ DXGI_FORMAT_R16_FLOAT, 1, Float16 },
-
-	{ DXGI_FORMAT_R16G16B16A16_SINT, 4, Int16 },
-	{ DXGI_FORMAT_R16G16_SINT, 2, Int16 },
-	{ DXGI_FORMAT_R16_SINT, 1, Int16 },
-
-	{ DXGI_FORMAT_R16G16B16A16_UINT, 4, UInt16 },
-	{ DXGI_FORMAT_R16G16_UINT, 2, UInt16 },
-	{ DXGI_FORMAT_R16_UINT, 1, UInt16 },
-
-	{ DXGI_FORMAT_R16G16B16A16_SNORM, 4, Norm16 },
-	{ DXGI_FORMAT_R16G16_SNORM, 2, Norm16 },
-	{ DXGI_FORMAT_R16_SNORM, 1, Norm16 },
-
-	{ DXGI_FORMAT_R16G16B16A16_UNORM, 4, UNorm16 },
-	{ DXGI_FORMAT_R16G16_UNORM, 2, UNorm16 },
-	{ DXGI_FORMAT_R16_UNORM, 1, UNorm16 },
-
-	{ DXGI_FORMAT_R16G16B16A16_TYPELESS, 4, Typeless16 },
-	{ DXGI_FORMAT_R16G16_TYPELESS, 2, Typeless16 },
-	{ DXGI_FORMAT_R16_TYPELESS, 1, Typeless16 },
-
-	// 8
-	{ DXGI_FORMAT_R8G8B8A8_SINT, 4, Int8 },
-	{ DXGI_FORMAT_R8G8_SINT, 2, Int8 },
-	{ DXGI_FORMAT_R8_SINT, 1, Int8 },
-
-	{ DXGI_FORMAT_R8G8B8A8_UINT, 4, UInt8 },
-	{ DXGI_FORMAT_R8G8_UINT, 2, UInt8 },
-	{ DXGI_FORMAT_R8_UINT, 1, UInt8 },
-
-	{ DXGI_FORMAT_R8G8B8A8_SNORM, 4, Norm8 },
-	{ DXGI_FORMAT_R8G8_SNORM, 2, Norm8 },
-	{ DXGI_FORMAT_R8_SNORM, 1, Norm8 },
-
-	{ DXGI_FORMAT_R8G8B8A8_UNORM, 4, UNorm8 },
-	{ DXGI_FORMAT_R8G8_UNORM, 2, UNorm8 },
-	{ DXGI_FORMAT_R8_UNORM, 1, UNorm8 },
-
-	{ DXGI_FORMAT_R8G8B8A8_TYPELESS, 4, Typeless8 },
-	{ DXGI_FORMAT_R8G8_TYPELESS, 2, Typeless8 },
-	{ DXGI_FORMAT_R8_TYPELESS, 1, Typeless8 }
+	{ DXGI_FORMAT_R32G32B32A32_FLOAT, "R32G32B32A32_FLOAT", 4, 32, Float32 },
+	{ DXGI_FORMAT_R32G32B32_FLOAT, "R32G32B32_FLOAT", 3, 32, Float32 },
+	{ DXGI_FORMAT_R32G32_FLOAT, "R32G32_FLOAT", 2, 32, Float32 },
+	{ DXGI_FORMAT_R32_FLOAT, "R32_FLOAT", 1, 32, Float32 },
+	{ DXGI_FORMAT_R32G32B32A32_SINT, "R32G32B32A32_SINT", 4, 32, Int32 },
+	{ DXGI_FORMAT_R32G32B32_SINT, "R32G32B32_SINT", 3, 32, Int32 },
+	{ DXGI_FORMAT_R32G32_SINT, "R32G32_SINT", 2, 32, Int32 },
+	{ DXGI_FORMAT_R32_SINT, "R32_SINT", 1, 32, Int32 },
+	{ DXGI_FORMAT_R32G32B32A32_UINT, "R32G32B32A32_UINT", 4, 32, UInt32 },
+	{ DXGI_FORMAT_R32G32B32_UINT, "R32G32B32_UINT", 3, 32, UInt32 },
+	{ DXGI_FORMAT_R32G32_UINT, "R32G32_UINT", 2, 32, UInt32 },
+	{ DXGI_FORMAT_R32_UINT, "R32_UINT", 1, 32, UInt32 },
+	{ DXGI_FORMAT_R32G32B32A32_TYPELESS, "R32G32B32A32_TYPELESS", 4, 32, Typeless32 },
+	{ DXGI_FORMAT_R32G32B32_TYPELESS, "R32G32B32_TYPELESS", 3, 32, Typeless32 },
+	{ DXGI_FORMAT_R32G32_TYPELESS, "R32G32_TYPELESS", 2, 32, Typeless32 },
+	{ DXGI_FORMAT_R32_TYPELESS, "R32_TYPELESS", 1, 32, Typeless32 },
+	{ DXGI_FORMAT_R16G16B16A16_FLOAT, "R16G16B16A16_FLOAT", 4, 16, Float16 },
+	{ DXGI_FORMAT_R16G16_FLOAT, "R16G16_FLOAT", 2, 16, Float16 },
+	{ DXGI_FORMAT_R16_FLOAT, "R16_FLOAT", 1, 16, Float16 },
+	{ DXGI_FORMAT_R16G16B16A16_SINT, "R16G16B16A16_SINT", 4, 16, Int16 },
+	{ DXGI_FORMAT_R16G16_SINT, "R16G16_SINT", 2, 16, Int16 },
+	{ DXGI_FORMAT_R16_SINT, "R16_SINT", 1, 16, Int16 },
+	{ DXGI_FORMAT_R16G16B16A16_UINT, "R16G16B16A16_UINT", 4, 16, UInt16 },
+	{ DXGI_FORMAT_R16G16_UINT, "R16G16_UINT", 2, 16, UInt16 },
+	{ DXGI_FORMAT_R16_UINT, "R16_UINT", 1, 16, UInt16 },
+	{ DXGI_FORMAT_R16G16B16A16_SNORM, "R16G16B16A16_SNORM", 4, 16, Norm16 },
+	{ DXGI_FORMAT_R16G16_SNORM, "R16G16_SNORM", 2, 16, Norm16 },
+	{ DXGI_FORMAT_R16_SNORM, "R16_SNORM", 1, 16, Norm16 },
+	{ DXGI_FORMAT_R16G16B16A16_UNORM, "R16G16B16A16_UNORM", 4, 16, UNorm16 },
+	{ DXGI_FORMAT_R16G16_UNORM, "R16G16_UNORM", 2, 16, UNorm16 },
+	{ DXGI_FORMAT_R16_UNORM, "R16_UNORM", 1, 16, UNorm16 },
+	{ DXGI_FORMAT_R16G16B16A16_TYPELESS, "R16G16B16A16_TYPELESS", 4, 16, Typeless16 },
+	{ DXGI_FORMAT_R16G16_TYPELESS, "R16G16_TYPELESS", 2, 16, Typeless16 },
+	{ DXGI_FORMAT_R16_TYPELESS, "R16_TYPELESS", 1, 16, Typeless16 },
+	{ DXGI_FORMAT_R8G8B8A8_SINT, "R8G8B8A8_SINT", 4, 8, Int8 },
+	{ DXGI_FORMAT_R8G8_SINT, "R8G8_SINT", 2, 8, Int8 },
+	{ DXGI_FORMAT_R8_SINT, "R8_SINT", 1, 8, Int8 },
+	{ DXGI_FORMAT_R8G8B8A8_UINT, "R8G8B8A8_UINT", 4, 8, UInt8 },
+	{ DXGI_FORMAT_R8G8_UINT, "R8G8_UINT", 2, 8, UInt8 },
+	{ DXGI_FORMAT_R8_UINT, "R8_UINT", 1, 8, UInt8 },
+	{ DXGI_FORMAT_R8G8B8A8_SNORM, "R8G8B8A8_SNORM", 4, 8, Norm8 },
+	{ DXGI_FORMAT_R8G8_SNORM, "R8G8_SNORM", 2, 8, Norm8 },
+	{ DXGI_FORMAT_R8_SNORM, "R8_SNORM", 1, 8, Norm8 },
+	{ DXGI_FORMAT_R8G8B8A8_UNORM, "R8G8B8A8_UNORM", 4, 8, UNorm8 },
+	{ DXGI_FORMAT_R8G8_UNORM, "R8G8_UNORM", 2, 8, UNorm8 },
+	{ DXGI_FORMAT_R8_UNORM, "R8_UNORM", 1, 8, UNorm8 },
+	{ DXGI_FORMAT_R8G8B8A8_TYPELESS, "R8G8B8A8_TYPELESS", 4, 8, Typeless8 },
+	{ DXGI_FORMAT_R8G8_TYPELESS, "R8G8_TYPELESS", 2, 8, Typeless8 },
+	{ DXGI_FORMAT_R8_TYPELESS, "R8_TYPELESS", 1, 8, Typeless8 }
 };
 
 DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
@@ -730,9 +757,11 @@ HRESULT Shader::CreateInputLayout()
 {
 	int n = mShaderDesc.InputParameters;
 	mInputElements.resize(n);
+	mInputFields.resize(n);
 	int vertexSize = 0;
 	for(int i = 0; i < n; ++i)
 	{
+		InputField &f = mInputFields[i];
 		D3D11_SIGNATURE_PARAMETER_DESC desc;
 		DX(mReflector->GetInputParameterDesc(i, &desc));
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
@@ -749,32 +778,50 @@ HRESULT Shader::CreateInputLayout()
 		// if they ask, try to find the right storage format
 		int fieldCount = 0;
 		StorageType storageType;
-		if(strchr(d.SemanticName, '_') != null)
+		TRACE("Semantic name: %s\n", d.SemanticName);
+
+		// get everything up to the last _
+		char const *u = strrchr(d.SemanticName, '_');
+		string type_annotation;
+		if(u != null)
 		{
-			TRACE("Semantic name: %s\n", d.SemanticName);
-			vector<string> tokens;
-			tokenize(d.SemanticName, tokens, "_");
-			if(tokens.size() > 1)
+			type_annotation = string(d.SemanticName, u - d.SemanticName);
+
+			// check if it's an auto type one
+			for(int i = 0; i < _countof(type_suffix); ++i)
 			{
-				string &type_annotation = ToUpper(string(tokens[0]));
-				for(int i = 0; i < _countof(type_suffix); ++i)
+				if(_stricmp(type_annotation.c_str(), type_suffix[i].name) == 0)
 				{
-					if(_stricmp(type_annotation.c_str(), type_suffix[i].name) == 0)
-					{
-						int fc = type_suffix[i].fieldCount;
-						fieldCount = (fc == 0) ? sourceFields : fc;
-						storageType = type_suffix[i].storageType;
-						break;
-					}
-				}
-				if(fieldCount != 0)
-				{
-					d.Format = GetDXGI_Format(fieldCount, storageType);
+					int fc = type_suffix[i].fieldCount;
+					fieldCount = (fc == 0) ? sourceFields : fc;
+					storageType = type_suffix[i].storageType;
+					break;
 				}
 			}
+			if(fieldCount == 0)
+			{
+				// else see if they want to specify the format explicitly
+				for(int i = 0; i < _countof(DXGI_Lookup); ++i)
+				{
+					if(_stricmp(DXGI_Lookup[i].name, type_annotation.c_str()) == 0)
+					{
+						fieldCount = DXGI_Lookup[i].fields;
+						storageType = DXGI_Lookup[i].storageType;
+					}
+				}
+			}
+
+			// got one?
+			if(fieldCount != 0)
+			{
+				// yes, try to match it to an actual format
+				d.Format = GetDXGI_Format(fieldCount, storageType);
+			}
 		}
+		// got a format yet?
 		if(d.Format == DXGI_FORMAT_UNKNOWN)
 		{
+			// no, use a simple mapping
 			fieldCount = sourceFields;
 			d.Format = formats[fieldCount - 1][desc.ComponentType];
 		}

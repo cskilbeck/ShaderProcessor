@@ -16,6 +16,18 @@ struct PixelShader
 
 //////////////////////////////////////////////////////////////////////
 
+struct InputField
+{
+	char const *name;		// eg Float
+	uint sizeInBytes;		// eg 16
+	uint elementCount;		// eg 4
+
+	string GetName() const
+	{
+		return Format("%s%d", name, elementCount);
+	}
+};
+
 struct Shader
 {
 	//////////////////////////////////////////////////////////////////////
@@ -38,6 +50,7 @@ struct Shader
 	vector<ConstantBufferBinding *>		mConstantBuffers;
 	vector<TextureBuffer *>				mTextureBuffers;
 	vector<D3D11_INPUT_ELEMENT_DESC>	mInputElements;
+	vector<InputField>					mInputFields;
 
 	IntMap								mTextureBufferIDs;
 	IntMap								mConstBufferIDs;

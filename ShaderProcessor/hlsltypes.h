@@ -21,9 +21,6 @@ namespace HLSL
 #define join3(x, y, z) join2(x, y) ## z
 #define join4(x, y, z, w) join3(x, y, z) ## w
 
-	template <typename t, int c> using vector = t[c];
-	template <typename t, int r, int c> using matrix = vector<t, c>[r];
-
 	using Bool = uint32;
 	using Int = int32;
 	using UInt = uint32;
