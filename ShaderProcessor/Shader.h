@@ -73,6 +73,7 @@ struct Shader
 
 	void Output();
 	void OutputInputElements();
+	void OutputInputStruct();
 
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
