@@ -18,13 +18,14 @@ struct PixelShader
 
 struct InputField
 {
-	char const *name;		// eg Float
-	uint sizeInBytes;		// eg 16
-	uint elementCount;		// eg 4
+	char const *typeName;		// eg Float
+	char const *varName;		// eg Position
+	uint sizeInBytes;			// eg 16
+	uint elementCount;			// eg 4
 
 	string GetName() const
 	{
-		return Format("%s%d", name, elementCount);
+		return Format("%s%d", typeName, elementCount);
 	}
 };
 

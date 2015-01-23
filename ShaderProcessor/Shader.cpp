@@ -14,7 +14,6 @@ using USMap = std::map<uint, char const *>;
 
 template<typename T, typename U> char const *const &GetFrom(T const &map, U x, char const *default = "Unknown")
 {
-	static string const unknown("?");
 	auto i = map.find(x);
 	return (i != map.end()) ? i->second : default;
 }
@@ -727,6 +726,13 @@ HRESULT Shader::CreateDefinitions()
 
 //////////////////////////////////////////////////////////////////////
 
+struct InputMember
+{
+	string name;			// eg Color
+	StorageType type;		// eg Byte
+	uint count;				// eg 4		=	Byte4 Color;
+};
+
 HRESULT Shader::CreateInputLayout()
 {
 	int n = mShaderDesc.InputParameters;
@@ -757,9 +763,11 @@ HRESULT Shader::CreateInputLayout()
 		// get everything up to the last _
 		char const *u = strrchr(d.SemanticName, '_');
 		string type_annotation;
+		string semantic_name;
 		if(u != null)
 		{
 			type_annotation = string(d.SemanticName, u - d.SemanticName);
+			semantic_name = string(u + 1);
 
 			// check if it's an auto type one
 			for(int i = 0; i < _countof(type_suffix); ++i)
@@ -791,6 +799,10 @@ HRESULT Shader::CreateInputLayout()
 				// yes, try to match it to an actual format
 				d.Format = GetDXGI_Format(fieldCount, storageType);
 			}
+		}
+		else
+		{
+			semantic_name = d.SemanticName;
 		}
 		// got a format yet?
 		if(d.Format == DXGI_FORMAT_UNKNOWN)
