@@ -16,18 +16,67 @@ struct PixelShader
 
 //////////////////////////////////////////////////////////////////////
 
-struct InputField
+enum StorageType
 {
-	char const *typeName;		// eg Float
-	char const *varName;		// eg Position
-	uint sizeInBytes;			// eg 16
-	uint elementCount;			// eg 4
+	Float,
+	Half,
+	Int,
+	UInt,
+	Short,
+	UShort,
+	Byte,
+	SByte,
+	Norm16,
+	Norm8,
+	UNorm16,
+	UNorm8,
+	Typeless32,
+	Typeless16,
+	Typeless8
+};
 
-	string GetName() const
+//////////////////////////////////////////////////////////////////////
+
+struct InputType
+{
+	char const *name;
+	int fieldCount;	// if this is 0, infer from input type
+	StorageType storageType;
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct DXGI_FormatDescriptor
+{
+	DXGI_FORMAT format;
+	char const *name;
+	uint fields;
+	uint bitSize;
+	StorageType storageType;
+
+	uint GetTotalSizeInBits() const
 	{
-		return Format("%s%d", typeName, elementCount);
+		return fields * bitSize;
 	}
 };
+
+//////////////////////////////////////////////////////////////////////
+
+struct InputField
+{
+	StorageType storageType;		// Float etc
+	uint elementCount;			// eg 4
+	string varName;				// eg Position (everything in the Semantic name after the last _)
+
+	string GetTypeName() const;  // eg Float4
+
+	string GetDeclaration() const
+	{
+		return Format("%s %s", GetTypeName().c_str(), varName.c_str());
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
 
 struct Shader
 {
@@ -79,7 +128,6 @@ struct Shader
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
 	int GetConstantBufferIndex(string const &name) const;
-	int GetTextureBufferIndex(string const &name) const;
 
 	uint GetConstantBufferCount() const;
 	ConstantBufferBinding *GetCB(string const &name);
@@ -88,19 +136,11 @@ struct Shader
 	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
 
-	Binding *CreateConstantBuffer(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Binding *CreateTextureBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Binding *CreateSamplerBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	Binding *CreateTextureBufferBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-
-	void DeleteConstantBuffers();
-
 	HRESULT Create(void const *blob, size_t size);
 	virtual HRESULT Destroy();
 
 	HRESULT CreateBindings();
 	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
-	void DestroyBindings();
 };
 
 //////////////////////////////////////////////////////////////////////

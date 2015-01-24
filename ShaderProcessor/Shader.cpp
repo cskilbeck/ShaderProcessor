@@ -36,6 +36,25 @@ static ISMap constant_buffer_type_names =
 
 //////////////////////////////////////////////////////////////////////
 
+static USMap StorageTypeName =
+{
+	{ Float, "Float" },
+	{ Half, "Half" },
+	{ Int, "Int" },
+	{ UInt, "UInt" },
+	{ Short, "Short" },
+	{ UShort, "UShort" },
+	{ Byte, "Byte" },
+	{ SByte, "SByte" },
+	{ Norm16, "UShort" },
+	{ Norm8, "SByte" },
+	{ UNorm16, "UInt16" },
+	{ UNorm8, "Byte" },
+	{ Typeless32, "UInt" },
+	{ Typeless16, "UShort" },
+	{ Typeless8, "Byte" }
+};
+
 static USMap shader_input_type_names =
 {
 	{ D3D_SIT_CBUFFER, "ConstantBuffer" },										// has 'Constant Buffer'	// ConstantBuffer
@@ -68,52 +87,6 @@ static USMap shader_input_dimension_names =
 	{ D3D_SRV_DIMENSION_TEXTURECUBE, "Cube" },
 	{ D3D_SRV_DIMENSION_TEXTURECUBEARRAY, "CubeArray" },
 	{ D3D_SRV_DIMENSION_BUFFEREX, "BufferEx" }
-};
-
-//////////////////////////////////////////////////////////////////////
-
-enum StorageType
-{
-	Float,
-	Half,
-	Int,
-	UInt,
-	Short,
-	UShort,
-	Byte,
-	SByte,
-	Norm16,
-	Norm8,
-	UNorm16,
-	UNorm8,
-	Typeless32,
-	Typeless16,
-	Typeless8
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct InputType
-{
-	char const *name;
-	int fieldCount;	// if this is 0, infer from input type
-	StorageType storageType;
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct DXGI_FormatDescriptor
-{
-	DXGI_FORMAT format;
-	char const *name;
-	uint fields;
-	uint bitSize;
-	StorageType storageType;
-
-	uint GetTotalSizeInBits() const
-	{
-		return fields * bitSize;
-	}
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -472,6 +445,13 @@ DXGI_FormatDescriptor DXGI_Lookup[] =
 
 //////////////////////////////////////////////////////////////////////
 
+string InputField::GetTypeName() const
+{
+	return Format("%s%d", GetFrom(StorageTypeName, storageType), elementCount);
+}
+
+//////////////////////////////////////////////////////////////////////
+
 DXGI_FormatDescriptor *GetDXGIDescriptor(DXGI_FORMAT format)
 {
 	for(uint i = 0; i < _countof(DXGI_Lookup); ++i)
@@ -671,25 +651,24 @@ void Shader::Output()
 	printf("%s", footer.c_str());
 }
 
+//////////////////////////////////////////////////////////////////////
+
 void Shader::OutputInputStruct()
 {
-	printf("struct Input\n{\n");
+	printf("\t\tstruct Input\n\t\t{\n");
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
-		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
-		DXGI_FormatDescriptor *f = GetDXGIDescriptor(d.Format);
-		if(f != 0)
-		{
-			printf("\t%s %s;\n", "Type", "Name");
-		}
+		InputField &f = mInputFields[i];
+		printf("\t\t\t%s;\n", f.GetDeclaration().c_str());
 	}
-	printf("};\n");
+	printf("\t\t};\n\n");
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void Shader::OutputInputElements()
 {
 	printf("\t\tDECLSPEC_SELECTANY InputElements[%d] =\n\t\t{", mInputElements.size());
-	uint i = 0;
 	char const *sep = "";
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
@@ -725,13 +704,6 @@ HRESULT Shader::CreateDefinitions()
 }
 
 //////////////////////////////////////////////////////////////////////
-
-struct InputMember
-{
-	string name;			// eg Color
-	StorageType type;		// eg Byte
-	uint count;				// eg 4		=	Byte4 Color;
-};
 
 HRESULT Shader::CreateInputLayout()
 {
@@ -770,25 +742,25 @@ HRESULT Shader::CreateInputLayout()
 			semantic_name = string(u + 1);
 
 			// check if it's an auto type one
-			for(int i = 0; i < _countof(type_suffix); ++i)
+			for(int j = 0; j < _countof(type_suffix); ++j)
 			{
-				if(_stricmp(type_annotation.c_str(), type_suffix[i].name) == 0)
+				if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
 				{
-					int fc = type_suffix[i].fieldCount;
+					int fc = type_suffix[j].fieldCount;
 					fieldCount = (fc == 0) ? sourceFields : fc;
-					storageType = type_suffix[i].storageType;
+					storageType = type_suffix[j].storageType;
 					break;
 				}
 			}
 			if(fieldCount == 0)
 			{
 				// else see if they want to specify the format explicitly
-				for(int i = 0; i < _countof(DXGI_Lookup); ++i)
+				for(int j = 0; j < _countof(DXGI_Lookup); ++j)
 				{
-					if(_stricmp(DXGI_Lookup[i].name, type_annotation.c_str()) == 0)
+					if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
 					{
-						fieldCount = DXGI_Lookup[i].fields;
-						storageType = DXGI_Lookup[i].storageType;
+						fieldCount = DXGI_Lookup[j].fields;
+						storageType = DXGI_Lookup[j].storageType;
 					}
 				}
 			}
@@ -817,6 +789,9 @@ HRESULT Shader::CreateInputLayout()
 			// Error, they specified a format which has a different field count from the source input
 		}
 		vertexSize += SizeOfFormatElement(d.Format) / 8;
+		f.storageType = storageType;
+		f.elementCount = fieldCount;
+		f.varName = semantic_name;
 	}
 	return S_OK;
 }

@@ -2,12 +2,10 @@
 
 #include "stdafx.h"
 #include <time.h>
-#include <time.inl>
 
 //////////////////////////////////////////////////////////////////////
 
-#if defined(_DEBUG)
-void TRACE(wchar const *strMsg, ...)
+void Trace(wchar const *strMsg, ...)
 {
 	wchar strBuffer[512];
 	va_list args;
@@ -19,7 +17,7 @@ void TRACE(wchar const *strMsg, ...)
 
 //////////////////////////////////////////////////////////////////////
 
-void TRACE(char const *strMsg, ...)
+void Trace(char const *strMsg, ...)
 {
 	char strBuffer[512];
 	va_list args;
@@ -28,7 +26,6 @@ void TRACE(char const *strMsg, ...)
 	va_end(args);
 	OutputDebugStringA(strBuffer);
 }
-#endif
 
 //////////////////////////////////////////////////////////////////////
 

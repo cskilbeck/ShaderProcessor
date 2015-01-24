@@ -10,9 +10,10 @@
 
 //////////////////////////////////////////////////////////////////////
 
+void Trace(wchar const *strMsg, ...);
+void Trace(char const *strMsg, ...);
 #if defined(_DEBUG)
-void TRACE(wchar const *strMsg, ...);
-void TRACE(char const *strMsg, ...);
+#define TRACE Trace
 #else
 #define TRACE(x, ...) if (false) {} else (x);
 #endif

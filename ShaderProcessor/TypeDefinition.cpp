@@ -145,38 +145,69 @@ TypeDefinition::~TypeDefinition()
 
 //////////////////////////////////////////////////////////////////////
 
+static void OutputTable(uint32 *table, uint count, char const *name)
+{
+	TRACE("uint32 half::%s[%d] = {", name, count);
+	char const *sep = "";
+	string sname = "// Name";
+	for(uint i = 0; i < count; ++i)
+	{
+		TRACE(sep);
+		if((i % 8) == 0)
+		{
+			TRACE("%s\n\t", sname.c_str());
+			name = "";
+		}
+		TRACE("0x%08x", table[i]);
+		sep = ",";
+	}
+	TRACE("\n};\n");
+}
+
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
 	printf("\t\t// %s Offsets\n", mDesc.Name);
 	printf("\t\tDECLSPEC_SELECTANY extern CBufferOffset const %s_Offsets[%d] = \n", mDesc.Name, mDesc.Variables);
-	printf("\t\t{\n");
+	printf("\t\t{");
+	char const *sep = "";
 	for(uint i = 0; i < FieldCount; ++i)
 	{
 		D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-		printf("\t\t\t{ \"%s\", %d }%s", v.Name, v.StartOffset, (i < FieldCount - 1) ? ",\n" : "\n");
+		printf("%s\n\t\t\t{ \"%s\", %d }", sep, v.Name, v.StartOffset);
+		sep = ",";
 	}
-	printf("\t\t};\n\n");
+	printf("\n\t\t};\n\n");
 
 	if(Defaults != null)
 	{
 		printf("\t\t// %s Defaults\n", mDesc.Name);
-		printf("\t\tDECLSPEC_SELECTANY extern uint32 const %s_Defaults[%d] = \n\t\t{\n", mDesc.Name, mDesc.Size / sizeof(uint32));
+		printf("\t\tDECLSPEC_SELECTANY extern uint32 const %s_Defaults[%d] = \n\t\t{", mDesc.Name, mDesc.Size / sizeof(uint32));
+		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
 		{
 			D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-			printf("\t\t\t");
 			uint32 *data = (uint32 *)(Defaults.get() + v.StartOffset);
 			bool lastOne = i == (FieldCount - 1);
 			uint end = (lastOne) ? mDesc.Size : mFields[i + 1]->Variable.StartOffset;
 			uint pad = (end - (v.StartOffset + v.Size));
 			uint slots = (v.Size + pad) / sizeof(uint32);
+			string eol = Format("// %s", v.Name);
+			char const *sol = "\n\t\t\t";
+			char const *sname = v.Name;
 			for(uint j = 0; j < slots; ++j)
 			{
-				printf("0x%08x%s", *data++, (j < slots - 1) ? "," : Format("%s // %s", lastOne ? " " : ",", v.Name).c_str());
+				printf(sep);
+				if((j % 4) == 0)
+				{
+					printf("%s%s\n\t\t\t", sol, eol.c_str());
+					sol = "";
+					eol = "";
+				}
+				printf("0x%08x", *data++);
+				sep = ",";
 			}
-			printf("\n");
 		}
-		printf("\t\t};\n\n");
+		printf("\n\t\t};\n");
 	}
 }
 

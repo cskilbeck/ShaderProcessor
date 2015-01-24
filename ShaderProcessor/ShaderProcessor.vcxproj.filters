@@ -59,6 +59,9 @@
     <ClInclude Include="Binding.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Half.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -86,6 +89,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Binding.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="half.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -7,8 +7,11 @@
 #include <windows.h>
 
 #include <d3d11.h>
+#pragma warning(push)
+#pragma warning(disable:4838)
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#pragma warning(pop)
 
 #include <stdlib.h>
 #include <malloc.h>
@@ -33,6 +36,7 @@
 #define WEAKSYM __declspec(selectany)
 
 #include "Types.h"
+#include "Half.h"
 #include "Util.h"
 #include "WinResource.h"
 #include "D3D.h"
