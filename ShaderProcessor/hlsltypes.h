@@ -21,12 +21,15 @@ namespace HLSL
 #define join3(x, y, z) join2(x, y) ## z
 #define join4(x, y, z, w) join3(x, y, z) ## w
 
-	using Bool = uint32;
+	using Byte = uint8;
+	using SByte = int8;
+	using Short = int16;
+	using UShort = uint16;
 	using Int = int32;
 	using UInt = uint32;
-	using DWord = uint32;
 	using Float = float;
-	using Void = void;
+	using Void = uint32;
+	using Half = half;
 
 	enum
 	{
@@ -87,17 +90,25 @@ namespace HLSL
 		def_mat_col(T, 3)	\
 		def_mat_col(T, 4)
 
-	def_vec(Bool)
-	def_vec(Int)
-	def_vec(UInt)
-	def_vec(DWord)
 	def_vec(Float)
+	def_vec(Half)
+	def_vec(UInt)
+	def_vec(Int)
+	def_vec(UShort)
+	def_vec(Short)
+	def_vec(Byte)
+	def_vec(SByte)
+	def_vec(Void)
 
-	def_mat(Bool)
-	def_mat(Int)
-	def_mat(UInt)
-	def_mat(DWord)
 	def_mat(Float)
+	def_mat(Half)
+	def_mat(UInt)
+	def_mat(Int)
+	def_mat(UShort)
+	def_mat(Short)
+	def_mat(Byte)
+	def_mat(SByte)
+	def_mat(Void)
 
 #pragma pop_macro("join2")
 #pragma pop_macro("join3")
