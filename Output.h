@@ -1,6 +1,3 @@
-32.000000,32.000000
-32.000000,32.000000
-8
 
 namespace HLSL
 {
@@ -26,10 +23,14 @@ namespace HLSL
 		// VertConstants Defaults
 		DECLSPEC_SELECTANY extern uint32 const VertConstants_Defaults[20] = 
 		{
-			0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000, // ProjectionMatrix
-			0x40000000,0x00000000,0x00000000,0x00000000  // bob
+			// ProjectionMatrix
+			0x00000000,0x00000000,0x00000000,0x00000000,
+			0x00000000,0x00000000,0x00000000,0x00000000,
+			0x00000000,0x00000000,0x00000000,0x00000000,
+			0x00000000,0x00000000,0x00000000,0x00000000,
+			// bob
+			0x40000000,0x00000000,0x00000000,0x00000000
 		};
-
 
 		DECLSPEC_SELECTANY InputElements[2] =
 		{
@@ -37,11 +38,12 @@ namespace HLSL
 			{ "BYTE_Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 		};
 
-struct Input
-{
-	Type Name;
-	Type Name;
-};
+		struct Input
+		{
+			Half2 Pos;
+			Byte4 Color;
+		};
+
 		// Constructor
 		UntexturedVertexShader_t()
 			: VertConstants(VertConstants_Defaults)

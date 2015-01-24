@@ -14,18 +14,6 @@ using namespace DirectX;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	using namespace HLSL;
-
-	Float2 &bob = SimplePixelShader.GridStuff.GridSize2;
-	printf("%f,%f\n", bob.x, bob.y);
-
-	Float4 *GridSize2 = (Float4 *)SimplePixelShader.GridStuff.GetAddressOf("GridSize2");
-	printf("%f,%f\n", GridSize2->x, GridSize2->y);
-
-	printf("%d\n", sizeof(ConstBufferOffset));
-
-	SimplePixelShader.samplerState = null;
-
 	int rc = 0;
 	if(D3D::Open())
 	{
