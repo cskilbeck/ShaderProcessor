@@ -167,7 +167,7 @@ static void OutputTable(uint32 *table, uint count, char const *name)
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
 	printf("\t\t// %s Offsets\n", mDesc.Name);
-	printf("\t\tDECLSPEC_SELECTANY extern CBufferOffset const %s_Offsets[%d] = \n", mDesc.Name, mDesc.Variables);
+	printf("\t\tconst WEAKSYM CBufferOffset const %s_Offsets[%d] = \n", mDesc.Name, mDesc.Variables);
 	printf("\t\t{");
 	char const *sep = "";
 	for(uint i = 0; i < FieldCount; ++i)
@@ -181,7 +181,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 	if(Defaults != null)
 	{
 		printf("\t\t// %s Defaults\n", mDesc.Name);
-		printf("\t\tDECLSPEC_SELECTANY extern uint32 const %s_Defaults[%d] = \n\t\t{", mDesc.Name, mDesc.Size / sizeof(uint32));
+		printf("\t\tconst WEAKSYM uint32 const %s_Defaults[%d] = \n\t\t{", mDesc.Name, mDesc.Size / sizeof(uint32));
 		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
 		{
@@ -218,7 +218,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 	// need to track the size of the struct and insert padding so no member crosses a 1x4 register boundary...
 
 	uint padID = 0;
-	printf("\t\tstruct %s_t\n\t\t{\n", mDesc.Name);
+	printf("\t\tstruct ALIGNED(16) %s_t\n\t\t{\n", mDesc.Name);
 	for(auto i = mFields.begin(); i != mFields.end(); ++i)
 	{
 		Field *p = (*i);

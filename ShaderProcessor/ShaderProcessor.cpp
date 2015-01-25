@@ -7,6 +7,7 @@
 // deal with Buffers of structs (no padding)
 
 #include "stdafx.h"
+#include "D:\\output.h"
 
 using namespace DirectX;
 

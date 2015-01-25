@@ -646,7 +646,7 @@ void Shader::Output()
 	}
 
 	printf("\t\t{\n\t\t}\n");
-	printf("\t};\n\n\tDECLSPEC_SELECTANY %s_t %s;\n", Name().c_str(), Name().c_str());
+	printf("\t};\n\n\tconst WEAKSYM %s_t %s;\n", Name().c_str(), Name().c_str());
 
 	printf("%s", footer.c_str());
 }
@@ -668,7 +668,7 @@ void Shader::OutputInputStruct()
 
 void Shader::OutputInputElements()
 {
-	printf("\t\tDECLSPEC_SELECTANY InputElements[%d] =\n\t\t{", mInputElements.size());
+	printf("\t\tconst WEAKSYM InputElements[%d] =\n\t\t{", mInputElements.size());
 	char const *sep = "";
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{

@@ -3,15 +3,15 @@ namespace HLSL
 {
 #pragma pack(push, 4)
 
-	struct UntexturedVertexShader_t
+	struct UntexturedVertexShader
 	{
-		struct VertConstants_t
+		struct VertConstants
 		{
 			Float4x4 ProjectionMatrix;
 			Float1 bob;			byte pad0[12];
 		};
 
-		VertConstants_t VertConstants;
+		VertConstants VertConstants;
 
 		// VertConstants Offsets
 		DECLSPEC_SELECTANY extern CBufferOffset const VertConstants_Offsets[2] = 
@@ -51,7 +51,7 @@ namespace HLSL
 		}
 	};
 
-	DECLSPEC_SELECTANY UntexturedVertexShader_t UntexturedVertexShader;
+	DECLSPEC_SELECTANY UntexturedVertexShader UntexturedVertexShader;
 
 #pragma pack(pop)
 

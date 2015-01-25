@@ -12,27 +12,13 @@ namespace HLSL
 	
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename T, uint32 OffsetCount, ConstBufferOffset const OffsetTable[]> struct ConstBuffer: T
+	template<typename T, uint32 OffsetCount, ConstBufferOffset const OffsetTable[], uint32 *BufferOrDefaults> struct ConstBuffer: T
 	{
-		//////////////////////////////////////////////////////////////////////
-
-		ConstBuffer()
-		{
-			memset(this, 0, sizeof(T));
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		ConstBuffer(uint32 const *defaults)
-		{
-			memcpy(this, defaults, sizeof(T));
-		}
-
 		//////////////////////////////////////////////////////////////////////
 
 		void const *Buffer() const
 		{
-			return this;
+			return BufferOrDefaults;
 		}
 
 		//////////////////////////////////////////////////////////////////////
