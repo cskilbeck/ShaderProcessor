@@ -33,7 +33,8 @@ inline half::half(float flt)
 {
 	uint32 f = *(uint32 *)&flt;
 	uint32 f23 = f >> 23;
-	n = basetable[(f23) & 0x1ff] + ((f & 0x007fffff) >> shifttable[(f23) & 0x1ff]);}
+	n = basetable[(f23) & 0x1ff] + ((f & 0x007fffff) >> shifttable[(f23) & 0x1ff]);
+}
 
 //////////////////////////////////////////////////////////////////////
 

@@ -12,20 +12,38 @@ namespace HLSL
 	
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename T, uint32 OffsetCount, ConstBufferOffset const OffsetTable[], uint32 *BufferOrDefaults> struct ConstBuffer: T
+	template<typename T, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Buffer> struct ConstBuffer: T
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		void const *Buffer() const
+
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Commit(ID3D11DeviceContext *context)
 		{
-			return BufferOrDefaults;
+			context->UpdateSubresource(mConstantBuffer, 0, null, Buffer(), 0, 0);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		ConstBufferOffset const * const Offsets() const
+		HRESULT Initialize()
 		{
-			return OffsetTable;
+			if(Buffer != null)
+			{
+				memcpy(this, Buffer, sizeof(T));
+			}
+			CD3D11_BUFFER_DESC desc(sizeof(T), D3D11_BIND_CONSTANT_BUFFER);
+			D3D11_SUBRESOURCE_DATA srd = { 0 };
+			srd.pSysMem = (void const *)this;
+			DX(gDevice->CreateBuffer(&desc, &srd, &mConstantBuffer));
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		uint32 SizeOfBuffer() const
+		{
+			return sizeof(T);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -34,9 +52,9 @@ namespace HLSL
 		{
 			for(int i = 0; i < OffsetCount; ++i)
 			{
-				if(strcmp(OffsetTable[i].name, name) == 0)
+				if(strcmp(Offsets[i].name, name) == 0)
 				{
-					return OffsetTable[i].offset;
+					return Offsets[i].offset;
 				}
 			}
 			return -1;
@@ -44,17 +62,19 @@ namespace HLSL
 
 		//////////////////////////////////////////////////////////////////////
 
-		void *GetAddressOf(char const *name) const
+		void *AddressOf(char const *name) const
 		{
 			for(int i = 0; i < OffsetCount; ++i)
 			{
-				if(strcmp(OffsetTable[i].name, name) == 0)
+				if(strcmp(Offsets[i].name, name) == 0)
 				{
-					return (byte *)this + OffsetTable[i].offset;
+					return (byte *)this + Offsets[i].offset;
 				}
 			}
 			return null;
 		}
+
+		DXPtr<ID3D11Buffer>	mConstantBuffer;
 	};
 
 	//////////////////////////////////////////////////////////////////////

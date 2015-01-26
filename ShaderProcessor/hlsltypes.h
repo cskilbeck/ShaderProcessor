@@ -29,7 +29,7 @@ namespace HLSL
 	using UInt = uint32;
 	using Float = float;
 	using Void = uint32;
-	using Half = half;
+	using Half = uint16;
 
 	enum
 	{
