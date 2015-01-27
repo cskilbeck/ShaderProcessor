@@ -116,7 +116,7 @@ wstring Format(wchar const *fmt, ...)
 	wchar buffer[1024];
 	va_list v;
 	va_start(v, fmt);
-	_vstprintf_s(buffer, fmt, v);
+	vswprintf_s(buffer, fmt, v);
 	return wstring(buffer);
 }
 

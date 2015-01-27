@@ -166,22 +166,27 @@ static void OutputTable(uint32 *table, uint count, char const *name)
 
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
-	printf("\t\t// %s Offsets\n", mDesc.Name);
-	printf("\t\tconst WEAKSYM CBufferOffset const %s_Offsets[%d] = \n", mDesc.Name, mDesc.Variables);
-	printf("\t\t{");
+	printf("\t// %s offsets\n", mDesc.Name);
+	printf("\textern ConstBufferOffset const WEAKSYM %s_%s_Offsets[%d] = \n", shaderName.c_str(), mDesc.Name, mDesc.Variables);
+	printf("\t{");
 	char const *sep = "";
 	for(uint i = 0; i < FieldCount; ++i)
 	{
 		D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-		printf("%s\n\t\t\t{ \"%s\", %d }", sep, v.Name, v.StartOffset);
+		printf("%s\n\t\t{ \"%s\", %d }", sep, v.Name, v.StartOffset);
 		sep = ",";
 	}
-	printf("\n\t\t};\n\n");
+	printf("\n\t};\n\n");
 
-	if(Defaults != null)
+	printf("\t// %s defaults\n", mDesc.Name);
+	printf("\textern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
+	if(Defaults == null)
 	{
-		printf("\t\t// %s Defaults\n", mDesc.Name);
-		printf("\t\tconst WEAKSYM uint32 const %s_Defaults[%d] = \n\t\t{", mDesc.Name, mDesc.Size / sizeof(uint32));
+		printf(" { 0 };\n");
+	}
+	else
+	{
+		printf("\n\t{");
 		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
 		{
@@ -192,14 +197,14 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 			uint pad = (end - (v.StartOffset + v.Size));
 			uint slots = (v.Size + pad) / sizeof(uint32);
 			string eol = Format("// %s", v.Name);
-			char const *sol = "\n\t\t\t";
+			char const *sol = "\n\t\t";
 			char const *sname = v.Name;
 			for(uint j = 0; j < slots; ++j)
 			{
 				printf(sep);
 				if((j % 4) == 0)
 				{
-					printf("%s%s\n\t\t\t", sol, eol.c_str());
+					printf("%s%s\n\t\t", sol, eol.c_str());
 					sol = "";
 					eol = "";
 				}
@@ -207,7 +212,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 				sep = ",";
 			}
 		}
-		printf("\n\t\t};\n");
+		printf("\n\t};\n");
 	}
 }
 
@@ -218,7 +223,8 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 	// need to track the size of the struct and insert padding so no member crosses a 1x4 register boundary...
 
 	uint padID = 0;
-	printf("\t\tstruct ALIGNED(16) %s_t\n\t\t{\n", mDesc.Name);
+	uint fieldCount = 0;
+	printf("\t\tstruct ALIGNED(16) %s\n\t\t{\n", mDesc.Name);
 	for(auto i = mFields.begin(); i != mFields.end(); ++i)
 	{
 		Field *p = (*i);
@@ -231,9 +237,18 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 			printf("\t\t\tbyte pad%d[%d];", padID++, p->padding);
 		}
 		printf("\n");
+		++fieldCount;
 	}
 	printf("\t\t};\n\n");
-	printf("\t\t%s_t %s;\n\n", mDesc.Name, mDesc.Name);
+//	printf("\t\t%s %s;\n\n", mDesc.Name, mDesc.Name);
+
+	printf("\t\tConstBuffer<%s, %u, %s_%s_Offsets, %s_%s_Defaults> %s\n\n", mDesc.Name, fieldCount, shaderName.c_str(), mDesc.Name, shaderName.c_str(), mDesc.Name, mDesc.Name);
+
+	//ConstBuffer<$Globals_t,
+	//	2,
+	//	SimplePixelShader_$Globals_Offsets,
+	//	SimplePixelShader_$Globals_Defaults>
+	//	$Globals;
 
 	//ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
 	//string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, shaderName.c_str(), mDesc.Name, mDesc.Name);

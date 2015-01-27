@@ -37,6 +37,107 @@ enum StorageType
 
 //////////////////////////////////////////////////////////////////////
 
+enum ShaderType
+{
+	Vertex = 0,
+	Hull = 1,
+	Domain = 2,
+	Geometry = 3,
+	Pixel = 4,
+	Compute = 5
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct ShaderTypeDesc
+{
+	ShaderType	type;
+	char const *name;
+	char const *refName;
+	uint32 shaderModelsAllowed;
+};
+
+// can be:			vs	hs	ds	gs	ps	cs
+// 4_0_level_9_1	##	..	..	..	##	..
+// 4_0_level_9_3	##	..	..	..	##	..
+// 4_0				##	..	..	##	##	##
+// 4_1				##	..	..	##	##	##
+// 5_0				##	##	##	##	##	##
+
+//////////////////////////////////////////////////////////////////////
+
+enum ShaderModel: uint32
+{
+	sm4_0_level_9_1 = 1,
+	sm4_0_level_9_3 = 2,
+	sm4_0 = 3,
+	sm4_1 = 4,
+	sm5_0 = 5
+};
+
+//////////////////////////////////////////////////////////////////////
+
+enum ShaderModelMask: uint32
+{
+	m4_0_level_9_1 = 1 << sm4_0_level_9_1,
+	m4_0_level_9_3 = 1 << sm4_0_level_9_3,
+	m4_0 = 1 << sm4_0,
+	m4_1 = 1 << sm4_1,
+	m5_0 = 1 << sm5_0
+};
+
+//////////////////////////////////////////////////////////////////////
+
+extern char const WEAKSYM *ShaderModelName[] =
+{
+	"4_0_level_9_1",
+	"4_0_level_9_3",
+	"4_0",
+	"4_1",
+	"5_0"
+};
+
+//////////////////////////////////////////////////////////////////////
+
+extern ShaderTypeDesc WEAKSYM ShaderTypeDescs[] =
+{
+	{ Vertex,	"Vertex",	"vs", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
+	{ Hull,		"Hull",		"hs",														m5_0	},
+	{ Domain,	"Domain",	"ds",														m5_0	},
+	{ Geometry,	"Geometry",	"gs",										m4_0 |	m4_1 |	m5_0	},
+	{ Pixel,	"Pixel",	"ps", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
+	{ Compute,	"Compute",	"cs",										m4_0 |	m4_1 |	m5_0	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+inline ShaderTypeDesc const *ShaderTypeDescFromType(ShaderType type)
+{
+	for(uint i = 0; i < _countof(ShaderTypeDescs); ++i)
+	{
+		if(ShaderTypeDescs[i].type == type)
+		{
+			return &ShaderTypeDescs[i];
+		}
+	}
+	return null;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+inline ShaderTypeDesc const &ShaderTypeDescFromReferenceName(char const *referenceName)
+{
+	for(uint i = 0; i < _countof(ShaderTypeDescs); ++i)
+	{
+		if(strcmp(ShaderTypeDescs[i].refName, referenceName) == 0)
+		{
+			return ShaderTypeDescs[i];
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 struct InputType
 {
 	char const *name;
@@ -107,16 +208,35 @@ struct Shader
 	IntMap								mSamplerIDs;
 	IntMap								mTextureIDs;
 
+	ShaderType							mShaderType;
+	ShaderTypeDesc						mShaderTypeDesc;
+
+	void const *						mBlob;
+	size_t								mSize;
+
 	string								mName;
 
 	vector<Binding *>					mBindings;
 
+	static void OutputHeader(char const *filename);
+	static void OutputFooter();
+	
 	string Name() const
 	{
-		return mName;
+		return string(mShaderTypeDesc.refName) + "_" + mName;
 	}
 
 	//////////////////////////////////////////////////////////////////////
+
+	void *GetConstantBuffer(char const *name)
+	{
+		static std::unordered_map<char const *, void *> const m =
+		{
+			{ "VertConstants", null }
+		};
+		auto p = m.find(name);
+		return (p == m.end()) ? null : p->second;
+	}
 
 	Shader(tstring const &filename);
 	virtual ~Shader();
@@ -124,6 +244,7 @@ struct Shader
 	void Output();
 	void OutputInputElements();
 	void OutputInputStruct();
+	void OutputBlob();
 
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
@@ -136,7 +257,7 @@ struct Shader
 	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
 
-	HRESULT Create(void const *blob, size_t size);
+	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
 	virtual HRESULT Destroy();
 
 	HRESULT CreateBindings();

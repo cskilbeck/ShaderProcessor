@@ -59,11 +59,15 @@ struct Binding
 	virtual void ConstructorOutput()
 	{
 	}
+
+	static void ClearAllBindings();
+	static void ShowAllBindings();
+
+	using ResourceBindingList_t = vector<Binding *>;
+
+	static ResourceBindingList_t ResourceBindingList[BindingInfo::Type::NumBindingTypes];
 };
 
 //////////////////////////////////////////////////////////////////////
 
-using ResourceBindingList_t = vector<Binding *>;
-extern ResourceBindingList_t ResourceBindingList[BindingInfo::Type::NumBindingTypes];
 
-void ShowAllBindings();

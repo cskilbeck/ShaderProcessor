@@ -552,6 +552,8 @@ Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 HRESULT Shader::CreateBindings()
 {
+	Binding::ClearAllBindings();
+
 	uint numBindingSlots = mShaderDesc.BoundResources;
 	uint numConstantBuffers = mShaderDesc.ConstantBuffers;
 
@@ -585,7 +587,7 @@ HRESULT Shader::CreateBindings()
 
 	delete[] buffers;
 
-	ShowAllBindings();
+	Binding::ShowAllBindings();
 
 	return S_OK;
 }
@@ -609,15 +611,83 @@ Shader::~Shader()
 
 static string header = "\nnamespace HLSL\n{\n#pragma pack(push, 4)\n\n";
 static string footer = "\n#pragma pack(pop)\n\n} // HLSL\n";
-static string constructor = "\t\t// Constructor\n\t\t%s_t()";
+static string constructor = "\n\t\t// Constructor\n\t\t%s()";
+static char const *comment = "//////////////////////////////////////////////////////////////////////\n";
+
+//////////////////////////////////////////////////////////////////////
+
+void Shader::OutputHeader(char const *filename)
+{
+	printf(comment);
+	printf("// %s.h - auto generated file, do not edit\n\n", filename);
+	printf("#pragma once\n");
+	printf("%s", header.c_str());
+
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void Shader::OutputFooter()
+{
+	printf("%s", footer.c_str());
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void Shader::OutputBlob()
+{
+	printf("\t%s\t// %s data\n\n\tuint32 %s_Data[] =\n\t{", comment, Name().c_str(), Name().c_str());
+	char *sep = "";
+	uint32 *d = (uint32 *)mBlob;
+	for(uint i = 0; i < mSize / 4; ++i)
+	{
+		printf(sep);
+		if((i & 7) == 0)
+		{
+			printf("\n\t\t");
+		}
+		printf("0x%08x", d[i]);
+		sep = ",";
+	}
+	printf("\n\t};\n\n");
+}
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::Output()
 {
-	printf("%s", header.c_str());
+	void *pp = GetConstantBuffer("VertConstants");
 
-	printf("\tstruct %s_t", Name().c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
+	OutputBlob();
+
+	// output the name/offset and defaults tables for the const buffers
+	if(!mDefinitions.empty())
+	{
+		printf("\t%s\t// offsets and defaults\n\n", comment);
+		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
+		{
+			(*i)->StaticsOutput(Name());
+		}
+		// output the constbuffernames table
+		printf("\n\t%s\t// const buffer names table\n", comment);
+		printf("\n\textern char const WEAKSYM *%s_ConstBufferNames[] =\n\t{", Name().c_str());
+		char const *sep = "";
+		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
+		{
+			printf("%s\n\t\t\"%s\"", sep, (*i)->Name);
+			sep = ",";
+		}
+		printf("\n\t};\n");
+	}
+
+	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	{
+		OutputInputElements();
+	}
+
+	printf("\n\t%s\t// %s Shader: %s\n", comment, mShaderTypeDesc.name, Name().c_str());
+
+	printf("\n\tstruct %s : %sShader<%s_ConstBufferNames, _countof(%s_ConstBufferNames)>", Name().c_str(), mShaderTypeDesc.name, Name().c_str(), Name().c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
 	printf("\n\t{\n");
 	for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 	{
@@ -625,17 +695,15 @@ void Shader::Output()
 	}
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		(*i)->StaticsOutput();
-	}
-	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
-	{
 		(*i)->MemberOutput();
-		printf("\n");
 	}
 
-	OutputInputElements();
-	OutputInputStruct();
+	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	{
+		OutputInputStruct();
+	}
 
+	printf("//____________\n");
 	printf(constructor.c_str(), Name().c_str());
 	char const *sep = ": ";
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
@@ -644,40 +712,41 @@ void Shader::Output()
 		(*i)->ConstructorOutput();
 		sep = ",";
 	}
+	printf("\n//____________\n");
 
-	printf("\t\t{\n\t\t}\n");
-	printf("\t};\n\n\tconst WEAKSYM %s_t %s;\n", Name().c_str(), Name().c_str());
-
-	printf("%s", footer.c_str());
+//	printf("\t\t{\n\t\t}\n");
+	printf("\t};\n\n");
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::OutputInputStruct()
 {
-	printf("\t\tstruct Input\n\t\t{\n");
+	printf("\t\tstruct InputVertex\n\t\t{\n");
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		InputField &f = mInputFields[i];
 		printf("\t\t\t%s;\n", f.GetDeclaration().c_str());
 	}
 	printf("\t\t};\n\n");
+	printf("\t\tusing VertexBuffer<InputVertex, %s_InputElements> = VertexBuffer;\n", Name().c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::OutputInputElements()
 {
-	printf("\t\tconst WEAKSYM InputElements[%d] =\n\t\t{", mInputElements.size());
+	printf("\n\t%s\t// Input Element descs\n\n", comment);
+	printf("\textern D3D11_INPUT_ELEMENT_DESC const WEAKSYM %s_InputElements[%d] =\n\t{", Name().c_str(), mInputElements.size());
 	char const *sep = "";
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		char const *formatName = GetFormatName(d.Format);
-		printf("%s\n\t\t\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
+		printf("%s\n\t\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
 		sep = ",";
 	}
-	printf("\n\t\t};\n\n");
+	printf("\n\t};\n");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -798,13 +867,19 @@ HRESULT Shader::CreateInputLayout()
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::Create(void const *blob, size_t size)
+HRESULT Shader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
 {
+	mBlob = blob;
+	mSize = size;
+	mShaderTypeDesc = desc;
 	DX(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
 	DX(CreateDefinitions());
 	DX(CreateBindings());
-	DX(CreateInputLayout());
+	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	{
+		DX(CreateInputLayout());
+	}
 	Output();
 	return S_OK;
 }

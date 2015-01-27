@@ -77,7 +77,7 @@ namespace
 
 //////////////////////////////////////////////////////////////////////
 
-ResourceBindingList_t ResourceBindingList[BindingInfo::Type::NumBindingTypes];
+Binding::ResourceBindingList_t Binding::ResourceBindingList[BindingInfo::Type::NumBindingTypes];
 
 //////////////////////////////////////////////////////////////////////
 
@@ -127,7 +127,17 @@ string Binding::TypeName()
 
 //////////////////////////////////////////////////////////////////////
 
-void ShowAllBindings()
+void Binding::ClearAllBindings()
+{
+	for(uint i = 0; i < BindingInfo::Type::NumBindingTypes; ++i)
+	{
+		ResourceBindingList[i].clear();
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void Binding::ShowAllBindings()
 {
 	for(uint i = 0; i < BindingInfo::Type::NumBindingTypes; ++i)
 	{
