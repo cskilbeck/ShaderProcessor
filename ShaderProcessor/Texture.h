@@ -15,18 +15,5 @@ struct Texture2D: Binding
 	{
 	}
 
-	void StaticsOutput() override
-	{
-	}
-
-	void MemberOutput() override
-	{
-		printf("\t\tTexture2D *%s;\n", mDesc.Name);
-	}
-
-	void ConstructorOutput() override
-	{
-		printf("%s(null)\n", mDesc.Name);
-	}
 };
 

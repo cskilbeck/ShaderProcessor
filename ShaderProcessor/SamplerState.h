@@ -15,18 +15,5 @@ struct SamplerState: Binding
 	{
 	}
 
-	void StaticsOutput() override
-	{
-	}
-
-	void MemberOutput() override
-	{
-		printf("\t\tSamplerState *%s;\n", mDesc.Name);
-	}
-
-	void ConstructorOutput() override
-	{
-		printf("%s(null)\n", mDesc.Name);
-	}
 };
 

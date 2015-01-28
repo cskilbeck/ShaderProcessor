@@ -59,6 +59,109 @@ extern HRESULT __hr;
 
 //////////////////////////////////////////////////////////////////////
 
+template<typename T> struct HandleTraits
+{
+	static void Close(T &handle) { }
+	static T Default() { }
+	static T InvalidValue() { }
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<> struct HandleTraits<HANDLE>
+{
+	static void Close(HANDLE handle)
+	{
+		CloseHandle(handle);
+	}
+
+	static HANDLE Default()
+	{
+		return INVALID_HANDLE_VALUE;
+	}
+
+	static HANDLE InvalidValue()
+	{
+		return INVALID_HANDLE_VALUE;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<> struct HandleTraits<IUnknown *>
+{
+	static void Close(IUnknown *comptr)
+	{
+		if(comptr != null)
+		{
+			comptr->Release();
+		}
+	}
+
+	static IUnknown *Default()
+	{
+		return null;
+	}
+
+	static IUnknown *InvalidValue()
+	{
+		return null;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<typename T, typename traits> struct ObjHandle
+{
+	T obj;
+
+	ObjHandle(T p) : obj(p)
+	{
+	}
+
+	ObjHandle()
+	{
+		obj = traits::Default();
+	}
+
+	operator T()
+	{
+		return obj;
+	}
+
+	T &operator = (T p)
+	{
+		obj = p;
+		return obj;
+	}
+
+	T *operator &()
+	{
+		return &obj;
+	}
+
+	bool IsValid() const
+	{
+		return obj != traits::InvalidValue();
+	}
+
+	~ObjHandle()
+	{
+		if(obj != traits::InvalidValue())
+		{
+			traits::Close(obj);
+		}
+		obj = traits::Default();
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<typename T> using DXPtr2 = ObjHandle<T, HandleTraits<IUnknown *>>;
+using Handle = ObjHandle<HANDLE, HandleTraits<HANDLE>>;
+
+//////////////////////////////////////////////////////////////////////
+
 template<typename T> struct DXPtr
 {
 	DXPtr(T *init = null) : p(init)
@@ -159,6 +262,20 @@ namespace D3D
 {
 	bool Open();
 	void Close();
+
+	struct Initializer
+	{
+		Initializer()
+		{
+			IsValid = Open();
+		}
+
+		~Initializer()
+		{
+			Close();
+		}
+		bool IsValid;
+	};
 
 #if defined(_DEBUG)
 	void SetDebugName(ID3D11DeviceChild *child, tchar const *name);

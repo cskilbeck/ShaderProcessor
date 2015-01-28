@@ -56,6 +56,16 @@ struct Binding
 	{
 	}
 
+	virtual bool IsResource() const
+	{
+		return false;
+	}
+
+	virtual bool IsSampler() const
+	{
+		return false;
+	}
+
 	virtual void ConstructorOutput()
 	{
 	}

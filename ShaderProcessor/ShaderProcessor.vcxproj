@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Args.h" />
     <ClInclude Include="CBuffer.h" />
     <ClInclude Include="D3D.h" />
     <ClInclude Include="Half.h" />
@@ -148,6 +149,7 @@
     <ClInclude Include="optionparser.h" />
     <ClInclude Include="output.h" />
     <ClInclude Include="Binding.h" />
+    <ClInclude Include="printer.h" />
     <ClInclude Include="SamplerState.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stdafx.h" />
@@ -161,10 +163,12 @@
     <ClInclude Include="WinResource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Args.cpp" />
     <ClCompile Include="Binding.cpp" />
     <ClCompile Include="CBuffer.cpp" />
     <ClCompile Include="D3D.cpp" />
     <ClCompile Include="half.cpp" />
+    <ClCompile Include="Printer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShaderProcessor.cpp" />
     <ClCompile Include="stdafx.cpp">

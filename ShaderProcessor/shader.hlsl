@@ -34,6 +34,11 @@ PS_INPUT vsMain(VS_INPUT input)
 	return o;
 }
 
+cbuffer ColourStuff
+{
+	float4 offset;
+};
+
 sampler tex1Sampler;
 Texture2D picTexture;
 
@@ -44,6 +49,6 @@ float4 tint = { 1.0f, 0.0f, 1.0f, 1.0f };
 float4 psMain(PS_INPUT input) : SV_TARGET
 {
 	float4 pixel = picTexture.Sample(tex1Sampler, input.UV);
-	return input.col * pixel + tint;
+	return input.col * pixel + tint + offset;
 }
 

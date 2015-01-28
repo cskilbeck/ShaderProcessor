@@ -2406,7 +2406,7 @@ namespace option
 		* @brief This is the implementation that is shared between all printUsage() templates.
 		* Because all printUsage() templates share this implementation, there is no template bloat.
 		*/
-		static void printUsage(IStringWriter& write, const Descriptor usage[], int width = 80, //
+		static void printUsage(IStringWriter& write, const Descriptor usage[], int width = 120, //
 							   int last_column_min_percent = 50, int last_column_own_line_max_percent = 75)
 		{
 			if(width < 1) // protect against nonsense values
@@ -2771,7 +2771,7 @@ namespace option
 	* @endcode
 	*/
 	template<typename OStream>
-	void printUsage(OStream& prn, const Descriptor usage[], int width = 80, int last_column_min_percent = 50,
+	void printUsage(OStream& prn, const Descriptor usage[], int width = 120, int last_column_min_percent = 50,
 					int last_column_own_line_max_percent = 75)
 	{
 		PrintUsageImplementation::OStreamWriter<OStream> write(prn);
@@ -2779,7 +2779,7 @@ namespace option
 	}
 
 	template<typename Function>
-	void printUsage(Function* prn, const Descriptor usage[], int width = 80, int last_column_min_percent = 50,
+	void printUsage(Function* prn, const Descriptor usage[], int width = 120, int last_column_min_percent = 50,
 					int last_column_own_line_max_percent = 75)
 	{
 		PrintUsageImplementation::FunctionWriter<Function> write(prn);
@@ -2787,7 +2787,7 @@ namespace option
 	}
 
 	template<typename Temporary>
-	void printUsage(const Temporary& prn, const Descriptor usage[], int width = 80, int last_column_min_percent = 50,
+	void printUsage(const Temporary& prn, const Descriptor usage[], int width = 120, int last_column_min_percent = 50,
 					int last_column_own_line_max_percent = 75)
 	{
 		PrintUsageImplementation::TemporaryWriter<Temporary> write(prn);
@@ -2795,7 +2795,7 @@ namespace option
 	}
 
 	template<typename Syscall>
-	void printUsage(Syscall* prn, int fd, const Descriptor usage[], int width = 80, int last_column_min_percent = 50,
+	void printUsage(Syscall* prn, int fd, const Descriptor usage[], int width = 120, int last_column_min_percent = 50,
 					int last_column_own_line_max_percent = 75)
 	{
 		PrintUsageImplementation::SyscallWriter<Syscall> write(prn, fd);
@@ -2803,7 +2803,7 @@ namespace option
 	}
 
 	template<typename Function, typename Stream>
-	void printUsage(Function* prn, Stream* stream, const Descriptor usage[], int width = 80, int last_column_min_percent =
+	void printUsage(Function* prn, Stream* stream, const Descriptor usage[], int width = 120, int last_column_min_percent =
 					50,
 					int last_column_own_line_max_percent = 75)
 	{

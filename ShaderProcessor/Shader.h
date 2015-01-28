@@ -4,18 +4,6 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct VertexShader
-{
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct PixelShader
-{
-};
-
-//////////////////////////////////////////////////////////////////////
-
 enum StorageType
 {
 	Float,
@@ -179,6 +167,10 @@ struct InputField
 
 //////////////////////////////////////////////////////////////////////
 
+struct ConstantBufferBinding;
+struct ResourceBinding;
+struct SamplerBinding;
+
 struct Shader
 {
 	//////////////////////////////////////////////////////////////////////
@@ -196,10 +188,6 @@ struct Shader
 	vector<TypeDefinition *>			mDefinitions;
 	IntMap								mDefinitionIDs;	// map names of Definitions to the mDefinitions vector
 
-	vector<SamplerState *>				mSamplers;
-	vector<Texture2D *>					mTextures;
-	vector<ConstantBufferBinding *>		mConstantBuffers;
-	vector<TextureBuffer *>				mTextureBuffers;
 	vector<D3D11_INPUT_ELEMENT_DESC>	mInputElements;
 	vector<InputField>					mInputFields;
 
@@ -217,6 +205,14 @@ struct Shader
 	string								mName;
 
 	vector<Binding *>					mBindings;
+
+	vector<ResourceBinding *>			mResourceBindings;
+	vector<SamplerBinding *>			mSamplerBindings;
+	vector<ConstantBufferBinding *>		mConstantBufferBindings;
+
+	int									mConstBuffers;
+	int									mSamplers;
+	int									mResources;
 
 	static void OutputHeader(char const *filename);
 	static void OutputFooter();
@@ -297,7 +293,7 @@ inline int Shader::GetConstantBufferIndex(string const &name) const
 
 inline uint Shader::GetConstantBufferCount() const
 {
-	return (uint)mConstantBuffers.size();
+	return (uint)mConstantBufferBindings.size();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -305,13 +301,13 @@ inline uint Shader::GetConstantBufferCount() const
 inline ConstantBufferBinding *Shader::GetCB(string const &name)
 {
 	int id = GetConstantBufferIndex(name);
-	return (id >= 0) ? mConstantBuffers[id] : null;
+	return (id >= 0) ? mConstantBufferBindings[id] : null;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 inline ConstantBufferBinding *Shader::GetConstantBuffer(int index)
 {
-	return mConstantBuffers[index];
+	return mConstantBufferBindings[index];
 }
 

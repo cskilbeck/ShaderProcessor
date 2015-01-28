@@ -24,6 +24,21 @@ struct ResourceBinding: Binding
 		: Binding(s, desc)
 	{
 	}
+
+	bool IsResource() const override
+	{
+		return true;
+	}
+
+	void MemberOutput() override
+	{
+		Printer::output("Texture2D *%s;", mDesc.Name);
+	}
+
+	void ConstructorOutput() override
+	{
+		Printer::output("%s(null)", mDesc.Name);
+	}
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -34,5 +49,21 @@ struct SamplerBinding: Binding
 		: Binding(s, desc)
 	{
 	}
+
+	bool IsSampler() const override
+	{
+		return true;
+	}
+
+	void MemberOutput() override
+	{
+		Printer::output("SamplerState *%s;", mDesc.Name);
+	}
+
+	void ConstructorOutput() override
+	{
+		Printer::output("%s(null)", mDesc.Name);
+	}
+
 };
 

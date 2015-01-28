@@ -1,7 +1,256 @@
+//////////////////////////////////////////////////////////////////////
+// shader.h - auto generated file, do not edit
+
+#pragma once
+
 namespace HLSL
 {
-#pragma pack(push, KNOB, 4)
+#pragma pack(push, 4)
 
-#pragma pack(pop, KNOB)
+	//////////////////////////////////////////////////////////////////////
+	// vs_shader data
+
+	uint32 vs_shader_Data[] =
+	{
+		0x43425844,0x6f4414af,0x9d7e9887,0x8b4d8433,0x2eaba11f,0x00000001,0x000003dc,0x00000005,
+		0x00000034,0x00000140,0x000001c4,0x00000238,0x00000360,0x46454452,0x00000104,0x00000001,
+		0x0000004c,0x00000001,0x0000001c,0xfffe0400,0x00000100,0x000000d0,0x0000003c,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x74726556,0x736e6f43,
+		0x746e6174,0xabab0073,0x0000003c,0x00000002,0x00000064,0x00000050,0x00000000,0x00000000,
+		0x00000094,0x00000000,0x00000040,0x00000002,0x000000a8,0x00000000,0x000000b8,0x00000040,
+		0x00000004,0x00000000,0x000000bc,0x000000cc,0x6a6f7250,0x69746365,0x614d6e6f,0x78697274,
+		0xababab00,0x00030003,0x00040004,0x00000000,0x00000000,0x00626f62,0x00030000,0x00010001,
+		0x00000000,0x00000000,0x40000000,0x7263694d,0x666f736f,0x52282074,0x4c482029,0x53204c53,
+		0x65646168,0x6f432072,0x6c69706d,0x36207265,0x392e332e,0x2e303036,0x31343731,0xabab0035,
+		0x4e475349,0x0000007c,0x00000003,0x00000008,0x00000050,0x00000000,0x00000000,0x00000003,
+		0x00000000,0x00000303,0x0000005f,0x00000000,0x00000000,0x00000003,0x00000001,0x00000003,
+		0x0000006e,0x00000000,0x00000000,0x00000003,0x00000002,0x00000f0f,0x414f4c46,0x6f505f54,
+		0x69746973,0x46006e6f,0x54414f4c,0x7865545f,0x726f6f43,0x59420064,0x435f4554,0x726f6c6f,
+		0xababab00,0x4e47534f,0x0000006c,0x00000003,0x00000008,0x00000050,0x00000000,0x00000001,
+		0x00000003,0x00000000,0x0000000f,0x0000005c,0x00000000,0x00000000,0x00000003,0x00000001,
+		0x00000f03,0x00000065,0x00000000,0x00000000,0x00000003,0x00000002,0x0000000f,0x505f5653,
+		0x7469736f,0x006e6f69,0x43584554,0x44524f4f,0x4c4f4300,0xab00524f,0x52444853,0x00000120,
+		0x00010040,0x00000048,0x04000059,0x00208e46,0x00000000,0x00000004,0x0300005f,0x00101032,
+		0x00000000,0x0300005f,0x001010f2,0x00000002,0x04000067,0x001020f2,0x00000000,0x00000001,
+		0x03000065,0x001020f2,0x00000002,0x02000068,0x00000001,0x05000036,0x00100032,0x00000000,
+		0x00101046,0x00000000,0x08000036,0x001000c2,0x00000000,0x00004002,0x00000000,0x00000000,
+		0x3f000000,0x3f800000,0x08000011,0x00102012,0x00000000,0x00100e46,0x00000000,0x00208e46,
+		0x00000000,0x00000000,0x08000011,0x00102022,0x00000000,0x00100e46,0x00000000,0x00208e46,
+		0x00000000,0x00000001,0x08000011,0x00102042,0x00000000,0x00100e46,0x00000000,0x00208e46,
+		0x00000000,0x00000002,0x08000011,0x00102082,0x00000000,0x00100e46,0x00000000,0x00208e46,
+		0x00000000,0x00000003,0x05000036,0x001020f2,0x00000002,0x00101e46,0x00000002,0x0100003e,
+		0x54415453,0x00000074,0x00000008,0x00000001,0x00000000,0x00000004,0x00000004,0x00000000,
+		0x00000000,0x00000001,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000003,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// offsets and defaults
+
+	// VertConstants offsets
+	extern ConstBufferOffset const WEAKSYM vs_shader_VertConstants_Offsets[2] = 
+	{
+		{ "ProjectionMatrix", 0 },
+		{ "bob", 64 }
+	};
+
+	// VertConstants defaults
+	extern uint32 ALIGNED(16) WEAKSYM vs_shader_VertConstants_Defaults[20] =
+	{
+		// ProjectionMatrix
+		0x00000000,0x00000000,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,
+		// bob
+		0x40000000,0x00000000,0x00000000,0x00000000
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// const buffer names table
+
+	extern char const WEAKSYM *vs_shader_ConstBufferNames[] =
+	{
+		"VertConstants"
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// Input Element descs
+
+	extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM vs_shader_InputElements[3] =
+	{
+		{ "FLOAT_Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "FLOAT_TexCoord", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BYTE_Color", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// Vertex Shader: vs_shader
+
+	struct vs_shader : VertexShader
+	{
+		struct ALIGNED(16) VertConstants
+		{
+			Float4x4 ProjectionMatrix;
+			Float1 bob;			byte pad0[12];
+		};
+
+		ConstBuffer<VertConstants> VertConstants;
+
+		struct InputVertex
+		{
+			Float2 Position;
+			Float2 TexCoord;
+			Byte4 Color;
+		};
+
+		using VertexBuffer = VertexBuffer<InputVertex, vs_shader_InputElements>;
+
+		// Constructor
+		vs_shader()
+			: VertexShader(vs_shader_Data, 988, 1, vs_shader_ConstBufferNames, 0, null, 0, null)
+			, VertConstants(2, vs_shader_VertConstants_Offsets, vs_shader_VertConstants_Defaults, this)
+		{
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// ps_shader data
+
+	uint32 ps_shader_Data[] =
+	{
+		0x43425844,0xdf05b5cf,0x3c95a027,0x38c69dc0,0x822217b8,0x00000001,0x000003d4,0x00000005,
+		0x00000034,0x000001c8,0x0000023c,0x00000270,0x00000358,0x46454452,0x0000018c,0x00000002,
+		0x000000c8,0x00000004,0x0000001c,0xffff0400,0x00000100,0x00000157,0x0000009c,0x00000003,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x000000a8,0x00000002,
+		0x00000005,0x00000004,0xffffffff,0x00000000,0x00000001,0x0000000c,0x000000b3,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x000000bc,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000001,0x00000001,0x00000000,0x31786574,0x706d6153,
+		0x0072656c,0x54636970,0x75747865,0x24006572,0x626f6c47,0x00736c61,0x6f6c6f43,0x74537275,
+		0x00666675,0x000000b3,0x00000001,0x000000f8,0x00000010,0x00000000,0x00000000,0x000000bc,
+		0x00000001,0x00000138,0x00000010,0x00000000,0x00000000,0x00000110,0x00000000,0x00000010,
+		0x00000002,0x00000118,0x00000128,0x746e6974,0xababab00,0x00030001,0x00040001,0x00000000,
+		0x00000000,0x3f800000,0x00000000,0x3f800000,0x3f800000,0x00000150,0x00000000,0x00000010,
+		0x00000002,0x00000118,0x00000000,0x7366666f,0x4d007465,0x6f726369,0x74666f73,0x29522820,
+		0x534c4820,0x6853204c,0x72656461,0x6d6f4320,0x656c6970,0x2e362072,0x36392e33,0x312e3030,
+		0x35313437,0xababab00,0x4e475349,0x0000006c,0x00000003,0x00000008,0x00000050,0x00000000,
+		0x00000001,0x00000003,0x00000000,0x0000000f,0x0000005c,0x00000000,0x00000000,0x00000003,
+		0x00000001,0x00000303,0x00000065,0x00000000,0x00000000,0x00000003,0x00000002,0x00000f0f,
+		0x505f5653,0x7469736f,0x006e6f69,0x43584554,0x44524f4f,0x4c4f4300,0xab00524f,0x4e47534f,
+		0x0000002c,0x00000001,0x00000008,0x00000020,0x00000000,0x00000000,0x00000003,0x00000000,
+		0x0000000f,0x545f5653,0x45475241,0xabab0054,0x52444853,0x000000e0,0x00000040,0x00000038,
+		0x04000059,0x00208e46,0x00000000,0x00000001,0x04000059,0x00208e46,0x00000001,0x00000001,
+		0x0300005a,0x00106000,0x00000000,0x04001858,0x00107000,0x00000000,0x00005555,0x03001062,
+		0x00101032,0x00000001,0x03001062,0x001010f2,0x00000002,0x03000065,0x001020f2,0x00000000,
+		0x02000068,0x00000001,0x09000045,0x001000f2,0x00000000,0x00101046,0x00000001,0x00107e46,
+		0x00000000,0x00106000,0x00000000,0x0a000032,0x001000f2,0x00000000,0x00101e46,0x00000002,
+		0x00100e46,0x00000000,0x00208e46,0x00000000,0x00000000,0x08000000,0x001020f2,0x00000000,
+		0x00100e46,0x00000000,0x00208e46,0x00000001,0x00000000,0x0100003e,0x54415453,0x00000074,
+		0x00000004,0x00000001,0x00000000,0x00000003,0x00000002,0x00000000,0x00000000,0x00000001,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,0x00000000,
+		0x00000000,0x00000000,0x00000000,0x00000000,0x00000000
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// offsets and defaults
+
+	// $Globals offsets
+	extern ConstBufferOffset const WEAKSYM ps_shader_$Globals_Offsets[1] = 
+	{
+		{ "tint", 0 }
+	};
+
+	// $Globals defaults
+	extern uint32 ALIGNED(16) WEAKSYM ps_shader_$Globals_Defaults[4] =
+	{
+		// tint
+		0x3f800000,0x00000000,0x3f800000,0x3f800000
+	};
+	// ColourStuff offsets
+	extern ConstBufferOffset const WEAKSYM ps_shader_ColourStuff_Offsets[1] = 
+	{
+		{ "offset", 0 }
+	};
+
+	// ColourStuff defaults
+	extern uint32 ALIGNED(16) WEAKSYM ps_shader_ColourStuff_Defaults[4] = { 0 };
+
+	//////////////////////////////////////////////////////////////////////
+	// const buffer names table
+
+	extern char const WEAKSYM *ps_shader_ConstBufferNames[] =
+	{
+		"$Globals",
+		"ColourStuff"
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// Texture names
+
+	extern char const WEAKSYM * ps_shader_TextureNames[] =
+	{
+		"picTexture"
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// Sampler names
+
+	extern char const WEAKSYM * ps_shader_SamplerNames[] =
+	{
+		"tex1Sampler"
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// Pixel Shader: ps_shader
+
+	struct ps_shader : PixelShader
+	{
+		struct ALIGNED(16) $Globals
+		{
+			Float4 tint;
+		};
+
+		ConstBuffer<$Globals> $Globals;
+
+		struct ALIGNED(16) ColourStuff
+		{
+			Float4 offset;
+		};
+
+		ConstBuffer<ColourStuff> ColourStuff;
+
+		union
+		{
+			struct
+			{
+				SamplerState *tex1Sampler;
+			};
+			SamplerState *samplers[1];
+		};
+
+		union
+		{
+			struct
+			{
+				Texture2D *picTexture;
+			};
+			Texture2D *textures[1];
+		};
+
+		// Constructor
+		ps_shader()
+			: PixelShader(ps_shader_Data, 980, 2, ps_shader_ConstBufferNames, 1, ps_shader_SamplerNames, 1, ps_shader_TextureNames)
+			, tex1Sampler(null)
+			, picTexture(null)
+			, $Globals(1, ps_shader_$Globals_Offsets, ps_shader_$Globals_Defaults, this)
+			, ColourStuff(1, ps_shader_ColourStuff_Offsets, ps_shader_ColourStuff_Defaults, this)
+		{
+		}
+	};
+
+
+#pragma pack(pop)
 
 } // HLSL

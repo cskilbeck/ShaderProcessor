@@ -20,6 +20,6 @@ void ConstantBufferBinding::MemberOutput()
 
 void ConstantBufferBinding::ConstructorOutput()
 {
-	printf("%s(%s)\n", mDesc.Name, definition->Defaults == null ? "" : Format("%s_Defaults", mDesc.Name).c_str());
+	definition->ConstructorOutput();
 }
 

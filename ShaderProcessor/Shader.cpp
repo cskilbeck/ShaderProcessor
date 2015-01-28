@@ -5,6 +5,8 @@
 
 #include "stdafx.h"
 
+using Printer::output;
+
 //////////////////////////////////////////////////////////////////////
 
 using ISMap = std::map<int, char const *>;
@@ -521,13 +523,18 @@ Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 	switch(desc.Type)
 	{
 		case D3D_SIT_CBUFFER:
+			++mConstBuffers;
 			return new ConstantBufferBinding(this, desc);
 		case D3D_SIT_TBUFFER:
 			break;
 		case D3D_SIT_TEXTURE:
-			return new ResourceBinding(this, desc);
+			++mResources;
+			mResourceBindings.push_back(new ResourceBinding(this, desc));
+			return mResourceBindings.back();
 		case D3D_SIT_SAMPLER:
-			return new SamplerBinding(this, desc);
+			++mSamplers;
+			mSamplerBindings.push_back(new SamplerBinding(this, desc));
+			return mSamplerBindings.back();
 		case D3D_SIT_UAV_RWTYPED:
 			break;
 		case D3D_SIT_STRUCTURED:
@@ -597,7 +604,11 @@ HRESULT Shader::CreateBindings()
 Shader::Shader(tstring const &filename)
 	: mStartIndex(0)
 	, mName(StringFromTString(filename))
+	, mConstBuffers(0)
+	, mSamplers(0)
+	, mResources(0)
 {
+	Printer::SetShader(this);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -611,45 +622,43 @@ Shader::~Shader()
 
 static string header = "\nnamespace HLSL\n{\n#pragma pack(push, 4)\n\n";
 static string footer = "\n#pragma pack(pop)\n\n} // HLSL\n";
-static string constructor = "\n\t\t// Constructor\n\t\t%s()";
 static char const *comment = "//////////////////////////////////////////////////////////////////////\n";
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputHeader(char const *filename)
+void Shader::OutputHeader(char const *filename) // static
 {
-	printf(comment);
-	printf("// %s.h - auto generated file, do not edit\n\n", filename);
-	printf("#pragma once\n");
-	printf("%s", header.c_str());
-
+	output(comment);
+	output("// %s.h - auto generated file, do not edit\n\n", filename);
+	output("#pragma once\n");
+	output("%s", header.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputFooter()
+void Shader::OutputFooter() // static
 {
-	printf("%s", footer.c_str());
+	output("%s", footer.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::OutputBlob()
 {
-	printf("\t%s\t// %s data\n\n\tuint32 %s_Data[] =\n\t{", comment, Name().c_str(), Name().c_str());
+	output("\t%s\t// %s data\n\n\tuint32 %s_Data[] =\n\t{", comment, Name().c_str(), Name().c_str());
 	char *sep = "";
 	uint32 *d = (uint32 *)mBlob;
 	for(uint i = 0; i < mSize / 4; ++i)
 	{
-		printf(sep);
+		output(sep);
 		if((i & 7) == 0)
 		{
-			printf("\n\t\t");
+			output("\n\t\t");
 		}
-		printf("0x%08x", d[i]);
+		output("0x%08x", d[i]);
 		sep = ",";
 	}
-	printf("\n\t};\n\n");
+	output("\n\t};\n\n");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -660,93 +669,181 @@ void Shader::Output()
 
 	OutputBlob();
 
-	// output the name/offset and defaults tables for the const buffers
+	// OutputConstBufferNamesAndOffsets
+
 	if(!mDefinitions.empty())
 	{
-		printf("\t%s\t// offsets and defaults\n\n", comment);
+		output("\t%s\t// offsets and defaults\n\n", comment);
 		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 		{
 			(*i)->StaticsOutput(Name());
 		}
 		// output the constbuffernames table
-		printf("\n\t%s\t// const buffer names table\n", comment);
-		printf("\n\textern char const WEAKSYM *%s_ConstBufferNames[] =\n\t{", Name().c_str());
+		output("\n\t%s\t// const buffer names table\n", comment);
+		output("\n\textern char const WEAKSYM *%s_ConstBufferNames[] =\n\t{", Name().c_str());
 		char const *sep = "";
 		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 		{
-			printf("%s\n\t\t\"%s\"", sep, (*i)->Name);
+			output("%s\n\t\t\"%s\"", sep, (*i)->Name);
 			sep = ",";
 		}
-		printf("\n\t};\n");
+		output("\n\t};\n");
 	}
 
-	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	// OutputResourceNames
+
+	if(mResources > 0)
 	{
-		OutputInputElements();
+		output("\n\t%s\t// Texture names\n\n", comment);
+		output("\textern char const WEAKSYM * %s_TextureNames[] =\n\t{", Name().c_str());
+		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+		{
+			char *sep = "";
+			if((*i)->IsResource())
+			{
+				output("%s\n\t\t\"%s\"", sep, (*i)->Name());
+			}
+		}
+		output("\n\t};\n");
 	}
 
-	printf("\n\t%s\t// %s Shader: %s\n", comment, mShaderTypeDesc.name, Name().c_str());
+	// OutputSamplerNames
 
-	printf("\n\tstruct %s : %sShader<%s_ConstBufferNames, _countof(%s_ConstBufferNames)>", Name().c_str(), mShaderTypeDesc.name, Name().c_str(), Name().c_str());	// TODO: add : PixelShader or : VertexShader or whatever...
-	printf("\n\t{\n");
+	if(mSamplers > 0)
+	{
+		output("\n\t%s\t// Sampler names\n\n", comment);
+		output("\textern char const WEAKSYM * %s_SamplerNames[] =\n\t{", Name().c_str());
+		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+		{
+			char *sep = "";
+			if((*i)->IsSampler())
+			{
+				output("%s\n\t\t\"%s\"", sep, (*i)->Name());
+			}
+		}
+		output("\n\t};\n");
+	}
+
+	OutputInputElements();
+
+	// OutputStructureDefinition
+
+	output("\n\t%s\t// %s Shader: %s\n", comment, mShaderTypeDesc.name, Name().c_str());
+	output("\n\tstruct %s : %sShader", Name().c_str(), mShaderTypeDesc.name);
+	output("\n\t{\n");
+
+	// OutputConstBufferMembers
+
 	for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 	{
 		(*i)->MemberOutput(this->Name());
 	}
-	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+
+	// OutputSamplerMembers
+
+	if(mSamplers > 0)
 	{
-		(*i)->MemberOutput();
+		output("\t\tunion\n\t\t{\n\t\t\tstruct\n\t\t\t{\n");
+		char const *sep = "";
+		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+		{
+			if((*i)->IsSampler())
+			{
+				output("\t\t\t\t");
+				(*i)->MemberOutput();
+				output("\n");
+			}
+		}
+		output("\t\t\t};\n\t\t\tSamplerState *samplers[%d];\n\t\t};\n", mSamplers);
 	}
 
-	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	// OutputResourceMembers
+
+	if(mResources > 0)
 	{
-		OutputInputStruct();
+		output("\n\t\tunion\n\t\t{\n\t\t\tstruct\n\t\t\t{\n");
+		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+		{
+			if((*i)->IsResource())
+			{
+				output("\t\t\t\t");
+				(*i)->MemberOutput();
+				output("\n");
+			}
+		}
+		output("\t\t\t};\n\t\t\tTexture2D *textures[%d];\n\t\t};\n", mResources);
 	}
 
-	printf("//____________\n");
-	printf(constructor.c_str(), Name().c_str());
-	char const *sep = ": ";
+	OutputInputStruct();
+
+	// OutputConstructor
+
+	string constBufferNames = (mConstBuffers > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
+	string textureNames = (mResources > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
+	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
+
+	output("\n\t\t// Constructor\n\t\t%s()\n\t\t\t: %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s)",
+		   Name().c_str(),
+		   mShaderTypeDesc.name,
+		   Name().c_str(),
+		   mSize,
+		   mConstBuffers,
+		   constBufferNames.c_str(),
+		   mSamplers,
+		   samplerNames.c_str(),
+		   mResources,
+		   textureNames.c_str());
+	char const *sep = ", ";
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		printf("\n\t\t\t%s", sep);
+		output("\n\t\t\t%s", sep);
 		(*i)->ConstructorOutput();
-		sep = ",";
+		sep = ", ";
 	}
-	printf("\n//____________\n");
 
-//	printf("\t\t{\n\t\t}\n");
-	printf("\t};\n\n");
+	output("\n\t\t{\n\t\t}\n");
+	output("\t};\n\n");
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::OutputInputStruct()
 {
-	printf("\t\tstruct InputVertex\n\t\t{\n");
+	if(mShaderTypeDesc.type != ShaderType::Vertex)
+	{
+		return;
+	}
+
+	output("\t\tstruct InputVertex\n\t\t{\n");
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		InputField &f = mInputFields[i];
-		printf("\t\t\t%s;\n", f.GetDeclaration().c_str());
+		output("\t\t\t%s;\n", f.GetDeclaration().c_str());
 	}
-	printf("\t\t};\n\n");
-	printf("\t\tusing VertexBuffer<InputVertex, %s_InputElements> = VertexBuffer;\n", Name().c_str());
+	output("\t\t};\n\n");
+	output("\t\tusing VertexBuffer = VertexBuffer<InputVertex, %s_InputElements>;\n", Name().c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void Shader::OutputInputElements()
 {
-	printf("\n\t%s\t// Input Element descs\n\n", comment);
-	printf("\textern D3D11_INPUT_ELEMENT_DESC const WEAKSYM %s_InputElements[%d] =\n\t{", Name().c_str(), mInputElements.size());
+	if(mShaderTypeDesc.type != ShaderType::Vertex)
+	{
+		return;
+	}
+
+	output("\n\t%s\t// Input Element descs\n\n", comment);
+	output("\textern D3D11_INPUT_ELEMENT_DESC const WEAKSYM %s_InputElements[%d] =\n\t{", Name().c_str(), mInputElements.size());
 	char const *sep = "";
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		char const *formatName = GetFormatName(d.Format);
-		printf("%s\n\t\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
+		output("%s\n\t\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
 		sep = ",";
 	}
-	printf("\n\t};\n");
+	output("\n\t};\n");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -890,10 +987,9 @@ HRESULT Shader::Destroy()
 {
 	mDefinitions.clear();
 	mDefinitionIDs.clear();
-	mSamplers.clear();
-	mTextures.clear();
-	mConstantBuffers.clear();
-	mTextureBuffers.clear();
+	mConstantBufferBindings.clear();
+	mResourceBindings.clear();
+	mSamplerBindings.clear();
 	mTextureBufferIDs.clear();
 	mConstBufferIDs.clear();
 	mSamplerIDs.clear();
