@@ -29,7 +29,7 @@ namespace HLSL
 	using UInt = uint32;
 	using Float = float;
 	using Void = uint32;
-	using Half = uint16;
+	using Half = half;
 
 	enum
 	{
@@ -39,10 +39,10 @@ namespace HLSL
 		W = 3
 	};
 
-	template <typename t> struct Vec1 { union { t m[1]; struct { t x; }; }; };
-	template <typename t> struct Vec2 { union { t m[2]; struct { t x, y; }; }; };
-	template <typename t> struct Vec3 { union { t m[3]; struct { t x, y, z; }; }; };
-	template <typename t> struct Vec4 { union { t m[4]; struct { t x, y, z, w; }; }; };
+	template <typename t> struct Vec1 { union { t m[1]; struct { t x; }; }; Vec1() {} Vec1(t x): x(x) { } };
+	template <typename t> struct Vec2 { union { t m[2]; struct { t x, y; }; }; Vec2() {} Vec2(t x, t y): x(x), y(y) { } };
+	template <typename t> struct Vec3 { union { t m[3]; struct { t x, y, z; }; }; Vec3() {} Vec3(t x, t y, t z): x(x), y(y), z(z) { } };
+	template <typename t> struct Vec4 { union { t m[4]; struct { t x, y, z, w; }; };  Vec4() {} Vec4(t x, t y, t z, t w): x(x), y(y), z(z), w(w) { } };
 
 	template <> struct Vec4<float>
 	{

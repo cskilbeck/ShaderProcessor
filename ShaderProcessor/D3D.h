@@ -8,6 +8,20 @@ using Matrix = DirectX::XMMATRIX;
 
 extern HRESULT __hr;
 
+//////////////////////////////////////////////////////////////////////
+
+class HRException: std::exception
+{
+public:
+	HRException(HRESULT h = S_OK, char const *msg = null) : exception(msg), hr(h)
+	{
+	}
+
+	HRESULT hr;
+};
+
+//////////////////////////////////////////////////////////////////////
+
 #define DXTRACE TRACE
 //#define DXTRACE if (true) {} else
 
@@ -51,10 +65,23 @@ extern HRESULT __hr;
 		DXTRACE(TEXT(#x) TEXT( " ok\n"));		\
 	}					\
 
+#define DXT(x) 			\
+	__hr = (x);			\
+	if(FAILED(__hr))	\
+	{					\
+		TRACE(TEXT(#x) TEXT(" failed: %08x\n"), __hr);	\
+		assert(false);	\
+		throw HRException(__hr, #x);	\
+	}					\
+	else				\
+	{					\
+		DXTRACE(TEXT(#x) TEXT( " ok\n"));		\
+	}	
 #else
 #define DX(x) __hr = (x); if(FAILED(__hr)) return __hr;
 #define DXV(x) __hr = (x); if(FAILED(__hr)) return;
 #define DXB(x) __hr = (x); if(FAILED(__hr)) return false;
+#define DXT(x) __hr = (x); if(FAILED(__hr)) throw HRException(__hr, #x);
 #endif
 
 //////////////////////////////////////////////////////////////////////

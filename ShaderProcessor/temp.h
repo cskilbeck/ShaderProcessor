@@ -28,13 +28,9 @@ namespace HLSL
 
 	struct Shader
 	{
-		void const *						mBlob;
-
 		char const **						mConstBufferNames;
 		char const **						mSamplerNames;
 		char const **						mTextureNames;
-		
-		size_t								mSize;
 
 		uint32								mNumConstBuffers;
 		uint32								mNumSamplers;
@@ -84,15 +80,13 @@ namespace HLSL
 		ConstBufferOffset const * const	mOffsets;
 		uint32 const * const 			mDefaults;
 		Shader *						mParent;
-		uint32							mVertCount;
 		DXPtr<ID3D11Buffer>				mConstantBuffer;
 
-		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent)
+		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 const *Defaults, Shader *parent)
 			: mOffsetCount(OffsetCount)
 			, mOffsets(Offsets)
 			, mDefaults(Defaults)
 			, mParent(parent)
-			, mVertCount(0)
 		{
 			mParent->mConstBuffers.push_back(this);
 			ResetToDefaults();
@@ -126,13 +120,6 @@ namespace HLSL
 
 		//////////////////////////////////////////////////////////////////////
 
-		uint32 SizeOfBuffer() const
-		{
-			return (uint32)(sizeof(definition) * mVertCount);
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 		bool GetOffset(char const *name, int &offset) const
 		{
 			for(int i = 0; i < mOffsetCount; ++i)
@@ -158,21 +145,29 @@ namespace HLSL
 	//////////////////////////////////////////////////////////////////////
 	// make this optionally dynamic using Map/UnMap etc
 
-	template<typename vert, D3D11_INPUT_ELEMENT_DESC const *inputElements> struct VertexBuffer
+	template<typename vert> struct VertexBuffer
 	{
-		static HRESULT Create(uint vertCount, VertexBuffer **buffer)
+		VertexBuffer(uint vertCount)
 		{
-			Ptr<VertexBuffer> t(new VertexBuffer());
-			t.Resize(vertCount);
-			CD3D11_BUFFER_DESC desc(sizeof(vertType), D3D11_BIND_VERTEX_BUFFER);
-			DX(gDevice->CreateBuffer(&desc, &t, &(t->mD3DBuffer)));
-			*buffer = t.release();
-			return S_OK;
+			Create(new vert[vertCount], true);
+		}
+
+		VertexBuffer(uint vertCount, vert *data)
+		{
+			Create(data, false);
+		}
+
+		~VertexBuffer()
+		{
+			if(mOwnBuffer)
+			{
+				Delete(mBuffer);
+			}
 		}
 
 		void Commit(ID3D11DeviceContext *context)
 		{
-			context->UpdateSubresource(mD3DBuffer, 0, null, mBuffer.data, 0, 0);
+			context->UpdateSubresource(mD3DBuffer, 0, null, mBuffer.data(), 0, 0);
 		}
 
 		void Activate(ID3D11DeviceContext *context)
@@ -187,38 +182,44 @@ namespace HLSL
 
 		vert *operator &()
 		{
-			return mBuffer.data;
+			return mBuffer.data();
 		}
 
 	private:
 
-		void Resize(uint count)
+		void Create(vert *data, bool own)
 		{
-			mBuffer.resize(count);
+			mOwnBuffer = own;
+			mBuffer = data;
+			CD3D11_BUFFER_DESC desc(sizeof(vert) * vertCount, D3D11_BIND_VERTEX_BUFFER);
+			DXT(gDevice->CreateBuffer(&desc, mBuffer, &(t->mD3DBuffer)));
 		}
 
-		vector<vert>		mBuffer;
+		bool				mOwnBuffer;
+		vert *				mBuffer;
 		DXPtr<ID3D11Buffer> mD3DBuffer;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct VertexShader: Shader
+	template<D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount> struct VertexShader: Shader
 	{
 		VertexShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames)
 			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames)
 		{
-			DXV(gDevice->CreateVertexShader(blob, size, null, &mVertexShader));
+			DXT(gDevice->CreateVertexShader(blob, size, null, &mVertexShader));
+			DXT(gDevice->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
 		}
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			// activate them all for now...
-			context->VSSetConstantBuffers(0, mConstBufferPointers.size(), mConstBufferPointers.empty() ? null : mConstBufferPointers.data());
+			context->IASetInputLayout(mInputLayout);
+			context->VSSetConstantBuffers(0, (uint)mConstBufferPointers.size(), mConstBufferPointers.empty() ? null : mConstBufferPointers.data());	// TODO: only changed ones?
 			context->VSSetShader(mVertexShader, null, 0);
 		}
 
 		DXPtr<ID3D11VertexShader>			mVertexShader;
+		DXPtr<ID3D11InputLayout>			mInputLayout;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -235,7 +236,7 @@ namespace HLSL
 		{
 			context->PSSetShaderResources(0, (uint)mTexturePointers.size(), mTexturePointers.empty() ? null : mTexturePointers.data());
 			context->PSSetSamplers(0, (uint)mSamplers.size(), mSamplerPointers.empty() ? null : mSamplerPointers.data());
-			context->PSSetConstantBuffers(0, mConstBufferPointers.size(), mConstBufferPointers.empty() ? null : mConstBufferPointers.data());
+			context->PSSetConstantBuffers(0, (uint)mConstBufferPointers.size(), mConstBufferPointers.empty() ? null : mConstBufferPointers.data());
 			context->PSSetShader(mPixelShader, null, 0);
 		}
 

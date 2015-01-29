@@ -58,6 +58,8 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 
 int main(int argc, char *argv[])
 {
+	half a; a = 0.5f;
+
 	vector<Option> options;
 	if(!ParseArgs(argc, argv, options))
 	{

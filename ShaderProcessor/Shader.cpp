@@ -729,7 +729,15 @@ void Shader::Output()
 	// OutputStructureDefinition
 
 	output("\n\t%s\t// %s Shader: %s\n", comment, mShaderTypeDesc.name, Name().c_str());
-	output("\n\tstruct %s : %sShader", Name().c_str(), mShaderTypeDesc.name);
+
+	string vsTag;
+
+	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	{
+		vsTag = Format("<%s_InputElements, _countof(%s_InputElements)>", Name().c_str(), Name().c_str());
+	}
+
+	output("\n\tstruct %s : %sShader%s", Name().c_str(), mShaderTypeDesc.name, vsTag.c_str());
 	output("\n\t{\n");
 
 	// OutputConstBufferMembers
@@ -821,7 +829,7 @@ void Shader::OutputInputStruct()
 		output("\t\t\t%s;\n", f.GetDeclaration().c_str());
 	}
 	output("\t\t};\n\n");
-	output("\t\tusing VertexBuffer = VertexBuffer<InputVertex, %s_InputElements>;\n", Name().c_str());
+	output("\t\tusing VertexBuffer = VertexBuffer<InputVertex>;\n");
 }
 
 //////////////////////////////////////////////////////////////////////

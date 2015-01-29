@@ -182,14 +182,14 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 	}
 	output("\n\t};\n\n");
 
-	output("\t// %s defaults\n", mDesc.Name);
-	output("\textern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
 	if(Defaults == null)
 	{
-		output(" { 0 };\n");
+		output("\t// no defaults for %s\n", mDesc.Name);
 	}
 	else
 	{
+		output("\t// %s defaults\n", mDesc.Name);
+		output("\textern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
 		output("\n\t{");
 		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
@@ -264,5 +264,10 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 
 void TypeDefinition::ConstructorOutput()
 {
-	output("%s(%u, %s_%s_Offsets, %s_%s_Defaults, this)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, Printer::ShaderName().c_str(), mDesc.Name);
+	string defaultStr = "null";
+	if(Defaults != null)
+	{
+		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
+	}
+	output("%s(%u, %s_%s_Offsets, %s, this)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str());
 }
