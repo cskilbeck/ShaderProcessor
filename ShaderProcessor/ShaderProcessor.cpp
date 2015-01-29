@@ -1,8 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-// support everything (Buffers<> especially)
-// deal with anonymous cbuffers and tbuffers (index instead of name)
-// test alignment/padding etc
-// deal with Buffers of structs (no padding)
 
 #include "stdafx.h"
 

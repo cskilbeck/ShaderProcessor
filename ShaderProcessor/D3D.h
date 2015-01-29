@@ -86,16 +86,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////
 
-template<typename T> struct HandleTraits
-{
-	static void Close(T &handle) { }
-	static T Default() { }
-	static T InvalidValue() { }
-};
-
-//////////////////////////////////////////////////////////////////////
-
-template<> struct HandleTraits<HANDLE>
+struct HandleTraits
 {
 	static void Close(HANDLE handle)
 	{
@@ -115,7 +106,7 @@ template<> struct HandleTraits<HANDLE>
 
 //////////////////////////////////////////////////////////////////////
 
-template<> struct HandleTraits<IUnknown *>
+struct IUnknownTraits
 {
 	static void Close(IUnknown *comptr)
 	{
@@ -184,8 +175,8 @@ template<typename T, typename traits> struct ObjHandle
 
 //////////////////////////////////////////////////////////////////////
 
-template<typename T> using DXPtr2 = ObjHandle<T, HandleTraits<IUnknown *>>;
-using Handle = ObjHandle<HANDLE, HandleTraits<HANDLE>>;
+template<typename T> using DXPtr2 = ObjHandle<T, IUnknownTraits>;
+using Handle = ObjHandle<HANDLE, HandleTraits>;
 
 //////////////////////////////////////////////////////////////////////
 

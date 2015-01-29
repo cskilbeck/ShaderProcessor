@@ -44,17 +44,16 @@ namespace HLSL
 		vector<ID3D11ShaderResourceView *>	mTexturePointers;
 		vector<ID3D11SamplerState *>		mSamplerPointers;
 
-		template<typename T> bool GetConstBuffer(char const *name, T * &ptr)
+		void *GetConstBuffer(char const *name)
 		{
-			for(uint i = 0; i < mConstBuffers.size(); ++i)
+			for(uint i = 0; i < mNumConstBuffers; ++i)
 			{
-				if(strcmp(constBufferNames[i], name) == 0)
+				if(strcmp(mConstBufferNames[i], name) == 0)
 				{
-					ptr = (T *)(mConstBuffers[i]);
-					return true;
+					return mConstBuffers[i];
 				}
 			}
-			return false;
+			return null;
 		}
 
 		Shader(uint32 numConstBuffers, char const **constBufferNames,
@@ -79,22 +78,21 @@ namespace HLSL
 		uint32 const					mOffsetCount;
 		ConstBufferOffset const * const	mOffsets;
 		uint32 const * const 			mDefaults;
-		Shader *						mParent;
 		DXPtr<ID3D11Buffer>				mConstantBuffer;
 
 		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 const *Defaults, Shader *parent)
 			: mOffsetCount(OffsetCount)
 			, mOffsets(Offsets)
 			, mDefaults(Defaults)
-			, mParent(parent)
 		{
-			mParent->mConstBuffers.push_back(this);
+			parent->mConstBuffers.push_back(this);
 			ResetToDefaults();
 			CD3D11_BUFFER_DESC desc(sizeof(definition), D3D11_BIND_CONSTANT_BUFFER);
 			D3D11_SUBRESOURCE_DATA srd = { 0 };
 			srd.pSysMem = (void const *)this;
 			DXV(gDevice->CreateBuffer(&desc, &srd, &mConstantBuffer));
-			mParent->mConstBufferPointers.push_back(mConstantBuffer);
+			parent->mConstBufferPointers.push_back(mConstantBuffer);
+			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -229,7 +227,7 @@ namespace HLSL
 		PixelShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames)
 			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames)
 		{
-			DXV(gDevice->CreatePixelShader(blob, size, null, &mPixelShader));
+			DXT(gDevice->CreatePixelShader(blob, size, null, &mPixelShader));
 		}
 
 		void Activate(ID3D11DeviceContext *context)

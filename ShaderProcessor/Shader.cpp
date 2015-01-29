@@ -1,7 +1,13 @@
 //////////////////////////////////////////////////////////////////////
-// Make it so it can compile multiple shader types in one run
-// Sort out the semantic name annotation parser & emit InputLayoutDefinitions
 // Make it a proper Compile type in VS2013
+// Sort out Resource types (Texture1D/2D/3D etc)
+// Support instancing?
+// Support all shader types
+// Support compute
+// support Buffers<>
+// deal with anonymous cbuffers and tbuffers (index instead of name)
+// test alignment/padding etc
+// deal with Buffers of structs (no padding)
 
 #include "stdafx.h"
 
