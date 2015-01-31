@@ -171,7 +171,7 @@ struct ConstantBufferBinding;
 struct ResourceBinding;
 struct SamplerBinding;
 
-struct Shader
+struct HLSLShader
 {
 	//////////////////////////////////////////////////////////////////////
 
@@ -234,8 +234,8 @@ struct Shader
 		return (p == m.end()) ? null : p->second;
 	}
 
-	Shader(tstring const &filename);
-	virtual ~Shader();
+	HLSLShader(tstring const &filename);
+	virtual ~HLSLShader();
 
 	void Output();
 	void OutputInputElements();
@@ -262,7 +262,7 @@ struct Shader
 
 //////////////////////////////////////////////////////////////////////
 
-static inline int GetIndex(string const &name, Shader::IntMap const &map)
+static inline int GetIndex(string const &name, HLSLShader::IntMap const &map)
 {
 	auto i = map.find(name);
 	return (i == map.end()) ? -1 : i->second;
@@ -270,35 +270,35 @@ static inline int GetIndex(string const &name, Shader::IntMap const &map)
 
 //////////////////////////////////////////////////////////////////////
 
-inline int Shader::GetTextureIndex(string const &name) const
+inline int HLSLShader::GetTextureIndex(string const &name) const
 {
 	return GetIndex(name, mTextureIDs);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline int Shader::GetSamplerIndex(string const &name) const
+inline int HLSLShader::GetSamplerIndex(string const &name) const
 {
 	return GetIndex(name, mSamplerIDs);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline int Shader::GetConstantBufferIndex(string const &name) const
+inline int HLSLShader::GetConstantBufferIndex(string const &name) const
 {
 	return GetIndex(name, mConstBufferIDs);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline uint Shader::GetConstantBufferCount() const
+inline uint HLSLShader::GetConstantBufferCount() const
 {
 	return (uint)mConstantBufferBindings.size();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline ConstantBufferBinding *Shader::GetCB(string const &name)
+inline ConstantBufferBinding *HLSLShader::GetCB(string const &name)
 {
 	int id = GetConstantBufferIndex(name);
 	return (id >= 0) ? mConstantBufferBindings[id] : null;
@@ -306,7 +306,7 @@ inline ConstantBufferBinding *Shader::GetCB(string const &name)
 
 //////////////////////////////////////////////////////////////////////
 
-inline ConstantBufferBinding *Shader::GetConstantBuffer(int index)
+inline ConstantBufferBinding *HLSLShader::GetConstantBuffer(int index)
 {
 	return mConstantBufferBindings[index];
 }

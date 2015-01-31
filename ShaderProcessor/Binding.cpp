@@ -81,7 +81,7 @@ Binding::ResourceBindingList_t Binding::ResourceBindingList[BindingInfo::Type::N
 
 //////////////////////////////////////////////////////////////////////
 
-Binding::Binding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+Binding::Binding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 	: mShader(s)
 	, mDesc(desc)
 	, definition(null)

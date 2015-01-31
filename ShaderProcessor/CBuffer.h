@@ -6,7 +6,7 @@
 
 struct ConstantBufferBinding: Binding
 {
-	ConstantBufferBinding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+	ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 		: Binding(s, desc)
 	{
 	}
@@ -20,7 +20,7 @@ struct ConstantBufferBinding: Binding
 
 struct ResourceBinding: Binding
 {
-	ResourceBinding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+	ResourceBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 		: Binding(s, desc)
 	{
 	}
@@ -45,7 +45,7 @@ struct ResourceBinding: Binding
 
 struct SamplerBinding: Binding
 {
-	SamplerBinding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+	SamplerBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 		: Binding(s, desc)
 	{
 	}

@@ -6,7 +6,7 @@
 
 struct SamplerState: Binding
 {
-	SamplerState(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
+	SamplerState(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
 		: Binding(s, desc)
 	{
 	}

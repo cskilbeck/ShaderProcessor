@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "DX.h"
 #include <time.h>
 
 //////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ uint8 *LoadFile(tchar const *filename, size_t *size)
 
 			if(s != len)
 			{
-				delete [] buf;
+				delete[] buf;
 				buf = null;
 			}
 			else
@@ -135,11 +135,11 @@ string Format(char const *fmt, ...)
 
 wstring WideStringFromTString(tstring const &str)
 {
-	#ifdef UNICODE
-		return str;
-	#else
-		return WideStringFromString(str);
-	#endif
+#ifdef UNICODE
+	return str;
+#else
+	return WideStringFromString(str);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////

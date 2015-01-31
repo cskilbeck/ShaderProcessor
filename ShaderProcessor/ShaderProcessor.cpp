@@ -42,7 +42,7 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 	ID3DBlob *errors;
 	if(D3DCompileFromFile(fname.c_str(), null, D3D_COMPILE_STANDARD_FILE_INCLUDE, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors) == S_OK)
 	{
-		Shader s(GetFilename(filename));
+		HLSLShader s(GetFilename(filename));
 		s.Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc);
 		return true;
 	}
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	Shader::OutputHeader(fileName.c_str());
+	HLSLShader::OutputHeader(fileName.c_str());
 	int shadersCompiled = 0;
 	for(int i = 0; i < _countof(shaderTypes); ++i)
 	{
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 			++shadersCompiled;
 		}
 	}
-	Shader::OutputFooter();
+	HLSLShader::OutputFooter();
 
 	if(shadersCompiled == 0)
 	{

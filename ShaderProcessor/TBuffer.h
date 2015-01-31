@@ -6,7 +6,7 @@
 
 struct TextureBuffer: Binding
 {
-	TextureBuffer(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
+	TextureBuffer(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
 		: Binding(s, desc)
 	{
 	}

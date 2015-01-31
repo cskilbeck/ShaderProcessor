@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderProcessor", "ShaderProcessor\ShaderProcessor.vcxproj", "{9F563558-CE4F-431E-BB85-7FFD22CFE562}"
+	ProjectSection(ProjectDependencies) = postProject
+		{73884195-8231-4AD9-80ED-8F41D03F4160} = {73884195-8231-4AD9-80ED-8F41D03F4160}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX", "DX\DX.vcxproj", "{73884195-8231-4AD9-80ED-8F41D03F4160}"
 EndProject
@@ -25,10 +28,12 @@ Global
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|x64.Build.0 = Release|x64
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|Win32.ActiveCfg = Debug|Win32
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|Win32.Build.0 = Debug|Win32
-		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|x64.ActiveCfg = Debug|Win32
+		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|x64.ActiveCfg = Debug|x64
+		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|x64.Build.0 = Debug|x64
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|Win32.ActiveCfg = Release|Win32
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|Win32.Build.0 = Release|Win32
-		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|x64.ActiveCfg = Release|Win32
+		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|x64.ActiveCfg = Release|x64
+		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

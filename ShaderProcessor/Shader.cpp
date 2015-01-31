@@ -523,7 +523,7 @@ char const *GetNameOfStorageType(StorageType st)
 
 //////////////////////////////////////////////////////////////////////
 
-Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
+Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
 	TRACE("Binding %s at %d is a %s called %s\n", GetFrom(shader_input_type_names, desc.Type), desc.BindPoint, GetFrom(shader_input_type_names, desc.Type), desc.Name);
 	switch(desc.Type)
@@ -563,7 +563,7 @@ Binding *Shader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::CreateBindings()
+HRESULT HLSLShader::CreateBindings()
 {
 	Binding::ClearAllBindings();
 
@@ -607,7 +607,7 @@ HRESULT Shader::CreateBindings()
 
 //////////////////////////////////////////////////////////////////////
 
-Shader::Shader(tstring const &filename)
+HLSLShader::HLSLShader(tstring const &filename)
 	: mStartIndex(0)
 	, mName(StringFromTString(filename))
 	, mConstBuffers(0)
@@ -619,7 +619,7 @@ Shader::Shader(tstring const &filename)
 
 //////////////////////////////////////////////////////////////////////
 
-Shader::~Shader()
+HLSLShader::~HLSLShader()
 {
 	Destroy();
 }
@@ -632,7 +632,7 @@ static char const *comment = "//////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputHeader(char const *filename) // static
+void HLSLShader::OutputHeader(char const *filename) // static
 {
 	output(comment);
 	output("// %s.h - auto generated file, do not edit\n\n", filename);
@@ -642,14 +642,14 @@ void Shader::OutputHeader(char const *filename) // static
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputFooter() // static
+void HLSLShader::OutputFooter() // static
 {
 	output("%s", footer.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputBlob()
+void HLSLShader::OutputBlob()
 {
 	output("\t%s\t// %s data\n\n\tuint32 %s_Data[] =\n\t{", comment, Name().c_str(), Name().c_str());
 	char *sep = "";
@@ -669,7 +669,7 @@ void Shader::OutputBlob()
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::Output()
+void HLSLShader::Output()
 {
 	void *pp = GetConstantBuffer("VertConstants");
 
@@ -821,7 +821,7 @@ void Shader::Output()
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputInputStruct()
+void HLSLShader::OutputInputStruct()
 {
 	if(mShaderTypeDesc.type != ShaderType::Vertex)
 	{
@@ -840,7 +840,7 @@ void Shader::OutputInputStruct()
 
 //////////////////////////////////////////////////////////////////////
 
-void Shader::OutputInputElements()
+void HLSLShader::OutputInputElements()
 {
 	if(mShaderTypeDesc.type != ShaderType::Vertex)
 	{
@@ -872,7 +872,7 @@ template <typename T> static void CallOutput(std::vector<T *> &vec)
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::CreateDefinitions()
+HRESULT HLSLShader::CreateDefinitions()
 {
 	for(uint i = 0; i < mShaderDesc.ConstantBuffers; ++i)
 	{
@@ -885,7 +885,7 @@ HRESULT Shader::CreateDefinitions()
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::CreateInputLayout()
+HRESULT HLSLShader::CreateInputLayout()
 {
 	int n = mShaderDesc.InputParameters;
 	mInputElements.resize(n);
@@ -978,7 +978,7 @@ HRESULT Shader::CreateInputLayout()
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
+HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
 {
 	mBlob = blob;
 	mSize = size;
@@ -997,7 +997,7 @@ HRESULT Shader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Shader::Destroy()
+HRESULT HLSLShader::Destroy()
 {
 	mDefinitions.clear();
 	mDefinitionIDs.clear();

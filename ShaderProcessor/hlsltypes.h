@@ -39,12 +39,12 @@ namespace HLSL
 		W = 3
 	};
 
-	template <typename t> struct Vec1 { union { t m[1]; struct { t x; }; }; Vec1() {} Vec1(t x): x(x) { } };
-	template <typename t> struct Vec2 { union { t m[2]; struct { t x, y; }; }; Vec2() {} Vec2(t x, t y): x(x), y(y) { } };
-	template <typename t> struct Vec3 { union { t m[3]; struct { t x, y, z; }; }; Vec3() {} Vec3(t x, t y, t z): x(x), y(y), z(z) { } };
-	template <typename t> struct Vec4 { union { t m[4]; struct { t x, y, z, w; }; };  Vec4() {} Vec4(t x, t y, t z, t w): x(x), y(y), z(z), w(w) { } };
+	template <typename t> struct Vec1 { t x; Vec1() {} Vec1(t x): x(x) { } };
+	template <typename t> struct Vec2 { t x, y; Vec2() {} Vec2(t x, t y): x(x), y(y) { } };
+	template <typename t> struct Vec3 { t x, y, z; Vec3() {} Vec3(t x, t y, t z): x(x), y(y), z(z) { } };
+	template <typename t> struct Vec4 { t x, y, z, w; Vec4() {} Vec4(t x, t y, t z, t w): x(x), y(y), z(z), w(w) { } };
 
-	template <> struct Vec4<float>
+	template <> struct ALIGNED(16) Vec4<float>
 	{
 		union
 		{
@@ -62,14 +62,7 @@ namespace HLSL
 
 	#define Mat(T, C, R) struct join4(T, R, x, C)	\
 	{												\
-		union										\
-		{											\
-			struct									\
-			{										\
-				join2(Vec, C)<T> r[R];				\
-			};										\
-			T m[C][R];								\
-		};											\
+		T m[C][R];									\
 	};
 
 	#define def_vec(T)							\

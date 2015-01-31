@@ -8,7 +8,7 @@ namespace
 {
 	HANDLE outputFile;
 	string shaderName;
-	Shader *shader;
+	HLSLShader *shader;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ namespace Printer
 
 	//////////////////////////////////////////////////////////////////////
 
-	void SetShader(Shader *s)
+	void SetShader(HLSLShader *s)
 	{
 		shader = s;
 	}

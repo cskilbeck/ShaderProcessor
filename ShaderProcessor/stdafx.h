@@ -35,25 +35,21 @@
 #define ALIGNED(x) __declspec(align(x))
 #define WEAKSYM __declspec(selectany)
 
-#include "Types.h"
-#include "Half.h"
-#include "Util.h"
+#include "DX.h"
+
+#include "printer.h"
 #include "WinResource.h"
-#include "D3D.h"
 #include "TypeDefinition.h"
 #include "Binding.h"
 #include "TBuffer.h"
 #include "Texture.h"
 #include "SamplerState.h"
-
 #include "hlsltypes.h"
-#include "Shader.h"
-#include "printer.h"
+#include "HLSLShader.h"
 #include "CBuffer.h"
-
-#include "temp.h"
 #include "output.h"
-
 #include "optionparser.h"
 #include "Args.h"
+
+// DX
 

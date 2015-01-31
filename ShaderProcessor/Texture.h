@@ -6,7 +6,7 @@
 
 struct Texture2D: Binding
 {
-	Texture2D(Shader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
+	Texture2D(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC desc)
 		: Binding(s, desc)
 	{
 	}

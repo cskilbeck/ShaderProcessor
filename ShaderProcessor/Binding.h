@@ -4,7 +4,7 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct Shader;
+struct HLSLShader;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -31,7 +31,7 @@ using BindingInfoMap_t = std::map<uint, BindingInfo>;
 
 struct Binding
 {
-	Shader *						mShader;
+	HLSLShader *						mShader;
 	D3D11_SHADER_INPUT_BIND_DESC	mDesc;
 	TypeDefinition *				definition;
 
@@ -42,7 +42,7 @@ struct Binding
 
 	string TypeName();
 
-	Binding(Shader *s, D3D11_SHADER_INPUT_BIND_DESC &desc);
+	Binding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc);
 
 	virtual ~Binding()
 	{
