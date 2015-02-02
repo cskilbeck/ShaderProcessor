@@ -112,13 +112,12 @@ struct MyDXWindow: DXWindow
 		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 		DXB(Device()->CreateBlendState(&blendDesc, &blendState));
 
-		p->tex1Sampler = s.get();
-		p->picTexture = t.get();
 		v->VertConstants.ProjectionMatrix.m[0][0] = 0.3f;
 		v->VertConstants.ProjectionMatrix.m[1][1] = 0.3f;
 		v->VertConstants.Commit(Context());
-		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, 1.0f);
-		p->ColourStuff.Commit(Context());
+
+		p->tex1Sampler = s.get();
+		p->picTexture = t.get();
 
 		return true;
 	}
@@ -129,6 +128,10 @@ struct MyDXWindow: DXWindow
 		v->Activate(Context());
 		p->Activate(Context());
 		vb->Activate(Context());
+
+		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, sinf(mFrame * 0.1f) * 0.5f + 0.5f);
+		p->ColourStuff.Commit(Context());
+
 		Context()->RSSetState(rasterizerState);
 		Context()->OMSetBlendState(blendState, null, 0xffffffff);
 		Context()->OMSetDepthStencilState(depthStencilState, 0);
