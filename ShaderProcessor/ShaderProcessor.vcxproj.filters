@@ -20,24 +20,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WinResource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="hlsltypes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SamplerState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="output.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -59,6 +41,15 @@
     <ClInclude Include="HLSLShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextureBinding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplerBinding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TBufferBinding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -67,13 +58,7 @@
     <ClCompile Include="ShaderProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WinResource.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TypeDefinition.cpp">
@@ -86,6 +71,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Printer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HLSLShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

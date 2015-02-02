@@ -30,14 +30,15 @@
 #include <unordered_map>
 #include <map>
 
-#define ALIGNED(x) __declspec(align(x))
-#define WEAKSYM __declspec(selectany)
-
 #include "Types.h"
+#include "Aligned.h"
 #include "linked_list.h"
 #include "Half.h"
 #include "Color.h"
+#include "HLSLTypes.h"
 #include "Util.h"
+#include "Resource.h"
+#include "File.h"
 #include "Vec2.h"
 #include "Point.h"
 #include "Size.h"
@@ -45,7 +46,7 @@
 #include "Random.h"
 #include "Timer.h"
 #include "D3D.h"
-
+#include "LoadImage.h"
 #include "Texture.h"
 #include "Sampler.h"
 #include "Shader.h"
@@ -53,3 +54,6 @@
 #include "VertexBuffer.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
+#include "Win32.h"
+#include "Window.h"
+#include "DXWindow.h"

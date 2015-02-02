@@ -21,11 +21,15 @@ struct BindingInfo
 	bool		NeedsDefinition;
 	Type		BindingType;
 	char const *Name;
+	char const *TypeName;
 };
 
 //////////////////////////////////////////////////////////////////////
 
 using BindingInfoMap_t = std::map<uint, BindingInfo>;
+
+BindingInfo *GetBindingInfo(D3D_SHADER_INPUT_TYPE type);
+char const *GetBindingTypeName(BindingInfo::Type bindingType);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -80,4 +84,15 @@ struct Binding
 
 //////////////////////////////////////////////////////////////////////
 
+struct ConstantBufferBinding: Binding
+{
+	ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+		: Binding(s, desc)
+	{
+	}
+
+	void StaticsOutput() override;
+	void MemberOutput() override;
+	void ConstructorOutput() override;
+};
 

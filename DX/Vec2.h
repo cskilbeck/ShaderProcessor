@@ -13,84 +13,84 @@ struct Size2D;
 
 #pragma pack(push, 4)
 
-struct Vec2
+struct Vec2f
 {
 	float x;
 	float y;
 
-	static Vec2 one;
-	static Vec2 zero;
-	static Vec2 half;
+	static Vec2f one;
+	static Vec2f zero;
+	static Vec2f half;
 
-	Vec2()
+	Vec2f()
 	{
 	}
 
-	Vec2(float _x, float _y) : x(_x), y(_y)
+	Vec2f(float _x, float _y) : x(_x), y(_y)
 	{
 	}
 
-	Vec2(Vec2 const &o)
+	Vec2f(Vec2f const &o)
 	{
 		x = o.x;
 		y = o.y;
 	}
 
-	explicit Vec2(Point2D const &p);
-	explicit Vec2(Size2D const &s);
+	explicit Vec2f(Point2D const &p);
+	explicit Vec2f(Size2D const &s);
 
-	Vec2 const &operator = (Vec2 const &b)
+	Vec2f const &operator = (Vec2f const &b)
 	{
 		x = b.x;
 		y = b.y;
 		return *this;
 	}
 
-	Vec2 const &operator += (Vec2 const &b)
+	Vec2f const &operator += (Vec2f const &b)
 	{
 		x += b.x;
 		y += b.y;
 		return *this;
 	}
 
-	Vec2 const &operator -= (Vec2 const &b)
+	Vec2f const &operator -= (Vec2f const &b)
 	{
 		x -= b.x;
 		y -= b.y;
 		return *this;
 	}
 
-	Vec2 const &operator *= (Vec2 const &b)
+	Vec2f const &operator *= (Vec2f const &b)
 	{
 		x *= b.x;
 		y *= b.y;
 		return *this;
 	}
 
-	Vec2 const &operator /= (Vec2 const &b)
+	Vec2f const &operator /= (Vec2f const &b)
 	{
 		x /= b.x;
 		y /= b.y;
 		return *this;
 	}
 
-	Vec2 const &operator *= (float f)
+	Vec2f const &operator *= (float f)
 	{
 		x *= f;
 		y *= f;
 		return *this;
 	}
 
-	Vec2 const &operator /= (float f)
+	Vec2f const &operator /= (float f)
 	{
 		x /= f;
 		y /= f;
 		return *this;
 	}
 
-	Vec2 operator - ()
+	Vec2f operator - ()
 	{
-		return Vec2(-x, -y);
+		return Vec2f(-x, -y);
 	}
 
 	void Set(float x, float y)
@@ -104,12 +104,12 @@ struct Vec2
 		x = y = 0;
 	}
 
-	float Dot(Vec2 const &o) const
+	float Dot(Vec2f const &o) const
 	{
 		return x * o.x + y * o.y;
 	}
 
-	float Cross(Vec2 const &o) const
+	float Cross(Vec2f const &o) const
 	{
 		return x * o.y - y * o.x;
 	}
@@ -134,120 +134,117 @@ struct Vec2
 		return DirectX::XMFLOAT2(x, y);
 	}
 
-	Vec2 &operator = (Point2D const &p);
-	Vec2 operator - (Size2D const &s);
+	Vec2f &operator = (Point2D const &p);
+	Vec2f operator - (Size2D const &s);
 
-	string ToString() const
-	{
-		return Format("{%f,%f}", x, y);
-	}
+	string ToString() const;
 
-	Vec2 Normalize();
+	Vec2f Normalize();
 };
 
 #pragma pack(pop)
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator <= (Vec2 const &a, Vec2 const &b)
+inline bool operator <= (Vec2f const &a, Vec2f const &b)
 {
 	return a.x <= b.x && a.y <= b.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator >= (Vec2 const &a, Vec2 const &b)
+inline bool operator >= (Vec2f const &a, Vec2f const &b)
 {
 	return a.x >= b.x && a.y >= b.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator < (Vec2 const &a, Vec2 const &b)
+inline bool operator < (Vec2f const &a, Vec2f const &b)
 {
 	return a.x < b.x && a.y < b.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator >(Vec2 const &a, Vec2 const &b)
+inline bool operator >(Vec2f const &a, Vec2f const &b)
 {
 	return a.x > b.x && a.y > b.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator == (Vec2 const &l, Vec2 const &r)
+inline bool operator == (Vec2f const &l, Vec2f const &r)
 {
 	return l.x == r.x && l.y == r.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline bool operator != (Vec2 const &l, Vec2 const &r)
+inline bool operator != (Vec2f const &l, Vec2f const &r)
 {
 	return l.x != r.x || l.y != r.y;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator + (Vec2 const &a, Vec2 const &b)
+inline Vec2f operator + (Vec2f const &a, Vec2f const &b)
 {
-	return Vec2(a.x + b.x, a.y + b.y);
+	return Vec2f(a.x + b.x, a.y + b.y);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator - (Vec2 const &a, Vec2 const &b)
+inline Vec2f operator - (Vec2f const &a, Vec2f const &b)
 {
-	return Vec2(a.x - b.x, a.y - b.y);
+	return Vec2f(a.x - b.x, a.y - b.y);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator * (Vec2 const &a, Vec2 const &b)
+inline Vec2f operator * (Vec2f const &a, Vec2f const &b)
 {
-	return Vec2(a.x * b.x, a.y * b.y);
+	return Vec2f(a.x * b.x, a.y * b.y);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator * (Vec2 const &a, float b)
+inline Vec2f operator * (Vec2f const &a, float b)
 {
-	return Vec2(a.x * b, a.y * b);
+	return Vec2f(a.x * b, a.y * b);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator / (Vec2 const &a, Vec2 const &b)
+inline Vec2f operator / (Vec2f const &a, Vec2f const &b)
 {
-	return Vec2(a.x / b.x, a.y / b.y);
+	return Vec2f(a.x / b.x, a.y / b.y);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 operator / (Vec2 const &a, float f)
+inline Vec2f operator / (Vec2f const &a, float f)
 {
-	return Vec2(a.x / f, a.y / f);
+	return Vec2f(a.x / f, a.y / f);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-inline Vec2 Vec2::Normalize()
+inline Vec2f Vec2f::Normalize()
 {
 	return *this / Length();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-template <> inline Vec2 Min(Vec2 a, Vec2 b)
+template <> inline Vec2f Min(Vec2f a, Vec2f b)
 {
-	return Vec2(Min(a.x, b.x), Min(a.y, b.y));
+	return Vec2f(Min(a.x, b.x), Min(a.y, b.y));
 }
 
 //////////////////////////////////////////////////////////////////////
 
-template <> inline Vec2 Max(Vec2 a, Vec2 b)
+template <> inline Vec2f Max(Vec2f a, Vec2f b)
 {
-	return Vec2(Max(a.x, b.x), Max(a.y, b.y));
+	return Vec2f(Max(a.x, b.x), Max(a.y, b.y));
 }

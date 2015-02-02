@@ -6,6 +6,11 @@
 
 struct Sampler
 {
+	Sampler()
+	{
+		CD3D11_SAMPLER_DESC desc(D3D11_DEFAULT);
+		DXT(D3D::Device->CreateSamplerState(&desc, &mSamplerState));
+	}
 
+	DXPtr<ID3D11SamplerState> mSamplerState;
 };
-

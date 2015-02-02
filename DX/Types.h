@@ -28,3 +28,7 @@ using std::wstring;
 using tstring = std::basic_string<tchar>;
 
 template <typename T> using Ptr = std::unique_ptr<T>;
+
+#define ALIGNED(x) __declspec(align(x))
+#define WEAKSYM __declspec(selectany)
+

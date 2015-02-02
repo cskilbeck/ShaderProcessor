@@ -16,7 +16,7 @@ struct Size2D: SIZE
 		cy = h;
 	}
 
-	explicit Size2D(Vec2 const &o)
+	explicit Size2D(Vec2f const &o)
 	{
 		cx = (int)o.x;
 		cy = (int)o.y;
@@ -89,7 +89,7 @@ inline Size2D operator - (Size2D a, Point2D b)
 
 //////////////////////////////////////////////////////////////////////
 
-inline Size2D operator - (Size2D const &s, Vec2 const &v)
+inline Size2D operator - (Size2D const &s, Vec2f const &v)
 {
 	return Size2D((long)(s.cx - v.x), (long)(s.cy - v.y));
 }

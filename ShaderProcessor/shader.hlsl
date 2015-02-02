@@ -2,17 +2,16 @@
 
 cbuffer VertConstants
 {
-	float4x4 ProjectionMatrix;
-	float bob = 2.0;
+	matrix ProjectionMatrix = matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
 //////////////////////////////////////////////////////////////////////
 
 struct VS_INPUT
 {
-	float2 Pos : FLOAT_Position;
-	float2 UV : FLOAT_TexCoord;
-	float4 Color : BYTE_Color;
+	float2 Pos : float_Position;
+	float2 UV : float_TexCoord;
+	float4 Color : byte_Color;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -29,26 +28,28 @@ struct PS_INPUT
 PS_INPUT vsMain(VS_INPUT input)
 {
 	PS_INPUT o;
+	o.UV = input.UV;
 	o.Pos = mul(float4(input.Pos.x, input.Pos.y, 0.5, 1.0), ProjectionMatrix);
 	o.col = input.Color;
 	return o;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 cbuffer ColourStuff
 {
-	float4 offset;
+	float4 tint;
 };
+
+//////////////////////////////////////////////////////////////////////
 
 sampler tex1Sampler;
 Texture2D picTexture;
-
-float4 tint = { 1.0f, 0.0f, 1.0f, 1.0f };
 
 //////////////////////////////////////////////////////////////////////
 
 float4 psMain(PS_INPUT input) : SV_TARGET
 {
 	float4 pixel = picTexture.Sample(tex1Sampler, input.UV);
-	return input.col * pixel + tint + offset;
+	return input.col * pixel * tint;
 }
-

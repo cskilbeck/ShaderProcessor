@@ -2,6 +2,7 @@
 
 #include "DX.h"
 #include <time.h>
+#include <debugapi.h>
 
 //////////////////////////////////////////////////////////////////////
 
@@ -10,7 +11,7 @@ void Trace(wchar const *strMsg, ...)
 	wchar strBuffer[512];
 	va_list args;
 	va_start(args, strMsg);
-	_vsnwprintf_s(strBuffer, ARRAYSIZE(strBuffer), strMsg, args);
+	_vsnwprintf_s(strBuffer, _countof(strBuffer), strMsg, args);
 	va_end(args);
 	OutputDebugStringW(strBuffer);
 }
@@ -22,7 +23,7 @@ void Trace(char const *strMsg, ...)
 	char strBuffer[512];
 	va_list args;
 	va_start(args, strMsg);
-	_vsnprintf_s(strBuffer, ARRAYSIZE(strBuffer), strMsg, args);
+	_vsnprintf_s(strBuffer, _countof(strBuffer), strMsg, args);
 	va_end(args);
 	OutputDebugStringA(strBuffer);
 }
@@ -144,6 +145,39 @@ wstring WideStringFromTString(tstring const &str)
 
 //////////////////////////////////////////////////////////////////////
 
+tstring TStringFromWideString(wstring const &str)
+{
+#ifdef UNICODE
+	return str;
+#else
+	return StringFromWideString(str);
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+
+string StringFromTString(tstring const &str)
+{
+#ifdef UNICODE
+	return StringFromWideString(str);
+#else
+	return str;
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+
+tstring TStringFromString(string const &str)
+{
+#ifdef UNICODE
+	return WideStringFromString(str);
+#else
+	return str;
+#endif
+}
+
+//////////////////////////////////////////////////////////////////////
+
 wstring WideStringFromString(string const &str)
 {
 	vector<wchar> temp;
@@ -171,28 +205,6 @@ string StringFromWideString(wstring const &str)
 
 //////////////////////////////////////////////////////////////////////
 
-string StringFromTString(tstring const &str)
-{
-#if defined(UNICODE)
-	return StringFromWideString(str);
-#else
-	return str;
-#endif
-}
-
-//////////////////////////////////////////////////////////////////////
-
-tstring TStringFromString(string const &str)
-{
-#if defined(UNICODE)
-	return WideStringFromString(str);
-#else
-	return str;
-#endif
-}
-
-//////////////////////////////////////////////////////////////////////
-
 tstring GetCurrentFolder()
 {
 	vector<tchar> s;
@@ -206,60 +218,67 @@ tstring GetCurrentFolder()
 
 //////////////////////////////////////////////////////////////////////
 
+static struct PathComponents
+{
+	tchar drive[_MAX_DRIVE];
+	tchar dir[_MAX_DIR];
+	tchar name[_MAX_FNAME];
+	tchar ext[_MAX_EXT];
+} pc;
+
+//////////////////////////////////////////////////////////////////////
+
+PathComponents SplitPath(tchar const *path, PathComponents &pc)
+{
+	_tsplitpath_s(path, pc.drive, pc.dir, pc.name, pc.ext);
+	return pc;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 tstring GetDrive(tchar const *path)
 {
-	tchar Drive[MAX_PATH];
-	tchar Dir[MAX_PATH];
-	tchar Name[MAX_PATH];
-	tchar Ext[MAX_PATH];
-	_tsplitpath_s(path, Drive, Dir, Name, Ext);
-	return Drive;
+	return SplitPath(path, pc).drive;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 tstring GetPath(tchar const *path)
 {
-	tchar Drive[MAX_PATH];
-	tchar Dir[MAX_PATH];
-	tchar Name[MAX_PATH];
-	tchar Ext[MAX_PATH];
-	_tsplitpath_s(path, Drive, Dir, Name, Ext);
-	return Dir;
+	return SplitPath(path, pc).dir;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 tstring GetFilename(tchar const *path)
 {
-	tchar Drive[MAX_PATH];
-	tchar Dir[MAX_PATH];
-	tchar Name[MAX_PATH];
-	tchar Ext[MAX_PATH];
-	_tsplitpath_s(path, Drive, Dir, Name, Ext);
-	return Name;
+	return SplitPath(path, pc).name;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 tstring GetExtension(tchar const *path)
 {
-	tchar Drive[MAX_PATH];
-	tchar Dir[MAX_PATH];
-	tchar Name[MAX_PATH];
-	tchar Ext[MAX_PATH];
-	_tsplitpath_s(path, Drive, Dir, Name, Ext);
-	return Ext;
+	return SplitPath(path, pc).ext;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 tstring SetExtension(tchar const *path, tchar const *ext)
 {
-	tchar Drive[MAX_PATH];
-	tchar Dir[MAX_PATH];
-	tchar Name[MAX_PATH];
-	tchar Ext[MAX_PATH];
-	_tsplitpath_s(path, Drive, Dir, Name, Ext);
-	return tstring(Drive) + tstring(Dir) + tstring(Name) + tstring(ext);
+	SplitPath(path, pc);
+	return tstring(pc.drive) + pc.dir + pc.name + ext;
 }
+//////////////////////////////////////////////////////////////////////
+
+void ErrorMessageBox(tchar const *format, ...)
+{
+	tchar buffer[1024];
+	va_list v;
+	va_start(v, format);
+	_vstprintf_s(buffer, format, v);
+	MessageBox(NULL, buffer, TEXT("Error"), MB_ICONEXCLAMATION);
+	TRACE(Format(TEXT("%s\n"), buffer).c_str());
+	//assert(false);
+}
+

@@ -89,6 +89,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerOutput>NoListing</AssemblerOutput>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -102,6 +103,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +120,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerOutput>NoListing</AssemblerOutput>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +138,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,27 +150,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Args.h" />
-    <ClInclude Include="CBuffer.h" />
-    <ClInclude Include="hlsltypes.h" />
     <ClInclude Include="optionparser.h" />
     <ClInclude Include="output.h" />
     <ClInclude Include="Binding.h" />
     <ClInclude Include="printer.h" />
-    <ClInclude Include="SamplerState.h" />
+    <ClInclude Include="SamplerBinding.h" />
     <ClInclude Include="HLSLShader.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="TBuffer.h" />
-    <ClInclude Include="Texture.h" />
+    <ClInclude Include="TBufferBinding.h" />
+    <ClInclude Include="TextureBinding.h" />
     <ClInclude Include="TypeDefinition.h" />
-    <ClInclude Include="WinResource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Args.cpp" />
     <ClCompile Include="Binding.cpp" />
     <ClCompile Include="CBuffer.cpp" />
     <ClCompile Include="Printer.cpp" />
-    <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="HLSLShader.cpp" />
     <ClCompile Include="ShaderProcessor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -175,7 +176,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TypeDefinition.cpp" />
-    <ClCompile Include="WinResource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader.hlsl">

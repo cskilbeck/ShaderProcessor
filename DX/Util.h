@@ -4,12 +4,6 @@
 
 //////////////////////////////////////////////////////////////////////
 
-#if !defined(ARRAYSIZE)
-#define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
-#endif
-
-//////////////////////////////////////////////////////////////////////
-
 void Trace(wchar const *strMsg, ...);
 void Trace(char const *strMsg, ...);
 #if defined(_DEBUG)
@@ -18,14 +12,19 @@ void Trace(char const *strMsg, ...);
 #define TRACE(x, ...) if (false) {} else (x);
 #endif
 
-uint8 *LoadFile(tchar const *filename, size_t *size = null);
+long ErrorMsgBox(tchar const *msg, long error);
+long ErrorMsgBox(tchar const *msg);
+
 HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
-wstring WideStringFromString(string const &str);
+
 wstring WideStringFromTString(tstring const &str);
-string StringFromWideString(wstring const &str);
+wstring WideStringFromString(string const &str);
+
+tstring TStringFromWideString(wstring const &str);
+tstring TStringFromString(string const &str);
 
 string StringFromTString(tstring const &str);
-tstring TStringFromString(string const &str);
+string StringFromWideString(wstring const &str);
 
 wstring Format(wchar const *fmt, ...);
 string Format(char const *fmt, ...);
@@ -342,3 +341,103 @@ template <class T> T ToUpper(T const &str)
 	return t;
 }
 
+//////////////////////////////////////////////////////////////////////
+
+struct HandleTraits
+{
+	static void Close(HANDLE handle)
+	{
+		CloseHandle(handle);
+	}
+
+	static HANDLE Default()
+	{
+		return INVALID_HANDLE_VALUE;
+	}
+
+	static HANDLE InvalidValue()
+	{
+		return INVALID_HANDLE_VALUE;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct IUnknownTraits
+{
+	static void Close(IUnknown *comptr)
+	{
+		comptr->Release();
+	}
+
+	static IUnknown *Default()
+	{
+		return null;
+	}
+
+	static IUnknown *InvalidValue()
+	{
+		return null;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<typename T, typename traits> struct ObjHandle
+{
+	T obj;
+
+	ObjHandle(T p) : obj(p)
+	{
+	}
+
+	ObjHandle()
+	{
+		obj = traits::Default();
+	}
+
+	operator T()
+	{
+		return obj;
+	}
+
+	T &operator = (T p)
+	{
+		obj = p;
+		return obj;
+	}
+
+	T *operator &()
+	{
+		return &obj;
+	}
+
+	bool IsValid() const
+	{
+		return obj != traits::InvalidValue();
+	}
+
+	void Close()
+	{
+		if(IsValid())
+		{
+			traits::Close(obj);
+		}
+		obj = traits::Default();
+	}
+
+	void Release()
+	{
+		Close();
+	}
+
+	~ObjHandle()
+	{
+		Close();
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<typename T> using DXPtr2 = ObjHandle<T, IUnknownTraits>;
+using Handle = ObjHandle<HANDLE, HandleTraits>;

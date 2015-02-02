@@ -8,12 +8,12 @@ template<typename vert> struct VertexBuffer
 {
 	VertexBuffer(uint vertCount)
 	{
-		Create(new vert[vertCount], true);
+		Create(new vert[vertCount], vertCount, true);
 	}
 
 	VertexBuffer(uint vertCount, vert *data)
 	{
-		Create(data, false);
+		Create(data, vertCount, false);
 	}
 
 	~VertexBuffer()
@@ -26,12 +26,14 @@ template<typename vert> struct VertexBuffer
 
 	void Commit(ID3D11DeviceContext *context)
 	{
-		context->UpdateSubresource(mD3DBuffer, 0, null, mBuffer.data(), 0, 0);
+		context->UpdateSubresource(mD3DBuffer, 0, null, mBuffer, 0, 0);
 	}
 
 	void Activate(ID3D11DeviceContext *context)
 	{
-		context->IASetVertexBuffers(0, 1, &mD3DBuffer, null, null);
+		uint stride = sizeof(vert);
+		uint offset = 0;
+		context->IASetVertexBuffers(0, 1, &mD3DBuffer, &stride, &offset);
 	}
 
 	vert &operator[](uint index)
@@ -41,17 +43,18 @@ template<typename vert> struct VertexBuffer
 
 	vert *operator &()
 	{
-		return mBuffer.data();
+		return mBuffer;
 	}
 
 private:
 
-	void Create(vert *data, bool own)
+	void Create(vert *data, uint32 vertCount, bool own)
 	{
 		mOwnBuffer = own;
 		mBuffer = data;
 		CD3D11_BUFFER_DESC desc(sizeof(vert) * vertCount, D3D11_BIND_VERTEX_BUFFER);
-		DXT(gDevice->CreateBuffer(&desc, mBuffer, &(t->mD3DBuffer)));
+		D3D11_SUBRESOURCE_DATA srd = { data, 0, 0 };
+		DXT(D3D::Device->CreateBuffer(&desc, &srd, &mD3DBuffer));
 	}
 
 	bool				mOwnBuffer;

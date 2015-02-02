@@ -60,24 +60,35 @@ namespace
 
 	BindingInfoMap_t BindingInfoMap =
 	{
-		{ D3D_SIT_CBUFFER, { true, BindingInfo::Type::ConstantBuffer, "CBUFFER" } },
-		{ D3D_SIT_TBUFFER, { false, BindingInfo::Type::Resource, "TBUFFER" } },
-		{ D3D_SIT_TEXTURE, { false, BindingInfo::Type::Resource, "TEXTURE" } },
-		{ D3D_SIT_SAMPLER, { false, BindingInfo::Type::SamplerState, "SAMPLER" } },
-		{ D3D_SIT_UAV_RWTYPED, { false, BindingInfo::Type::Resource, "UAV_RWTYPED" } },
-		{ D3D_SIT_STRUCTURED, { true, BindingInfo::Type::Resource, "STRUCTURED" } },
-		{ D3D_SIT_UAV_RWSTRUCTURED, { true, BindingInfo::Type::Resource, "UAV_RWSTRUCTURED" } },
-		{ D3D_SIT_BYTEADDRESS, { false, BindingInfo::Type::Resource, "BYTEADDRESS" } },
-		{ D3D_SIT_UAV_RWBYTEADDRESS, { false, BindingInfo::Type::Resource, "UAV_RWBYTEADDRESS" } },
-		{ D3D_SIT_UAV_APPEND_STRUCTURED, { true, BindingInfo::Type::Resource, "UAV_APPEND_STRUCTURED" } },
-		{ D3D_SIT_UAV_CONSUME_STRUCTURED, { true, BindingInfo::Type::Resource, "UAV_CONSUME_STRUCTURED" } },
-		{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, { true, BindingInfo::Type::Resource, "UAV_RWSTRUCTURED_WITH_COUNTER" } }
+		{ D3D_SIT_CBUFFER, { true, BindingInfo::Type::ConstantBuffer, "CBUFFER", "ConstantBuffer" } },
+		{ D3D_SIT_TBUFFER, { false, BindingInfo::Type::Resource, "TBUFFER", "TextureBuffer" } },
+		{ D3D_SIT_TEXTURE, { false, BindingInfo::Type::Resource, "TEXTURE", "Texture" } },
+		{ D3D_SIT_SAMPLER, { false, BindingInfo::Type::SamplerState, "SAMPLER", "Sampler" } },
+		{ D3D_SIT_UAV_RWTYPED, { false, BindingInfo::Type::Resource, "UAV_RWTYPED", "RW_UAVTyped" } },
+		{ D3D_SIT_STRUCTURED, { true, BindingInfo::Type::Resource, "STRUCTURED", "StructuredInput" } },
+		{ D3D_SIT_UAV_RWSTRUCTURED, { true, BindingInfo::Type::Resource, "UAV_RWSTRUCTURED", "RW_UAVStructured" } },
+		{ D3D_SIT_BYTEADDRESS, { false, BindingInfo::Type::Resource, "BYTEADDRESS", "ByteAddress" } },
+		{ D3D_SIT_UAV_RWBYTEADDRESS, { false, BindingInfo::Type::Resource, "UAV_RWBYTEADDRESS", "RW_ByteAddress" } },
+		{ D3D_SIT_UAV_APPEND_STRUCTURED, { true, BindingInfo::Type::Resource, "UAV_APPEND_STRUCTURED", "AppendStructured" } },
+		{ D3D_SIT_UAV_CONSUME_STRUCTURED, { true, BindingInfo::Type::Resource, "UAV_CONSUME_STRUCTURED", "ConsumeStructured" } },
+		{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, { true, BindingInfo::Type::Resource, "UAV_RWSTRUCTURED_WITH_COUNTER", "RW_AUVStructuredWithCounter" } }
 	};
 }
 
 //////////////////////////////////////////////////////////////////////
 
 Binding::ResourceBindingList_t Binding::ResourceBindingList[BindingInfo::Type::NumBindingTypes];
+
+BindingInfo *GetBindingInfo(D3D_SHADER_INPUT_TYPE type)
+{
+	auto i = BindingInfoMap.find(type);
+	return (i != BindingInfoMap.end()) ? &i->second : null;
+}
+
+char const *GetBindingTypeName(BindingInfo::Type bindingType)
+{
+	return BindingTypeNames[bindingType];
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -86,11 +97,10 @@ Binding::Binding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 	, mDesc(desc)
 	, definition(null)
 {
-	auto i = BindingInfoMap.find(desc.Type);
-	if(i != BindingInfoMap.end())
+	BindingInfo *info = GetBindingInfo(desc.Type);
+	if(info != null)
 	{
-		BindingInfo &info = i->second;
-		if(info.NeedsDefinition)
+		if(info->NeedsDefinition)
 		{
 			// find the definition in the shader
 			auto j = s->mDefinitionIDs.find(desc.Name);
@@ -103,7 +113,7 @@ Binding::Binding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 				TRACE("ERROR! Where's my TypeDefinition!? I need one...\n");
 			}
 		}
-		ResourceBindingList[info.BindingType].push_back(this);
+		ResourceBindingList[info->BindingType].push_back(this);
 	}
 	else
 	{
@@ -148,7 +158,9 @@ void Binding::ShowAllBindings()
 		for(auto j = l.begin(); j != l.end(); ++j)
 		{
 			Binding *b = *j;
-			TRACE("  %d:%s %s", b->mDesc.BindPoint, GetFrom(shader_input_type_names, b->mDesc.Type).c_str(), b->Name());
+			BindingInfo *info = GetBindingInfo(b->mDesc.Type);
+			assert(info != null);
+			TRACE("  %d:%s %s", b->mDesc.BindPoint, info->Name, b->Name());
 			if(b->definition != null)
 			{
 				TRACE(" (Definition: %s)", b->definition->Name);

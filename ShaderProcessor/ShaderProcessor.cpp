@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "output.h"
 
 using namespace DirectX;
 
@@ -52,9 +53,100 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 
 //////////////////////////////////////////////////////////////////////
 
+struct MyDXWindow: DXWindow
+{
+	Ptr<vs_shader> v;
+	Ptr<ps_shader> p;
+	Ptr<Texture> t;
+	Ptr<Sampler> s;
+	Ptr<vs_shader::VertexBuffer> vb;
+	DXPtr<ID3D11RasterizerState> rasterizerState;
+	DXPtr<ID3D11DepthStencilState>	depthStencilState;
+
+	MyDXWindow()
+		: DXWindow(640, 480)
+	{
+	}
+
+	void OnKeyDown(int key, uintptr flags) override
+	{
+		if(key == 27)
+		{
+			Close();
+		}
+	}
+
+	bool OnCreate() override
+	{
+		if(!DXWindow::OnCreate())
+		{
+			return false;
+		}
+		v.reset(new vs_shader());
+		p.reset(new ps_shader());
+		t.reset(new Texture(256, 256, Color::Snow));
+		s.reset(new Sampler());
+		vb.reset(new vs_shader::VertexBuffer(3));
+
+		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
+		rasterizerDesc.CullMode = D3D11_CULL_NONE;
+		DXB(Device()->CreateRasterizerState(&rasterizerDesc, &rasterizerState));
+
+		CD3D11_DEPTH_STENCIL_DESC depthstencilDesc(D3D11_DEFAULT);
+		depthstencilDesc.DepthEnable = false;
+		depthstencilDesc.StencilEnable = false;
+		DXB(Device()->CreateDepthStencilState(&depthstencilDesc, &depthStencilState));
+
+		TRACE("OnCreate complete\n");
+
+		return true;
+	}
+
+	void OnDestroy() override
+	{
+		v.reset();
+		p.reset();
+		t.reset();
+		s.reset();
+		vb.reset();
+		rasterizerState.Release();
+		depthStencilState.Release();
+	}
+
+	void OnDraw() override
+	{
+		Clear(Color(32, 64, 128));
+		v->VertConstants.Commit(Context());
+		v->Activate(Context());
+		p->tex1Sampler = s.get();
+		p->picTexture = t.get();
+		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, 1.0f);
+		p->ColourStuff.Commit(Context());
+		p->Activate(Context());
+		vs_shader::VertexBuffer &b = *vb;
+		b[0].Color = Color::White;	b[0].Position = Float2(0, 0);	b[0].TexCoord = Float2(0, 0);
+		b[1].Color = Color::White;	b[1].Position = Float2(1, 0);	b[1].TexCoord = Float2(1, 1);
+		b[2].Color = Color::White;	b[2].Position = Float2(1, 1);	b[2].TexCoord = Float2(1, 0);
+		b.Commit(Context());
+		b.Activate(Context());
+		Context()->RSSetState(rasterizerState);
+		Context()->OMSetDepthStencilState(depthStencilState, 0);
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->Draw(3, 0);
+	}
+};
+
 int main(int argc, char *argv[])
 {
-	half a; a = 0.5f;
+	half a(0.5f);
+
+	MyDXWindow w;
+	w.Open();
+	w.Show();
+
+	while(w.Update())
+	{
+	}
 
 	vector<Option> options;
 	if(!ParseArgs(argc, argv, options))
@@ -73,13 +165,6 @@ int main(int argc, char *argv[])
 	{
 		fprintf(stderr, "Shader model not specified, exiting\n");
 		PrintUsage();
-		return 1;
-	}
-
-	D3D::Initializer d3d;
-	if(!d3d.IsValid)
-	{
-		fprintf(stderr, "Error initializing D3D, exiting\n");
 		return 1;
 	}
 

@@ -10,15 +10,10 @@ struct ConstBufferOffset
 	size_t offset;
 };
 
+//////////////////////////////////////////////////////////////////////
+
 template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// definition MUST be POD
 {
-	//////////////////////////////////////////////////////////////////////
-
-	uint32 const					mOffsetCount;
-	ConstBufferOffset const * const	mOffsets;
-	uint32 const * const 			mDefaults;
-	DXPtr<ID3D11Buffer>				mConstantBuffer;
-
 	ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 const *Defaults, Shader *parent)
 		: mOffsetCount(OffsetCount)
 		, mOffsets(Offsets)
@@ -29,7 +24,7 @@ template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// def
 		CD3D11_BUFFER_DESC desc(sizeof(definition), D3D11_BIND_CONSTANT_BUFFER);
 		D3D11_SUBRESOURCE_DATA srd = { 0 };
 		srd.pSysMem = (void const *)this;
-		DXV(gDevice->CreateBuffer(&desc, &srd, &mConstantBuffer));
+		DXV(D3D::Device->CreateBuffer(&desc, &srd, &mConstantBuffer));
 		parent->mConstBufferPointers.push_back(mConstantBuffer);
 		assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 	}
@@ -77,5 +72,13 @@ template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// def
 		int offset;
 		return GetOffset(name, offset) ? (byte *)this + offset : null;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	uint32 const					mOffsetCount;
+	ConstBufferOffset const * const	mOffsets;
+	uint32 const * const 			mDefaults;
+	DXPtr<ID3D11Buffer>				mConstantBuffer;
+
 };
 

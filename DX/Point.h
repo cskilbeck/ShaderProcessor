@@ -22,7 +22,7 @@ struct Point2D: POINT
 		y = o.y;
 	}
 
-	explicit Point2D(Vec2 const &o)
+	explicit Point2D(Vec2f const &o)
 	{
 		x = (int)o.x;
 		y = (int)o.y;
@@ -83,7 +83,7 @@ inline Point2D operator - (Point2D const &a, Point2D const &b)
 
 //////////////////////////////////////////////////////////////////////
 
-inline Point2D operator - (Point2D const &a, Vec2 const &b)
+inline Point2D operator - (Point2D const &a, Vec2f const &b)
 {
 	return Point2D((int)(a.x - b.x), (int)(a.y - b.y));
 }

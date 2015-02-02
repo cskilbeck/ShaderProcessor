@@ -6,21 +6,21 @@
 
 enum StorageType
 {
-	Float,
-	Half,
-	Int,
-	UInt,
-	Short,
-	UShort,
-	Byte,
-	SByte,
-	Norm16,
-	Norm8,
-	UNorm16,
-	UNorm8,
-	Typeless32,
-	Typeless16,
-	Typeless8
+	Float_type,
+	Half_type,
+	Int_type,
+	UInt_type,
+	Short_type,
+	UShort_type,
+	Byte_type,
+	SByte_type,
+	Norm16_type,
+	Norm8_type,
+	UNorm16_type,
+	UNorm8_type,
+	Typeless32_type,
+	Typeless16_type,
+	Typeless8_type
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -238,6 +238,14 @@ struct HLSLShader
 	virtual ~HLSLShader();
 
 	void Output();
+	void OutputConstBufferNamesAndOffsets();
+	void OutputResourceNames();
+	void OutputSamplerNames();
+	void OutputShaderStruct();
+	void OutputConstBufferMembers();
+	void OutputSamplerMembers();
+	void OutputResourceMembers();
+	void OutputConstructor();
 	void OutputInputElements();
 	void OutputInputStruct();
 	void OutputBlob();
