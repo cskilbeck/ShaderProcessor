@@ -50,7 +50,7 @@ struct Shader
 	{
 		mTexturePointers.resize(numTextures);
 		mSamplerPointers.resize(numSamplers);
-		mConstBufferPointers.resize(numConstBuffers);
+		mConstBufferPointers.reserve(numConstBuffers);
 	}
 
 	void UpdateTextures()
