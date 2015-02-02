@@ -125,16 +125,18 @@ struct MyDXWindow: DXWindow
 	void OnDraw() override
 	{
 		Clear(Color(32, 64, 128));
+
+		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, sinf(mFrame * 0.25f) * 0.25f + 0.75f);
+		p->ColourStuff.Commit(Context());
+
 		v->Activate(Context());
 		p->Activate(Context());
 		vb->Activate(Context());
 
-		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, sinf(mFrame * 0.1f) * 0.5f + 0.5f);
-		p->ColourStuff.Commit(Context());
-
 		Context()->RSSetState(rasterizerState);
 		Context()->OMSetBlendState(blendState, null, 0xffffffff);
 		Context()->OMSetDepthStencilState(depthStencilState, 0);
+
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		Context()->Draw(4, 0);
 	}

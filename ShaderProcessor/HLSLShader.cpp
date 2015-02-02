@@ -122,128 +122,6 @@ InputType type_suffix[] =
 
 //////////////////////////////////////////////////////////////////////
 
-USMap FormatName =
-{
-	{ DXGI_FORMAT_UNKNOWN                   , "DXGI_FORMAT_UNKNOWN" },
-	{ DXGI_FORMAT_R32G32B32A32_TYPELESS     , "DXGI_FORMAT_R32G32B32A32_TYPELESS" },
-	{ DXGI_FORMAT_R32G32B32A32_FLOAT        , "DXGI_FORMAT_R32G32B32A32_FLOAT" },
-	{ DXGI_FORMAT_R32G32B32A32_UINT         , "DXGI_FORMAT_R32G32B32A32_UINT" },
-	{ DXGI_FORMAT_R32G32B32A32_SINT         , "DXGI_FORMAT_R32G32B32A32_SINT" },
-	{ DXGI_FORMAT_R32G32B32_TYPELESS        , "DXGI_FORMAT_R32G32B32_TYPELESS" },
-	{ DXGI_FORMAT_R32G32B32_FLOAT           , "DXGI_FORMAT_R32G32B32_FLOAT" },
-	{ DXGI_FORMAT_R32G32B32_UINT            , "DXGI_FORMAT_R32G32B32_UINT" },
-	{ DXGI_FORMAT_R32G32B32_SINT            , "DXGI_FORMAT_R32G32B32_SINT" },
-	{ DXGI_FORMAT_R16G16B16A16_TYPELESS     , "DXGI_FORMAT_R16G16B16A16_TYPELESS" },
-	{ DXGI_FORMAT_R16G16B16A16_FLOAT        , "DXGI_FORMAT_R16G16B16A16_FLOAT" },
-	{ DXGI_FORMAT_R16G16B16A16_UNORM        , "DXGI_FORMAT_R16G16B16A16_UNORM" },
-	{ DXGI_FORMAT_R16G16B16A16_UINT         , "DXGI_FORMAT_R16G16B16A16_UINT" },
-	{ DXGI_FORMAT_R16G16B16A16_SNORM        , "DXGI_FORMAT_R16G16B16A16_SNORM" },
-	{ DXGI_FORMAT_R16G16B16A16_SINT         , "DXGI_FORMAT_R16G16B16A16_SINT" },
-	{ DXGI_FORMAT_R32G32_TYPELESS           , "DXGI_FORMAT_R32G32_TYPELESS" },
-	{ DXGI_FORMAT_R32G32_FLOAT              , "DXGI_FORMAT_R32G32_FLOAT" },
-	{ DXGI_FORMAT_R32G32_UINT               , "DXGI_FORMAT_R32G32_UINT" },
-	{ DXGI_FORMAT_R32G32_SINT               , "DXGI_FORMAT_R32G32_SINT" },
-	{ DXGI_FORMAT_R32G8X24_TYPELESS         , "DXGI_FORMAT_R32G8X24_TYPELESS" },
-	{ DXGI_FORMAT_D32_FLOAT_S8X24_UINT      , "DXGI_FORMAT_D32_FLOAT_S8X24_UINT" },
-	{ DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS  , "DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS" },
-	{ DXGI_FORMAT_X32_TYPELESS_G8X24_UINT   , "DXGI_FORMAT_X32_TYPELESS_G8X24_UINT" },
-	{ DXGI_FORMAT_R10G10B10A2_TYPELESS      , "DXGI_FORMAT_R10G10B10A2_TYPELESS" },
-	{ DXGI_FORMAT_R10G10B10A2_UNORM         , "DXGI_FORMAT_R10G10B10A2_UNORM" },
-	{ DXGI_FORMAT_R10G10B10A2_UINT          , "DXGI_FORMAT_R10G10B10A2_UINT" },
-	{ DXGI_FORMAT_R11G11B10_FLOAT           , "DXGI_FORMAT_R11G11B10_FLOAT" },
-	{ DXGI_FORMAT_R8G8B8A8_TYPELESS         , "DXGI_FORMAT_R8G8B8A8_TYPELESS" },
-	{ DXGI_FORMAT_R8G8B8A8_UNORM            , "DXGI_FORMAT_R8G8B8A8_UNORM" },
-	{ DXGI_FORMAT_R8G8B8A8_UNORM_SRGB       , "DXGI_FORMAT_R8G8B8A8_UNORM_SRGB" },
-	{ DXGI_FORMAT_R8G8B8A8_UINT             , "DXGI_FORMAT_R8G8B8A8_UINT" },
-	{ DXGI_FORMAT_R8G8B8A8_SNORM            , "DXGI_FORMAT_R8G8B8A8_SNORM" },
-	{ DXGI_FORMAT_R8G8B8A8_SINT             , "DXGI_FORMAT_R8G8B8A8_SINT" },
-	{ DXGI_FORMAT_R16G16_TYPELESS           , "DXGI_FORMAT_R16G16_TYPELESS" },
-	{ DXGI_FORMAT_R16G16_FLOAT              , "DXGI_FORMAT_R16G16_FLOAT" },
-	{ DXGI_FORMAT_R16G16_UNORM              , "DXGI_FORMAT_R16G16_UNORM" },
-	{ DXGI_FORMAT_R16G16_UINT               , "DXGI_FORMAT_R16G16_UINT" },
-	{ DXGI_FORMAT_R16G16_SNORM              , "DXGI_FORMAT_R16G16_SNORM" },
-	{ DXGI_FORMAT_R16G16_SINT               , "DXGI_FORMAT_R16G16_SINT" },
-	{ DXGI_FORMAT_R32_TYPELESS              , "DXGI_FORMAT_R32_TYPELESS" },
-	{ DXGI_FORMAT_D32_FLOAT                 , "DXGI_FORMAT_D32_FLOAT" },
-	{ DXGI_FORMAT_R32_FLOAT                 , "DXGI_FORMAT_R32_FLOAT" },
-	{ DXGI_FORMAT_R32_UINT                  , "DXGI_FORMAT_R32_UINT" },
-	{ DXGI_FORMAT_R32_SINT                  , "DXGI_FORMAT_R32_SINT" },
-	{ DXGI_FORMAT_R24G8_TYPELESS            , "DXGI_FORMAT_R24G8_TYPELESS" },
-	{ DXGI_FORMAT_D24_UNORM_S8_UINT         , "DXGI_FORMAT_D24_UNORM_S8_UINT" },
-	{ DXGI_FORMAT_R24_UNORM_X8_TYPELESS     , "DXGI_FORMAT_R24_UNORM_X8_TYPELESS" },
-	{ DXGI_FORMAT_X24_TYPELESS_G8_UINT      , "DXGI_FORMAT_X24_TYPELESS_G8_UINT" },
-	{ DXGI_FORMAT_R8G8_TYPELESS             , "DXGI_FORMAT_R8G8_TYPELESS" },
-	{ DXGI_FORMAT_R8G8_UNORM                , "DXGI_FORMAT_R8G8_UNORM" },
-	{ DXGI_FORMAT_R8G8_UINT                 , "DXGI_FORMAT_R8G8_UINT" },
-	{ DXGI_FORMAT_R8G8_SNORM                , "DXGI_FORMAT_R8G8_SNORM" },
-	{ DXGI_FORMAT_R8G8_SINT                 , "DXGI_FORMAT_R8G8_SINT" },
-	{ DXGI_FORMAT_R16_TYPELESS              , "DXGI_FORMAT_R16_TYPELESS" },
-	{ DXGI_FORMAT_R16_FLOAT                 , "DXGI_FORMAT_R16_FLOAT" },
-	{ DXGI_FORMAT_D16_UNORM                 , "DXGI_FORMAT_D16_UNORM" },
-	{ DXGI_FORMAT_R16_UNORM                 , "DXGI_FORMAT_R16_UNORM" },
-	{ DXGI_FORMAT_R16_UINT                  , "DXGI_FORMAT_R16_UINT" },
-	{ DXGI_FORMAT_R16_SNORM                 , "DXGI_FORMAT_R16_SNORM" },
-	{ DXGI_FORMAT_R16_SINT                  , "DXGI_FORMAT_R16_SINT" },
-	{ DXGI_FORMAT_R8_TYPELESS               , "DXGI_FORMAT_R8_TYPELESS" },
-	{ DXGI_FORMAT_R8_UNORM                  , "DXGI_FORMAT_R8_UNORM" },
-	{ DXGI_FORMAT_R8_UINT                   , "DXGI_FORMAT_R8_UINT" },
-	{ DXGI_FORMAT_R8_SNORM                  , "DXGI_FORMAT_R8_SNORM" },
-	{ DXGI_FORMAT_R8_SINT                   , "DXGI_FORMAT_R8_SINT" },
-	{ DXGI_FORMAT_A8_UNORM                  , "DXGI_FORMAT_A8_UNORM" },
-	{ DXGI_FORMAT_R1_UNORM                  , "DXGI_FORMAT_R1_UNORM" },
-	{ DXGI_FORMAT_R9G9B9E5_SHAREDEXP        , "DXGI_FORMAT_R9G9B9E5_SHAREDEXP" },
-	{ DXGI_FORMAT_R8G8_B8G8_UNORM           , "DXGI_FORMAT_R8G8_B8G8_UNORM" },
-	{ DXGI_FORMAT_G8R8_G8B8_UNORM           , "DXGI_FORMAT_G8R8_G8B8_UNORM" },
-	{ DXGI_FORMAT_BC1_TYPELESS              , "DXGI_FORMAT_BC1_TYPELESS" },
-	{ DXGI_FORMAT_BC1_UNORM                 , "DXGI_FORMAT_BC1_UNORM" },
-	{ DXGI_FORMAT_BC1_UNORM_SRGB            , "DXGI_FORMAT_BC1_UNORM_SRGB" },
-	{ DXGI_FORMAT_BC2_TYPELESS              , "DXGI_FORMAT_BC2_TYPELESS" },
-	{ DXGI_FORMAT_BC2_UNORM                 , "DXGI_FORMAT_BC2_UNORM" },
-	{ DXGI_FORMAT_BC2_UNORM_SRGB            , "DXGI_FORMAT_BC2_UNORM_SRGB" },
-	{ DXGI_FORMAT_BC3_TYPELESS              , "DXGI_FORMAT_BC3_TYPELESS" },
-	{ DXGI_FORMAT_BC3_UNORM                 , "DXGI_FORMAT_BC3_UNORM" },
-	{ DXGI_FORMAT_BC3_UNORM_SRGB            , "DXGI_FORMAT_BC3_UNORM_SRGB" },
-	{ DXGI_FORMAT_BC4_TYPELESS              , "DXGI_FORMAT_BC4_TYPELESS" },
-	{ DXGI_FORMAT_BC4_UNORM                 , "DXGI_FORMAT_BC4_UNORM" },
-	{ DXGI_FORMAT_BC4_SNORM                 , "DXGI_FORMAT_BC4_SNORM" },
-	{ DXGI_FORMAT_BC5_TYPELESS              , "DXGI_FORMAT_BC5_TYPELESS" },
-	{ DXGI_FORMAT_BC5_UNORM                 , "DXGI_FORMAT_BC5_UNORM" },
-	{ DXGI_FORMAT_BC5_SNORM                 , "DXGI_FORMAT_BC5_SNORM" },
-	{ DXGI_FORMAT_B5G6R5_UNORM              , "DXGI_FORMAT_B5G6R5_UNORM" },
-	{ DXGI_FORMAT_B5G5R5A1_UNORM            , "DXGI_FORMAT_B5G5R5A1_UNORM" },
-	{ DXGI_FORMAT_B8G8R8A8_UNORM            , "DXGI_FORMAT_B8G8R8A8_UNORM" },
-	{ DXGI_FORMAT_B8G8R8X8_UNORM            , "DXGI_FORMAT_B8G8R8X8_UNORM" },
-	{ DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM, "DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM" },
-	{ DXGI_FORMAT_B8G8R8A8_TYPELESS         , "DXGI_FORMAT_B8G8R8A8_TYPELESS" },
-	{ DXGI_FORMAT_B8G8R8A8_UNORM_SRGB       , "DXGI_FORMAT_B8G8R8A8_UNORM_SRGB" },
-	{ DXGI_FORMAT_B8G8R8X8_TYPELESS         , "DXGI_FORMAT_B8G8R8X8_TYPELESS" },
-	{ DXGI_FORMAT_B8G8R8X8_UNORM_SRGB       , "DXGI_FORMAT_B8G8R8X8_UNORM_SRGB" },
-	{ DXGI_FORMAT_BC6H_TYPELESS             , "DXGI_FORMAT_BC6H_TYPELESS" },
-	{ DXGI_FORMAT_BC6H_UF16                 , "DXGI_FORMAT_BC6H_UF16" },
-	{ DXGI_FORMAT_BC6H_SF16                 , "DXGI_FORMAT_BC6H_SF16" },
-	{ DXGI_FORMAT_BC7_TYPELESS              , "DXGI_FORMAT_BC7_TYPELESS" },
-	{ DXGI_FORMAT_BC7_UNORM                 , "DXGI_FORMAT_BC7_UNORM" },
-	{ DXGI_FORMAT_BC7_UNORM_SRGB            , "DXGI_FORMAT_BC7_UNORM_SRGB" },
-	{ DXGI_FORMAT_AYUV                      , "DXGI_FORMAT_AYUV" },
-	{ DXGI_FORMAT_Y410                      , "DXGI_FORMAT_Y410" },
-	{ DXGI_FORMAT_Y416                      , "DXGI_FORMAT_Y416" },
-	{ DXGI_FORMAT_NV12                      , "DXGI_FORMAT_NV12" },
-	{ DXGI_FORMAT_P010                      , "DXGI_FORMAT_P010" },
-	{ DXGI_FORMAT_P016                      , "DXGI_FORMAT_P016" },
-	{ DXGI_FORMAT_420_OPAQUE                , "DXGI_FORMAT_420_OPAQUE" },
-	{ DXGI_FORMAT_YUY2                      , "DXGI_FORMAT_YUY2" },
-	{ DXGI_FORMAT_Y210                      , "DXGI_FORMAT_Y210" },
-	{ DXGI_FORMAT_Y216                      , "DXGI_FORMAT_Y216" },
-	{ DXGI_FORMAT_NV11                      , "DXGI_FORMAT_NV11" },
-	{ DXGI_FORMAT_AI44                      , "DXGI_FORMAT_AI44" },
-	{ DXGI_FORMAT_IA44                      , "DXGI_FORMAT_IA44" },
-	{ DXGI_FORMAT_P8                        , "DXGI_FORMAT_P8" },
-	{ DXGI_FORMAT_A8P8                      , "DXGI_FORMAT_A8P8" },
-	{ DXGI_FORMAT_B4G4R4A4_UNORM            , "DXGI_FORMAT_B4G4R4A4_UNORM" }
-};
-
-//////////////////////////////////////////////////////////////////////
-
 uint SizeOfFormatElement(DXGI_FORMAT format)
 {
 	switch(format)
@@ -504,7 +382,8 @@ DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
 
 char const *GetFormatName(DXGI_FORMAT format)
 {
-	return GetFrom(FormatName, format, "DXGI_FORMAT_UNKNOWN");
+	DXGI_FormatDescriptor *f = GetDXGIDescriptor(format);
+	return (f != null) ? f->name : "DXGI_FORMAT_UNKNOWN";
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -757,7 +636,6 @@ void HLSLShader::OutputSamplerMembers()
 	if(mSamplers > 0)
 	{
 		output(unionHeader);
-		char const *sep = "";
 		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 		{
 			if((*i)->IsSampler())
@@ -813,12 +691,10 @@ void HLSLShader::OutputConstructor()
 		   mResources > 0 ? "textures" : "null",
 		   mSamplers > 0 ? "samplers" : "null"
 		   );
-	char const *sep = ", ";
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		output("\n\t\t%s", sep);
+		output("\n\t\t, ");
 		(*i)->ConstructorOutput();
-		sep = ", ";
 	}
 
 	output("\n\t{\n\t}\n");
@@ -838,7 +714,6 @@ void HLSLShader::OutputShaderStruct()
 	}
 
 	output("struct %s : %sShader%s, Aligned16\n", Name().c_str(), mShaderTypeDesc.name, vsTag.c_str());
-
 	output("{\n");
 
 	OutputConstBufferMembers();
@@ -866,7 +741,7 @@ void HLSLShader::OutputInputElements()
 	{
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		char const *formatName = GetFormatName(d.Format);
-		output("%s\n\t{ \"%s\", %u, %s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
+		output("%s\n\t{ \"%s\", %u, DXGI_FORMAT_%s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
 		sep = ",";
 	}
 	output("\n};\n");
@@ -901,16 +776,6 @@ void HLSLShader::Output()
 	OutputResourceNames();
 	OutputInputElements();
 	OutputShaderStruct();
-}
-
-//////////////////////////////////////////////////////////////////////
-
-template <typename T> static void CallOutput(std::vector<T *> &vec)
-{
-	for(auto i = vec.begin(); i != vec.end(); ++i)
-	{
-		(*i)->Output();
-	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1056,4 +921,3 @@ HRESULT HLSLShader::Destroy()
 	mReflector.Release();
 	return S_OK;
 }
-

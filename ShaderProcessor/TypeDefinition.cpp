@@ -224,8 +224,6 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 
 void TypeDefinition::MemberOutput(string const &shaderName)
 {
-	// need to track the size of the struct and insert padding so no member crosses a 1x4 register boundary...
-
 	uint padID = 0;
 	uint fieldCount = 0;
 	output("\tstruct ALIGNED(16) %s\n\t{\n", mDesc.Name);
@@ -244,22 +242,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 		++fieldCount;
 	}
 	output("\t};\n\n");
-//	output("\t\t%s %s;\n\n", mDesc.Name, mDesc.Name);
-
 	output("\tConstBuffer<%s> %s;\n\n", mDesc.Name, mDesc.Name);
-
-	// , %u, %s_%s_Offsets, %s_%s_Defaults> 
-	// , 
-
-	//ConstBuffer<$Globals_t,
-	//	2,
-	//	SimplePixelShader_$Globals_Offsets,
-	//	SimplePixelShader_$Globals_Defaults>
-	//	$Globals;
-
-	//ConstantBuffer<GridStuff_t, 2, SimplePixelShader_GridStuff_Offsets> GridStuff;
-	//string s = Format("ConstantBuffer<%s_t, %d, %s_%s_Offsets> %s", mDesc.Name, mDesc.Variables, shaderName.c_str(), mDesc.Name, mDesc.Name);
-	//printf("\t\t};\n\t\t%s;\n", s.c_str());
 }
 
 void TypeDefinition::ConstructorOutput()

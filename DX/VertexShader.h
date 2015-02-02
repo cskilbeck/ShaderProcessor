@@ -8,7 +8,6 @@ template<D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount> 
 {
 	VertexShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames, Texture **textureArray, Sampler **samplerArray)
 		: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
-
 	{
 		DXT(D3D::Device->CreateVertexShader(blob, size, null, &mVertexShader));
 		DXT(D3D::Device->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
