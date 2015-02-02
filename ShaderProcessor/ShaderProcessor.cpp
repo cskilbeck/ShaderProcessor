@@ -62,6 +62,7 @@ struct MyDXWindow: DXWindow
 	Ptr<vs_shader::VertexBuffer> vb;
 	DXPtr<ID3D11RasterizerState> rasterizerState;
 	DXPtr<ID3D11DepthStencilState>	depthStencilState;
+	DXPtr<ID3D11BlendState>	blendState;
 
 	MyDXWindow()
 		: DXWindow(640, 480)
@@ -84,9 +85,16 @@ struct MyDXWindow: DXWindow
 		}
 		v.reset(new vs_shader());
 		p.reset(new ps_shader());
-		t.reset(new Texture(256, 256, Color::Snow));
+		t.reset(new Texture(TEXT("temp.png")));
 		s.reset(new Sampler());
-		vb.reset(new vs_shader::VertexBuffer(3));
+		vb.reset(new vs_shader::VertexBuffer(4));
+
+		vs_shader::VertexBuffer &b = *vb;
+		b[0].Color = Color::White;	b[0].Position = Float2(0.0f, 1);	b[0].TexCoord = Float2(0, 0);
+		b[1].Color = Color::White;	b[1].Position = Float2(0.0f, 0);	b[1].TexCoord = Float2(0, 1);
+		b[2].Color = Color::White;	b[2].Position = Float2(0.5f, 1);	b[2].TexCoord = Float2(1, 0);
+		b[3].Color = Color::White;	b[3].Position = Float2(0.5f, 0);	b[3].TexCoord = Float2(1, 1);
+		b.Commit(Context());
 
 		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
 		rasterizerDesc.CullMode = D3D11_CULL_NONE;
@@ -97,9 +105,35 @@ struct MyDXWindow: DXWindow
 		depthstencilDesc.StencilEnable = false;
 		DXB(Device()->CreateDepthStencilState(&depthstencilDesc, &depthStencilState));
 
-		TRACE("OnCreate complete\n");
+		CD3D11_BLEND_DESC blendDesc(D3D11_DEFAULT);
+		blendDesc.RenderTarget[0].BlendEnable = true;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		DXB(Device()->CreateBlendState(&blendDesc, &blendState));
+
+		p->tex1Sampler = s.get();
+		p->picTexture = t.get();
+		v->VertConstants.ProjectionMatrix.m[0][0] = 0.3f;
+		v->VertConstants.ProjectionMatrix.m[1][1] = 0.3f;
+		v->VertConstants.Commit(Context());
+		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, 1.0f);
+		p->ColourStuff.Commit(Context());
 
 		return true;
+	}
+
+	void OnDraw() override
+	{
+		Clear(Color(32, 64, 128));
+		v->Activate(Context());
+		p->Activate(Context());
+		vb->Activate(Context());
+		Context()->RSSetState(rasterizerState);
+		Context()->OMSetBlendState(blendState, null, 0xffffffff);
+		Context()->OMSetDepthStencilState(depthStencilState, 0);
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		Context()->Draw(4, 0);
 	}
 
 	void OnDestroy() override
@@ -111,35 +145,14 @@ struct MyDXWindow: DXWindow
 		vb.reset();
 		rasterizerState.Release();
 		depthStencilState.Release();
-	}
-
-	void OnDraw() override
-	{
-		Clear(Color(32, 64, 128));
-		v->VertConstants.Commit(Context());
-		v->Activate(Context());
-		p->tex1Sampler = s.get();
-		p->picTexture = t.get();
-		p->ColourStuff.tint = Float4(1.0f, 1.0f, 1.0f, 1.0f);
-		p->ColourStuff.Commit(Context());
-		p->Activate(Context());
-		vs_shader::VertexBuffer &b = *vb;
-		b[0].Color = Color::White;	b[0].Position = Float2(0, 0);	b[0].TexCoord = Float2(0, 0);
-		b[1].Color = Color::White;	b[1].Position = Float2(1, 0);	b[1].TexCoord = Float2(1, 1);
-		b[2].Color = Color::White;	b[2].Position = Float2(1, 1);	b[2].TexCoord = Float2(1, 0);
-		b.Commit(Context());
-		b.Activate(Context());
-		Context()->RSSetState(rasterizerState);
-		Context()->OMSetDepthStencilState(depthStencilState, 0);
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->Draw(3, 0);
+		blendState.Release();
 	}
 };
 
+//////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[])
 {
-	half a(0.5f);
-
 	MyDXWindow w;
 	w.Open();
 	w.Show();

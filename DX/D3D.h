@@ -268,6 +268,10 @@ struct D3DDevice
 	HRESULT Open(HWND w = null)
 	{
 		mWindow = w;
+		Rect2D r;
+		GetClientRect(w, &r);
+		mWidth = r.Width();
+		mHeight = r.Height();
 
 		D3D_FEATURE_LEVEL levels[] =
 		{
@@ -390,7 +394,7 @@ struct D3DDevice
 		vp.Height = (float)mHeight;
 		vp.MaxDepth = 1.0f;
 		vp.MinDepth = 0.0f;
-		mContext->RSSetViewports(1, &vp);
+		DXI(mContext->RSSetViewports(1, &vp));
 
 		return S_OK;
 	}
