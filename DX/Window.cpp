@@ -49,9 +49,7 @@ Window::Window(int width, int height, tchar const *caption, uint32 windowStyle, 
 	, mHINST(null)
 	, mWidth(width)
 	, mHeight(height)
-	, mLeftMouseDown(false)
-	, mRightMouseDown(false)
-	, mMessageWait(true)
+	, mActive(false)
 	, mCaption(caption == null ? tstring() : caption)
 	, mClassName(className == null ? tstring() : className)
 	, mWindowStyle(windowStyle)
@@ -235,17 +233,27 @@ void Window::MoveTo(int x, int y)
 
 bool Window::Update()
 {
-	MSG msg;
+	Keyboard::LastKeyPressed = 0;
+	Keyboard::LastCharPressed = 0;
 
-	if(mHWND == null || mMessageWait && WaitMessage() == 0)
+	Mouse::Pressed = 0;
+	Mouse::Released = 0;
+
+	if(mHWND == null || mActive == false && WaitMessage() == 0)
 	{
 		return false;
 	}
+
+	MSG msg;
 	while(PeekMessage(&msg, null, 0, 0, PM_REMOVE))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
+
+	Mouse::Update(*this);
+	Keyboard::Update();
+
 	return (msg.message != WM_QUIT) ? OnUpdate() : false;
 }
 
@@ -312,6 +320,13 @@ LRESULT Window::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			DoResize();
 			break;
 
+		case WM_MOUSEWHEEL:
+			Mouse::WheelDelta = (float)(HIWORD(wParam)) / WHEEL_DELTA;
+			mousePos = GetPointFromParam(lParam);
+			ScreenToClient(hWnd, &mousePos);
+			OnMouseWheel(mousePos, (int16)HIWORD(wParam), wParam);
+			break;
+
 		case WM_PAINT:
 			BeginPaint(mHWND, &ps);
 			OnPaint(ps);
@@ -319,21 +334,17 @@ LRESULT Window::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_CHAR:
+			Keyboard::LastCharPressed = (int)wParam;
 			OnChar((int)wParam, lParam);
 			break;
 
 		case WM_KEYDOWN:
+			Keyboard::LastKeyPressed = (int)wParam;
 			OnKeyDown((int)wParam, lParam);
 			break;
 
 		case WM_KEYUP:
 			OnKeyUp((int)wParam, lParam);
-			break;
-
-		case WM_MOUSEWHEEL:
-			mousePos = GetPointFromParam(lParam);
-			ScreenToClient(hWnd, &mousePos);
-			OnMouseWheel(mousePos, (int16)HIWORD(wParam), wParam);
 			break;
 
 		case WM_MOUSEMOVE:
@@ -349,27 +360,58 @@ LRESULT Window::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_LBUTTONDOWN:
-			SetCapture(hWnd);
-			mLeftMouseDown = true;
+			Mouse::Pressed |= Mouse::Button::Left;
+			Mouse::Held |= Mouse::Button::Left;
 			OnLeftButtonDown(GetPointFromParam(lParam), wParam);
 			break;
 
 		case WM_LBUTTONUP:
-			ReleaseCapture();
-			mLeftMouseDown = false;
+			Mouse::Released |= Mouse::Button::Left;
+			Mouse::Held &= ~Mouse::Button::Left;
 			OnLeftButtonUp(GetPointFromParam(lParam), wParam);
 			break;
 
 		case WM_RBUTTONDOWN:
-			SetCapture(hWnd);
-			mRightMouseDown = true;
+			Mouse::Pressed |= Mouse::Button::Right;
+			Mouse::Held |= Mouse::Button::Right;
 			OnRightButtonDown(GetPointFromParam(lParam), wParam);
 			break;
 
 		case WM_RBUTTONUP:
-			ReleaseCapture();
-			mRightMouseDown = false;
+			Mouse::Released |= Mouse::Button::Right;
+			Mouse::Held &= ~Mouse::Button::Right;
 			OnRightButtonUp(GetPointFromParam(lParam), wParam);
+			break;
+
+		case WM_ACTIVATE:
+			switch(wParam)
+			{
+				case WA_ACTIVE:
+				{
+					mActive = true;
+					if(Mouse::GetMode() == Mouse::Mode::Captured)
+					{
+						SetCapture(hWnd);
+						POINT p;
+						p.x = mWidth / 2;
+						p.y = mHeight / 2;
+						ClientToScreen(hWnd, &p);
+						SetCursorPos(p.x, p.y);
+						//ShowCursor(false);
+					}
+				}
+				break;
+
+				case WA_INACTIVE:
+					if(Mouse::GetMode() == Mouse::Mode::Captured)
+					{
+						ReleaseCapture();
+					}
+					ShowCursor(true);
+					mActive = false;
+					break;
+
+			}
 			break;
 
 		default:

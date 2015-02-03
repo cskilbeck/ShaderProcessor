@@ -35,7 +35,7 @@ char const *GetBindingTypeName(BindingInfo::Type bindingType);
 
 struct Binding
 {
-	HLSLShader *						mShader;
+	HLSLShader *					mShader;
 	D3D11_SHADER_INPUT_BIND_DESC	mDesc;
 	TypeDefinition *				definition;
 

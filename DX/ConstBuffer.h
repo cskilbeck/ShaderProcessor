@@ -12,33 +12,22 @@ struct ConstBufferOffset
 
 //////////////////////////////////////////////////////////////////////
 
-template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// definition MUST be POD
+template <typename T> struct ConstantBuffer: Buffer<T>
 {
-	ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 const *Defaults, Shader *parent)
+	HRESULT Create(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+	{
+		return Buffer<T>::Create(ConstantBufferType, count, data, usage, rwOption);
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+template<typename definition> struct ALIGNED(16) ConstBuffer : definition, ConstantBuffer<definition>	// definition MUST be POD
+{
+	ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent)
 		: mOffsetCount(OffsetCount)
 		, mOffsets(Offsets)
 		, mDefaults(Defaults)
-	{
-		parent->mConstBuffers.push_back(this);
-		ResetToDefaults();
-		CD3D11_BUFFER_DESC desc(sizeof(definition), D3D11_BIND_CONSTANT_BUFFER);
-		D3D11_SUBRESOURCE_DATA srd = { 0 };
-		srd.pSysMem = (void const *)this;
-		DXV(D3D::Device->CreateBuffer(&desc, &srd, &mConstantBuffer));
-		parent->mConstBufferPointers.push_back(mConstantBuffer);
-		assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Commit(ID3D11DeviceContext *context)
-	{
-		context->UpdateSubresource(mConstantBuffer, 0, null, this, 0, 0);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void ResetToDefaults()
 	{
 		if(mDefaults != null)
 		{
@@ -48,6 +37,10 @@ template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// def
 		{
 			memset(this, 0, sizeof(definition));
 		}
+		Create(1, (definition *)this);
+		parent->mConstBuffers.push_back(this);
+		parent->mConstBufferPointers.push_back(mBuffer);
+		assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -67,18 +60,9 @@ template<typename definition> struct ALIGNED(16) ConstBuffer : definition	// def
 
 	//////////////////////////////////////////////////////////////////////
 
-	void *AddressOf(char const *name) const
-	{
-		int offset;
-		return GetOffset(name, offset) ? (byte *)this + offset : null;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
 	uint32 const					mOffsetCount;
 	ConstBufferOffset const * const	mOffsets;
 	uint32 const * const 			mDefaults;
-	DXPtr<ID3D11Buffer>				mConstantBuffer;
 
 };
 

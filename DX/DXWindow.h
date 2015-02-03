@@ -11,6 +11,14 @@ struct DXWindow: Window
 
 	void Clear(Color color);
 
+	enum DepthClearOption
+	{
+		Depth = 1,
+		Stencil = 2,
+	};
+
+	void ClearDepth(DepthClearOption option, float z, byte stencil);
+
 	virtual void OnDraw();
 
 	void OnPaint(PAINTSTRUCT &ps) override;

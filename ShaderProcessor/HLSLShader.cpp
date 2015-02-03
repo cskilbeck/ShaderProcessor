@@ -8,6 +8,7 @@
 // deal with anonymous cbuffers and tbuffers (index instead of name)
 // test alignment/padding etc
 // deal with Buffers of structs (no padding)
+// Allow row or column major matrices
 
 #include "stdafx.h"
 

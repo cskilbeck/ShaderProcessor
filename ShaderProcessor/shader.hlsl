@@ -2,35 +2,38 @@
 
 cbuffer VertConstants
 {
-	matrix ProjectionMatrix = matrix(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	matrix ModelMatrix;
+	matrix TransformMatrix;
 }
 
 //////////////////////////////////////////////////////////////////////
 
 struct VS_INPUT
 {
-	float2 Pos : float_Position;
-	float2 UV : float_TexCoord;
+	float3 Position : float_Position;
+	half2 TexCoord : half_TexCoord;
 	float4 Color : byte_Color;
+	float3 Normal : float_Normal;
 };
 
 //////////////////////////////////////////////////////////////////////
 
 struct PS_INPUT
 {
-	float4 Pos : SV_Position;
-	float2 UV : TEXCOORD;
-	float4 col : COLOR0;
+	float4 Position : SV_Position;
+	float3 Normal : NORMAL;
+	float2 TexCoord : TEXCOORD;
 };
 
 //////////////////////////////////////////////////////////////////////
 
-PS_INPUT vsMain(VS_INPUT input)
+PS_INPUT vsMain(VS_INPUT v)
 {
 	PS_INPUT o;
-	o.UV = input.UV;
-	o.Pos = mul(float4(input.Pos.x, input.Pos.y, 0.5, 1.0), ProjectionMatrix);
-	o.col = input.Color;
+	float4 pos = float4(v.Position.xyz, 1);
+	o.Position = mul(pos, TransformMatrix);
+	o.Normal = normalize(mul(v.Normal, (float3x3)ModelMatrix));
+	o.TexCoord = float2(v.TexCoord.x, v.TexCoord.y);
 	return o;
 }
 
@@ -38,7 +41,7 @@ PS_INPUT vsMain(VS_INPUT input)
 
 cbuffer ColourStuff
 {
-	float4 tint;
+	float3 LightDirection;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -48,8 +51,9 @@ Texture2D picTexture;
 
 //////////////////////////////////////////////////////////////////////
 
-float4 psMain(PS_INPUT input) : SV_TARGET
+float4 psMain(PS_INPUT i) : SV_TARGET
 {
-	float4 pixel = picTexture.Sample(tex1Sampler, input.UV);
-	return input.col * pixel * tint;
+	float4 c = picTexture.Sample(tex1Sampler, i.TexCoord);
+	float l = saturate(dot(normalize(i.Normal), LightDirection));
+	return float4((l * c).xyz, c.w);
 }

@@ -79,8 +79,16 @@ void DXWindow::Clear(Color color)
 {
 	float rgba[4];
 	mDevice.mContext->ClearRenderTargetView(mDevice.mRenderTargetView, color.GetFloatsRGBA(rgba));
-	if(mDevice.mDepthBuffer != null)
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void DXWindow::ClearDepth(DepthClearOption option, float z, byte stencil)
+{
+	if(mDevice.mDepthStencilView != null)
 	{
-		Context()->ClearDepthStencilView(mDevice.mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		uint flags = (option & Depth) ? D3D11_CLEAR_DEPTH : 0;
+		flags |= (option & Stencil) ? D3D11_CLEAR_STENCIL : 0;
+		Context()->ClearDepthStencilView(mDevice.mDepthStencilView, flags , z, stencil);
 	}
 }

@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderProcessor", "ShaderPr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX", "DX\DX.vcxproj", "{73884195-8231-4AD9-80ED-8F41D03F4160}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cube", "Cube\Cube.vcxproj", "{69F7A2E0-9831-4746-830C-039D2B360005}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,14 @@ Global
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|Win32.Build.0 = Release|Win32
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|x64.ActiveCfg = Release|x64
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Release|x64.Build.0 = Release|x64
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Debug|Win32.ActiveCfg = Debug|Win32
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Debug|Win32.Build.0 = Debug|Win32
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Debug|x64.ActiveCfg = Debug|x64
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Debug|x64.Build.0 = Debug|x64
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|Win32.ActiveCfg = Release|Win32
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|Win32.Build.0 = Release|Win32
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|x64.ActiveCfg = Release|x64
+		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

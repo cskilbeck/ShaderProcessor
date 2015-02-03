@@ -20,9 +20,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="output.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="TypeDefinition.h">
       <Filter>Header Files</Filter>
     </ClInclude>

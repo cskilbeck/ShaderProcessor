@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aligned.h" />
+    <ClInclude Include="Buffer.h" />
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="ConstBuffer.h" />
     <ClInclude Include="D3D.h" />
@@ -28,8 +30,12 @@
     <ClInclude Include="File.h" />
     <ClInclude Include="Half.h" />
     <ClInclude Include="HLSLTypes.h" />
+    <ClInclude Include="IndexBuffer.h" />
+    <ClInclude Include="Keyboard.h" />
     <ClInclude Include="linked_list.h" />
     <ClInclude Include="LoadImage.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Mouse.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Random.h" />
@@ -43,12 +49,14 @@
     <ClInclude Include="Types.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="Vec2.h" />
+    <ClInclude Include="Vec4.h" />
     <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="Win32.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="D3D.cpp" />
     <ClCompile Include="DX.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -58,7 +66,10 @@
     </ClCompile>
     <ClCompile Include="DXWindow.cpp" />
     <ClCompile Include="File.cpp" />
+    <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LoadImage.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Resource.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Util.cpp" />

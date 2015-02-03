@@ -75,8 +75,7 @@ protected:
 	HWND							mHWND;
 	HWND							mParentHWND;
 	HINSTANCE						mHINST;
-	bool							mLeftMouseDown;
-	bool							mRightMouseDown;
+	bool							mActive;
 	bool							mMessageWait;
 	tstring							mCaption;
 	tstring							mClassName;
