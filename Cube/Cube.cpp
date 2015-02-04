@@ -158,7 +158,7 @@ void MyDXWindow::OnDraw()
 	pixelShader->ColourStuff.cameraPos = Float3(0, -10, 0);
 	pixelShader->ColourStuff.lightPos = Float3(10, -5, 10);
 	pixelShader->ColourStuff.ambientColor = Float3(0.2f, 0.2f, 0.2f);
-	pixelShader->ColourStuff.diffuseColor = Float3(0.5f, 0.5f, 0.5f);
+	pixelShader->ColourStuff.diffuseColor = Float3(0.8f, 0.8f, 0.8f);
 	pixelShader->ColourStuff.specColor = Float3(1, 1, 1);
 
 	pixelShader->ColourStuff.Commit(Context());
