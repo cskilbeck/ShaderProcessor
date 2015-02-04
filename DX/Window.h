@@ -35,6 +35,9 @@ struct Window
 	void Show();
 	void Hide();
 
+	void SetActive(bool active);
+	bool IsActive() const;
+
 	void Center();
 	int Width() const;
 	int Height() const;
@@ -76,6 +79,7 @@ protected:
 	HWND							mParentHWND;
 	HINSTANCE						mHINST;
 	bool							mActive;
+	bool							mResizing;
 	bool							mMessageWait;
 	tstring							mCaption;
 	tstring							mClassName;

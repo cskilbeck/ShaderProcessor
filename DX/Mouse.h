@@ -38,6 +38,7 @@ namespace Mouse
 	void Update(Window &w);
 	void SetMode(Mode mode, Window &w);
 	Mode GetMode();
+	void OnActivate(bool active, Window &w);
 
 	//////////////////////////////////////////////////////////////////////
 

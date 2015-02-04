@@ -50,6 +50,7 @@ Window::Window(int width, int height, tchar const *caption, uint32 windowStyle, 
 	, mWidth(width)
 	, mHeight(height)
 	, mActive(false)
+	, mResizing(false)
 	, mCaption(caption == null ? tstring() : caption)
 	, mClassName(className == null ? tstring() : className)
 	, mWindowStyle(windowStyle)
@@ -254,7 +255,16 @@ bool Window::Update()
 	Mouse::Update(*this);
 	Keyboard::Update();
 
-	return (msg.message != WM_QUIT) ? OnUpdate() : false;
+	if(msg.message == WM_QUIT)
+	{
+		return false;
+	}
+
+	if(mActive && !mResizing)
+	{
+		OnUpdate();
+	}
+	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -333,6 +343,14 @@ LRESULT Window::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			EndPaint(mHWND, &ps);
 			break;
 
+		case WM_ENTERSIZEMOVE:
+			mResizing = true;
+			break;
+
+		case WM_EXITSIZEMOVE:
+			mResizing = false;
+			break;
+
 		case WM_CHAR:
 			Keyboard::LastCharPressed = (int)wParam;
 			OnChar((int)wParam, lParam);
@@ -383,41 +401,37 @@ LRESULT Window::HandleMessage(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			OnRightButtonUp(GetPointFromParam(lParam), wParam);
 			break;
 
+		case WM_ACTIVATEAPP:
+			SetActive(wParam == TRUE);
+			break;
+
 		case WM_ACTIVATE:
-			switch(wParam)
-			{
-				case WA_ACTIVE:
-				{
-					mActive = true;
-					if(Mouse::GetMode() == Mouse::Mode::Captured)
-					{
-						SetCapture(hWnd);
-						POINT p;
-						p.x = mWidth / 2;
-						p.y = mHeight / 2;
-						ClientToScreen(hWnd, &p);
-						SetCursorPos(p.x, p.y);
-						//ShowCursor(false);
-					}
-				}
-				break;
+			SetActive(wParam != WA_INACTIVE);
+			break;
 
-				case WA_INACTIVE:
-					if(Mouse::GetMode() == Mouse::Mode::Captured)
-					{
-						ReleaseCapture();
-					}
-					ShowCursor(true);
-					mActive = false;
-					break;
-
-			}
+		case WM_CLOSE:
+			Close();
 			break;
 
 		default:
 			return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+bool Window::IsActive() const
+{
+	return mActive;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void Window::SetActive(bool active)
+{
+	mActive = active;
+	Mouse::OnActivate(active, *this);
 }
 
 //////////////////////////////////////////////////////////////////////

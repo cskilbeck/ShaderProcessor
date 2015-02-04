@@ -439,5 +439,19 @@ template<typename T, typename traits> struct ObjHandle
 
 //////////////////////////////////////////////////////////////////////
 
+inline float Deg2Rad(float rad)
+{
+	return rad * (PI / 180.0f);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+inline float Rad2Deg(float deg)
+{
+	return deg * (180.0f / PI);
+}
+
+//////////////////////////////////////////////////////////////////////
+
 template<typename T> using DXPtr2 = ObjHandle<T, IUnknownTraits>;
 using Handle = ObjHandle<HANDLE, HandleTraits>;

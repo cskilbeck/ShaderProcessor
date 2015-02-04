@@ -7,6 +7,16 @@
 typedef DirectX::XMMATRIX Matrix;
 typedef float MatrixArray[4][4];
 
+inline MatrixArray &MatrixAsArray(Matrix &m)
+{
+	return *(MatrixArray *)&m;
+}
+
+inline MatrixArray const &MatrixAsArray(Matrix const &m)
+{
+	return *(MatrixArray const *)&m;
+}
+
 extern Matrix IdentityMatrix;
 
 //////////////////////////////////////////////////////////////////////

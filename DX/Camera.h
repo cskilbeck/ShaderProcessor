@@ -35,6 +35,27 @@ public:
 
 	//////////////////////////////////////////////////////////////////////
 
+	Vec4f GetForwardVector() const
+	{
+		return GetZ3(mViewMatrix.r[0], mViewMatrix.r[1], mViewMatrix.r[2]);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Vec4f GetUpVector() const
+	{
+		return GetY3(mViewMatrix.r[0], mViewMatrix.r[1], mViewMatrix.r[2]);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Vec4f GetStrafeVector() const
+	{
+		return GetX3(mViewMatrix.r[0], mViewMatrix.r[1], mViewMatrix.r[2]);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	Matrix const &GetViewMatrix() const
 	{
 		return mViewMatrix;
@@ -59,7 +80,7 @@ public:
 
 	//////////////////////////////////////////////////////////////////////
 
-private:
+protected:
 
 	Matrix			mViewMatrix;
 	Matrix			mProjectionMatrix;

@@ -21,8 +21,9 @@ struct VS_INPUT
 struct PS_INPUT
 {
 	float4 Position : SV_Position;
-	float3 Normal : NORMAL;
-	float2 TexCoord : TEXCOORD;
+	float3 WorldPos : TEXCOORD0;
+	float3 Normal : TEXCOORD1;
+	float2 TexCoord : TEXCOORD2;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -30,10 +31,12 @@ struct PS_INPUT
 PS_INPUT vsMain(VS_INPUT v)
 {
 	PS_INPUT o;
-	float4 pos = float4(v.Position.xyz, 1);
+	float4 pos = float4(v.Position, 1);
 	o.Position = mul(pos, TransformMatrix);
-	o.Normal = normalize(mul(v.Normal, (float3x3)ModelMatrix));
-	o.TexCoord = float2(v.TexCoord.x, v.TexCoord.y);
+	float4 vertPos = mul(pos, ModelMatrix);
+	o.WorldPos = vertPos.xyz; // / vertPos.w; // ?
+	o.Normal = mul(v.Normal, (float3x3)ModelMatrix);
+	o.TexCoord = v.TexCoord;
 	return o;
 }
 
@@ -41,7 +44,12 @@ PS_INPUT vsMain(VS_INPUT v)
 
 cbuffer ColourStuff
 {
-	float3 LightDirection;
+	float3 cameraPos;
+
+	float3 lightPos;
+	float3 ambientColor;
+	float3 diffuseColor;
+	float3 specColor;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -54,6 +62,11 @@ Texture2D picTexture;
 float4 psMain(PS_INPUT i) : SV_TARGET
 {
 	float4 c = picTexture.Sample(tex1Sampler, i.TexCoord);
-	float l = saturate(dot(normalize(i.Normal), LightDirection));
-	return float4((l * c).xyz, c.w);
+	float3 lightDir = normalize(lightPos - i.WorldPos);
+	float diffuse = max(dot(lightDir, i.Normal), 0);
+	float3 viewDir = normalize(cameraPos - i.WorldPos);
+	float3 halfDir = normalize(lightDir + viewDir);
+	float specAngle = max(dot(halfDir, i.Normal), 0.0);
+	float specular = pow(specAngle, 1024);
+	return float4((ambientColor + diffuseColor * diffuse) * c.xyz + specular * specColor, c.w);
 }

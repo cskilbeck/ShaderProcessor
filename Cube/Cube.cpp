@@ -75,9 +75,11 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	rollPitchYaw = Vec3(0, 0, 0);
+
 	vertexShader.reset(new vs_shader());
 	pixelShader.reset(new ps_shader());
-	texture.reset(new Texture(TEXT("temp.png")));
+	texture.reset(new Texture(TEXT("temp.jpg")));
 	sampler.reset(new Sampler());
 	pixelShader->tex1Sampler = sampler.get();
 	pixelShader->picTexture = texture.get();
@@ -86,8 +88,8 @@ bool MyDXWindow::OnCreate()
 	vertexBuffer.reset(new vs_shader::VertexBuffer(_countof(verts), verts));
 
 	camera.CalculatePerspectiveProjectionMatrix();
-	camera.CalculateViewMatrix(Vec4(0, 0, 0), Vec4(0, -10, 0), Vec4(0, 0, 1));
-	camera.CalculateViewProjectionMatrix();
+	camera.position = Vec4(0, -2, 0);
+	camera.Update();
 
 	CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
 	DXB(Device()->CreateRasterizerState(&rasterizerDesc, &rasterizerState));
@@ -102,6 +104,8 @@ bool MyDXWindow::OnCreate()
 	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
 	DXB(Device()->CreateBlendState(&blendDesc, &blendState));
 
+	Mouse::SetMode(Mouse::Mode::Captured, *this);
+
 	Show();
 
 	return true;
@@ -114,7 +118,34 @@ void MyDXWindow::OnDraw()
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthClearOption::Depth, 0.0f, 0);
 
-	Matrix modelMatrix = DirectX::XMMatrixRotationRollPitchYaw(mFrame * 0.05f, mFrame * 0.02f, mFrame * 0.01f);
+	camera.pitch -= Mouse::Delta.y * 0.001f;
+	camera.yaw -= Mouse::Delta.x * 0.001f;
+
+	float moveSpeed = 0.1f;
+	float strafeSpeed = 0.1f;
+
+	Vec4f move(Vec4(0, 0, 0));
+	if(Keyboard::Held('W')) { move = SetZ(move, moveSpeed); }
+	if(Keyboard::Held('S')) { move = SetZ(move, -moveSpeed); }
+	if(Keyboard::Held('A')) { move = SetX(move, -strafeSpeed); }
+	if(Keyboard::Held('D')) { move = SetX(move, strafeSpeed); }
+	if(Keyboard::Held('R')) { move = SetY(move, strafeSpeed); }
+	if(Keyboard::Held('F')) { move = SetY(move, -strafeSpeed); }
+
+	camera.Move(move);
+
+	if(Mouse::Pressed & Mouse::Button::Right)
+	{
+		camera.LookAt(Vec4(0, 2, 0));
+	}
+
+	camera.Update();
+
+	rollPitchYaw.x = mFrame * 0.04f;
+	rollPitchYaw.y = mFrame * 0.01f;
+	rollPitchYaw.z = mFrame * 0.03f;
+	Matrix modelMatrix = DirectX::XMMatrixRotationRollPitchYaw(rollPitchYaw.x, rollPitchYaw.y, rollPitchYaw.z);
+	modelMatrix *= TranslationMatrix(Vec4(0, 2, 0));
 
 	Matrix t = TransposeMatrix(camera.GetTransformMatrix(modelMatrix));
 	memcpy(&vertexShader->VertConstants.TransformMatrix, &t, sizeof(Matrix));
@@ -124,7 +155,12 @@ void MyDXWindow::OnDraw()
 
 	vertexShader->VertConstants.Commit(Context());
 
-	pixelShader->ColourStuff.LightDirection = Float3(-0.707f, 0, -0.707f);
+	pixelShader->ColourStuff.cameraPos = Float3(0, -10, 0);
+	pixelShader->ColourStuff.lightPos = Float3(10, -5, 10);
+	pixelShader->ColourStuff.ambientColor = Float3(0.2f, 0.2f, 0.2f);
+	pixelShader->ColourStuff.diffuseColor = Float3(0.5f, 0.5f, 0.5f);
+	pixelShader->ColourStuff.specColor = Float3(1, 1, 1);
+
 	pixelShader->ColourStuff.Commit(Context());
 
 	vertexShader->Activate(Context());

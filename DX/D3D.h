@@ -41,8 +41,8 @@ public:
 
 //////////////////////////////////////////////////////////////////////
 
-#define DXTRACE TRACE
-//#define DXTRACE if (true) {} else
+//#define DXTRACE TRACE
+#define DXTRACE if (true) {} else
 
 #if defined(_DEBUG)
 #define DXI(x) 			\
@@ -343,11 +343,11 @@ struct D3DDevice
 		auto i = D3D::LevelNames.find(mFeatureLevel);
 		if(i != D3D::LevelNames.end())
 		{
-			TRACE("%s Device created\n", i->second.c_str());
+			DXTRACE("%s Device created\n", i->second.c_str());
 		}
 		else
 		{
-			TRACE("Unknown D3D feature level!?\n");
+			DXTRACE("Unknown D3D feature level!?\n");
 		}
 		return S_OK;
 	}

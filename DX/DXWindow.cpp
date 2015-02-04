@@ -62,7 +62,10 @@ bool DXWindow::OnUpdate()
 {
 	OnDraw();
 	Present();
-	++mFrame;
+	if(!mResizing)
+	{
+		++mFrame;
+	}
 	return true;
 }
 
