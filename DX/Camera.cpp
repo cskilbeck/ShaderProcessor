@@ -30,7 +30,7 @@ Matrix Camera::ViewMatrix(Vec4f position, float yaw, float pitch, float roll)
 {
 	Matrix m = IdentityMatrix;
 	m.r[3] = SetW(Negate(position), 1.0f);
-	m *= RotationMatrix(yaw, pitch, roll);
+	m *= RotationMatrix(pitch, yaw, roll);
 	return m;
 }
 

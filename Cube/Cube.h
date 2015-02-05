@@ -19,7 +19,7 @@ struct FPSCamera: Camera
 
 	void Update()
 	{
-		CalculateViewMatrix(position, yaw, pitch, 0);
+		CalculateViewMatrix(position, 0, pitch, yaw);
 		CalculateViewProjectionMatrix();
 	}
 
@@ -34,8 +34,8 @@ struct FPSCamera: Camera
 	void Move(Vec4f direction)
 	{
 		position += GetStrafeVector() * GetX(direction);
-		position += GetForwardVector() * GetZ(direction);
-		position += GetUpVector() * GetY(direction);
+		position += GetForwardVector() * GetY(direction);
+		position += Vec4(0, 0, GetZ(direction));
 	}
 };
 
@@ -49,11 +49,10 @@ struct MyDXWindow: DXWindow
 	Matrix worldMatrix;
 	Matrix viewMatrix;
 	Matrix projectionMatrix;
-	Ptr<vs_shader> vertexShader;
-	Ptr<ps_shader> pixelShader;
+	Ptr<vs_shader> vs;
+	Ptr<ps_shader> ps;
 	Ptr<Texture> texture;
 	Ptr<Sampler> sampler;
-	Vec3 rollPitchYaw;
 	Ptr<IndexBuffer<uint16>> indexBuffer;
 	Ptr<vs_shader::VertexBuffer> vertexBuffer;
 	DXPtr<ID3D11RasterizerState> rasterizerState;

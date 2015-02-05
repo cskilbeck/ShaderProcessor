@@ -80,6 +80,9 @@
   <ItemGroup>
     <ClCompile Include="WinMessages.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Vec4.inl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{73884195-8231-4AD9-80ED-8F41D03F4160}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

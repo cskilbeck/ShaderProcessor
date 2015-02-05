@@ -33,7 +33,7 @@ PS_INPUT vsMain(VS_INPUT v)
 	PS_INPUT o;
 	float4 pos = float4(v.Position, 1);
 	o.Position = mul(pos, TransformMatrix);
-	o.WorldPos = mul(pos, ModelMatrix).xyz;
+	o.WorldPos = mul(pos, ModelMatrix).xyz / pos.w;
 	o.Normal = mul(v.Normal, (float3x3)ModelMatrix);
 	o.TexCoord = v.TexCoord;
 	return o;
@@ -41,10 +41,15 @@ PS_INPUT vsMain(VS_INPUT v)
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer ColourStuff
+cbuffer Camera
 {
 	float3 cameraPos;
+}
 
+//////////////////////////////////////////////////////////////////////
+
+cbuffer Light
+{
 	float3 lightPos;
 	float3 ambientColor;
 	float3 diffuseColor;

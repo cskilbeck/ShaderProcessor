@@ -226,7 +226,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 {
 	uint padID = 0;
 	uint fieldCount = 0;
-	output("\tstruct ALIGNED(16) %s\n\t{\n", mDesc.Name);
+	output("\tstruct ALIGNED(16) %s_t\n\t{\n", mDesc.Name);
 	for(auto i = mFields.begin(); i != mFields.end(); ++i)
 	{
 		Field *p = (*i);
@@ -242,7 +242,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 		++fieldCount;
 	}
 	output("\t};\n\n");
-	output("\tConstBuffer<%s> %s;\n\n", mDesc.Name, mDesc.Name);
+	output("\tConstBuffer<%s_t> %s;\n\n", mDesc.Name, mDesc.Name);
 }
 
 void TypeDefinition::ConstructorOutput()

@@ -39,7 +39,7 @@ inline Matrix TransposeMatrix(Matrix const &m)
 
 inline Matrix RotationMatrix(float yaw, float pitch, float roll)
 {
-	return DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+	return DirectX::XMMatrixRotationRollPitchYaw(yaw, pitch, roll);	// swap Y & Z...
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -66,3 +66,11 @@ inline Vec4f TransformPoint(Vec4f pos, Matrix const &m)
 
 //////////////////////////////////////////////////////////////////////
 
+inline void CopyMatrix(void *f, Matrix const &m)
+{
+	Vec4f *p = (Vec4f *)f;
+	p[0] = m.r[0];
+	p[1] = m.r[1];
+	p[2] = m.r[2];
+	p[3] = m.r[3];
+}

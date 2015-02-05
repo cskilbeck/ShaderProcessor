@@ -1,6 +1,8 @@
 
 #pragma once
 
+#pragma pack(push, n)
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -10,6 +12,8 @@
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
 #pragma warning(pop)
+
+#pragma pack(pop, n)
 
 #include <stdlib.h>
 #include <malloc.h>
@@ -33,11 +37,12 @@
 #include "Types.h"
 #include "Aligned.h"
 #include "linked_list.h"
-#include "Vec4.h"
-#include "Matrix.h"
 #include "Half.h"
-#include "Color.h"
+#include "Vec4.h"
 #include "HLSLTypes.h"
+#include "Vec4.inl"
+#include "Matrix.h"
+#include "Color.h"
 #include "Util.h"
 #include "Resource.h"
 #include "File.h"
