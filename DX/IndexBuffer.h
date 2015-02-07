@@ -4,30 +4,34 @@
 
 //////////////////////////////////////////////////////////////////////
 
-template<typename T> DXGI_FORMAT GetIndexBufferFormat()
+template<typename T> struct IndexBufferFormat
 {
-	return DXGI_FORMAT_UNKNOWN;
-}
+	enum { format = DXGI_FORMAT_UNKNOWN };
+};
 
-template<> inline DXGI_FORMAT GetIndexBufferFormat<uint16>()
+template<> struct IndexBufferFormat<uint16>
 {
-	return DXGI_FORMAT_R16_UINT;
-}
+	enum { format = DXGI_FORMAT_R16_UINT };
+};
 
-template<> inline DXGI_FORMAT GetIndexBufferFormat<uint32>()
+template<> struct IndexBufferFormat<uint32>
 {
-	return DXGI_FORMAT_R32_UINT;
-}
+	enum { format = DXGI_FORMAT_R32_UINT };
+};
+
+//////////////////////////////////////////////////////////////////////
 
 template <typename T> struct IndexBuffer: Buffer <T>
 {
+	static_assert(IndexBufferFormat<T>::format != DXGI_FORMAT_UNKNOWN, "Only uint16 or uint32 index buffers are supported");
+
 	IndexBuffer()
 	{
 	}
 
 	IndexBuffer(uint count, T *data = null, BufferUsage usage = StaticUsage, ReadWriteOption rwOption = NotCPUAccessible)
 	{
-		Create(count, data, usage, rwOption);
+		DXT(Create(count, data, usage, rwOption));
 	}
 
 	HRESULT Create(uint count, T *data = null, BufferUsage usage = StaticUsage, ReadWriteOption rwOption = NotCPUAccessible)
@@ -37,7 +41,7 @@ template <typename T> struct IndexBuffer: Buffer <T>
 
 	void Activate(ID3D11DeviceContext *context, uint offset = 0)
 	{
-		context->IASetIndexBuffer(mBuffer, GetIndexBufferFormat<T>(), offset);
+		context->IASetIndexBuffer(mBuffer, (DXGI_FORMAT)IndexBufferFormat<T>::format, offset);
 	}
 };
 

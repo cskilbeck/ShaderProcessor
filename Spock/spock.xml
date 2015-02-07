@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties"
+                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                          xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+  <Rule Name="SPOCK"
+        PageTemplate="tool"
+        DisplayName="Shader Processor"
+        Order="200">
+
+    <Rule.DataSource>
+      <DataSource Persistence="ProjectFile"
+                  ItemType="SPOCK" />
+    </Rule.DataSource>
+
+    <Rule.Categories>
+      <Category Name="General">
+        <Category.DisplayName>
+          <sys:String>General</sys:String>
+        </Category.DisplayName>
+      </Category>
+
+      <Category Name="Command Line"
+                Subtype="CommandLine">
+        <Category.DisplayName>
+          <sys:String>Command Line</sys:String>
+        </Category.DisplayName>
+      </Category>
+    </Rule.Categories>
+
+    <StringProperty Name="Inputs"
+                    Category="Command Line"
+                    IsRequired="true">
+      <StringProperty.DataSource>
+        <DataSource Persistence="ProjectFile"
+                    ItemType="SPOCK"
+                    SourceType="Item" />
+      </StringProperty.DataSource>
+    </StringProperty>
+
+    <!-- Non config-dependent -->
+
+    <StringProperty Name="VertexShaderFunction"
+                    Category="General"
+                    DisplayName="Vertex Shader Main Function"
+                    Description="VS Main function, if there is one"
+                    Switch="--vs=" />
+    
+    <StringProperty Name="PixelShaderFunction"
+                    Category="General"
+                    DisplayName="Pixel Shader Main Function"
+                    Description="PS Main function, if there is one"
+                    Switch="--ps=" />
+    
+    <StringProperty Name="HeaderFile"
+                    Category="General"
+                    DisplayName="Header File Name"
+                    Description="Specify Output Header Filename."
+                    Switch="--header=" />
+    
+    <BoolProperty Name="EmbedObject"
+                  Category="General"
+                  DisplayName="Embed Shader Object Code"
+                  Description="Embed the shader object code in the header."
+                  Switch="--embedObject" />
+    
+    <StringListProperty Name="IncludePaths"
+                        Category="General"
+                        DisplayName="Include Paths"
+                        Description="Sets path for include file."
+                        Switch="--includePath=" />
+    
+    <BoolProperty Name="WarnOnError"
+                  Category="General"
+                  DisplayName="Treat Warnings As Errors"
+                  Description="Return an error if warnings are generated."
+                  Switch="--warnOnError" />
+    
+    <EnumProperty Name="ShaderModel"
+                  Category="General"
+                  DisplayName="Shader Model"
+                  Description="Select the Shader Model">
+      <EnumValue Name="0" DisplayName="2_0" Switch="--sm=2_0" />
+      <EnumValue Name="1" DisplayName="3_0" Switch="--sm=3_0" />
+      <EnumValue Name="2" DisplayName="4_0_level_9_1" Switch="--sm=4_0_level_9_1" />
+      <EnumValue Name="3" DisplayName="4_0_level_9_3" Switch="--sm=4_0_level_9_3" />
+      <EnumValue Name="4" DisplayName="4_0" Switch="--sm=4_0" />
+      <EnumValue Name="5" DisplayName="4_1" Switch="--sm=4_1" />
+      <EnumValue Name="6" DisplayName="5_0" Switch="--sm=5_0" />
+    </EnumProperty>
+
+    <!-- Config-dependent -->
+
+    <BoolProperty Name="GenerateDebugInformation"
+                  Category="General"
+                  DisplayName="Generate Debug Information"
+                  Description="Generates Debug Information."
+                  Switch="--debugInfo" />
+    
+    <BoolProperty Name="DisableOptimizer"
+                  Category="General"
+                  DisplayName="Disable Shader Optimization"
+                  Description="Disable Shader Optimization."
+                  Switch="--disableOptimization" />
+    
+    <!-- Dynamics -->
+
+    <DynamicEnumProperty Name="SPOCKBeforeTargets"
+                         Category="General"
+                         EnumProvider="Targets"
+                         IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName>
+        <sys:String>Execute Before</sys:String>
+      </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description>
+        <sys:String>Specifies the targets for the Shader Processor to run before.</sys:String>
+      </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings>
+        <NameValuePair Name="Exclude"
+                       Value="^SPOCKBeforeTargets|^Compute" />
+      </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource>
+        <DataSource Persistence="ProjectFile"
+                    ItemType=""
+                    HasConfigurationCondition="true" />
+      </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+    
+    <DynamicEnumProperty Name="SPOCKAfterTargets"
+                         Category="General"
+                         EnumProvider="Targets"
+                         IncludeInCommandLine="False">
+      <DynamicEnumProperty.DisplayName>
+        <sys:String>Execute After</sys:String>
+      </DynamicEnumProperty.DisplayName>
+      <DynamicEnumProperty.Description>
+        <sys:String>Specifies the targets for the Shader Processor to run after.</sys:String>
+      </DynamicEnumProperty.Description>
+      <DynamicEnumProperty.ProviderSettings>
+        <NameValuePair Name="Exclude"
+                       Value="^SPOCKAfterTargets|^Compute" />
+      </DynamicEnumProperty.ProviderSettings>
+      <DynamicEnumProperty.DataSource>
+        <DataSource Persistence="ProjectFile"
+                    ItemType=""
+                    HasConfigurationCondition="true" />
+      </DynamicEnumProperty.DataSource>
+    </DynamicEnumProperty>
+
+    <StringProperty Name="ExecutionDescription"
+                    DisplayName="Execution Description"
+                    IncludeInCommandLine="False"
+                    Visible="False" />
+
+    <StringListProperty Name="AdditionalDependencies"
+                        DisplayName="Additional Dependencies"
+                        IncludeInCommandLine="False"
+                        Visible="False" />
+
+    <StringProperty Subtype="AdditionalOptions"
+                    Name="AdditionalOptions"
+                    Category="Command Line"
+                    IncludeInCommandLine="True">
+      <StringProperty.DisplayName>
+        <sys:String>Additional Options</sys:String>
+      </StringProperty.DisplayName>
+      <StringProperty.Description>
+        <sys:String>Additional Options</sys:String>
+      </StringProperty.Description>
+    </StringProperty>
+
+  </Rule>
+
+  <ItemType Name="SPOCK"
+            DisplayName="Shader Processor" />
+  
+  <FileExtension Name="*.shader"
+                 ContentType="SPOCK" />
+  
+  <ContentType Name="SPOCK"
+               DisplayName="Shader Processor"
+               ItemType="SPOCK" />
+
+</ProjectSchemaDefinitions>

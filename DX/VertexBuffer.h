@@ -46,10 +46,16 @@ template<typename vert> struct VertexBuffer
 		return mBuffer;
 	}
 
+	uint32 VertexCount() const
+	{
+		return mVertexCount;
+	}
+
 private:
 
 	void Create(vert *data, uint32 vertCount, bool own)
 	{
+		mVertexCount = vertCount;
 		mOwnBuffer = own;
 		mBuffer = data;
 		CD3D11_BUFFER_DESC desc(sizeof(vert) * vertCount, D3D11_BIND_VERTEX_BUFFER);
@@ -57,6 +63,7 @@ private:
 		DXT(D3D::Device->CreateBuffer(&desc, &srd, &mD3DBuffer));
 	}
 
+	uint32				mVertexCount;
 	bool				mOwnBuffer;
 	vert *				mBuffer;
 	DXPtr<ID3D11Buffer> mD3DBuffer;

@@ -14,7 +14,7 @@ Camera::Camera()
 
 Matrix Camera::ViewMatrix(Vec4f target, Vec4f position, Vec4f up)
 {
-	Vec4f zaxis = Normalize(target - position);
+	Vec4f zaxis = Normalize(position - target);
 	Vec4f xaxis = Normalize(Cross(up, zaxis));
 	Vec4f yaxis = Cross(zaxis, xaxis);
 	Vec4f trans = Vec4(-Dot(xaxis, position), -Dot(yaxis, position), -Dot(zaxis, position), 1);
@@ -26,11 +26,11 @@ Matrix Camera::ViewMatrix(Vec4f target, Vec4f position, Vec4f up)
 
 //////////////////////////////////////////////////////////////////////
 
-Matrix Camera::ViewMatrix(Vec4f position, float yaw, float pitch, float roll)
+Matrix Camera::ViewMatrix(Vec4f position, float roll, float pitch, float yaw)
 {
 	Matrix m = IdentityMatrix;
 	m.r[3] = SetW(Negate(position), 1.0f);
-	m *= RotationMatrix(pitch, yaw, roll);
+	m *= DirectX::XMMatrixRotationRollPitchYaw(pitch, roll, yaw);	// we use Z up, not Y, so swap roll, yaw
 	return m;
 }
 
@@ -125,3 +125,9 @@ void Camera::CalculateViewProjectionMatrix(Matrix const &modelMatrix)
 	mTransformMatrix = modelMatrix * mViewMatrix * mProjectionMatrix;
 }
 
+//////////////////////////////////////////////////////////////////////
+
+Vec4f Camera::GetYawPitchRoll() const
+{
+	return GetPitchYawRollFromMatrix(mViewMatrix);
+}

@@ -90,8 +90,21 @@ void DXWindow::ClearDepth(DepthClearOption option, float z, byte stencil)
 {
 	if(mDevice.mDepthStencilView != null)
 	{
-		uint flags = (option & Depth) ? D3D11_CLEAR_DEPTH : 0;
-		flags |= (option & Stencil) ? D3D11_CLEAR_STENCIL : 0;
+		uint flags;
+		switch(option)
+		{
+			case Depth:
+				flags = D3D11_CLEAR_DEPTH;
+				break;
+			case Stencil:
+				flags = D3D11_CLEAR_STENCIL;
+				break;
+			case Depth + Stencil:
+				flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
+				break;
+			default:
+				flags = 0;
+		}
 		Context()->ClearDepthStencilView(mDevice.mDepthStencilView, flags , z, stencil);
 	}
 }

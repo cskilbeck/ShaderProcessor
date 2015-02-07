@@ -42,6 +42,18 @@ public:
 
 	//////////////////////////////////////////////////////////////////////
 
+	Vec4f GetFlatForwardVector() const
+	{
+		Vec4f f = SetZ(GetForwardVector(), 0);
+		if(GetX(f) == 0 && GetY(f) == 0)
+		{
+			return f;
+		}
+		return Normalize(f);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	Vec4f GetUpVector() const
 	{
 		return GetY3(mViewMatrix.r[0], mViewMatrix.r[1], mViewMatrix.r[2]);
@@ -60,6 +72,10 @@ public:
 	{
 		return mViewMatrix;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Vec4f GetYawPitchRoll() const;
 
 	//////////////////////////////////////////////////////////////////////
 

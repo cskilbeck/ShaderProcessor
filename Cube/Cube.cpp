@@ -1,11 +1,10 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include "..\ShaderProcessor\output.h"
 
 //////////////////////////////////////////////////////////////////////
 
-static vs_shader::InputVertex verts[24] =
+static vs_phong::InputVertex verts[24] =
 {
 	Float3(-1, +1, +1), Half2(0, 0), Color::White, Float3(0, 0, +1),// 00
 	Float3(+1, +1, +1), Half2(1, 0), Color::White, Float3(0, 0, +1),// 01
@@ -52,7 +51,7 @@ static uint16 indices[36] =
 
 //////////////////////////////////////////////////////////////////////
 
-MyDXWindow::MyDXWindow() : DXWindow(640, 480)
+MyDXWindow::MyDXWindow() : DXWindow(640, 480, TEXT("Cube"), DepthBufferEnabled)
 {
 }
 
@@ -75,8 +74,36 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	vs.reset(new vs_shader());
-	ps.reset(new ps_shader());
+	vsLine.reset(new vs_ColoredLine());
+	psLine.reset(new ps_ColoredLine());
+	vbLineGrid.reset(new vs_ColoredLine::VertexBuffer(86));
+
+	vs_ColoredLine::VertexBuffer &v = *vbLineGrid.get();
+
+	uint i = 0;
+	float const b = -10;
+	float const t = 10;
+	for(int x = -10; x <= 10; ++x)
+	{
+		float a = (float)x;
+		Color cx = Color::White & 0x80FFFFFF;
+		Color cy = Color::White & 0x80FFFFFF;
+		if(x == 0)
+		{
+			cx = Color::BrightRed;
+			cy = Color::BrightGreen;
+		}
+		v[i++] = { { a, b, 0 }, cx };
+		v[i++] = { { a, t, 0 }, cx };
+		v[i++] = { { b, a, 0 }, cy };
+		v[i++] = { { t, a, 0 }, cy };
+	}
+	v[i++] = { { 0, 0, 0 }, Color::BrightBlue };
+	v[i++] = { { 0, 0, 2 }, Color::BrightBlue };
+	v.Commit(Context());
+
+	vs.reset(new vs_phong());
+	ps.reset(new ps_phong());
 
 	texture.reset(new Texture(TEXT("temp.jpg")));
 	ps->picTexture = texture.get();
@@ -85,18 +112,13 @@ bool MyDXWindow::OnCreate()
 	ps->tex1Sampler = sampler.get();
 
 	indexBuffer.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage, NotCPUAccessible));
-	vertexBuffer.reset(new vs_shader::VertexBuffer(_countof(verts), verts));
+	vertexBuffer.reset(new vs_phong::VertexBuffer(_countof(verts), verts));
 
 	ps->Light.lightPos = Float3(0, -5, 0);
 	ps->Light.ambientColor = Float3(0.2f, 0.2f, 0.2f);
 	ps->Light.diffuseColor = Float3(0.8f, 0.8f, 0.8f);
 	ps->Light.specColor = Float3(1, 1, 1);
 	ps->Light.Commit(Context());
-
-	camera.CalculatePerspectiveProjectionMatrix();
-	camera.position = Vec4(0, -6, 0);
-	camera.LookAt(Vec4(0, 0, 0));
-	camera.Update();
 
 	CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
 	DXB(Device()->CreateRasterizerState(&rasterizerDesc, &rasterizerState));
@@ -123,10 +145,7 @@ bool MyDXWindow::OnCreate()
 void MyDXWindow::OnDraw()
 {
 	Clear(Color(32, 64, 128));
-	ClearDepth(DepthClearOption::Depth, 0.0f, 0);
-
-	camera.pitch -= Mouse::Delta.y * 0.001f;
-	camera.yaw += Mouse::Delta.x * 0.001f;
+	ClearDepth(DepthClearOption::Depth, 1.0f, 0);
 
 	float moveSpeed = 0.1f;
 	float strafeSpeed = 0.1f;
@@ -136,38 +155,55 @@ void MyDXWindow::OnDraw()
 	if(Keyboard::Held('S')) { move = SetY(move, -moveSpeed); }
 	if(Keyboard::Held('A')) { move = SetX(move, -strafeSpeed); }
 	if(Keyboard::Held('D')) { move = SetX(move, strafeSpeed); }
-	if(Keyboard::Held('R')) { move = SetZ(move, -strafeSpeed); }
-	if(Keyboard::Held('F')) { move = SetZ(move, strafeSpeed); }
+	if(Keyboard::Held('R')) { move = SetZ(move, strafeSpeed); }
+	if(Keyboard::Held('F')) { move = SetZ(move, -strafeSpeed); }
 
 	camera.Move(move);
 
+	if(Mouse::Held & Mouse::Button::Left)
+	{
+		Mouse::SetMode(Mouse::Mode::Captured, *this);
+		camera.Rotate(Mouse::Delta.x * 0.001f, Mouse::Delta.y * 0.001f);
+	}
+	else
+	{
+		Mouse::SetMode(Mouse::Mode::Free, *this);
+	}
+
 	if(Mouse::Pressed & Mouse::Button::Right)
 	{
-		camera.LookAt(Vec4(0, 0, 0));
+		//camera.Reset();
+		camera.LookAt(Vec4(4, 4, 2));
 	}
+
 	camera.Update();
 
+	//Matrix modelMatrix = IdentityMatrix;
 	Matrix modelMatrix = RotationMatrix(mFrame * 0.02f, mFrame * 0.01f, mFrame * 0.03f);
+	modelMatrix *= TranslationMatrix(Vec4(4, 4, 2));
 
 	CopyMatrix(&vs->VertConstants.TransformMatrix, TransposeMatrix(camera.GetTransformMatrix(modelMatrix)));
 	CopyMatrix(&vs->VertConstants.ModelMatrix, TransposeMatrix(modelMatrix));
 	vs->VertConstants.Commit(Context());
-
 	ps->Camera.cameraPos = camera.position;
 	ps->Camera.Commit(Context());
-
 	vs->Activate(Context());
 	ps->Activate(Context());
-
 	vertexBuffer->Activate(Context());
 	indexBuffer->Activate(Context());
-
 	Context()->RSSetState(rasterizerState);
 	Context()->OMSetBlendState(blendState, null, 0xffffffff);
 	Context()->OMSetDepthStencilState(depthStencilState, 0);
-
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(_countof(indices), 0, 0);
+
+	CopyMatrix(&vsLine->VertConstants.TransformMatrix, TransposeMatrix(camera.GetTransformMatrix()));
+	vsLine->VertConstants.Commit(Context());
+	vsLine->Activate(Context());
+	psLine->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	vbLineGrid->Activate(Context());
+	Context()->Draw(vbLineGrid->VertexCount(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Shader Files">
+      <UniqueIdentifier>{100136f9-92ea-4bce-a484-bb6a3ed97368}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -31,5 +34,13 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <SPOCK Include="phong.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
+    <SPOCK Include="ColoredLine.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>

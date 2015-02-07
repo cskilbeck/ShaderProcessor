@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup
+    Condition="'$(SPOCKBeforeTargets)' == '' and '$(SPOCKAfterTargets)' == '' and '$(ConfigurationType)' != 'Makefile'">
+    <SPOCKBeforeTargets>ClCompile</SPOCKBeforeTargets>
+    <SPOCKAfterTargets></SPOCKAfterTargets>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <SPOCK>
+      <HeaderFile>$(ProjectDir)%(FileName).h</HeaderFile>
+      <EmbedObject>true</EmbedObject>
+      <ShaderModel>4</ShaderModel>
+      <VertexShaderFunction>vsMain</VertexShaderFunction>
+      <PixelShaderFunction>psMain</PixelShaderFunction>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <DisableOptimizer>false</DisableOptimizer>
+      <CommandLineTemplate>$(SolutionDir)Spock\shaderprocessor.exe [AllOptions] [AdditionalOptions] --source=%(FullPath)</CommandLineTemplate>
+      <ExecutionDescription>%(FileName)%(Extension)</ExecutionDescription>
+    </SPOCK>
+  </ItemDefinitionGroup>
+</Project>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <PropertyPageSchema Include="$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml" />
+    <AvailableItemName Include="SPOCK">
+      <Targets>_SPOCK</Targets>
+    </AvailableItemName>
+  </ItemGroup>
+
+  <UsingTask TaskName="SPOCK"
+             TaskFactory="XamlTaskFactory"
+             AssemblyName="Microsoft.Build.Tasks.v4.0">
+    <Task>$(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml</Task>
+  </UsingTask>
+
+  <Target Name="_SPOCK"
+          BeforeTargets="$(SPOCKBeforeTargets)"
+          AfterTargets="$(SPOCKAfterTargets)"
+          Condition="'@(SPOCK)' != ''"
+          Outputs="%(SPOCK.HeaderFile)"
+          Inputs="%(SPOCK.Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile)"
+          DependsOnTargets="_SelectedFiles">
+
+    <ItemGroup Condition="'@(SelectedFiles)' != ''">
+      <SPOCK Remove="@(SPOCK)"
+             Condition="'%(Identity)' != '@(SelectedFiles)'" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <SPOCK_tlog Include="%(SPOCK.HeaderFile)"
+                  Condition="'%(SPOCK.HeaderFile)' != '' and '%(SPOCK.ExcludedFromBuild)' != 'true'">
+        <Source>@(SPOCK, '|')</Source>
+      </SPOCK_tlog>
+    </ItemGroup>
+
+    <Message Importance="High"
+             Text="%(SPOCK.ExecutionDescription)" />
+
+    <WriteLinesToFile Condition="'@(SPOCK_tlog)' != '' and '%(SPOCK_tlog.ExcludedFromBuild)' != 'true'"
+                      File="$(IntDir)$(ProjectName).write.1.tlog"
+                      Lines="^%(SPOCK_tlog.Source);@(SPOCK_tlog-&gt;'%(Fullpath)')"/>
+
+    <SPOCK Condition="'@(SPOCK)' != '' and '%(SPOCK.ExcludedFromBuild)' != 'true'"
+           Inputs="%(SPOCK.Inputs)"
+           VertexShaderFunction="%(SPOCK.VertexShaderFunction)"
+           PixelShaderFunction="%(SPOCK.PixelShaderFunction)"
+           HeaderFile="%(SPOCK.HeaderFile)"
+           EmbedObject="%(SPOCK.EmbedObject)"
+           GenerateDebugInformation="%(SPOCK.GenerateDebugInformation)"
+           DisableOptimizer="%(SPOCK.DisableOptimizer)"
+           ShaderModel="%(SPOCK.ShaderModel)"
+           IncludePaths="%(SPOCK.IncludePaths)"
+           WarnOnError="%(SPOCK.WarnOnError)"
+           CommandLineTemplate="%(SPOCK.CommandLineTemplate)"
+           AdditionalOptions="%(SPOCK.AdditionalOptions)" />
+  </Target>
+
+</Project>

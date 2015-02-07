@@ -362,8 +362,8 @@ struct D3DDevice
 			depth.Width = mWidth;
 			depth.Height = mHeight;
 			depth.MipLevels = 0;
-			depth.ArraySize = 0;
-			depth.Format = DXGI_FORMAT_R24G8_TYPELESS;
+			depth.ArraySize = 1;
+			depth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 			depth.SampleDesc.Count = 1;
 			depth.SampleDesc.Quality = 0;
 			depth.Usage = D3D11_USAGE_DEFAULT;

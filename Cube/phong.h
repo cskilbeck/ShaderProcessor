@@ -1,13 +1,13 @@
 //////////////////////////////////////////////////////////////////////
-// shader.h - auto generated file, do not edit
+// phong.h - auto generated file, do not edit
 
 #pragma once
 #pragma pack(push, 4)
 
 //////////////////////////////////////////////////////////////////////
-// vs_shader data
+// vs_phong data
 
-uint32 WEAKSYM vs_shader_Data[] =
+uint32 WEAKSYM vs_phong_Data[] =
 {
 	0x43425844,0x8e574333,0x731ab242,0x8bc4c91a,0x842fd61b,0x00000001,0x000004dc,0x00000005,
 	0x00000034,0x00000130,0x000001d8,0x00000260,0x00000460,0x46454452,0x000000f4,0x00000001,
@@ -54,7 +54,7 @@ uint32 WEAKSYM vs_shader_Data[] =
 // offsets and defaults
 
 // VertConstants offsets
-extern ConstBufferOffset const WEAKSYM vs_shader_VertConstants_Offsets[2] = 
+extern ConstBufferOffset const WEAKSYM vs_phong_VertConstants_Offsets[2] = 
 {
 	{ "ModelMatrix", 0 },
 	{ "TransformMatrix", 64 }
@@ -65,7 +65,7 @@ extern ConstBufferOffset const WEAKSYM vs_shader_VertConstants_Offsets[2] =
 //////////////////////////////////////////////////////////////////////
 // const buffer names table
 
-extern char const WEAKSYM *vs_shader_ConstBufferNames[] =
+extern char const WEAKSYM *vs_phong_ConstBufferNames[] =
 {
 	"VertConstants"
 };
@@ -73,7 +73,7 @@ extern char const WEAKSYM *vs_shader_ConstBufferNames[] =
 //////////////////////////////////////////////////////////////////////
 // Input Element descs
 
-extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM vs_shader_InputElements[4] =
+extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM vs_phong_InputElements[4] =
 {
 	{ "float_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	{ "half_TexCoord", 0, DXGI_FORMAT_R16G16_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -82,9 +82,9 @@ extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM vs_shader_InputElements[4] =
 };
 
 //////////////////////////////////////////////////////////////////////
-// Vertex Shader: vs_shader
+// Vertex Shader: vs_phong
 
-struct vs_shader : VertexShader<vs_shader_InputElements, _countof(vs_shader_InputElements)>, Aligned16
+struct vs_phong : VertexShader<vs_phong_InputElements, _countof(vs_phong_InputElements)>, Aligned16
 {
 	struct ALIGNED(16) VertConstants_t
 	{
@@ -105,17 +105,17 @@ struct vs_shader : VertexShader<vs_shader_InputElements, _countof(vs_shader_Inpu
 	using VertexBuffer = VertexBuffer<InputVertex>;
 
 	// Constructor
-	vs_shader()
-		: VertexShader(vs_shader_Data, 1244, 1, vs_shader_ConstBufferNames, 0, null, 0, null, null, null)
-		, VertConstants(2, vs_shader_VertConstants_Offsets, null, this)
+	vs_phong()
+		: VertexShader(vs_phong_Data, 1244, 1, vs_phong_ConstBufferNames, 0, null, 0, null, null, null)
+		, VertConstants(2, vs_phong_VertConstants_Offsets, null, this)
 	{
 	}
 };
 
 //////////////////////////////////////////////////////////////////////
-// ps_shader data
+// ps_phong data
 
-uint32 WEAKSYM ps_shader_Data[] =
+uint32 WEAKSYM ps_phong_Data[] =
 {
 	0x43425844,0xb77279a6,0x9bf4059e,0x57ab030b,0xb0bebc8b,0x00000001,0x00000670,0x00000005,
 	0x00000034,0x00000220,0x000002a8,0x000002dc,0x000005f4,0x46454452,0x000001e4,0x00000002,
@@ -175,7 +175,7 @@ uint32 WEAKSYM ps_shader_Data[] =
 // offsets and defaults
 
 // Camera offsets
-extern ConstBufferOffset const WEAKSYM ps_shader_Camera_Offsets[1] = 
+extern ConstBufferOffset const WEAKSYM ps_phong_Camera_Offsets[1] = 
 {
 	{ "cameraPos", 0 }
 };
@@ -183,7 +183,7 @@ extern ConstBufferOffset const WEAKSYM ps_shader_Camera_Offsets[1] =
 // no defaults for Camera
 
 // Light offsets
-extern ConstBufferOffset const WEAKSYM ps_shader_Light_Offsets[4] = 
+extern ConstBufferOffset const WEAKSYM ps_phong_Light_Offsets[4] = 
 {
 	{ "lightPos", 0 },
 	{ "ambientColor", 16 },
@@ -196,7 +196,7 @@ extern ConstBufferOffset const WEAKSYM ps_shader_Light_Offsets[4] =
 //////////////////////////////////////////////////////////////////////
 // const buffer names table
 
-extern char const WEAKSYM *ps_shader_ConstBufferNames[] =
+extern char const WEAKSYM *ps_phong_ConstBufferNames[] =
 {
 	"Camera",
 	"Light"
@@ -205,7 +205,7 @@ extern char const WEAKSYM *ps_shader_ConstBufferNames[] =
 //////////////////////////////////////////////////////////////////////
 // Sampler names
 
-extern char const WEAKSYM * ps_shader_SamplerNames[] =
+extern char const WEAKSYM * ps_phong_SamplerNames[] =
 {
 	"tex1Sampler"
 };
@@ -213,15 +213,15 @@ extern char const WEAKSYM * ps_shader_SamplerNames[] =
 //////////////////////////////////////////////////////////////////////
 // Texture names
 
-extern char const WEAKSYM * ps_shader_TextureNames[] =
+extern char const WEAKSYM * ps_phong_TextureNames[] =
 {
 	"picTexture"
 };
 
 //////////////////////////////////////////////////////////////////////
-// Pixel Shader: ps_shader
+// Pixel Shader: ps_phong
 
-struct ps_shader : PixelShader, Aligned16
+struct ps_phong : PixelShader, Aligned16
 {
 	struct ALIGNED(16) Camera_t
 	{
@@ -259,12 +259,12 @@ struct ps_shader : PixelShader, Aligned16
 	};
 
 	// Constructor
-	ps_shader()
-		: PixelShader(ps_shader_Data, 1648, 2, ps_shader_ConstBufferNames, 1, ps_shader_SamplerNames, 1, ps_shader_TextureNames, textures, samplers)
+	ps_phong()
+		: PixelShader(ps_phong_Data, 1648, 2, ps_phong_ConstBufferNames, 1, ps_phong_SamplerNames, 1, ps_phong_TextureNames, textures, samplers)
 		, tex1Sampler(null)
 		, picTexture(null)
-		, Camera(1, ps_shader_Camera_Offsets, null, this)
-		, Light(4, ps_shader_Light_Offsets, null, this)
+		, Camera(1, ps_phong_Camera_Offsets, null, this)
+		, Light(4, ps_phong_Light_Offsets, null, this)
 	{
 	}
 };

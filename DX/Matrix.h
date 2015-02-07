@@ -26,7 +26,7 @@ Matrix		RotationMatrix(float yaw, float pitch, float roll);
 Matrix		RotationMatrix(Vec4f axis, float angle);
 Matrix		TranslationMatrix(Vec4f translation);
 Vec4f		TransformPoint(Vec4f pos, Matrix const &m);
-Vec4f		GetYawPitchRollFromMatrix(Matrix const &m);
+Vec4f		GetPitchYawRollFromMatrix(Matrix const &m);
 
 //////////////////////////////////////////////////////////////////////
 
