@@ -1,6 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // Material (Shaders, Rasterizer, DepthStencil, Blend)
 // Viewport
+// DrawList
+// SpriteList
+// Font
 
 #include "stdafx.h"
 
@@ -69,16 +72,17 @@ void MyDXWindow::CreateGrid()
 	using namespace Shaders::Colored;
 	vector<InputVertex> v;
 	uint i = 0;
-	float const b = -10;
-	float const t = 10;
 	InputVertex v1, v2, v3, v4;
 	for(int x = -10; x <= 10; ++x)
 	{
 		float a = (float)x;
+		float b = -10;
+		float t = 10;
 		Color cx = 0x80FFFFFF;
 		Color cy = 0x80FFFFFF;
 		if(x == 0)
 		{
+			t = 100;
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
@@ -201,7 +205,7 @@ void MyDXWindow::OnDraw()
 
 	if(Mouse::Pressed & Mouse::Button::Right)
 	{
-		camera.LookAt(Vec4(4, 4, 2));
+		camera.LookAt(Vec4(4, 4, 0));
 	}
 
 	camera.Update();
@@ -251,7 +255,6 @@ void MyDXWindow::OnDraw()
 
 void MyDXWindow::OnDestroy()
 {
-	TRACE("OnDestroy!\n");
 	vsLine.reset();
 	psLine.reset();
 	vs.reset();

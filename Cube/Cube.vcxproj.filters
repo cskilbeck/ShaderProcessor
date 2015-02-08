@@ -20,7 +20,7 @@
     <ClInclude Include="Cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ShaderProcessor\output.h">
+    <ClInclude Include="FPSCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

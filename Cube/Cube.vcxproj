@@ -171,8 +171,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\ShaderProcessor\output.h" />
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="FPSCamera.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

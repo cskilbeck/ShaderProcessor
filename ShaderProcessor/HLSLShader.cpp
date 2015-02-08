@@ -692,6 +692,7 @@ void HLSLShader::OutputSamplerMembers()
 		OutputLine("Sampler *samplers[%d];", mResources);
 		UnIndent();
 		OutputLine("};");
+		OutputLine();
 	}
 }
 
@@ -720,6 +721,7 @@ void HLSLShader::OutputResourceMembers()
 		OutputLine("Texture *textures[%d];", mResources);
 		UnIndent();
 		OutputLine("};");
+		OutputLine();
 	}
 }
 

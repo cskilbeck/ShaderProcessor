@@ -264,6 +264,7 @@ namespace Shaders
 				};
 				Sampler *samplers[1];
 			};
+
 			union
 			{
 				struct
@@ -272,6 +273,7 @@ namespace Shaders
 				};
 				Texture *textures[1];
 			};
+
 			//////////////////////////////////////////////////////////////////////
 			// Constructor
 

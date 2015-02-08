@@ -1,13 +1,5 @@
 //////////////////////////////////////////////////////////////////////
 
-#pragma Name(Phong)
-
-#pragma BlendMode(Mode=Add, Src = SrcAlpha, Dst = InvSrcAlpha)
-#pragma RasterizerState(Mode = Fill, Culling = On, Order = CCW)
-#pragma DepthStencilState(Depth = On, Stencil = Off)
-
-//////////////////////////////////////////////////////////////////////
-
 cbuffer VertConstants
 {
 	matrix ModelMatrix;

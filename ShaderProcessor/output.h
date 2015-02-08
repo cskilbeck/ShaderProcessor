@@ -291,6 +291,7 @@ namespace Shaders
 				};
 				Sampler *samplers[1];
 			};
+
 			union
 			{
 				struct
