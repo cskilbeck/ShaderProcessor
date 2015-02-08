@@ -2,8 +2,10 @@
 
 #pragma once
 
-#include "phong.h"
-#include "ColoredLine.h"
+using namespace DX;
+
+#include "Phong.h"
+#include "Colored.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -21,17 +23,7 @@ struct FPSCamera: Camera
 		, roll(0)
 	{
 		CalculatePerspectiveProjectionMatrix();
-		CalculateViewProjectionMatrix();
-		CalculateViewMatrix(position, roll, pitch, yaw);
-	}
-
-	void Reset()
-	{
-		position = Vec4(0, 0, -10);
-		yaw = pitch = roll = 0;
-		CalculatePerspectiveProjectionMatrix();
-		CalculateViewProjectionMatrix();
-		CalculateViewMatrix(position, roll, pitch, yaw);
+		Update();
 	}
 
 	void LookAt(Vec4f target)
@@ -70,22 +62,23 @@ struct MyDXWindow: DXWindow
 	//////////////////////////////////////////////////////////////////////
 
 	FPSCamera camera;
-	Matrix worldMatrix;
-	Matrix viewMatrix;
-	Matrix projectionMatrix;
-	Ptr<vs_phong> vs;
-	Ptr<ps_phong> ps;
+
+	Ptr<Shaders::Phong::VS> vs;
+	Ptr<Shaders::Phong::PS> ps;
+	Ptr<Shaders::Phong::VertBuffer> vertexBuffer;
 	Ptr<Texture> texture;
 	Ptr<Sampler> sampler;
 	Ptr<IndexBuffer<uint16>> indexBuffer;
-	Ptr<vs_phong::VertexBuffer> vertexBuffer;
+
+	Ptr<Shaders::Colored::VS> vsLine;
+	Ptr<Shaders::Colored::PS> psLine;
+	Ptr<Shaders::Colored::VertBuffer> vbLineGrid;
+	Ptr<Shaders::Colored::VertBuffer> octahedron;
+	Ptr<IndexBuffer<uint16>> octahedronIB;
+
 	DXPtr<ID3D11RasterizerState> rasterizerState;
 	DXPtr<ID3D11DepthStencilState>	depthStencilState;
 	DXPtr<ID3D11BlendState>	blendState;
-
-	Ptr<vs_ColoredLine> vsLine;
-	Ptr<ps_ColoredLine> psLine;
-	Ptr<vs_ColoredLine::VertexBuffer> vbLineGrid;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -95,5 +88,8 @@ struct MyDXWindow: DXWindow
 	bool OnCreate() override;
 	void OnDraw() override;
 	void OnDestroy() override;
+
+	void CreateGrid();
+	void CreateOctahedron();
 };
 

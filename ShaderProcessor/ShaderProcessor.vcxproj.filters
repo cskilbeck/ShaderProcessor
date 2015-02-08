@@ -10,7 +10,7 @@
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
     <Filter Include="HLSL">
-      <UniqueIdentifier>{86d9b1ba-3f40-478a-bd3d-e379184a4962}</UniqueIdentifier>
+      <UniqueIdentifier>{26ca7db9-be75-4a77-82b6-0544f6fe3d43}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -75,8 +75,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shader.hlsl">
+    <None Include="Phong.shader">
       <Filter>HLSL</Filter>
-    </FxCompile>
+    </None>
   </ItemGroup>
 </Project>

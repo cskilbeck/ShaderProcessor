@@ -4,6 +4,8 @@
 
 //////////////////////////////////////////////////////////////////////
 
+using namespace DX;
+
 static uint BPPFromTextureFormat(DXGI_FORMAT format)
 {
 	switch(format)
@@ -128,88 +130,91 @@ static uint BPPFromTextureFormat(DXGI_FORMAT format)
 	}
 }
 
-
 //////////////////////////////////////////////////////////////////////
 
-void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height)
+namespace DX
 {
-	uint bpp = BPPFromTextureFormat(pixelFormat);
-	D3D11_SUBRESOURCE_DATA data[1];
-	data[0].pSysMem = (void *)buffer;
-	data[0].SysMemPitch = (width * bpp + 7) / 8;
-	data[0].SysMemSlicePitch = 0;
 
-	CD3D11_TEXTURE2D_DESC desc(pixelFormat, width, height, 1, 1);
-	if(!FAILED(D3D::Device->CreateTexture2D(&desc, data, &mTexture2D)))
+	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height)
 	{
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-		srvDesc.Format = pixelFormat;
-		srvDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-		srvDesc.Texture2D.MipLevels = desc.MipLevels;
-		srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
-		if(FAILED(D3D::Device->CreateShaderResourceView(mTexture2D, &srvDesc, &mShaderResourceView)))
+		uint bpp = BPPFromTextureFormat(pixelFormat);
+		D3D11_SUBRESOURCE_DATA data[1];
+		data[0].pSysMem = (void *)buffer;
+		data[0].SysMemPitch = (width * bpp + 7) / 8;
+		data[0].SysMemSlicePitch = 0;
+
+		CD3D11_TEXTURE2D_DESC desc(pixelFormat, width, height, 1, 1);
+		if(!FAILED(DX::Device->CreateTexture2D(&desc, data, &mTexture2D)))
 		{
-			mTexture2D.Release();
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+			srvDesc.Format = pixelFormat;
+			srvDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MipLevels = desc.MipLevels;
+			srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
+			if(FAILED(DX::Device->CreateShaderResourceView(mTexture2D, &srvDesc, &mShaderResourceView)))
+			{
+				mTexture2D.Release();
+			}
+			else
+			{
+				mTexture2D->GetDesc(&mTextureDesc);
+			}
 		}
-		else
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	uint Texture::BitsPerPixel() const
+	{
+		return BPPFromTextureFormat(mTextureDesc.Format);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Texture::Update(ID3D11DeviceContext *sContext, byte *pixels)
+	{
+		uint rowPitch = (Width() * BitsPerPixel() + 7) / 8;
+		sContext->UpdateSubresource(mTexture2D, 0, null, pixels, rowPitch, rowPitch * Height());
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Texture::Texture(tchar const *name)
+		: mName(name)
+	{
+		if(!FAILED(CreateWICTextureFromFile(WideStringFromTString(mName).c_str(), (ID3D11Resource **)&mTexture2D, &mShaderResourceView)))
 		{
 			mTexture2D->GetDesc(&mTextureDesc);
 		}
 	}
-}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-uint Texture::BitsPerPixel() const
-{
-	return BPPFromTextureFormat(mTextureDesc.Format);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-void Texture::Update(ID3D11DeviceContext *sContext, byte *pixels)
-{
-	uint rowPitch = (Width() * BitsPerPixel() + 7) / 8;
-	sContext->UpdateSubresource(mTexture2D, 0, null, pixels, rowPitch, rowPitch * Height());
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Texture::Texture(tchar const *name)
-	: mName(name)
-{
-	if(!FAILED(CreateWICTextureFromFile(WideStringFromTString(mName).c_str(), (ID3D11Resource **)&mTexture2D, &mShaderResourceView)))
+	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels)
 	{
-		mTexture2D->GetDesc(&mTextureDesc);
+		InitFromPixelBuffer(pixels, format, w, h);
 	}
-}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels)
-{
-	InitFromPixelBuffer(pixels, format, w, h);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-Texture::Texture(int width, int height, Color color)
-{
-	Ptr<byte> pPixels(new byte[width * height * 4]);
-	for(int y = 0; y < height; ++y)
+	Texture::Texture(int width, int height, Color color)
 	{
-		Color *row = (Color *)(pPixels.get() + y * width * 4);
-		for(int x = 0; x < width; ++x)
+		Ptr<byte> pPixels(new byte[width * height * 4]);
+		for(int y = 0; y < height; ++y)
 		{
-			row[x] = color;
+			Color *row = (Color *)(pPixels.get() + y * width * 4);
+			for(int x = 0; x < width; ++x)
+			{
+				row[x] = color;
+			}
 		}
+		InitFromPixelBuffer(pPixels.get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height);
 	}
-	InitFromPixelBuffer(pPixels.get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height);
+
+	//////////////////////////////////////////////////////////////////////
+
+	Texture::~Texture()
+	{
+	}
+
 }
-
-//////////////////////////////////////////////////////////////////////
-
-Texture::~Texture()
-{
-}
-

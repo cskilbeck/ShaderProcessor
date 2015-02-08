@@ -4,30 +4,33 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct ConstBufferOffset
+namespace DX
 {
-	char const *name;
-	size_t offset;
-};
 
-//////////////////////////////////////////////////////////////////////
-
-template <typename T> struct ConstantBuffer: Buffer<T>
-{
-	HRESULT Create(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+	struct ConstBufferOffset
 	{
-		return Buffer<T>::Create(ConstantBufferType, count, data, usage, rwOption);
-	}
-};
+		char const *name;
+		size_t offset;
+	};
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-template<typename definition> struct ALIGNED(16) ConstBuffer : definition, ConstantBuffer<definition>	// definition MUST be POD
+	template <typename T> struct ConstantBuffer: Buffer < T >
+	{
+		HRESULT Create(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		{
+			return Buffer<T>::Create(ConstantBufferType, count, data, usage, rwOption);
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	template<typename definition> struct ALIGNED(16) ConstBuffer : definition, ConstantBuffer < definition >	// definition MUST be POD
 {
 	ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent)
-		: mOffsetCount(OffsetCount)
-		, mOffsets(Offsets)
-		, mDefaults(Defaults)
+	: mOffsetCount(OffsetCount)
+	, mOffsets(Offsets)
+	, mDefaults(Defaults)
 	{
 		if(mDefaults != null)
 		{
@@ -60,9 +63,11 @@ template<typename definition> struct ALIGNED(16) ConstBuffer : definition, Const
 
 	//////////////////////////////////////////////////////////////////////
 
+private:
+
 	uint32 const					mOffsetCount;
 	ConstBufferOffset const * const	mOffsets;
 	uint32 const * const 			mDefaults;
-
 };
 
+}

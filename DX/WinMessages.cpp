@@ -1027,7 +1027,12 @@ static char const *messageStrings[] = {
 	TEXT("WM_CBT_RESERVED_LAST")
 };
 
-char const *GetWM_Name(uint message)
+namespace DX
 {
-	return (message < _countof(messageStrings)) ? messageStrings[message] : "??";
+
+	char const *GetWM_Name(uint message)
+	{
+		return (message < _countof(messageStrings)) ? messageStrings[message] : "??";
+	}
+
 }

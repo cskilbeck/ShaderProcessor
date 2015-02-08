@@ -4,7 +4,7 @@
 
 //////////////////////////////////////////////////////////////////////
 
-using Printer::output;
+using namespace Printer;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -170,27 +170,36 @@ static void OutputTable(uint32 *table, uint count, char const *name)
 
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
-	output("// %s offsets\n", mDesc.Name);
-	output("extern ConstBufferOffset const WEAKSYM %s_%s_Offsets[%d] = \n", shaderName.c_str(), mDesc.Name, mDesc.Variables);
-	output("{");
+	OutputComment("%s offsets", mDesc.Name);
+	OutputLine("extern ConstBufferOffset const WEAKSYM %s_%s_Offsets[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Variables);
+	OutputIndent("{");
+	Indent();
 	char const *sep = "";
 	for(uint i = 0; i < FieldCount; ++i)
 	{
 		D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-		output("%s\n\t{ \"%s\", %d }", sep, v.Name, v.StartOffset);
+		Output(sep);
+		OutputLine();
+		OutputIndent();
+		Output("{ \"%s\", %d }", v.Name, v.StartOffset);
 		sep = ",";
 	}
-	output("\n};\n\n");
+	OutputLine();
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
 
 	if(Defaults == null)
 	{
-		output("// no defaults for %s\n\n", mDesc.Name);
+		OutputLine("// no defaults for %s", mDesc.Name);
+		OutputLine();
 	}
 	else
 	{
-		output("// %s defaults\n", mDesc.Name);
-		output("extern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
-		output("\n{");
+		OutputLine("// %s defaults\n", mDesc.Name);
+		OutputLine("extern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
+		OutputIndent("{");
+		Indent();
 		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
 		{
@@ -201,22 +210,29 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 			uint pad = (end - (v.StartOffset + v.Size));
 			uint slots = (v.Size + pad) / sizeof(uint32);
 			string eol = Format("// %s", v.Name);
-			char const *sol = "\n\t";
+			char const *sol = "\n";
 			char const *sname = v.Name;
 			for(uint j = 0; j < slots; ++j)
 			{
-				output(sep);
+				Output(sep);
 				if((j % 4) == 0)
 				{
-					output("%s%s\n\t", sol, eol.c_str());
+					Output(sol);
+					OutputIndent();
+					Output(eol.c_str());
+					OutputLine();
+					OutputIndent();
 					sol = "";
 					eol = "";
 				}
-				output("0x%08x", *data++);
+				Output("0x%08x", *data++);
 				sep = ",";
 			}
 		}
-		output("\n};\n\n");
+		OutputLine();
+		UnIndent();
+		OutputLine("};");
+		OutputLine();
 	}
 }
 
@@ -226,24 +242,32 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 {
 	uint padID = 0;
 	uint fieldCount = 0;
-	output("\tstruct ALIGNED(16) %s_t\n\t{\n", mDesc.Name);
+	OutputLine("struct %s_t: Aligned16", mDesc.Name);
+	OutputLine("{");
+	Indent();
 	for(auto i = mFields.begin(); i != mFields.end(); ++i)
 	{
 		Field *p = (*i);
 		D3D11_SHADER_VARIABLE_DESC &v = p->Variable;
 		D3D11_SHADER_TYPE_DESC &t = p->Type;
 		string typeName = Format("%s%s%d", typeNames[t.Type], isMatrix[t.Class] ? Format("%dx", t.Rows).c_str() : "", t.Columns);
-		output("\t\t%s %s;", typeName.c_str(), v.Name);
+		OutputIndent();
+		Output("%s %s;", typeName.c_str(), v.Name);
 		if(p->padding != 0)
 		{
-			output("\t\tbyte pad%d[%d];", padID++, p->padding);
+			Output("\t\tprivate: byte pad%d[%d]; public:", padID++, p->padding);
 		}
-		output("\n");
+		OutputLine();
 		++fieldCount;
 	}
-	output("\t};\n\n");
-	output("\tConstBuffer<%s_t> %s;\n\n", mDesc.Name, mDesc.Name);
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
+	OutputLine("ConstBuffer<%s_t> %s;", mDesc.Name, mDesc.Name);
+	OutputLine();
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void TypeDefinition::ConstructorOutput()
 {
@@ -252,5 +276,5 @@ void TypeDefinition::ConstructorOutput()
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	output("%s(%u, %s_%s_Offsets, %s, this)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str());
+	OutputLine(", %s(%u, %s_%s_Offsets, %s, this)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str());
 }

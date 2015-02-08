@@ -18,12 +18,12 @@ struct ResourceBinding: Binding
 
 	void MemberOutput() override
 	{
-		Printer::output("Texture *%s;", mDesc.Name);
+		Printer::OutputLine("Texture *%s;", mDesc.Name);
 	}
 
 	void ConstructorOutput() override
 	{
-		Printer::output("%s(null)", mDesc.Name);
+		Printer::OutputLine(", %s(null)", mDesc.Name);
 	}
 };
 

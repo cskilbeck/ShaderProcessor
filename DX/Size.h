@@ -4,97 +4,102 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct Size2D: SIZE
+namespace DX
 {
-	Size2D()
+
+	struct Size2D: SIZE
 	{
+		Size2D()
+		{
+		}
+
+		Size2D(int w, int h)
+		{
+			cx = w;
+			cy = h;
+		}
+
+		explicit Size2D(Vec2f const &o)
+		{
+			cx = (int)o.x;
+			cy = (int)o.y;
+		}
+
+		explicit Size2D(Point2D const &o)
+		{
+			cx = o.x;
+			cy = o.y;
+		}
+
+		long Width() const
+		{
+			return cx;
+		}
+
+		long Height() const
+		{
+			return cy;
+		}
+
+		void Clear()
+		{
+			cx = 0;
+			cy = 0;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Point2D operator + (Point2D a, Size2D b)
+	{
+		return Point2D(a.x + b.cx, a.y + b.cy);
 	}
 
-	Size2D(int w, int h)
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D operator + (Size2D a, Size2D b)
 	{
-		cx = w;
-		cy = h;
+		return Size2D(a.cx + b.cx, a.cy + b.cy);
 	}
 
-	explicit Size2D(Vec2f const &o)
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D operator + (Size2D a, Point2D b)
 	{
-		cx = (int)o.x;
-		cy = (int)o.y;
+		return Size2D(a.cx + b.x, a.cy + b.y);
 	}
 
-	explicit Size2D(Point2D const &o)
+	//////////////////////////////////////////////////////////////////////
+
+	inline Point2D operator - (Point2D a, Size2D b)
 	{
-		cx = o.x;
-		cy = o.y;
+		return Point2D(a.x - b.cx, a.y - b.cy);
 	}
 
-	long Width() const
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D operator - (Size2D a, Size2D b)
 	{
-		return cx;
+		return Size2D(a.cx - b.cx, a.cy - b.cy);
 	}
 
-	long Height() const
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D operator - (Size2D a, Point2D b)
 	{
-		return cy;
+		return Size2D(a.cx - b.x, a.cy - b.y);
 	}
 
-	void Clear()
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D operator - (Size2D const &s, Vec2f const &v)
 	{
-		cx = 0;
-		cy = 0;
+		return Size2D((long)(s.cx - v.x), (long)(s.cy - v.y));
 	}
-};
 
-//////////////////////////////////////////////////////////////////////
+	inline bool operator == (Size2D const &a, Size2D const &b)
+	{
+		return a.cx == b.cx && a.cy == b.cy;
+	}
 
-inline Point2D operator + (Point2D a, Size2D b)
-{
-	return Point2D(a.x + b.cx, a.y + b.cy);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Size2D operator + (Size2D a, Size2D b)
-{
-	return Size2D(a.cx + b.cx, a.cy + b.cy);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Size2D operator + (Size2D a, Point2D b)
-{
-	return Size2D(a.cx + b.x, a.cy + b.y);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Point2D operator - (Point2D a, Size2D b)
-{
-	return Point2D(a.x - b.cx, a.y - b.cy);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Size2D operator - (Size2D a, Size2D b)
-{
-	return Size2D(a.cx - b.cx, a.cy - b.cy);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Size2D operator - (Size2D a, Point2D b)
-{
-	return Size2D(a.cx - b.x, a.cy - b.y);
-}
-
-//////////////////////////////////////////////////////////////////////
-
-inline Size2D operator - (Size2D const &s, Vec2f const &v)
-{
-	return Size2D((long)(s.cx - v.x), (long)(s.cy - v.y));
-}
-
-inline bool operator == (Size2D const &a, Size2D const &b)
-{
-	return a.cx == b.cx && a.cy == b.cy;
 }

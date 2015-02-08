@@ -4,6 +4,8 @@
 
 //////////////////////////////////////////////////////////////////////
 
+using namespace DX;
+
 static POINT mouseSavedPos;
 static Vec2f oldMousePos;
 static Mouse::Mode mouseMode = Mouse::Mode::Free;
@@ -33,29 +35,30 @@ static void HideMouse()
 
 //////////////////////////////////////////////////////////////////////
 
-namespace Mouse
+namespace DX
 {
-	//////////////////////////////////////////////////////////////////////
 
-	Vec2f		Delta(0, 0);
-	float		WheelDelta(0);
-	Vec2f		Position(0, 0);
-	uint32		Pressed(0);
-	uint32		Held(0);
-	uint32		Released(0);
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Update(Window &w)
+	namespace Mouse
 	{
-		if(w.IsActive())
+		//////////////////////////////////////////////////////////////////////
+
+		Vec2f		Delta(0, 0);
+		float		WheelDelta(0);
+		Vec2f		Position(0, 0);
+		uint32		Pressed(0);
+		uint32		Held(0);
+		uint32		Released(0);
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Update(Window &w)
 		{
-			Point2D p;
-			HideMouse();
-			GetCursorPos(&p);
-			ScreenToClient(w.Handle(), &p);
-			if(GetMode() == Mode::Captured)
+			if(w.IsActive() && GetMode() == Mode::Captured)
 			{
+				HideMouse();
+				Point2D p;
+				GetCursorPos(&p);
+				ScreenToClient(w.Handle(), &p);
 				POINT c;
 				c.x = w.Width() / 2;
 				c.y = w.Height() / 2;
@@ -64,72 +67,73 @@ namespace Mouse
 				ClientToScreen(w.Handle(), &c);
 				SetCursorPos(c.x, c.y);
 			}
-		}
-		else
-		{
-			ShowMouse();
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void SetMode(Mode mode, Window &w)
-	{
-		if(mouseMode != mode)
-		{
-			mouseMode = mode;
-			if(mode == Captured)
-			{
-				GetCursorPos(&mouseSavedPos);
-				HideMouse();
-				oldMousePos = Mouse::Position;
-				Mouse::Update(w);
-				Mouse::Delta = Vec2f(0, 0);
-			}
 			else
 			{
-				SetCursorPos(mouseSavedPos.x, mouseSavedPos.y);
-				Mouse::Position = oldMousePos;
 				ShowMouse();
 			}
 		}
-	}
 
-	//////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////
 
-	void OnActivate(bool active, Window &w)
-	{
-		if(active)
+		void SetMode(Mode mode, Window &w)
 		{
-			if(GetMode() == Mode::Captured)
+			if(mouseMode != mode)
 			{
-				GetCursorPos(&mouseSavedPos);
-				HideMouse();
-				SetCapture(w.Handle());
-				POINT p;
-				p.x = w.Width() / 2;
-				p.y = w.Height() / 2;
-				ClientToScreen(w.Handle(), &p);
-				SetCursorPos(p.x, p.y);
+				mouseMode = mode;
+				if(mode == Captured)
+				{
+					GetCursorPos(&mouseSavedPos);
+					HideMouse();
+					oldMousePos = Mouse::Position;
+					Mouse::Update(w);
+					Mouse::Delta = Vec2f(0, 0);
+				}
+				else
+				{
+					SetCursorPos(mouseSavedPos.x, mouseSavedPos.y);
+					Mouse::Position = oldMousePos;
+					ShowMouse();
+				}
 			}
 		}
-		else
+
+		//////////////////////////////////////////////////////////////////////
+
+		void OnActivate(bool active, Window &w)
 		{
-			ReleaseCapture();
-			ShowMouse();
-			if(GetMode() == Mode::Captured)
+			if(active)
 			{
-				SetCursorPos(mouseSavedPos.x, mouseSavedPos.y);
+				if(GetMode() == Mode::Captured)
+				{
+					GetCursorPos(&mouseSavedPos);
+					HideMouse();
+					SetCapture(w.Handle());
+					POINT p;
+					p.x = w.Width() / 2;
+					p.y = w.Height() / 2;
+					ClientToScreen(w.Handle(), &p);
+					SetCursorPos(p.x, p.y);
+				}
+			}
+			else
+			{
+				ReleaseCapture();
+				ShowMouse();
+				if(GetMode() == Mode::Captured)
+				{
+					SetCursorPos(mouseSavedPos.x, mouseSavedPos.y);
+				}
 			}
 		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		Mode GetMode()
+		{
+			return mouseMode;
+		}
+
+		//////////////////////////////////////////////////////////////////////
 	}
 
-	//////////////////////////////////////////////////////////////////////
-
-	Mode GetMode()
-	{
-		return mouseMode;
-	}
-
-	//////////////////////////////////////////////////////////////////////
 }

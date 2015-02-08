@@ -199,8 +199,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="ColoredLine.shader" />
-    <SPOCK Include="phong.shader" />
+    <SPOCK Include="Colored.shader" />
+    <SPOCK Include="Phong.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

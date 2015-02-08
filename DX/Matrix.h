@@ -4,73 +4,85 @@
 
 //////////////////////////////////////////////////////////////////////
 
-typedef DirectX::XMMATRIX Matrix;
-typedef float MatrixArray[4][4];
-
-inline MatrixArray &MatrixAsArray(Matrix &m)
+namespace DX
 {
-	return *(MatrixArray *)&m;
-}
 
-inline MatrixArray const &MatrixAsArray(Matrix const &m)
-{
-	return *(MatrixArray const *)&m;
-}
+	typedef DirectX::XMMATRIX Matrix;
+	typedef float MatrixArray[4][4];
 
-extern Matrix IdentityMatrix;
+	inline MatrixArray &MatrixAsArray(Matrix &m)
+	{
+		return *(MatrixArray *)&m;
+	}
 
-//////////////////////////////////////////////////////////////////////
+	inline MatrixArray const &MatrixAsArray(Matrix const &m)
+	{
+		return *(MatrixArray const *)&m;
+	}
 
-Matrix		TransposeMatrix(Matrix const &m);
-Matrix		RotationMatrix(float yaw, float pitch, float roll);
-Matrix		RotationMatrix(Vec4f axis, float angle);
-Matrix		TranslationMatrix(Vec4f translation);
-Vec4f		TransformPoint(Vec4f pos, Matrix const &m);
-Vec4f		GetPitchYawRollFromMatrix(Matrix const &m);
+	extern Matrix IdentityMatrix;
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline Matrix TransposeMatrix(Matrix const &m)
-{
-	return XMMatrixTranspose(m);
-}
+	Matrix		TransposeMatrix(Matrix const &m);
+	Matrix		RotationMatrix(float yaw, float pitch, float roll);
+	Matrix		RotationMatrix(Vec4f axis, float angle);
+	Matrix		TranslationMatrix(Vec4f translation);
+	Vec4f		TransformPoint(Vec4f pos, Matrix const &m);
+	Vec4f		GetPitchYawRollFromMatrix(Matrix const &m);
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline Matrix RotationMatrix(float yaw, float pitch, float roll)
-{
-	return DirectX::XMMatrixRotationRollPitchYaw(yaw, pitch, roll);	// swap Y & Z...
-}
+	inline Matrix TransposeMatrix(Matrix const &m)
+	{
+		return XMMatrixTranspose(m);
+	}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline Matrix RotationMatrix(Vec4f axis, float angle)
-{
-	return DirectX::XMMatrixRotationNormal(axis, angle);
-}
+	inline Matrix RotationMatrix(float yaw, float pitch, float roll)
+	{
+		return DirectX::XMMatrixRotationRollPitchYaw(yaw, pitch, roll);	// swap Y & Z...
+	}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline Matrix TranslationMatrix(Vec4f translation)
-{
-	return DirectX::XMMatrixTranslationFromVector(translation);
-}
+	inline Matrix RotationMatrix(Vec4f axis, float angle)
+	{
+		return DirectX::XMMatrixRotationNormal(axis, angle);
+	}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline Vec4f TransformPoint(Vec4f pos, Matrix const &m)
-{
-	Vec4f r = SplatX(pos) * m.r[0] + SplatY(pos) * m.r[1] + SplatZ(pos) * m.r[2] + m.r[3];
-	return r / SplatW(r);
-}
+	inline Matrix TranslationMatrix(Vec4f translation)
+	{
+		return DirectX::XMMatrixTranslationFromVector(translation);
+	}
 
-//////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////
 
-inline void CopyMatrix(void *f, Matrix const &m)
-{
-	Vec4f *p = (Vec4f *)f;
-	p[0] = m.r[0];
-	p[1] = m.r[1];
-	p[2] = m.r[2];
-	p[3] = m.r[3];
+	inline Matrix ScaleMatrix(Vec4f scale)
+	{
+		return DirectX::XMMatrixScalingFromVector(scale);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec4f TransformPoint(Vec4f pos, DX::Matrix const &m)
+	{
+		Vec4f r = SplatX(pos) * m.r[0] + SplatY(pos) * m.r[1] + SplatZ(pos) * m.r[2] + m.r[3];
+		return r / SplatW(r);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline void CopyMatrix(void *f, DX::Matrix const &m)
+	{
+		Vec4f *p = (Vec4f *)f;
+		p[0] = m.r[0];
+		p[1] = m.r[1];
+		p[2] = m.r[2];
+		p[3] = m.r[3];
+	}
+
 }

@@ -12,7 +12,7 @@
 
 #include "stdafx.h"
 
-using Printer::output;
+using namespace Printer;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -511,45 +511,65 @@ HLSLShader::~HLSLShader()
 
 //////////////////////////////////////////////////////////////////////
 
-static string header = "#pragma pack(push, 4)\n\n";
-static string footer = "#pragma pack(pop)\n\n";
 static char const *comment = "//////////////////////////////////////////////////////////////////////\n";
 
 //////////////////////////////////////////////////////////////////////
 
 void HLSLShader::OutputHeader(char const *filename) // static
 {
-	output(comment);
-	output("// %s.h - auto generated file, do not edit\n\n", filename);
-	output("#pragma once\n");
-	output("%s", header.c_str());
+	OutputComment("%s.h - auto generated file, do not edit", filename);
+	OutputLine("#pragma once");
+	OutputLine("#pragma pack(push, 4)");
+	OutputLine();
+	OutputLine("namespace Shaders");
+	OutputLine("{");
+	Indent();
+	OutputLine("using namespace DX;");
+	OutputLine();
+	OutputLine("namespace %s", filename);
+	OutputLine("{");
+	Indent();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputFooter() // static
+void HLSLShader::OutputFooter(char const *filename) // static
 {
-	output("%s", footer.c_str());
+	UnIndent();
+	OutputLine("} // %s", filename);
+	OutputLine();
+	UnIndent();
+	OutputLine("} // Shaders");
+	OutputLine();
+	OutputLine("#pragma pack(pop)");
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void HLSLShader::OutputBlob()
 {
-	output("%s// %s data\n\nuint32 WEAKSYM %s_Data[] =\n{", comment, Name().c_str(), Name().c_str());
+	OutputComment("Data for %s", Name().c_str());
+	OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
+	OutputLine("{");
+	Indent();
+
 	char *sep = "";
 	uint32 *d = (uint32 *)mBlob;
 	for(uint i = 0; i < mSize / 4; ++i)
 	{
-		output(sep);
+		Output(sep);
 		if((i & 7) == 0)
 		{
-			output("\n\t");
+			OutputLine();
+			OutputIndent();
 		}
-		output("0x%08x", d[i]);
+		Output("0x%08x", d[i]);
 		sep = ",";
 	}
-	output("\n};\n\n");
+	OutputLine();
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -558,21 +578,29 @@ void HLSLShader::OutputConstBufferNamesAndOffsets()
 {
 	if(!mDefinitions.empty())
 	{
-		output("%s// offsets and defaults\n\n", comment);
+		OutputComment("offsets and defaults");
 		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 		{
 			(*i)->StaticsOutput(Name());
 		}
 		// output the constbuffernames table
-		output("%s// const buffer names table\n", comment);
-		output("\nextern char const WEAKSYM *%s_ConstBufferNames[] =\n{", Name().c_str());
+		OutputComment("const buffer names table");
+		OutputLine("extern char const WEAKSYM *%s_ConstBufferNames[] =", Name().c_str());
+		OutputIndent("{");
+		Indent();
 		char const *sep = "";
 		for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 		{
-			output("%s\n\t\"%s\"", sep, (*i)->Name);
+			Output(sep);
+			OutputLine();
+			OutputIndent();
+			Output("\"%s\"", (*i)->Name);
 			sep = ",";
 		}
-		output("\n};\n\n");
+		UnIndent();
+		OutputLine();
+		OutputLine("};");
+		OutputLine();
 	}
 }
 
@@ -582,19 +610,25 @@ void HLSLShader::OutputResourceNames()
 {
 	if(mResources > 0)
 	{
-		output("%s// Texture names\n\n", comment);
-		output("extern char const WEAKSYM * %s_TextureNames[] =\n{", Name().c_str());
+		OutputComment("Texture names");
+		OutputLine("extern char const WEAKSYM * %s_TextureNames[] =", Name().c_str());
+		OutputIndent("{");
+		OutputLine();
+		Indent();
 		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 		{
-			char *sep = "";
+			char const *sep = "";
 			if((*i)->IsResource())
 			{
-				output("%s\n\t\"%s\"", sep, (*i)->Name());
+				Output(sep);
+				OutputLine("\"%s\"", (*i)->Name());
+				sep = ",";
 			}
 		}
-		output("\n};\n");
+		UnIndent();
+		OutputLine("};");
+		OutputLine();
 	}
-
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -603,17 +637,24 @@ void HLSLShader::OutputSamplerNames()
 {
 	if(mSamplers > 0)
 	{
-		output("%s// Sampler names\n\n", comment);
-		output("extern char const WEAKSYM * %s_SamplerNames[] =\n{", Name().c_str());
+		OutputComment("Sampler names", comment);
+		OutputLine("extern char const WEAKSYM * %s_SamplerNames[] =", Name().c_str());
+		OutputIndent("{");
+		OutputLine();
+		Indent();
 		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 		{
 			char *sep = "";
 			if((*i)->IsSampler())
 			{
-				output("%s\n\t\"%s\"", sep, (*i)->Name());
+				Output(sep);
+				OutputLine("\"%s\"", (*i)->Name());
+				sep = ",";
 			}
 		}
-		output("\n};\n\n");
+		UnIndent();
+		OutputLine("};");
+		OutputLine();
 	}
 }
 
@@ -629,24 +670,28 @@ void HLSLShader::OutputConstBufferMembers()
 
 //////////////////////////////////////////////////////////////////////
 
-static char const *unionHeader = "\tunion\n\t{\n\t\tstruct\n\t\t{\n";
-static char const *textureLine = "\t\t};\n\t\t%s *%s[%d];\n\t};\n\n";
-
 void HLSLShader::OutputSamplerMembers()
 {
 	if(mSamplers > 0)
 	{
-		output(unionHeader);
+		OutputLine("union");
+		OutputLine("{");
+		Indent();
+		OutputLine("struct");
+		OutputLine("{");
+		Indent();
 		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 		{
 			if((*i)->IsSampler())
 			{
-				output("\t\t\t");
 				(*i)->MemberOutput();
-				output("\n");
 			}
 		}
-		output(textureLine, "Sampler", "samplers", mSamplers);
+		UnIndent();
+		OutputLine("};");
+		OutputLine("Sampler *samplers[%d];", mResources);
+		UnIndent();
+		OutputLine("};");
 	}
 }
 
@@ -656,17 +701,25 @@ void HLSLShader::OutputResourceMembers()
 {
 	if(mResources > 0)
 	{
-		output(unionHeader);
+		OutputLine("union");
+		OutputLine("{");
+		Indent();
+		OutputLine("struct");
+		OutputLine("{");
+		Indent();
+
 		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 		{
 			if((*i)->IsResource())
 			{
-				output("\t\t\t");
 				(*i)->MemberOutput();
-				output("\n");
 			}
 		}
-		output(textureLine, "Texture", "textures", mSamplers);
+		UnIndent();
+		OutputLine("};");
+		OutputLine("Texture *textures[%d];", mResources);
+		UnIndent();
+		OutputLine("};");
 	}
 }
 
@@ -678,8 +731,11 @@ void HLSLShader::OutputConstructor()
 	string textureNames = (mResources > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
 	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
-	output("\t// Constructor\n\t%s()\n\t\t: %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s)",
-		   Name().c_str(),
+
+	OutputComment("Constructor");
+	OutputLine("%s()", Name().c_str());
+	Indent();
+	OutputLine(": %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s)",
 		   mShaderTypeDesc.name,
 		   Name().c_str(),
 		   mSize,
@@ -694,18 +750,18 @@ void HLSLShader::OutputConstructor()
 		   );
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		output("\n\t\t, ");
 		(*i)->ConstructorOutput();
 	}
-
-	output("\n\t{\n\t}\n");
+	UnIndent();
+	OutputLine("{");
+	OutputLine("}");
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void HLSLShader::OutputShaderStruct()
 {
-	output("\n%s// %s Shader: %s\n\n", comment, mShaderTypeDesc.name, Name().c_str());
+	OutputComment("%s Shader: %s", mShaderTypeDesc.name, Name().c_str());
 
 	string vsTag;
 
@@ -714,16 +770,19 @@ void HLSLShader::OutputShaderStruct()
 		vsTag = Format("<%s_InputElements, _countof(%s_InputElements)>", Name().c_str(), Name().c_str());
 	}
 
-	output("struct %s : %sShader%s, Aligned16\n", Name().c_str(), mShaderTypeDesc.name, vsTag.c_str());
-	output("{\n");
+	OutputInputStruct();
+	OutputLine("struct %s : %sShader%s, Aligned16", Name().c_str(), mShaderTypeDesc.name, vsTag.c_str());
+	OutputLine("{");
+	Indent();
 
 	OutputConstBufferMembers();
 	OutputSamplerMembers();
 	OutputResourceMembers();
-	OutputInputStruct();
 	OutputConstructor();
 
-	output("};\n\n");
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -735,17 +794,26 @@ void HLSLShader::OutputInputElements()
 		return;
 	}
 
-	output("%s// Input Element descs\n\n", comment);
-	output("extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM %s_InputElements[%d] =\n{", Name().c_str(), mInputElements.size());
+	OutputComment("Input Element descs");
+	OutputLine("extern D3D11_INPUT_ELEMENT_DESC const WEAKSYM %s_InputElements[%d] =", Name().c_str(), mInputElements.size());
+	OutputIndent();
+	Output("{");
+	Indent();
 	char const *sep = "";
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		char const *formatName = GetFormatName(d.Format);
-		output("%s\n\t{ \"%s\", %u, DXGI_FORMAT_%s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", sep, d.SemanticName, d.SemanticIndex, formatName);
+		Output(sep);
+		OutputLine();
+		OutputIndent();
+		Output("{ \"%s\", %u, DXGI_FORMAT_%s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", d.SemanticName, d.SemanticIndex, formatName);
 		sep = ",";
 	}
-	output("\n};\n");
+	OutputLine();
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -757,19 +825,24 @@ void HLSLShader::OutputInputStruct()
 		return;
 	}
 
-	output("\tstruct InputVertex\n\t{\n");
+	OutputLine("struct InputVertex");
+	OutputLine("{");
+	Indent();
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		InputField &f = mInputFields[i];
-		output("\t\t%s;\n", f.GetDeclaration().c_str());
+		OutputLine("%s;", f.GetDeclaration().c_str());
 	}
-	output("\t};\n\n");
-	output("\tusing VertexBuffer = VertexBuffer<InputVertex>;\n\n");
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
+	OutputLine("using VertBuffer = VertexBuffer<InputVertex>;");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::Output()
+void HLSLShader::OutputHeaderFile()
 {
 	OutputBlob();
 	OutputConstBufferNamesAndOffsets();
@@ -804,7 +877,7 @@ HRESULT HLSLShader::CreateInputLayout()
 	{
 		InputField &f = mInputFields[i];
 		D3D11_SIGNATURE_PARAMETER_DESC desc;
-		DX(mReflector->GetInputParameterDesc(i, &desc));
+		DXR(mReflector->GetInputParameterDesc(i, &desc));
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		d.SemanticName = desc.SemanticName;
 		d.SemanticIndex = desc.SemanticIndex;
@@ -892,15 +965,15 @@ HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &
 	mBlob = blob;
 	mSize = size;
 	mShaderTypeDesc = desc;
-	DX(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
+	DXR(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
-	DX(CreateDefinitions());
-	DX(CreateBindings());
+	DXR(CreateDefinitions());
+	DXR(CreateBindings());
 	if(mShaderTypeDesc.type == ShaderType::Vertex)
 	{
-		DX(CreateInputLayout());
+		DXR(CreateInputLayout());
 	}
-	Output();
+	OutputHeaderFile();
 	return S_OK;
 }
 
@@ -921,4 +994,11 @@ HRESULT HLSLShader::Destroy()
 	mBindings.clear();
 	mReflector.Release();
 	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+char const *HLSLShader::ShaderTypeName() const
+{
+	return mShaderTypeDesc.name;
 }

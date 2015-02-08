@@ -4,28 +4,32 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct PixelShader: Shader
+namespace DX
 {
-	PixelShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames,
-				Texture **textureArray,
-				Sampler **samplerArray)
 
-		: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+	struct PixelShader: Shader
 	{
-		DXT(D3D::Device->CreatePixelShader(blob, size, null, &mPixelShader));
-	}
+		PixelShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames,
+					Texture **textureArray,
+					Sampler **samplerArray)
 
-	void Activate(ID3D11DeviceContext *context)
-	{
-		UpdateTextures();
-		UpdateSamplers();
+					: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+		{
+			DXT(DX::Device->CreatePixelShader(blob, size, null, &mPixelShader));
+		}
 
-		context->PSSetShaderResources(0, mNumTextures, mTexturePointers.data());
-		context->PSSetSamplers(0, mNumSamplers, mSamplerPointers.data());
-		context->PSSetConstantBuffers(0, mNumConstBuffers, mConstBufferPointers.data());
-		context->PSSetShader(mPixelShader, null, 0);
-	}
+		void Activate(ID3D11DeviceContext *context)
+		{
+			UpdateTextures();
+			UpdateSamplers();
 
-	DXPtr<ID3D11PixelShader>			mPixelShader;
-};
+			context->PSSetShaderResources(0, mNumTextures, mTexturePointers.data());
+			context->PSSetSamplers(0, mNumSamplers, mSamplerPointers.data());
+			context->PSSetConstantBuffers(0, mNumConstBuffers, mConstBufferPointers.data());
+			context->PSSetShader(mPixelShader, null, 0);
+		}
 
+		DXPtr<ID3D11PixelShader>			mPixelShader;
+	};
+
+}

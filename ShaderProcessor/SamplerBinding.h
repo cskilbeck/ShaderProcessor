@@ -18,12 +18,12 @@ struct SamplerBinding: Binding
 
 	void MemberOutput() override
 	{
-		Printer::output("Sampler *%s;", mDesc.Name);
+		Printer::OutputLine("Sampler *%s;", mDesc.Name);
 	}
 
 	void ConstructorOutput() override
 	{
-		Printer::output("%s(null)", mDesc.Name);
+		Printer::OutputLine(", %s(null)", mDesc.Name);
 	}
 
 };

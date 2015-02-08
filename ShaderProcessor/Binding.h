@@ -26,6 +26,8 @@ struct BindingInfo
 
 //////////////////////////////////////////////////////////////////////
 
+using namespace DX;
+
 using BindingInfoMap_t = std::map<uint, BindingInfo>;
 
 BindingInfo *GetBindingInfo(D3D_SHADER_INPUT_TYPE type);

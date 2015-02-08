@@ -7,13 +7,13 @@
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT __hr;
-
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 
 //////////////////////////////////////////////////////////////////////
+
+using namespace DX;
 
 static std::map<uint, char const *> FormatName =
 {
@@ -158,13 +158,14 @@ template<typename t, typename u> static char const *GetFrom(t &map, u n)
 
 //////////////////////////////////////////////////////////////////////
 
-namespace D3D
+namespace DX
 {
 	ID3D11Device *				Device;
+	HRESULT						__hr;
 
 	//////////////////////////////////////////////////////////////////////
 
-	std::map<int, string> LevelNames =
+	std::map<int, string> D3DLevelNames =
 	{
 		{ D3D_FEATURE_LEVEL_9_1, "D3D_FEATURE_LEVEL_9_1" },
 		{ D3D_FEATURE_LEVEL_9_2, "D3D_FEATURE_LEVEL_9_2" },

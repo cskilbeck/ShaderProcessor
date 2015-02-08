@@ -34,7 +34,8 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 		fprintf(stderr, "Unknown shader type: %d\n", type);
 		return false;
 	}
-	string shader = Format("%s_%s", desc->refName, shaderModel);	// eg vs_4_0
+	string refname = ToLower(desc->refName);
+	string shader = Format("%s_%s", refname.c_str(), shaderModel);	// eg vs_4_0
 	wstring fname = WideStringFromString(filename);
 	uint flags = 0;
 	string output = SetExtension(filename, TEXT(".cso"));
@@ -46,16 +47,16 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 		s.Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc);
 		return true;
 	}
-	Printer::output("/*\n");
+	Printer::Output("/*\n");
 	if(errors != null)
 	{
-		Printer::output("%s\n", errors->GetBufferPointer());
+		Printer::Output("%s\n", errors->GetBufferPointer());
 	}
 	else
 	{
-		Printer::output("Unknown D3DCompileFromFile error\n");
+		Printer::Output("Unknown D3DCompileFromFile error\n");
 	}
-	Printer::output("*/\n");
+	Printer::Output("*/\n");
 	return false;
 }
 
@@ -123,7 +124,7 @@ int main(int argc, char *argv[])
 			++shadersCompiled;
 		}
 	}
-	HLSLShader::OutputFooter();
+	HLSLShader::OutputFooter(fileName.c_str());
 
 	if(shadersCompiled == 0)
 	{

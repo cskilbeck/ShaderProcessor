@@ -175,7 +175,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////
 
-struct Aligned16
+struct ALIGNED(16) Aligned16
 {
 	void *operator new(size_t s)
 	{

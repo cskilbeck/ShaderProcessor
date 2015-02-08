@@ -89,12 +89,12 @@ extern char const WEAKSYM *ShaderModelName[] =
 
 extern ShaderTypeDesc WEAKSYM ShaderTypeDescs[] =
 {
-	{ Vertex,	"Vertex",	"vs", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
-	{ Hull,		"Hull",		"hs",														m5_0	},
-	{ Domain,	"Domain",	"ds",														m5_0	},
-	{ Geometry,	"Geometry",	"gs",										m4_0 |	m4_1 |	m5_0	},
-	{ Pixel,	"Pixel",	"ps", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
-	{ Compute,	"Compute",	"cs",										m4_0 |	m4_1 |	m5_0	}
+	{ Vertex,	"Vertex",	"VS", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
+	{ Hull,		"Hull",		"HS",														m5_0	},
+	{ Domain,	"Domain",	"DS",														m5_0	},
+	{ Geometry,	"Geometry",	"GS",										m4_0 |	m4_1 |	m5_0	},
+	{ Pixel,	"Pixel",	"PS", m4_0_level_9_1 |	m4_0_level_9_3 |	m4_0 |	m4_1 |	m5_0	},
+	{ Compute,	"Compute",	"CS",										m4_0 |	m4_1 |	m5_0	}
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -153,11 +153,11 @@ struct DXGI_FormatDescriptor
 
 struct InputField
 {
-	StorageType storageType;		// Float etc
+	StorageType storageType;	// Float etc
 	uint elementCount;			// eg 4
-	string varName;				// eg Position (everything in the Semantic name after the last _)
+	string varName;				// eg Position (everything in the Semantic name after the last _ )
 
-	string GetTypeName() const;  // eg Float4
+	string GetTypeName() const;	// eg Float4
 
 	string GetDeclaration() const
 	{
@@ -215,29 +215,12 @@ struct HLSLShader
 	int									mResources;
 
 	static void OutputHeader(char const *filename);
-	static void OutputFooter();
+	static void OutputFooter(char const *filename);
 	
-	string Name() const
-	{
-		return string(mShaderTypeDesc.refName) + "_" + mName;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void *GetConstantBuffer(char const *name)
-	{
-		static std::unordered_map<char const *, void *> const m =
-		{
-			{ "VertConstants", null }
-		};
-		auto p = m.find(name);
-		return (p == m.end()) ? null : p->second;
-	}
-
 	HLSLShader(tstring const &filename);
 	virtual ~HLSLShader();
 
-	void Output();
+	void OutputHeaderFile();
 	void OutputConstBufferNamesAndOffsets();
 	void OutputResourceNames();
 	void OutputSamplerNames();
@@ -250,6 +233,10 @@ struct HLSLShader
 	void OutputInputStruct();
 	void OutputBlob();
 
+	string Name() const;
+	char const *ShaderTypeName() const;
+	void *GetConstantBuffer(char const *name);
+
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
 	int GetConstantBufferIndex(string const &name) const;
@@ -258,15 +245,26 @@ struct HLSLShader
 	ConstantBufferBinding *GetCB(string const &name);
 	ConstantBufferBinding *GetConstantBuffer(int index);
 
+	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
 	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
-
-	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
+	HRESULT CreateBindings();
 	virtual HRESULT Destroy();
 
-	HRESULT CreateBindings();
 	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 };
+
+//////////////////////////////////////////////////////////////////////
+
+inline void *HLSLShader::GetConstantBuffer(char const *name)
+{
+	static std::unordered_map<char const *, void *> const m =
+	{
+		{ "VertConstants", null }
+	};
+	auto p = m.find(name);
+	return (p == m.end()) ? null : p->second;
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -274,6 +272,13 @@ static inline int GetIndex(string const &name, HLSLShader::IntMap const &map)
 {
 	auto i = map.find(name);
 	return (i == map.end()) ? -1 : i->second;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+inline string HLSLShader::Name() const
+{
+	return string(mShaderTypeDesc.refName);
 }
 
 //////////////////////////////////////////////////////////////////////
