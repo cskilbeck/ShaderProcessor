@@ -71,8 +71,7 @@ void MyDXWindow::CreateGrid()
 {
 	using namespace Shaders::Colored;
 	vector<InputVertex> v;
-	uint i = 0;
-	InputVertex v1, v2, v3, v4;
+	InputVertex i;
 	for(int x = -10; x <= 10; ++x)
 	{
 		float a = (float)x;
@@ -86,13 +85,13 @@ void MyDXWindow::CreateGrid()
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
-		v.push_back(v1 = { { a, b, 0 }, cy });
-		v.push_back(v2 = { { a, t, 0 }, cy });
-		v.push_back(v3 = { { b, a, 0 }, cx });
-		v.push_back(v4 = { { t, a, 0 }, cx });
+		v.push_back(i = { { b, a, 0 }, cx });
+		v.push_back(i = { { t, a, 0 }, cx });
+		v.push_back(i = { { a, b, 0 }, cy });
+		v.push_back(i = { { a, t, 0 }, cy });
 	}
-	v.push_back(v1 = { { 0, 0, 0 }, Color::Cyan });
-	v.push_back(v2 = { { 0, 0, 10 }, Color::Cyan });
+	v.push_back(i = { { 0, 0, 0 }, Color::Cyan });
+	v.push_back(i = { { 0, 0, 10 }, Color::Cyan });
 	vbLineGrid.reset(new VertBuffer(v.size(), v.data()));
 }
 
@@ -104,13 +103,12 @@ void MyDXWindow::CreateOctahedron()
 	octahedron.reset(new VertBuffer(6));
 	InputVertex *v = octahedron->Data();
 	float f = sqrtf(2) / 2.0f;
-	InputVertex t;
-	v[0] = t = { {  0,  0,  1 }, 0xffffffff };
-	v[1] = t = { { -f,  f,  0 }, 0xffffffff };
-	v[2] = t = { {  f,  f,  0 }, 0xffffffff };
-	v[3] = t = { {  f, -f,  0 }, 0xffffffff };
-	v[4] = t = { { -f, -f,  0 }, 0xffffffff };
-	v[5] = t = { {  0,  0, -1 }, 0xffffffff };
+	v[0] = { {  0,  0,  1 }, 0xffffffff };
+	v[1] = { { -f,  f,  0 }, 0xffffffff };
+	v[2] = { {  f,  f,  0 }, 0xffffffff };
+	v[3] = { {  f, -f,  0 }, 0xffffffff };
+	v[4] = { { -f, -f,  0 }, 0xffffffff };
+	v[5] = { {  0,  0, -1 }, 0xffffffff };
 	octahedron->Commit(Context());
 
 	octahedronIB.reset(new IndexBuffer<uint16>(3 * 8));
