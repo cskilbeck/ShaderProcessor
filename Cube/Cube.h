@@ -12,10 +12,10 @@ struct MyDXWindow: DXWindow
 
 	Ptr<Shaders::Phong::VS> vsPhong;
 	Ptr<Shaders::Phong::PS> psPhong;
-	Ptr<Shaders::Phong::VertBuffer> vbPhong;
+	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
 	Ptr<Texture> texture;
 	Ptr<Sampler> sampler;
-	Ptr<IndexBuffer<uint16>> indexBuffer;
+	Ptr<IndexBuffer<uint16>> cubeIndices;
 
 	Ptr<Shaders::Colored::VS> vsSolidColor;
 	Ptr<Shaders::Colored::PS> psSolidColor;

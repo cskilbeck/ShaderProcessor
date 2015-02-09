@@ -41,6 +41,11 @@ namespace DX
 			return mColor;
 		}
 
+		operator Byte4() const
+		{
+			return (Byte4)mColor;
+		}
+
 		Color(Color const &other)
 			: mColor(other.mColor)
 		{

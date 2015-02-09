@@ -38,7 +38,7 @@ namespace DX
 		{
 			mCount = count;
 			mData = data;
-			if(mData == null && usage == DefaultUsage)
+			if(mData == null)
 			{
 				mData = new T[count];
 				mOwnData = true;

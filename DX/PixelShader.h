@@ -6,16 +6,17 @@
 
 namespace DX
 {
-
 	struct PixelShader: Shader
 	{
-		PixelShader(void const *blob, size_t size, uint numConstBuffers, char const **constBufferNames, uint numSamplers, char const **samplerNames, uint numTextures, char const **textureNames,
+		PixelShader(void const *blob, size_t size,
+					uint numConstBuffers, char const **constBufferNames,
+					uint numSamplers, char const **samplerNames,
+					uint numTextures, char const **textureNames,
 					Texture **textureArray,
 					Sampler **samplerArray)
-
-					: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
 		{
-			DXT(DX::Device->CreatePixelShader(blob, size, null, &mPixelShader));
+			DXT(Device->CreatePixelShader(blob, size, null, &mPixelShader));
 		}
 
 		void Activate(ID3D11DeviceContext *context)

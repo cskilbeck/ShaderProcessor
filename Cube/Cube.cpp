@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////
-// Viewport
+// Viewport / Aspect Ratio
 // DrawList
 // SpriteList
 // Font
@@ -70,8 +70,8 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 void MyDXWindow::CreateGrid()
 {
 	using namespace Shaders::Colored;
+
 	vector<InputVertex> v;
-	InputVertex i;
 	for(int x = -1000; x <= 1000; x += 10)
 	{
 		float a = (float)x;
@@ -84,14 +84,14 @@ void MyDXWindow::CreateGrid()
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
-		v.push_back(i = { { b, a, 0 }, cx });
-		v.push_back(i = { { t, a, 0 }, cx });
-		v.push_back(i = { { a, b, 0 }, cy });
-		v.push_back(i = { { a, t, 0 }, cy });
+		v.push_back({ { b, a, 0 }, cx });
+		v.push_back({ { t, a, 0 }, cx });
+		v.push_back({ { a, b, 0 }, cy });
+		v.push_back({ { a, t, 0 }, cy });
 	}
-	v.push_back(i = { { 0, 0, 0 }, Color::Cyan });
-	v.push_back(i = { { 0, 0, 1000 }, Color::Cyan });
-	gridVB.reset(new VertBuffer(v.size(), v.data()));
+	v.push_back({ { 0, 0, 0 }, Color::Cyan });
+	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
+	gridVB.reset(new VertBuffer(v.size(), v.data(), StaticUsage));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -99,6 +99,7 @@ void MyDXWindow::CreateGrid()
 void MyDXWindow::CreateOctahedron()
 {
 	using namespace Shaders::Colored;
+
 	octahedronVB.reset(new VertBuffer(6));
 	InputVertex *v = octahedronVB->Data();
 	float f = sqrtf(2) / 2.0f;
@@ -142,18 +143,18 @@ bool MyDXWindow::OnCreate()
 	psPhong.reset(new Shaders::Phong::PS());
 
 	texture.reset(new Texture(TEXT("temp.jpg")));
-	psPhong->picTexture = texture.get();
-
 	sampler.reset(new Sampler());
+
+	psPhong->picTexture = texture.get();
 	psPhong->tex1Sampler = sampler.get();
 
-	indexBuffer.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage, NotCPUAccessible));
-	vbPhong.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts));
+	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
+	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
 	psPhong->Light.lightPos = Float3(0, -15, 0);
-	psPhong->Light.ambientColor = Float3(0.2f, 0.2f, 0.2f);
-	psPhong->Light.diffuseColor = Float3(0.8f, 0.8f, 0.8f);
-	psPhong->Light.specColor = Float3(1, 1, 1);
+	psPhong->Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
+	psPhong->Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	psPhong->Light.specColor = Float3(1, 1, 0.8f);
 	psPhong->Light.Commit(Context());
 
 	MaterialOptions o;
@@ -226,30 +227,27 @@ void MyDXWindow::OnDraw()
 
 	vsPhong->Activate(Context());
 	psPhong->Activate(Context());
-
-	vbPhong->Activate(Context());
-	indexBuffer->Activate(Context());
+	cubeVerts->Activate(Context());
+	cubeIndices->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(indexBuffer->Count(), 0, 0);
-
-	vsSolidColor->Activate(Context());
-	psSolidColor->Activate(Context());
+	Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 
 	modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(Vec4(psPhong->Light.lightPos));
 	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 	vsSolidColor->VertConstants.Commit(Context());
 
+	vsSolidColor->Activate(Context());
+	psSolidColor->Activate(Context());
 	octahedronVB->Activate(Context());
 	octahedronIB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
 
-	blendEnabled.Activate(Context());
-
 	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
 	vsSolidColor->VertConstants.Commit(Context());
 
+	blendEnabled.Activate(Context());
 	gridVB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
@@ -265,7 +263,7 @@ void MyDXWindow::OnDestroy()
 	psPhong.reset();
 	texture.reset();
 	sampler.reset();
-	vbPhong.reset();
+	cubeVerts.reset();
 	blendEnabled.Release();
 	blendDisabled.Release();
 }

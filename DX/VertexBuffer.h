@@ -9,9 +9,9 @@ namespace DX
 
 	template<typename vert> struct VertexBuffer: Buffer < vert >
 	{
-		VertexBuffer(uint vertCount, vert *data = null)
+		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
-			DXT(Create(vertCount, data));
+			DXT(Create(vertCount, data, usage, rwOption));
 		}
 
 		HRESULT Create(uint count, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
