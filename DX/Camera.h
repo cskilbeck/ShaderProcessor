@@ -7,7 +7,7 @@
 namespace DX
 {
 
-	class ALIGNED(16) Camera : Aligned16
+	class Camera : Aligned16
 	{
 	public:
 
@@ -67,6 +67,13 @@ namespace DX
 		Vec4f GetStrafeVector() const
 		{
 			return GetX3(mViewMatrix.r[0], mViewMatrix.r[1], mViewMatrix.r[2]);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void SetViewMatrix(Matrix const &m)
+		{
+			mViewMatrix = m;
 		}
 
 		//////////////////////////////////////////////////////////////////////

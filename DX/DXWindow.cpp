@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	DXWindow::DXWindow(int width, int height, tchar const *caption, DepthBufferOption depthBufferOption, FullScreenOption fullScreenOption)
 		: Window(width, height, caption, WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_OVERLAPPEDWINDOW | WS_SIZEBOX | WS_BORDER)
 		, mDevice(WithSwapChain, depthBufferOption, fullScreenOption)
@@ -55,7 +54,7 @@ namespace DX
 
 	void DXWindow::OnResized()
 	{
-		mDevice.Resize();
+		mDevice.Resize(mWidth, mHeight);
 		OnUpdate();
 	}
 
@@ -93,22 +92,7 @@ namespace DX
 	{
 		if(mDevice.mDepthStencilView != null)
 		{
-			uint flags;
-			switch(option)
-			{
-				case Depth:
-					flags = D3D11_CLEAR_DEPTH;
-					break;
-				case Stencil:
-					flags = D3D11_CLEAR_STENCIL;
-					break;
-				case Depth + Stencil:
-					flags = D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL;
-					break;
-				default:
-					flags = 0;
-			}
-			Context()->ClearDepthStencilView(mDevice.mDepthStencilView, flags, z, stencil);
+			Context()->ClearDepthStencilView(mDevice.mDepthStencilView, option, z, stencil);
 		}
 	}
 

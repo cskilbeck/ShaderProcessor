@@ -11,7 +11,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct ALIGNED(16) Vec4i
+	struct __declspec(align(16)) Vec4i
 	{
 		union
 		{
@@ -25,11 +25,11 @@ namespace DX
 		}
 	};
 
-	extern const __declspec(selectany) Vec4i gMMaskXYZ = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000 };
-	extern const __declspec(selectany) Vec4i gMMaskX = { 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000 };
-	extern const __declspec(selectany) Vec4i gMMaskY = { 0x00000000, 0xFFFFFFFF, 0x00000000, 0x00000000 };
-	extern const __declspec(selectany) Vec4i gMMaskZ = { 0x00000000, 0x00000000, 0xFFFFFFFF, 0x00000000 };
-	extern const __declspec(selectany) Vec4i gMMaskW = { 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFF };
+	extern const __declspec(align(16)) __declspec(selectany) Vec4i gMMaskXYZ = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0x00000000 };
+	extern const __declspec(align(16)) __declspec(selectany) Vec4i gMMaskX = { 0xFFFFFFFF, 0x00000000, 0x00000000, 0x00000000 };
+	extern const __declspec(align(16)) __declspec(selectany) Vec4i gMMaskY = { 0x00000000, 0xFFFFFFFF, 0x00000000, 0x00000000 };
+	extern const __declspec(align(16)) __declspec(selectany) Vec4i gMMaskZ = { 0x00000000, 0x00000000, 0xFFFFFFFF, 0x00000000 };
+	extern const __declspec(align(16)) __declspec(selectany) Vec4i gMMaskW = { 0x00000000, 0x00000000, 0x00000000, 0xFFFFFFFF };
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -45,6 +45,8 @@ namespace DX
 	Vec4f		SetY(Vec4f a, float y);
 	Vec4f		SetZ(Vec4f a, float z);
 	Vec4f		SetW(Vec4f a, float w);
+
+	Vec4f		Select(Vec4f a, Vec4f b, Vec4i const &mask);
 
 	Vec4f		Splat(float n);
 

@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	struct Shader
 	{
 		char const **						mConstBufferNames;

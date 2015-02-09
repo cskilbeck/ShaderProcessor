@@ -34,8 +34,10 @@
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="linked_list.h" />
     <ClInclude Include="LoadImage.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Mouse.h" />
+    <ClInclude Include="Options.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Random.h" />
@@ -52,6 +54,7 @@
     <ClInclude Include="Vec4.h" />
     <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VertexShader.h" />
+    <ClInclude Include="Viewport.h" />
     <ClInclude Include="Win32.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

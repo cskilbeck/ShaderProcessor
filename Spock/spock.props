@@ -14,7 +14,7 @@
       <PixelShaderFunction>psMain</PixelShaderFunction>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <DisableOptimizer>false</DisableOptimizer>
-      <CommandLineTemplate>$(SolutionDir)Spock\shaderprocessor.exe [AllOptions] [AdditionalOptions] --source=%(FullPath)</CommandLineTemplate>
+      <CommandLineTemplate>"$(SolutionDir)Spock\shaderprocessor.exe" [AllOptions] [AdditionalOptions] --source="%(FullPath)"</CommandLineTemplate>
       <ExecutionDescription>%(FileName)%(Extension)</ExecutionDescription>
     </SPOCK>
   </ItemDefinitionGroup>

@@ -12,9 +12,9 @@ struct FPSCamera: Camera
 	float roll;
 
 	FPSCamera()
-		: position(Vec4(0, 0, 10))
+		: position(Vec4(0, 0, 50))
 		, yaw(0)
-		, pitch(-PI)
+		, pitch(0)
 		, roll(0)
 	{
 		CalculatePerspectiveProjectionMatrix();
@@ -39,8 +39,8 @@ struct FPSCamera: Camera
 
 	void Rotate(float pan, float tilt)
 	{
-		pitch = Constrain(pitch - tilt, -PI + FLT_EPSILON, FLT_EPSILON);
-		yaw -= pan;
+		pitch = Constrain(pitch - tilt, FLT_EPSILON, PI - FLT_EPSILON);
+		yaw += pan;
 	}
 
 	void Update()

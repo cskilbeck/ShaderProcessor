@@ -6,19 +6,12 @@
 
 namespace DX
 {
-
 	struct DXWindow: Window
 	{
 		DXWindow(int width, int height, tchar const *caption = TEXT("DXWindow"), DX::DepthBufferOption depthBufferOption = DX::DepthBufferDisabled, DX::FullScreenOption fullScreenOption = DX::Windowed);
 		virtual ~DXWindow();
 
 		void Clear(DX::Color color);
-
-		enum DepthClearOption
-		{
-			Depth = 1,
-			Stencil = 2,
-		};
 
 		void ClearDepth(DepthClearOption option, float z, byte stencil);
 
@@ -42,9 +35,9 @@ namespace DX
 			return mDevice.mContext;
 		}
 
-		DX::D3DDevice	mDevice;
-		HWND			mDXWindow;
-		int				mFrame;
+		D3DDevice	mDevice;
+		HWND		mDXWindow;
+		int			mFrame;
 	};
 
 }

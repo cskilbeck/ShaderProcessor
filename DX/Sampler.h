@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	struct Sampler
 	{
 		Sampler()

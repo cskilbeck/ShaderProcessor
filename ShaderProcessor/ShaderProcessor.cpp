@@ -62,26 +62,41 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 
 //////////////////////////////////////////////////////////////////////
 
+enum
+{
+	success = 0,
+	err_args,
+	err_nosource,
+	err_noshadermodel,
+	err_cantcreateheaderfile,
+	err_cantwritetoheaderfile,
+	err_compilerproblem,
+	err_noshaderspecified,
+
+};
+
+//////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[])
 {
 	vector<Option> options;
 	if(!ParseArgs(argc, argv, options))
 	{
-		return 1;
+		return err_args;
 	}
 
 	if(!options[SOURCE])
 	{
 		fprintf(stderr, "No source file specified, exiting\n\n");
 		PrintUsage();
-		return 1;
+		return err_nosource;
 	}
 
 	if(!options[SMVERSION])
 	{
 		fprintf(stderr, "Shader model not specified, exiting\n");
 		PrintUsage();
-		return 1;
+		return err_noshadermodel;
 	}
 
 	Handle headerFile;
@@ -92,7 +107,7 @@ int main(int argc, char *argv[])
 		if(!headerFile.IsValid())
 		{
 			fprintf(stderr, "Error opening header file, exiting\n");
-			return 1;
+			return err_cantcreateheaderfile;
 		}
 	}
 	else
@@ -107,7 +122,7 @@ int main(int argc, char *argv[])
 	if(!headerFile.IsValid())
 	{
 		fprintf(stderr, "Error opening header file for writing, exiting\n");
-		return 1;
+		return err_cantwritetoheaderfile;
 	}
 
 	HLSLShader::OutputHeader(fileName.c_str());
@@ -119,7 +134,7 @@ int main(int argc, char *argv[])
 		{
 			if(!CompileFile(options[SOURCE].arg, options[a.arg].arg, options[SMVERSION].arg, a.type))
 			{
-				return 1;
+				return err_compilerproblem;
 			}
 			++shadersCompiled;
 		}
@@ -129,8 +144,8 @@ int main(int argc, char *argv[])
 	if(shadersCompiled == 0)
 	{
 		fprintf(stderr, "No shader types specified - output file will be useless!\n");
-		return 1;
+		return err_noshaderspecified;
 	}
 
-	return 0;
+	return success;
 }

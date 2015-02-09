@@ -10,22 +10,21 @@ struct MyDXWindow: DXWindow
 
 	FPSCamera camera;
 
-	Ptr<Shaders::Phong::VS> vs;
-	Ptr<Shaders::Phong::PS> ps;
-	Ptr<Shaders::Phong::VertBuffer> vertexBuffer;
+	Ptr<Shaders::Phong::VS> vsPhong;
+	Ptr<Shaders::Phong::PS> psPhong;
+	Ptr<Shaders::Phong::VertBuffer> vbPhong;
 	Ptr<Texture> texture;
 	Ptr<Sampler> sampler;
 	Ptr<IndexBuffer<uint16>> indexBuffer;
 
-	Ptr<Shaders::Colored::VS> vsLine;
-	Ptr<Shaders::Colored::PS> psLine;
-	Ptr<Shaders::Colored::VertBuffer> vbLineGrid;
-	Ptr<Shaders::Colored::VertBuffer> octahedron;
+	Ptr<Shaders::Colored::VS> vsSolidColor;
+	Ptr<Shaders::Colored::PS> psSolidColor;
+	Ptr<Shaders::Colored::VertBuffer> gridVB;
+	Ptr<Shaders::Colored::VertBuffer> octahedronVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
 
-	DXPtr<ID3D11RasterizerState> rasterizerState;
-	DXPtr<ID3D11DepthStencilState>	depthStencilState;
-	DXPtr<ID3D11BlendState>	blendState;
+	Material blendEnabled;
+	Material blendDisabled;
 
 	//////////////////////////////////////////////////////////////////////
 

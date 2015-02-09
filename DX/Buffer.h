@@ -6,43 +6,6 @@
 
 namespace DX
 {
-
-	enum BufferType
-	{
-		IndexBufferType = D3D11_BIND_INDEX_BUFFER,
-		VertexBufferType = D3D11_BIND_VERTEX_BUFFER,
-		ConstantBufferType = D3D11_BIND_CONSTANT_BUFFER
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	enum BufferUsage
-	{
-		DefaultUsage = D3D11_USAGE_DEFAULT,
-		StaticUsage = D3D11_USAGE_IMMUTABLE,
-		DynamicUsage = D3D11_USAGE_DYNAMIC
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	enum ReadWriteOption
-	{
-		NotCPUAccessible = 0,
-		Readable = D3D11_CPU_ACCESS_READ,
-		Writeable = D3D11_CPU_ACCESS_WRITE,
-		ReadWriteable = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	enum MapWaitOption
-	{
-		WaitForGPU = 0,
-		DontWaitForGPU = D3D11_MAP_FLAG_DO_NOT_WAIT
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
 	template <typename T> struct Buffer
 	{
 		//////////////////////////////////////////////////////////////////////

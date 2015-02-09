@@ -6,6 +6,7 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
 
 	struct ConstBufferOffset
 	{
@@ -25,49 +26,49 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename definition> struct ALIGNED(16) ConstBuffer : definition, ConstantBuffer < definition >	// definition MUST be POD
-{
-	ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent)
-	: mOffsetCount(OffsetCount)
-	, mOffsets(Offsets)
-	, mDefaults(Defaults)
+	template<typename definition> struct ConstBuffer : definition, ConstantBuffer <definition>	// definition MUST be POD
 	{
-		if(mDefaults != null)
+		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent)
+			: mOffsetCount(OffsetCount)
+			, mOffsets(Offsets)
+			, mDefaults(Defaults)
 		{
-			memcpy(this, mDefaults, sizeof(definition)); // !!
-		}
-		else
-		{
-			memset(this, 0, sizeof(definition));
-		}
-		Create(1, (definition *)this);
-		parent->mConstBuffers.push_back(this);
-		parent->mConstBufferPointers.push_back(mBuffer);
-		assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool GetOffset(char const *name, int &offset) const
-	{
-		for(int i = 0; i < mOffsetCount; ++i)
-		{
-			if(strcmp(mOffsets[i].name, name) == 0)
+			if(mDefaults != null)
 			{
-				offset = mOffsets[i].offset;
-				return true;
+				memcpy(this, mDefaults, sizeof(definition)); // !!
 			}
+			else
+			{
+				memset(this, 0, sizeof(definition));
+			}
+			Create(1, (definition *)this);
+			parent->mConstBuffers.push_back(this);
+			parent->mConstBufferPointers.push_back(mBuffer);
+			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 		}
-		return false;
-	}
 
-	//////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////
 
-private:
+		bool GetOffset(char const *name, int &offset) const
+		{
+			for(int i = 0; i < mOffsetCount; ++i)
+			{
+				if(strcmp(mOffsets[i].name, name) == 0)
+				{
+					offset = mOffsets[i].offset;
+					return true;
+				}
+			}
+			return false;
+		}
 
-	uint32 const					mOffsetCount;
-	ConstBufferOffset const * const	mOffsets;
-	uint32 const * const 			mDefaults;
-};
+		//////////////////////////////////////////////////////////////////////
+
+	private:
+
+		uint32 const					mOffsetCount;
+		ConstBufferOffset const * const	mOffsets;
+		uint32 const * const 			mDefaults;
+	};
 
 }

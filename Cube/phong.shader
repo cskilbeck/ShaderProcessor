@@ -34,7 +34,7 @@ PS_INPUT vsMain(VS_INPUT v)
 	float4 pos = float4(v.Position, 1);
 	o.Position = mul(pos, TransformMatrix);
 	o.WorldPos = mul(pos, ModelMatrix).xyz;
-	o.Normal = mul(v.Normal, (float3x3)ModelMatrix);
+	o.Normal = normalize(mul(v.Normal, (float3x3)ModelMatrix));
 	o.TexCoord = v.TexCoord;
 	return o;
 }

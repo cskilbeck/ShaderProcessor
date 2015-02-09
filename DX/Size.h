@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	struct Size2D: SIZE
 	{
 		Size2D()

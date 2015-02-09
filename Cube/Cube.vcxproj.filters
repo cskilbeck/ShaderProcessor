@@ -17,10 +17,10 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cube.h">
+    <ClInclude Include="FPSCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FPSCamera.h">
+    <ClInclude Include="Cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

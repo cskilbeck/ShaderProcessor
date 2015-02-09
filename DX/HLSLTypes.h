@@ -125,7 +125,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <> struct ALIGNED(16) HLSLVec4 < float >
+	template <> struct HLSLVec4 < float >: Aligned16
 	{
 		union
 		{
@@ -248,6 +248,11 @@ namespace DX
 	def_mat_col(T, 3)	\
 	def_mat_col(T, 4)
 
+#define def_matf(T)		\
+	def_mat_col(T, 1)	\
+	def_mat_col(T, 2)	\
+	def_mat_col(T, 3)
+
 	//////////////////////////////////////////////////////////////////////
 
 	def_vec(Float)
@@ -262,7 +267,8 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	def_mat(Float)
+	def_matf(Float)
+
 	def_mat(Half)
 	def_mat(UInt)
 	def_mat(Int)

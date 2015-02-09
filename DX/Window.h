@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	struct Window
 	{
 		Window(int width = 640, int height = 480, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);

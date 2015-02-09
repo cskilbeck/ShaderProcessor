@@ -12,6 +12,11 @@ namespace DX
 						  0, 0, 1, 0,
 						  0, 0, 0, 1);
 
+	Matrix NegativeIdentityMatrix(	-1, 0, 0, 0,
+									0, -1, 0, 0,
+									0, 0, -1, 0,
+									0, 0, 0, 1);
+
 	//////////////////////////////////////////////////////////////////////
 
 	Vec4f GetPitchYawRollFromMatrix(Matrix const &m)

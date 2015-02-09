@@ -7,8 +7,9 @@
 namespace DX
 {
 
-	typedef DirectX::XMMATRIX Matrix;
-	typedef float MatrixArray[4][4];
+	using Matrix = DirectX::XMMATRIX;
+	using MatrixArray = float[4][4];
+	using Float4x4 = DX::Matrix;
 
 	inline MatrixArray &MatrixAsArray(Matrix &m)
 	{
@@ -21,10 +22,11 @@ namespace DX
 	}
 
 	extern Matrix IdentityMatrix;
+	extern Matrix NegativeIdentityMatrix;
 
 	//////////////////////////////////////////////////////////////////////
 
-	Matrix		TransposeMatrix(Matrix const &m);
+	Matrix		Transpose(Matrix const &m);
 	Matrix		RotationMatrix(float yaw, float pitch, float roll);
 	Matrix		RotationMatrix(Vec4f axis, float angle);
 	Matrix		TranslationMatrix(Vec4f translation);
@@ -33,7 +35,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Matrix TransposeMatrix(Matrix const &m)
+	inline Matrix Transpose(Matrix const &m)
 	{
 		return XMMatrixTranspose(m);
 	}

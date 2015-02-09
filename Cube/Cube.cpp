@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
-// Material (Shaders, Rasterizer, DepthStencil, Blend)
 // Viewport
 // DrawList
 // SpriteList
 // Font
+// Fix ViewMatrix Axes Y/Z up etc
 
 #include "stdafx.h"
 
@@ -41,12 +41,12 @@ static Shaders::Phong::InputVertex verts[24] =
 
 static uint16 indices[36] =
 {
-	 0, 2, 1, 0, 3, 2,
-	 4, 6, 5, 4, 7, 6,
-	 8,10, 9, 8,11,10,
-	12,14,13,12,15,14,
-	16,18,17,16,19,18,
-	20,22,21,20,23,22
+	 0, 1, 2, 0, 2, 3,
+	 4, 5, 6, 4, 6, 7,
+	 8, 9,10, 8,10,11,
+	12,13,14,12,14,15,
+	16,17,18,16,18,19,
+	20,21,22,20,22,23
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -72,16 +72,15 @@ void MyDXWindow::CreateGrid()
 	using namespace Shaders::Colored;
 	vector<InputVertex> v;
 	InputVertex i;
-	for(int x = -10; x <= 10; ++x)
+	for(int x = -1000; x <= 1000; x += 10)
 	{
 		float a = (float)x;
-		float b = -10;
-		float t = 10;
-		Color cx = 0x80FFFFFF;
-		Color cy = 0x80FFFFFF;
+		float b = -1000;
+		float t = 1000;
+		Color cx = 0x40FFFFFF;
+		Color cy = 0x40FFFFFF;
 		if(x == 0)
 		{
-			t = 100;
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
@@ -91,8 +90,8 @@ void MyDXWindow::CreateGrid()
 		v.push_back(i = { { a, t, 0 }, cy });
 	}
 	v.push_back(i = { { 0, 0, 0 }, Color::Cyan });
-	v.push_back(i = { { 0, 0, 10 }, Color::Cyan });
-	vbLineGrid.reset(new VertBuffer(v.size(), v.data()));
+	v.push_back(i = { { 0, 0, 1000 }, Color::Cyan });
+	gridVB.reset(new VertBuffer(v.size(), v.data()));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -100,8 +99,8 @@ void MyDXWindow::CreateGrid()
 void MyDXWindow::CreateOctahedron()
 {
 	using namespace Shaders::Colored;
-	octahedron.reset(new VertBuffer(6));
-	InputVertex *v = octahedron->Data();
+	octahedronVB.reset(new VertBuffer(6));
+	InputVertex *v = octahedronVB->Data();
 	float f = sqrtf(2) / 2.0f;
 	v[0] = { {  0,  0,  1 }, 0xffffffff };
 	v[1] = { { -f,  f,  0 }, 0xffffffff };
@@ -109,18 +108,18 @@ void MyDXWindow::CreateOctahedron()
 	v[3] = { {  f, -f,  0 }, 0xffffffff };
 	v[4] = { { -f, -f,  0 }, 0xffffffff };
 	v[5] = { {  0,  0, -1 }, 0xffffffff };
-	octahedron->Commit(Context());
+	octahedronVB->Commit(Context());
 
 	octahedronIB.reset(new IndexBuffer<uint16>(3 * 8));
 	uint16 *o = octahedronIB->Data();
-	o[ 0] = 0; o[ 1] = 2; o[ 2] = 1;
-	o[ 3] = 0; o[ 4] = 3; o[ 5] = 2;
-	o[ 6] = 0; o[ 7] = 4; o[ 8] = 3;
-	o[ 9] = 0; o[10] = 1; o[11] = 4;
-	o[12] = 5; o[13] = 1; o[14] = 2;
-	o[15] = 5; o[16] = 2; o[17] = 3;
-	o[18] = 5; o[19] = 3; o[20] = 4;
-	o[21] = 5; o[22] = 4; o[23] = 1;
+	o[ 0] = 0; o[ 1] = 1; o[ 2] = 2;
+	o[ 3] = 0; o[ 4] = 2; o[ 5] = 3;
+	o[ 6] = 0; o[ 7] = 3; o[ 8] = 4;
+	o[ 9] = 0; o[10] = 4; o[11] = 1;
+	o[12] = 5; o[13] = 2; o[14] = 1;
+	o[15] = 5; o[16] = 3; o[17] = 2;
+	o[18] = 5; o[19] = 4; o[20] = 3;
+	o[21] = 5; o[22] = 1; o[23] = 4;
 	octahedronIB->Commit(Context());
 }
 
@@ -133,38 +132,37 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	vsLine.reset(new Shaders::Colored::VS());
-	psLine.reset(new Shaders::Colored::PS());
+	vsSolidColor.reset(new Shaders::Colored::VS());
+	psSolidColor.reset(new Shaders::Colored::PS());
 
 	CreateGrid();
 	CreateOctahedron();
 
-	vs.reset(new Shaders::Phong::VS());
-	ps.reset(new Shaders::Phong::PS());
+	vsPhong.reset(new Shaders::Phong::VS());
+	psPhong.reset(new Shaders::Phong::PS());
 
 	texture.reset(new Texture(TEXT("temp.jpg")));
-	ps->picTexture = texture.get();
+	psPhong->picTexture = texture.get();
 
 	sampler.reset(new Sampler());
-	ps->tex1Sampler = sampler.get();
+	psPhong->tex1Sampler = sampler.get();
 
 	indexBuffer.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage, NotCPUAccessible));
-	vertexBuffer.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts));
+	vbPhong.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts));
 
-	ps->Light.lightPos = Float3(0, -5, 0);
-	ps->Light.ambientColor = Float3(0.2f, 0.2f, 0.2f);
-	ps->Light.diffuseColor = Float3(0.8f, 0.8f, 0.8f);
-	ps->Light.specColor = Float3(1, 1, 1);
-	ps->Light.Commit(Context());
+	psPhong->Light.lightPos = Float3(0, -15, 0);
+	psPhong->Light.ambientColor = Float3(0.2f, 0.2f, 0.2f);
+	psPhong->Light.diffuseColor = Float3(0.8f, 0.8f, 0.8f);
+	psPhong->Light.specColor = Float3(1, 1, 1);
+	psPhong->Light.Commit(Context());
 
-	CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
-	DXB(Device()->CreateRasterizerState(&rasterizerDesc, &rasterizerState));
+	MaterialOptions o;
+	o.blend = BlendDisabled;
+	blendDisabled.Create(o);
 
-	CD3D11_DEPTH_STENCIL_DESC depthstencilDesc(D3D11_DEFAULT);
-	DXB(Device()->CreateDepthStencilState(&depthstencilDesc, &depthStencilState));
-
-	CD3D11_BLEND_DESC blendDesc(D3D11_DEFAULT);
-	DXB(Device()->CreateBlendState(&blendDesc, &blendState));
+	o.blend = BlendEnabled;
+	o.depthWrite = DepthWriteDisabled;
+	blendEnabled.Create(o);
 
 	Show();
 
@@ -176,16 +174,22 @@ bool MyDXWindow::OnCreate()
 void MyDXWindow::OnDraw()
 {
 	Clear(Color(32, 64, 128));
-	ClearDepth(DepthClearOption::Depth, 1.0f, 0);
+	ClearDepth(DepthOnly, 1.0f, 0);
 
-	float moveSpeed = 0.1f;
-	float strafeSpeed = 0.1f;
+	float moveSpeed = 1.0f;
+	float strafeSpeed = 1.0f;
+
+	if(Keyboard::Held(VK_SHIFT))
+	{
+		moveSpeed *= 0.1f;
+		strafeSpeed *= 0.1f;
+	}
 
 	Vec4f move(Vec4(0, 0, 0));
-	if(Keyboard::Held('W')) { move = SetY(move, moveSpeed); }
-	if(Keyboard::Held('S')) { move = SetY(move, -moveSpeed); }
 	if(Keyboard::Held('A')) { move = SetX(move, -strafeSpeed); }
 	if(Keyboard::Held('D')) { move = SetX(move, strafeSpeed); }
+	if(Keyboard::Held('W')) { move = SetY(move, moveSpeed); }
+	if(Keyboard::Held('S')) { move = SetY(move, -moveSpeed); }
 	if(Keyboard::Held('R')) { move = SetZ(move, strafeSpeed); }
 	if(Keyboard::Held('F')) { move = SetZ(move, -strafeSpeed); }
 
@@ -208,59 +212,60 @@ void MyDXWindow::OnDraw()
 
 	camera.Update();
 
-	Context()->RSSetState(rasterizerState);
-	Context()->OMSetBlendState(blendState, null, 0xffffffff);
-	Context()->OMSetDepthStencilState(depthStencilState, 0);
-
+	blendDisabled.Activate(Context());
 
 	Matrix modelMatrix = RotationMatrix(mFrame * 0.02f, mFrame * 0.01f, mFrame * 0.03f);
-	modelMatrix *= TranslationMatrix(Vec4(4, 4, 0));
+	modelMatrix *= ScaleMatrix(Vec4(5, 5, 5)) * TranslationMatrix(Vec4(4, 4, 0));
 
-	CopyMatrix(&vs->VertConstants.TransformMatrix, TransposeMatrix(camera.GetTransformMatrix(modelMatrix)));
-	CopyMatrix(&vs->VertConstants.ModelMatrix, TransposeMatrix(modelMatrix));
-	vs->VertConstants.Commit(Context());
-	ps->Camera.cameraPos = camera.position;
-	ps->Camera.Commit(Context());
+	vsPhong->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+	vsPhong->VertConstants.ModelMatrix = Transpose(modelMatrix);
+	vsPhong->VertConstants.Commit(Context());
 
-	vs->Activate(Context());
-	ps->Activate(Context());
-	vertexBuffer->Activate(Context());
+	psPhong->Camera.cameraPos = camera.position;
+	psPhong->Camera.Commit(Context());
+
+	vsPhong->Activate(Context());
+	psPhong->Activate(Context());
+
+	vbPhong->Activate(Context());
 	indexBuffer->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(_countof(indices), 0, 0);
+	Context()->DrawIndexed(indexBuffer->Count(), 0, 0);
 
-	CopyMatrix(&vsLine->VertConstants.TransformMatrix, TransposeMatrix(camera.GetTransformMatrix()));
-	vsLine->VertConstants.Commit(Context());
-
-	vsLine->Activate(Context());
-	psLine->Activate(Context());
-	vbLineGrid->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Context()->Draw(vbLineGrid->Count(), 0);
+	vsSolidColor->Activate(Context());
+	psSolidColor->Activate(Context());
 
 	modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-	modelMatrix *= TranslationMatrix(Vec4(ps->Light.lightPos));
-	CopyMatrix(&vsLine->VertConstants.TransformMatrix, TransposeMatrix(camera.GetTransformMatrix(modelMatrix)));
-	vsLine->VertConstants.Commit(Context());
+	modelMatrix *= TranslationMatrix(Vec4(psPhong->Light.lightPos));
+	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+	vsSolidColor->VertConstants.Commit(Context());
 
-	octahedron->Activate(Context());
+	octahedronVB->Activate(Context());
 	octahedronIB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
+
+	blendEnabled.Activate(Context());
+
+	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
+	vsSolidColor->VertConstants.Commit(Context());
+
+	gridVB->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	Context()->Draw(gridVB->Count(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void MyDXWindow::OnDestroy()
 {
-	vsLine.reset();
-	psLine.reset();
-	vs.reset();
-	ps.reset();
+	vsSolidColor.reset();
+	psSolidColor.reset();
+	vsPhong.reset();
+	psPhong.reset();
 	texture.reset();
 	sampler.reset();
-	vertexBuffer.reset();
-	rasterizerState.Release();
-	depthStencilState.Release();
-	blendState.Release();
+	vbPhong.reset();
+	blendEnabled.Release();
+	blendDisabled.Release();
 }

@@ -51,8 +51,8 @@ namespace DX
 	Window::Window(int width, int height, tchar const *caption, uint32 windowStyle, tchar const *className, HWND parent)
 		: mHWND(null)
 		, mHINST(null)
-		, mWidth(width)
-		, mHeight(height)
+		, mWidth(0)
+		, mHeight(0)
 		, mActive(false)
 		, mResizing(false)
 		, mCaption(caption == null ? tstring() : caption)
@@ -60,7 +60,13 @@ namespace DX
 		, mWindowStyle(windowStyle)
 		, mParentHWND(parent)
 	{
+		Rect2D r(0, 0, width, height);
+		AdjustWindowRectEx(&r, windowStyle, false, 0);
+		mWidth = r.Width();
+		mHeight = r.Height();
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void Window::Open()
 	{
@@ -88,9 +94,6 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// Allow Class Name and Window Styles to be specified in the ctor
-
-	// EG: WS_CHILD etc
 
 	bool Window::Init(int width, int height)
 	{

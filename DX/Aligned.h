@@ -175,7 +175,11 @@ private:
 
 //////////////////////////////////////////////////////////////////////
 
-struct ALIGNED(16) Aligned16
+struct __declspec(align(16)) Align16
+{
+};
+
+struct Aligned16 : Align16
 {
 	void *operator new(size_t s)
 	{

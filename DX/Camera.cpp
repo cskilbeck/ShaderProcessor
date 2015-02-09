@@ -17,35 +17,55 @@ namespace DX
 
 	Matrix Camera::ViewMatrix(Vec4f target, Vec4f position, Vec4f up)
 	{
-		return DirectX::XMMatrixLookAtLH(position, target, up);
+		using namespace DirectX;
+		Vec4f direction(target - position);
+		Vec4f Z = Normalize(direction);
+		Vec4f X = Normalize(Cross(up, Z));
+		Vec4f Y = Cross(Z, X);
+		Vec4f nPosition = Negate(position);
+		Vec4f dx = Splat(Dot(X, nPosition));
+		Vec4f dy = Splat(Dot(Y, nPosition));
+		Vec4f dz = Splat(Dot(Z, nPosition));
+		Matrix m;
+		m.r[0] = Select(dx, Negate(X), gMMaskXYZ);
+		m.r[1] = Select(dy, Negate(Y), gMMaskXYZ);
+		m.r[2] = Select(dz, Negate(Z), gMMaskXYZ);
+		m.r[3] = IdentityMatrix.r[3];
+		return Transpose(m);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Matrix Camera::ViewMatrix(Vec4f position, float roll, float pitch, float yaw)
 	{
+		Matrix z = IdentityMatrix;	// Z UP not down...?
+		z.r[2] = Negate(z.r[2]);
+
 		Matrix m = IdentityMatrix;
 		m.r[3] = SetW(Negate(position), 1.0f);
-		m *= DirectX::XMMatrixRotationRollPitchYaw(pitch, roll, yaw);	// we use Z up, not Y, so swap roll, yaw
-		return m;
+
+		// we use Z up, not Y, so swap roll, yaw
+		return m * z * DirectX::XMMatrixRotationRollPitchYaw(pitch, roll, yaw);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Matrix Camera::PerspectiveProjection(float fov /* = 0.5f */, float aspectRatio /* = 4.0f / 3.0f */, float nearZ /* = 1.0f */, float farZ /* = 1000.0f */)
 	{
-		float sinFov = sinf(fov * 0.5f);
-		float cosFov = cosf(fov * 0.5f);
-		float high = cosFov / sinFov;
-		float wide = high / aspectRatio;
-		float zDiff = farZ - nearZ;
-		float zF = farZ / zDiff;
-		float zN = -zF * nearZ;
-		return Matrix(wide, 0, 0, 0,
-					  0, high, 0, 0,
-					  0, 0, zF, 1,
-					  0, 0, zN, 0);
+		using namespace DirectX;
+		float s;
+		float c;
+		XMScalarSinCos(&s, &c, fov * 0.5f);
+		float h = c / s;
+		float w = h / aspectRatio;
+		float f = farZ / (farZ - nearZ);
+		float n = -f * nearZ;
+		return Matrix(w, 0, 0, 0,
+					  0, h, 0, 0,
+					  0, 0, f, 1,
+					  0, 0, n, 0);
 	}
+
 	//////////////////////////////////////////////////////////////////////
 
 	Matrix Camera::OrthoProjection3D(float width /* = 40 */, float height /* = 30 */, float nearZ /* = 1.0f */, float farZ /* = 1000.0f */)

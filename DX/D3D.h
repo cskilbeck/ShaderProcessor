@@ -229,30 +229,6 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	enum DepthBufferOption
-	{
-		DepthBufferEnabled = 0,
-		DepthBufferDisabled = 1
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	enum FullScreenOption
-	{
-		Windowed = 0,
-		FullScreen = 1
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	enum CreateSwapChainOption
-	{
-		WithSwapChain = 0,
-		WithoutSwapChain = 1
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
 	struct D3DDevice
 	{
 		D3DDevice(CreateSwapChainOption createSwapChainOption = WithSwapChain, DepthBufferOption depthBufferOption = DepthBufferDisabled, FullScreenOption fullScreenOption = Windowed)
@@ -358,6 +334,8 @@ namespace DX
 		{
 			if(mDepthBufferOption == DepthBufferEnabled)
 			{
+				mDepthBuffer.Release();
+
 				D3D11_TEXTURE2D_DESC depth;
 				depth.Width = mWidth;
 				depth.Height = mHeight;
@@ -383,6 +361,7 @@ namespace DX
 			DXR(mDevice->CreateRenderTargetView(mBackBuffer, null, &mRenderTargetView));
 			if(mDepthBuffer != null)
 			{
+				CreateDepthBuffer();
 				DXR(mDevice->CreateDepthStencilView(mDepthBuffer, null, &mDepthStencilView));
 			}
 			DXI(mContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView));
@@ -401,8 +380,10 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Resize()
+		HRESULT Resize(uint width, uint height)
 		{
+			mWidth = width;
+			mHeight = height;
 			if(mContext != null)
 			{
 				DXI(mContext->ClearState());

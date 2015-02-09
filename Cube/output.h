@@ -1,7 +1,0 @@
-//////////////////////////////////////////////////////////////////////
-// shader.h - auto generated file, do not edit
-
-#pragma once
-#pragma pack(push, 4)
-
-/*

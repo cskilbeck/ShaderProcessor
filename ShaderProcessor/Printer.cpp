@@ -37,16 +37,35 @@ namespace Printer
 {
 	//////////////////////////////////////////////////////////////////////
 
-	void Indent()
+	void Indent(char const *txt, ...)
 	{
+		if(txt != null)
+		{
+			char buffer[1024];
+			va_list v;
+			va_start(v, txt);
+			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
+			WriteString(indent);
+			WriteString(buffer);
+		}
 		indent += "\t";
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void UnIndent()
+	void UnIndent(char const *txt, ...)
 	{
 		indent = indent.substr(0, indent.length() - 1);
+		if(txt != null)
+		{
+			char buffer[1024];
+			va_list v;
+			va_start(v, txt);
+			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
+			WriteString(indent);
+			WriteString(buffer);
+			WriteString("\n");
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -116,7 +135,7 @@ namespace Printer
 
 	//////////////////////////////////////////////////////////////////////
 
-	void OutputComment(char const *format, ...)
+	void OutputCommentLine(char const *format, ...)
 	{
 		char buffer[1024];
 		va_list v;
@@ -128,6 +147,23 @@ namespace Printer
 		char const crlf2[] = "\n\n";
 		WriteString(indent);
 		WriteString(comment);
+		WriteString(indent);
+		WriteString(comment2);
+		WriteFile(outputFile, buffer, n, &wrote, null);
+		WriteString(crlf2);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void OutputComment(char const *format, ...)
+	{
+		char buffer[1024];
+		va_list v;
+		va_start(v, format);
+		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
+		DWORD wrote;
+		char const comment2[] = "// ";
+		char const crlf2[] = "\n\n";
 		WriteString(indent);
 		WriteString(comment2);
 		WriteFile(outputFile, buffer, n, &wrote, null);

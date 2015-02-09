@@ -170,7 +170,7 @@ static void OutputTable(uint32 *table, uint count, char const *name)
 
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
-	OutputComment("%s offsets", mDesc.Name);
+	OutputCommentLine("%s offsets", mDesc.Name);
 	OutputLine("extern ConstBufferOffset const WEAKSYM %s_%s_Offsets[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Variables);
 	OutputIndent("{");
 	Indent();
@@ -185,13 +185,12 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 		sep = ",";
 	}
 	OutputLine();
-	UnIndent();
-	OutputLine("};");
+	UnIndent("};");
 	OutputLine();
 
 	if(Defaults == null)
 	{
-		OutputLine("// no defaults for %s", mDesc.Name);
+		OutputComment("no defaults for %s", mDesc.Name);
 		OutputLine();
 	}
 	else
@@ -230,8 +229,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 			}
 		}
 		OutputLine();
-		UnIndent();
-		OutputLine("};");
+		UnIndent("};");
 		OutputLine();
 	}
 }
@@ -260,8 +258,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 		OutputLine();
 		++fieldCount;
 	}
-	UnIndent();
-	OutputLine("};");
+	UnIndent("};");
 	OutputLine();
 	OutputLine("ConstBuffer<%s_t> %s;", mDesc.Name, mDesc.Name);
 	OutputLine();

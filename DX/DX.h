@@ -1,10 +1,17 @@
+//////////////////////////////////////////////////////////////////////
 
 #pragma once
+
+//////////////////////////////////////////////////////////////////////
+// Windows
 
 #pragma pack(push, n)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+//////////////////////////////////////////////////////////////////////
+// D3D
 
 #include <d3d11.h>
 #pragma warning(push)
@@ -14,6 +21,9 @@
 #pragma warning(pop)
 
 #pragma pack(pop, n)
+
+//////////////////////////////////////////////////////////////////////
+// c libs
 
 #include <stdlib.h>
 #include <malloc.h>
@@ -26,6 +36,9 @@
 #include <stdarg.h>
 #include <math.h>
 
+//////////////////////////////////////////////////////////////////////
+// c++ std libs
+
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -33,6 +46,9 @@
 #include <memory>
 #include <unordered_map>
 #include <map>
+
+//////////////////////////////////////////////////////////////////////
+// DX
 
 #include "Types.h"
 #include "Aligned.h"
@@ -45,6 +61,7 @@
 #include "Color.h"
 #include "Util.h"
 #include "Resource.h"
+#include "Options.h"
 #include "File.h"
 #include "Vec2.h"
 #include "Point.h"
@@ -56,9 +73,11 @@
 #include "Timer.h"
 #include "Camera.h"
 #include "D3D.h"
+#include "Viewport.h"
 #include "LoadImage.h"
 #include "Texture.h"
 #include "Sampler.h"
+#include "Material.h"
 #include "Shader.h"
 #include "Buffer.h"
 #include "IndexBuffer.h"
