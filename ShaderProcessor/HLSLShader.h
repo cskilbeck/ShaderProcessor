@@ -228,7 +228,7 @@ struct HLSLShader
 	void OutputConstBufferMembers();
 	void OutputSamplerMembers();
 	void OutputResourceMembers();
-	void OutputConstructor();
+	void OutputConstructor(string const extra);
 	void OutputInputElements();
 	void OutputInputStruct();
 	void OutputBlob();

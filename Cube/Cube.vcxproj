@@ -171,10 +171,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Colored.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="FPSCamera.h" />
-    <ClInclude Include="phong.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
@@ -203,6 +201,7 @@
   <ItemGroup>
     <SPOCK Include="Colored.shader" />
     <SPOCK Include="Phong.shader" />
+    <SPOCK Include="UI.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

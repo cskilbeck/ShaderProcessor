@@ -6,14 +6,15 @@
 
 namespace DX
 {
-	template<D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount> struct VertexShader: Shader
+	struct VertexShader: Shader
 	{
 		VertexShader(void const *blob, size_t size,
 					 uint numConstBuffers, char const **constBufferNames,
 					 uint numSamplers, char const **samplerNames,
 					 uint numTextures, char const **textureNames,
 					 Texture **textureArray,
-					 Sampler **samplerArray)
+					 Sampler **samplerArray,
+					 D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
 			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
 		{
 			DXT(Device->CreateVertexShader(blob, size, null, &mVertexShader));
@@ -35,5 +36,4 @@ namespace DX
 		DXPtr<ID3D11VertexShader>			mVertexShader;
 		DXPtr<ID3D11InputLayout>			mInputLayout;
 	};
-
 }

@@ -43,6 +43,8 @@ namespace DX
 		void Center();
 		int Width() const;
 		int Height() const;
+		int ClientWidth() const;
+		int ClientHeight() const;
 		float FWidth() const;
 		float FHeight() const;
 		Vec2f FSize() const;
@@ -77,6 +79,8 @@ namespace DX
 
 		int								mWidth;
 		int								mHeight;
+		int								mClientWidth;
+		int								mClientHeight;
 		HWND							mHWND;
 		HWND							mParentHWND;
 		HINSTANCE						mHINST;
@@ -102,6 +106,20 @@ namespace DX
 	inline int Window::Height() const
 	{
 		return mHeight;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline int Window::ClientWidth() const
+	{
+		return mClientWidth;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline int Window::ClientHeight() const
+	{
+		return mClientHeight;
 	}
 
 	//////////////////////////////////////////////////////////////////////

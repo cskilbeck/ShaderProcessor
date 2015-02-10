@@ -29,6 +29,7 @@ namespace DX
 	Matrix		Transpose(Matrix const &m);
 	Matrix		RotationMatrix(float yaw, float pitch, float roll);
 	Matrix		RotationMatrix(Vec4f axis, float angle);
+	Matrix		RotationMatrix(Vec4f yawPitchRoll);
 	Matrix		TranslationMatrix(Vec4f translation);
 	Vec4f		TransformPoint(Vec4f pos, Matrix const &m);
 	Vec4f		GetPitchYawRollFromMatrix(Matrix const &m);
@@ -44,6 +45,16 @@ namespace DX
 
 	inline Matrix RotationMatrix(float yaw, float pitch, float roll)
 	{
+		return DirectX::XMMatrixRotationRollPitchYaw(yaw, pitch, roll);	// swap Y & Z...
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Matrix RotationMatrix(Vec4f yawPitchRoll)
+	{
+		float yaw = GetX(yawPitchRoll);
+		float pitch = GetY(yawPitchRoll);
+		float roll = GetZ(yawPitchRoll);
 		return DirectX::XMMatrixRotationRollPitchYaw(yaw, pitch, roll);	// swap Y & Z...
 	}
 

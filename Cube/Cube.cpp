@@ -71,7 +71,8 @@ void MyDXWindow::CreateGrid()
 {
 	using namespace Shaders::Colored;
 
-	vector<InputVertex> v;
+	gridVB.reset(new VertBuffer(806, null, DynamicUsage, Writeable));
+	InputVertex *v = gridVB->Map(Context());
 	for(int x = -1000; x <= 1000; x += 10)
 	{
 		float a = (float)x;
@@ -84,14 +85,14 @@ void MyDXWindow::CreateGrid()
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
-		v.push_back({ { b, a, 0 }, cx });
-		v.push_back({ { t, a, 0 }, cx });
-		v.push_back({ { a, b, 0 }, cy });
-		v.push_back({ { a, t, 0 }, cy });
+		*v++ = { { b, a, 0 }, cx };
+		*v++ = { { t, a, 0 }, cx };
+		*v++ = { { a, b, 0 }, cy };
+		*v++ = { { a, t, 0 }, cy };
 	}
-	v.push_back({ { 0, 0, 0 }, Color::Cyan });
-	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
-	gridVB.reset(new VertBuffer(v.size(), v.data(), StaticUsage));
+	*v++ = { { 0, 0, 0 }, Color::Cyan };
+	*v++ = { { 0, 0, 1000 }, Color::Cyan };
+	gridVB->UnMap(Context());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -165,6 +166,27 @@ bool MyDXWindow::OnCreate()
 	o.depthWrite = DepthWriteDisabled;
 	blendEnabled.Create(o);
 
+	vsUI.reset(new Shaders::UI::VS());
+	psUI.reset(new Shaders::UI::PS());
+	UIVerts.reset(new Shaders::UI::VertBuffer(6));
+	uiTexture.reset(new Texture(TEXT("temp.png")));
+	uiSampler.reset(new Sampler());
+
+	MaterialOptions uiOptions;
+	uiOptions.blend = BlendEnabled;
+	uiOptions.depth = DepthDisabled;
+	uiOptions.culling = CullingNone;
+	uiOptions.fillMode = FillModeSolid;
+	uiOptions.depthWrite = DepthWriteDisabled;
+	uiMaterial.Create(uiOptions);
+
+	vsUI->vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	vsUI->vConstants.Commit(Context());
+	psUI->pConstants.Color = Float4(1, 1, 1, 1);
+	psUI->pConstants.Commit(Context());
+	psUI->page = uiTexture.get();
+	psUI->smplr = uiSampler.get();
+
 	Show();
 
 	return true;
@@ -174,9 +196,6 @@ bool MyDXWindow::OnCreate()
 
 void MyDXWindow::OnDraw()
 {
-	Clear(Color(32, 64, 128));
-	ClearDepth(DepthOnly, 1.0f, 0);
-
 	float moveSpeed = 1.0f;
 	float strafeSpeed = 1.0f;
 
@@ -194,7 +213,10 @@ void MyDXWindow::OnDraw()
 	if(Keyboard::Held('R')) { move = SetZ(move, strafeSpeed); }
 	if(Keyboard::Held('F')) { move = SetZ(move, -strafeSpeed); }
 
-	camera.Move(move);
+	if(Mouse::Pressed & Mouse::Button::Right)
+	{
+		camera.LookAt(cubePos);
+	}
 
 	if(Mouse::Held & Mouse::Button::Left)
 	{
@@ -206,18 +228,19 @@ void MyDXWindow::OnDraw()
 		Mouse::SetMode(Mouse::Mode::Free, *this);
 	}
 
-	if(Mouse::Pressed & Mouse::Button::Right)
-	{
-		camera.LookAt(Vec4(4, 4, 0));
-	}
-
+	camera.Move(move);
 	camera.Update();
+
+	cubePos = Vec4(15, 15, 0);
+	cubeScale = Vec4(5, 5, 5);
+	cubeRot = Vec4(mFrame * 0.02f, mFrame * 0.01f, mFrame * 0.03f);
+
+	Clear(Color(32, 64, 128));
+	ClearDepth(DepthOnly, 1.0f, 0);
 
 	blendDisabled.Activate(Context());
 
-	Matrix modelMatrix = RotationMatrix(mFrame * 0.02f, mFrame * 0.01f, mFrame * 0.03f);
-	modelMatrix *= ScaleMatrix(Vec4(5, 5, 5)) * TranslationMatrix(Vec4(4, 4, 0));
-
+	Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
 	vsPhong->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 	vsPhong->VertConstants.ModelMatrix = Transpose(modelMatrix);
 	vsPhong->VertConstants.Commit(Context());
@@ -248,9 +271,22 @@ void MyDXWindow::OnDraw()
 	vsSolidColor->VertConstants.Commit(Context());
 
 	blendEnabled.Activate(Context());
+
 	gridVB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
+
+	drawList.SetMaterial(uiMaterial);
+	drawList.SetShader(vsUI.get(), psUI.get(), UIVerts.get(), sizeof(Shaders::UI::InputVertex));
+	drawList.BeginTriangleList();
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 0, }, { 0, 0 } });
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 100 }, { 1, 1 } });
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 100 }, { 0, 1 } });
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 0, }, { 0, 0 } });
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 0 }, { 1, 0 } });
+	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 100 }, { 1, 1 } });
+	drawList.End();
+	drawList.Execute(Context());
 }
 
 //////////////////////////////////////////////////////////////////////

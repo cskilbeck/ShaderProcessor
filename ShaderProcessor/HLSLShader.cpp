@@ -725,17 +725,16 @@ void HLSLShader::OutputResourceMembers()
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputConstructor()
+void HLSLShader::OutputConstructor(string const extra)
 {
 	string constBufferNames = (mConstBuffers > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
 	string textureNames = (mResources > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
 	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
-
 	OutputComment("Constructor");
 	OutputLine("%s()", Name().c_str());
 	Indent();
-	OutputLine(": %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s)",
+	OutputLine(": %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s%s)",
 		   mShaderTypeDesc.name,
 		   Name().c_str(),
 		   mSize,
@@ -746,7 +745,8 @@ void HLSLShader::OutputConstructor()
 		   mResources,
 		   textureNames.c_str(),
 		   mResources > 0 ? "textures" : "null",
-		   mSamplers > 0 ? "samplers" : "null"
+		   mSamplers > 0 ? "samplers" : "null",
+		   extra.c_str()
 		   );
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
@@ -764,21 +764,21 @@ void HLSLShader::OutputShaderStruct()
 
 	if(mShaderTypeDesc.type == ShaderType::Vertex)
 	{
-		vsTag = Format("<%s_InputElements, _countof(%s_InputElements)>", Name().c_str(), Name().c_str());
+		vsTag = Format(", %s_InputElements, _countof(%s_InputElements)", Name().c_str(), Name().c_str());
 	}
 
 	OutputInputStruct();
 
 	OutputCommentLine("%s Shader: %s", mShaderTypeDesc.name, Name().c_str());
 
-	OutputLine("struct %s : %sShader%s, Aligned16", Name().c_str(), mShaderTypeDesc.name, vsTag.c_str());
+	OutputLine("struct %s : %sShader, Aligned16", Name().c_str(), mShaderTypeDesc.name);
 	OutputLine("{");
 	Indent();
 
 	OutputConstBufferMembers();
 	OutputSamplerMembers();
 	OutputResourceMembers();
-	OutputConstructor();
+	OutputConstructor(vsTag);
 
 	UnIndent("};");
 	OutputLine();

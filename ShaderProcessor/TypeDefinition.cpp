@@ -266,12 +266,12 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 
 //////////////////////////////////////////////////////////////////////
 
-void TypeDefinition::ConstructorOutput()
+void TypeDefinition::ConstructorOutput(int index)
 {
 	string defaultStr = "null";
 	if(Defaults != null)
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	OutputLine(", %s(%u, %s_%s_Offsets, %s, this)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str());
+	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), index);
 }

@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <SPOCK>
-      <HeaderFile>$(ProjectDir)%(FileName).h</HeaderFile>
+      <HeaderFile>$(ProjectDir)%(FileName)_Shader.h</HeaderFile>
       <EmbedObject>true</EmbedObject>
       <ShaderModel>4</ShaderModel>
       <VertexShaderFunction>vsMain</VertexShaderFunction>

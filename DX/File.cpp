@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	bool File::Open(tchar const *filename)
 	{
 		name = filename;

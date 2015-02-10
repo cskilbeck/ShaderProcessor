@@ -53,6 +53,8 @@ namespace DX
 		, mHINST(null)
 		, mWidth(0)
 		, mHeight(0)
+		, mClientWidth(width)
+		, mClientHeight(height)
 		, mActive(false)
 		, mResizing(false)
 		, mCaption(caption == null ? tstring() : caption)
@@ -446,9 +448,15 @@ namespace DX
 	void Window::DoResize()
 	{
 		Rect2D rc;
-		GetClientRect(mHWND, &rc);
+
+		GetWindowRect(mHWND, &rc);
 		mWidth = rc.Width();
 		mHeight = rc.Height();
+
+		GetClientRect(mHWND, &rc);
+		mClientWidth = rc.Width();
+		mClientHeight = rc.Height();
+
 		OnResized();
 	}
 
@@ -457,9 +465,15 @@ namespace DX
 	void Window::DoMove()
 	{
 		Rect2D rc;
-		GetClientRect(mHWND, &rc);
+
+		GetWindowRect(mHWND, &rc);
 		mWidth = rc.Width();
 		mHeight = rc.Height();
+
+		GetClientRect(mHWND, &rc);
+		mClientWidth = rc.Width();
+		mClientHeight = rc.Height();
+
 		OnMoved();
 	}
 

@@ -16,7 +16,7 @@ namespace DX
 		uint32								mNumSamplers;
 		uint32								mNumTextures;
 
-		vector<void *>						mConstBuffers;
+		vector<TypelessBuffer *>			mConstBuffers;
 		Texture **							mTextures;
 		Sampler **							mSamplers;
 
@@ -36,6 +36,18 @@ namespace DX
 			return null;
 		}
 
+		int GetConstBufferIndex(char const *name)
+		{
+			for(uint i = 0; i < mNumConstBuffers; ++i)
+			{
+				if(strcmp(mConstBufferNames[i], name) == 0)
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+
 		Shader(uint32 numConstBuffers, char const **constBufferNames,
 			   uint32 numSamplers, char const **samplerNames,
 			   uint32 numTextures, char const **textureNames,
@@ -53,6 +65,11 @@ namespace DX
 			mTexturePointers.resize(numTextures);
 			mSamplerPointers.resize(numSamplers);
 			mConstBufferPointers.reserve(numConstBuffers);
+		}
+
+		void UpdateConstants(uint index, void *data, uint32 size)
+		{
+			TypelessBuffer *b = (TypelessBuffer *)(mConstBuffers[index]);
 		}
 
 		void UpdateTextures()

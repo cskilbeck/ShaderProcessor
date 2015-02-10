@@ -6,8 +6,9 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
 
-	template<typename vert> struct VertexBuffer: Buffer < vert >
+	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
 		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{

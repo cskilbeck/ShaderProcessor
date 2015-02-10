@@ -54,7 +54,7 @@ namespace DX
 
 	void DXWindow::OnResized()
 	{
-		mDevice.Resize(mWidth, mHeight);
+		mDevice.Resize(mClientWidth, mClientHeight);
 		OnUpdate();
 	}
 

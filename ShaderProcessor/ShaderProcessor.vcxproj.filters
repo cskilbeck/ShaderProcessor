@@ -78,5 +78,6 @@
     <None Include="Phong.shader">
       <Filter>HLSL</Filter>
     </None>
+    <None Include="Font.shader" />
   </ItemGroup>
 </Project>

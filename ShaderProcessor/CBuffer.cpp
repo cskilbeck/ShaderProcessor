@@ -20,6 +20,6 @@ void ConstantBufferBinding::MemberOutput()
 
 void ConstantBufferBinding::ConstructorOutput()
 {
-	definition->ConstructorOutput();
+	definition->ConstructorOutput(this->mDesc.BindPoint);
 }
 

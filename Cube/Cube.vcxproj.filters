@@ -23,12 +23,6 @@
     <ClInclude Include="Cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Colored.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="phong.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cube.cpp">
@@ -46,6 +40,9 @@
       <Filter>Shader Files</Filter>
     </SPOCK>
     <SPOCK Include="Phong.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
+    <SPOCK Include="UI.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

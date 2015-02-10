@@ -114,13 +114,13 @@ namespace Shaders
 
 		uint32 WEAKSYM PS_Data[] =
 		{
-			0x43425844,0x1a619b34,0x5d5c40a7,0x944d445e,0xfb995650,0x00000001,0x000002f8,0x00000005,
+			0x43425844,0x32892801,0x09f32f5e,0x5cf23327,0x6e40a5f9,0x00000001,0x000002f8,0x00000005,
 			0x00000034,0x0000014c,0x000001a4,0x000001d8,0x0000027c,0x46454452,0x00000110,0x00000001,
 			0x00000094,0x00000003,0x0000001c,0xffff0400,0x00000100,0x000000dc,0x0000007c,0x00000003,
 			0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x00000082,0x00000002,
 			0x00000005,0x00000004,0xffffffff,0x00000000,0x00000001,0x0000000c,0x00000087,0x00000000,
 			0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,0x6c706d73,0x61700072,
-			0x76006567,0x736e6f43,0x746e6174,0xabab0073,0x00000087,0x00000001,0x000000ac,0x00000010,
+			0x70006567,0x736e6f43,0x746e6174,0xabab0073,0x00000087,0x00000001,0x000000ac,0x00000010,
 			0x00000000,0x00000000,0x000000c4,0x00000000,0x00000010,0x00000002,0x000000cc,0x00000000,
 			0x6f6c6f43,0xabab0072,0x00030001,0x00040001,0x00000000,0x00000000,0x7263694d,0x666f736f,
 			0x52282074,0x4c482029,0x53204c53,0x65646168,0x6f432072,0x6c69706d,0x36207265,0x392e332e,
@@ -144,14 +144,14 @@ namespace Shaders
 		// offsets and defaults
 
 		//////////////////////////////////////////////////////////////////////
-		// vConstants offsets
+		// pConstants offsets
 
-		extern ConstBufferOffset const WEAKSYM PS_vConstants_Offsets[1] =
+		extern ConstBufferOffset const WEAKSYM PS_pConstants_Offsets[1] =
 		{
 			{ "Color", 0 }
 		};
 
-		// no defaults for vConstants
+		// no defaults for pConstants
 
 
 		//////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ namespace Shaders
 
 		extern char const WEAKSYM *PS_ConstBufferNames[] =
 		{
-			"vConstants"
+			"pConstants"
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -185,12 +185,12 @@ namespace Shaders
 		{
 			// Const Buffers
 
-			struct vConstants_t: Aligned16
+			struct pConstants_t: Aligned16
 			{
 				Float4 Color;
 			};
 
-			ConstBuffer<vConstants_t> vConstants;
+			ConstBuffer<pConstants_t> pConstants;
 
 			// Samplers
 
@@ -220,7 +220,7 @@ namespace Shaders
 				: PixelShader(PS_Data, 760, 1, PS_ConstBufferNames, 1, PS_SamplerNames, 1, PS_TextureNames, textures, samplers)
 				, smplr(null)
 				, page(null)
-				, vConstants(1, PS_vConstants_Offsets, null, this, 0)
+				, pConstants(1, PS_pConstants_Offsets, null, this, 0)
 			{
 			}
 		};

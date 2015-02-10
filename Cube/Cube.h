@@ -26,6 +26,18 @@ struct MyDXWindow: DXWindow
 	Material blendEnabled;
 	Material blendDisabled;
 
+	Vec4f cubePos;
+	Vec4f cubeScale;
+	Vec4f cubeRot;
+
+	DrawList drawList;
+	Ptr<Shaders::UI::VS> vsUI;
+	Ptr<Shaders::UI::PS> psUI;
+	Ptr<Shaders::UI::VertBuffer> UIVerts;
+	Ptr<Texture> uiTexture;
+	Ptr<Sampler> uiSampler;
+	Material uiMaterial;
+
 	//////////////////////////////////////////////////////////////////////
 
 	MyDXWindow();

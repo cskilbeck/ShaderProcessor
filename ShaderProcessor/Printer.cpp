@@ -41,7 +41,7 @@ namespace Printer
 	{
 		if(txt != null)
 		{
-			char buffer[1024];
+			char buffer[8192];
 			va_list v;
 			va_start(v, txt);
 			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
@@ -58,7 +58,7 @@ namespace Printer
 		indent = indent.substr(0, indent.length() - 1);
 		if(txt != null)
 		{
-			char buffer[1024];
+			char buffer[8192];
 			va_list v;
 			va_start(v, txt);
 			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
@@ -104,7 +104,7 @@ namespace Printer
 
 	void Output(char const *format, ...)
 	{
-		char buffer[1024];
+		char buffer[8192];
 		va_list v;
 		va_start(v, format);
 		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
@@ -137,7 +137,7 @@ namespace Printer
 
 	void OutputCommentLine(char const *format, ...)
 	{
-		char buffer[1024];
+		char buffer[8192];
 		va_list v;
 		va_start(v, format);
 		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
@@ -157,7 +157,7 @@ namespace Printer
 
 	void OutputComment(char const *format, ...)
 	{
-		char buffer[1024];
+		char buffer[8192];
 		va_list v;
 		va_start(v, format);
 		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
