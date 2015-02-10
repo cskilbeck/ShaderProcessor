@@ -77,6 +77,9 @@
     <ClCompile Include="File.cpp" />
     <ClCompile Include="Font.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LoadImage.cpp" />
@@ -97,7 +100,12 @@
     <None Include="Vec4.inl" />
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Font.shader" />
+    <SPOCK Include="Font.shader">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </SPOCK>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{73884195-8231-4AD9-80ED-8F41D03F4160}</ProjectGuid>

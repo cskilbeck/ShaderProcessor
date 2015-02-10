@@ -1,7 +1,6 @@
 //////////////////////////////////////////////////////////////////////
-// Viewport / Aspect Ratio
-// DrawList
-// SpriteList
+// Aspect Ratio
+// SpriteList / Geometry Shader support
 // Font
 // Fix ViewMatrix Axes Y/Z up etc
 
@@ -168,7 +167,7 @@ bool MyDXWindow::OnCreate()
 
 	vsUI.reset(new Shaders::UI::VS());
 	psUI.reset(new Shaders::UI::PS());
-	UIVerts.reset(new Shaders::UI::VertBuffer(6));
+	UIVerts.reset(new Shaders::UI::VertBuffer(12));
 	uiTexture.reset(new Texture(TEXT("temp.png")));
 	uiSampler.reset(new Sampler());
 
@@ -186,8 +185,6 @@ bool MyDXWindow::OnCreate()
 	psUI->pConstants.Commit(Context());
 	psUI->page = uiTexture.get();
 	psUI->smplr = uiSampler.get();
-
-	Show();
 
 	return true;
 }
@@ -276,17 +273,49 @@ void MyDXWindow::OnDraw()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
 
-	drawList.SetMaterial(uiMaterial);
-	drawList.SetShader(vsUI.get(), psUI.get(), UIVerts.get(), sizeof(Shaders::UI::InputVertex));
-	drawList.BeginTriangleList();
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 0, }, { 0, 0 } });
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 100 }, { 1, 1 } });
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 100 }, { 0, 1 } });
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 0, 0, }, { 0, 0 } });
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 0 }, { 1, 0 } });
-	drawList.AddVertex<Shaders::UI::InputVertex>({ { 100, 100 }, { 1, 1 } });
-	drawList.End();
-	drawList.Execute(Context());
+	{
+		using v = Shaders::UI::InputVertex;
+		Shaders::UI::PS::pConstants_t c;
+		drawList.SetShader(vsUI.get(), psUI.get(), UIVerts.get(), sizeof(v));
+		drawList.SetMaterial(uiMaterial);
+
+		float w = 100 + sinf(mFrame * 0.2f) * 30;
+		float h = 200 + sinf(mFrame * 0.3f) * 30;
+		float x0 = 0;
+		float y0 = 0;
+		float x1 = x0 + w;
+		float y1 = y0 + h;
+
+		c.Color = Float4(1, 1, 1, sinf((float)mFrame * 0.2f) * 0.5f + 0.5f);
+		drawList.SetPSConstantData(c, psUI->pConstants.Index());
+		drawList.BeginTriangleList();
+		drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
+		drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
+		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
+		drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
+		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+		drawList.End();
+
+		w = 100 + sinf(mFrame * 0.1f) * 30;
+		h = 200 + sinf(mFrame * 0.4f) * 30;
+		x0 += 200;
+		y0 += 200;
+		x1 = x0 + w;
+		y1 = y0 + h;
+
+		c.Color = Float4(1, 1, 1, 1);
+		drawList.SetPSConstantData(c, psUI->pConstants.Index());
+		drawList.BeginTriangleList();
+		drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
+		drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
+		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
+		drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
+		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+		drawList.End();
+		drawList.Execute(Context());
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -76,6 +76,10 @@ namespace DX
 		{
 			Close();
 		}
+		else
+		{
+			Show();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -243,6 +247,11 @@ namespace DX
 
 	bool Window::Update()
 	{
+		if(!mHWND)
+		{
+			Open();
+		}
+
 		Keyboard::LastKeyPressed = 0;
 		Keyboard::LastCharPressed = 0;
 

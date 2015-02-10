@@ -120,12 +120,12 @@ namespace
 			((Shader *)mPixelShader)->mSamplers[s->mIndex] = s->mSampler;
 		}
 
-		void UpdateVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
+		void SetVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
 			mVertexShader->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(VSConstBufferItem));
 		}
 
-		void UpdatePSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
+		void SetPSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
 			mPixelShader->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(PSConstBufferItem));
 		}
@@ -194,6 +194,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::SetVSConsts(byte *data, uint size, uint index)
+	{
+		VSConstBufferItem *i = Add<VSConstBufferItem>();
+		AddData(data, size);
+		i->mIndex = index;
+		i->mSize = size;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::SetPSConsts(byte *data, uint size, uint index)
+	{
+		PSConstBufferItem *i = Add<PSConstBufferItem>();
+		AddData(data, size);
+		i->mIndex = index;
+		i->mSize = size;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	byte *DrawList::AddData(byte const *data, uint size)
 	{
 		memcpy(mItemPointer, data, size);
@@ -238,26 +258,6 @@ namespace DX
 		mVertPointer = vb->Data();
 		mVertCount = 0;
 		mVertBase = 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetVSConstantData(byte *data, uint size, uint index)
-	{
-		VSConstBufferItem *i = Add<VSConstBufferItem>();
-		AddData(data, size);
-		i->mIndex = index;
-		i->mSize = size;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetPSConstantData(byte *data, uint size, uint index)
-	{
-		PSConstBufferItem *i = Add<PSConstBufferItem>();
-		AddData(data, size);
-		i->mIndex = index;
-		i->mSize = size;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -346,13 +346,13 @@ namespace DX
 
 				case it_VSConstants:
 					assert(csi != null);
-					csi->UpdateVSConstants((VSConstBufferItem *)t, context);
+					csi->SetVSConstants((VSConstBufferItem *)t, context);
 					t += sizeof(VSConstBufferItem) + ((VSConstBufferItem *)t)->mSize;
 					break;
 
 				case it_PSConstants:
 					assert(csi != null);
-					csi->UpdatePSConstants((PSConstBufferItem *)t, context);
+					csi->SetPSConstants((PSConstBufferItem *)t, context);
 					t += sizeof(PSConstBufferItem) + ((PSConstBufferItem *)t)->mSize;
 					break;
 
