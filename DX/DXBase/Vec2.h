@@ -39,6 +39,11 @@ namespace DX
 			y = o.y;
 		}
 
+		operator Float2()
+		{
+			return Float2(x, y);
+		}
+
 		explicit Vec2f(Point2D const &p);
 		explicit Vec2f(Size2D const &s);
 

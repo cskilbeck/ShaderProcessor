@@ -45,5 +45,8 @@
     <SPOCK Include="UI.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
+    <SPOCK Include="Sprite.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>

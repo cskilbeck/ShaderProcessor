@@ -499,7 +499,6 @@ HLSLShader::HLSLShader(tstring const &filename)
 	, mSamplers(0)
 	, mResources(0)
 {
-	Printer::SetShader(this);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -522,22 +521,17 @@ void HLSLShader::OutputHeader(char const *filename) // static
 	OutputLine("#pragma pack(push, 4)");
 	OutputLine();
 	OutputLine("namespace Shaders");
-	OutputLine("{");
-	Indent();
+	Indent("{");
+	OutputLine();
 	OutputLine("using namespace DX;");
 	OutputLine();
-	OutputLine("namespace %s", filename);
-	OutputLine("{");
-	Indent();
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void HLSLShader::OutputFooter(char const *filename) // static
 {
-	UnIndent("} // %s", filename);
-	OutputLine();
-	UnIndent("} // Shaders");
+	UnIndent("}");
 	OutputLine();
 	OutputLine("#pragma pack(pop)");
 }
@@ -548,8 +542,7 @@ void HLSLShader::OutputBlob()
 {
 	OutputCommentLine("Data for %s", Name().c_str());
 	OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
-	OutputIndent("{");
-	Indent();
+	Indent("{");
 
 	char *sep = "";
 	uint32 *d = (uint32 *)mBlob;
@@ -732,7 +725,7 @@ void HLSLShader::OutputConstructor(string const extra)
 	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
 	OutputComment("Constructor");
-	OutputLine("%s()", Name().c_str());
+	OutputLine("%s()", RefName().c_str());
 	Indent();
 	OutputLine(": %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s%s)",
 		   mShaderTypeDesc.name,
@@ -769,9 +762,9 @@ void HLSLShader::OutputShaderStruct()
 
 	OutputInputStruct();
 
-	OutputCommentLine("%s Shader: %s", mShaderTypeDesc.name, Name().c_str());
+	OutputCommentLine("%s Shader", mShaderTypeDesc.name);
 
-	OutputLine("struct %s : %sShader, Aligned16", Name().c_str(), mShaderTypeDesc.name);
+	OutputLine("struct %s : %sShader, Aligned16", RefName().c_str(), mShaderTypeDesc.name);
 	OutputLine("{");
 	Indent();
 
@@ -816,6 +809,13 @@ void HLSLShader::OutputInputElements()
 
 //////////////////////////////////////////////////////////////////////
 
+void HLSLShader::OutputMemberVariable()
+{
+	OutputLine("%s %sShader;", mShaderTypeDesc.refName, mShaderTypeDesc.name);
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void HLSLShader::OutputInputStruct()
 {
 	if(mShaderTypeDesc.type != ShaderType::Vertex)
@@ -841,14 +841,23 @@ void HLSLShader::OutputInputStruct()
 
 //////////////////////////////////////////////////////////////////////
 
+void HLSLShader::OutputData()
+{
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void HLSLShader::OutputStruct()
+{
+	OutputShaderStruct();
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void HLSLShader::OutputHeaderFile()
 {
-	OutputBlob();
-	OutputConstBufferNamesAndOffsets();
-	OutputSamplerNames();
-	OutputResourceNames();
-	OutputInputElements();
-	OutputShaderStruct();
+	Printer::SetShader(this);
+	OutputStruct();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -972,7 +981,6 @@ HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &
 	{
 		DXR(CreateInputLayout());
 	}
-	OutputHeaderFile();
 	return S_OK;
 }
 

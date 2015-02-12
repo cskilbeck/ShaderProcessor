@@ -10,9 +10,14 @@ enum optionIndex
 	SOURCE,
 	VERTEXMAIN,
 	PIXELMAIN,
+	GEOMETRYMAIN,
 	SMVERSION,
 	EMBEDBYTECODE,
-	HEADER
+	HEADER,
+	DISABLEOPTIMIZATION,
+	INCLUDEDEBUGINFO,
+	ERRORONWARNING,
+	INCLUDEPATH
 };
 
 bool ParseArgs(int argc, char *argv[], vector<option::Option> &options);

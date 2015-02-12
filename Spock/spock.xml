@@ -52,7 +52,13 @@
                     DisplayName="Pixel Shader Main Function"
                     Description="PS Main function, if there is one"
                     Switch="--ps=" />
-    
+
+    <StringProperty Name="GeometryShaderFunction"
+                    Category="General"
+                    DisplayName="Geometry Shader Main Function"
+                    Description="GS Main function, if there is one"
+                    Switch="--gs=" />
+
     <StringProperty Name="HeaderFile"
                     Category="General"
                     DisplayName="Header File Name"
@@ -68,14 +74,14 @@
     <StringListProperty Name="IncludePaths"
                         Category="General"
                         DisplayName="Include Paths"
-                        Description="Sets path for include file."
+                        Description="Set path for include files, separate multiple paths with semicolons."
                         Switch="--includePath=" />
     
     <BoolProperty Name="WarnOnError"
                   Category="General"
                   DisplayName="Treat Warnings As Errors"
                   Description="Return an error if warnings are generated."
-                  Switch="--warnOnError" />
+                  Switch="--errorOnWarning" />
     
     <EnumProperty Name="ShaderModel"
                   Category="General"

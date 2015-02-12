@@ -7,6 +7,7 @@ using namespace DirectX;
 //////////////////////////////////////////////////////////////////////
 
 using option::Option;
+vector<Option> options;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -21,8 +22,13 @@ struct ShaderArgType
 ShaderArgType shaderTypes[] =
 {
 	{ VERTEXMAIN, ShaderType::Vertex },
-	{ PIXELMAIN, ShaderType::Pixel }
+	{ PIXELMAIN, ShaderType::Pixel },
+	{ GEOMETRYMAIN, ShaderType::Geometry }
 };
+
+//////////////////////////////////////////////////////////////////////
+
+std::map<ShaderType, HLSLShader *> shaders;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -41,16 +47,35 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 	string output = SetExtension(filename, TEXT(".cso"));
 	ID3DBlob *compiledShader;
 	ID3DBlob *errors = null;
+
+	if(options[INCLUDEDEBUGINFO])
+	{
+		flags |= D3DCOMPILE_DEBUG;
+	}
+
+	if(options[DISABLEOPTIMIZATION])
+	{
+		flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+	}
+	if(options[ERRORONWARNING])
+	{
+		flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+	}
+
+	// etc etc...
+
 	if(D3DCompileFromFile(fname.c_str(), null, D3D_COMPILE_STANDARD_FILE_INCLUDE, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors) == S_OK)
 	{
-		HLSLShader s(GetFilename(filename));
-		s.Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc);
+		HLSLShader *s = new HLSLShader(GetFilename(filename));
+		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
+		shaders[s->mShaderTypeDesc.type] = s;
 		return true;
 	}
 	Printer::Output("/*\n");
 	if(errors != null)
 	{
 		Printer::Output("%s\n", errors->GetBufferPointer());
+		printf("%s", errors->GetBufferPointer());
 	}
 	else
 	{
@@ -72,14 +97,12 @@ enum
 	err_cantwritetoheaderfile,
 	err_compilerproblem,
 	err_noshaderspecified,
-
 };
 
 //////////////////////////////////////////////////////////////////////
 
 int main(int argc, char *argv[])
 {
-	vector<Option> options;
 	if(!ParseArgs(argc, argv, options))
 	{
 		return err_args;
@@ -90,6 +113,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "No source file specified, exiting\n\n");
 		PrintUsage();
 		return err_nosource;
+	}
+
+	if(options[EMBEDBYTECODE])
+	{
+		printf("!");
 	}
 
 	if(!options[SMVERSION])
@@ -125,7 +153,6 @@ int main(int argc, char *argv[])
 		return err_cantwritetoheaderfile;
 	}
 
-	HLSLShader::OutputHeader(fileName.c_str());
 	int shadersCompiled = 0;
 	for(int i = 0; i < _countof(shaderTypes); ++i)
 	{
@@ -139,13 +166,108 @@ int main(int argc, char *argv[])
 			++shadersCompiled;
 		}
 	}
-	HLSLShader::OutputFooter(fileName.c_str());
 
 	if(shadersCompiled == 0)
 	{
 		fprintf(stderr, "No shader types specified - output file will be useless!\n");
 		return err_noshaderspecified;
 	}
+
+	// set up the Printer
+	// Output Header
+	HLSLShader::OutputHeader(fileName.c_str());
+
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputBlob();
+	}
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputConstBufferNamesAndOffsets();
+	}
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputSamplerNames();
+	}
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputResourceNames();
+	}
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputInputElements();
+	}
+	// Output Structure Header
+
+	using namespace Printer;
+
+	string name = GetFilename(options[SOURCE].arg);
+
+	OutputCommentLine("Shader struct");
+	OutputLine("struct %s : ShaderState", name.c_str());
+	OutputIndent("{");
+	OutputLine();
+	Indent();
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputHeaderFile();
+	}
+
+	OutputCommentLine("Members");
+
+	// now members
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		(*i).second->OutputMemberVariable();
+	}
+
+	OutputLine();
+	OutputCommentLine("Constructor");
+	OutputLine("%s()", name.c_str());
+	Indent("{");
+	OutputLine();
+	for(uint i = 0; i < NumShaderTypes; ++i)
+	{
+		char const *name = ShaderTypeDescs[i].name;
+		auto f = shaders.find((ShaderType)i);
+		if(f == shaders.end())
+		{
+			OutputLine("Shaders[%s] = null;", name);
+		}
+		else
+		{
+			OutputLine("Shaders[%s] = &%sShader;", name, name);
+		}
+	}
+	UnIndent("}");
+
+	OutputLine();
+	OutputCommentLine("Activate");
+	OutputLine("void Activate(ID3D11DeviceContext *context)");
+	Indent("{");
+	OutputLine();
+	// Activate
+	for(uint i = 0; i < NumShaderTypes; ++i)
+	{
+		auto f = shaders.find((ShaderType)i);
+		if(f == shaders.end())
+		{
+			OutputLine("context->%sSetShader(null, null, 0);", ShaderTypeDescs[i].refName);
+		}
+		else
+		{
+			OutputLine("%sShader.Activate(context);", ShaderTypeDescs[i].name);
+		}
+	}
+	UnIndent("}");
+	OutputLine();
+	OutputLine("void Activate_V(ID3D11DeviceContext *context) override");
+	Indent("{");
+	OutputLine();
+	OutputLine("Activate(context);");
+	UnIndent("}");
+	UnIndent("};");
+	HLSLShader::OutputFooter(fileName.c_str());
 
 	return success;
 }

@@ -5,72 +5,60 @@
 #include "RapidXML\xml_util.h"
 #include "Font_Shader.h"
 
+//////////////////////////////////////////////////////////////////////
+
 namespace
 {
 	using namespace DX;
 
 	linked_list<Font, &Font::mListNode> sAllFonts;
 	bool initialised = false;
-	Ptr<Shaders::Text::VS> vertexShader;
-	Ptr<Shaders::Text::PS> pixelShader;
-	Ptr<Shaders::Text::VertBuffer> vertexBuffer;
-	uint vertCount;
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct KerningValue
-	{
-		wchar otherChar;			// if the char before me was this
-		float amount;				// add this to the x cursor pos before drawing
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct Graphic
-	{
-		Vec2f drawOffset;			// add this to the cursor position before drawing it
-		Point2D position;				// top left on the texture page
-		Point2D size;					// size of graphic in pixels
-		int pageIndex;				// which page it's on
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct Glyph
-	{
-		float advance;				// advance the x cursor pos this much after drawing
-		wchar character;			// what character this Glyph is for
-
-		Graphic *imageTable;
-		int imageTableSize;
-
-		KerningValue *kerningTable;
-		int kerningTableSize;
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct Layer
-	{
-		Color color;
-		Vec2f offset;
-		bool measure;
-	};
-
-	Shaders::Text::InputVertex *currentVert = null;
-
-	void StartString()
-	{
-	}
-
-	void EndString()
-	{
-	}
-
-	void AddQuad(Font *f, Glyph *g)
-	{
-	}
+	Ptr<Shaders::Font> shader;
+	Ptr<Shaders::Font::VertBuffer> vertexBuffer;
+	Ptr<Sampler> sampler;
+	Ptr<Material> material;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+struct Font::KerningValue
+{
+	wchar otherChar;			// if the char before me was this
+	float amount;				// add this to the x cursor pos before drawing
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct Font::Graphic
+{
+	Vec2f drawOffset;			// add this to the cursor position before drawing it
+	Point2D position;				// top left on the texture page
+	Point2D size;					// size of graphic in pixels
+	int pageIndex;				// which page it's on
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct Font::Glyph
+{
+	float advance;				// advance the x cursor pos this much after drawing
+	wchar character;			// what character this Glyph is for
+
+	Graphic *imageTable;
+	int imageTableSize;
+
+	KerningValue *kerningTable;
+	int kerningTableSize;
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct Font::Layer
+{
+	Color color;
+	Vec2f offset;
+	bool measure;
+};
 
 //////////////////////////////////////////////////////////////////////
 
@@ -78,12 +66,63 @@ static void LoadShader()
 {
 	if(!initialised)
 	{
-		using namespace Shaders::Text;
-		vertexShader.reset(new VS());
-		pixelShader.reset(new PS());
-		vertexBuffer.reset(new VertBuffer(4096, null, DynamicUsage, Writeable));	// Map/UnMap...
+		shader.reset(new Shaders::Font());
+
+		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));	// Map/UnMap...
+
+		MaterialOptions o;
+		o.blend = BlendEnabled;
+		o.depth = DepthDisabled;
+		o.depthWrite = DepthWriteDisabled;
+		o.culling = CullingNone;
+		o.fillMode = FillModeSolid;
+		material.reset(new Material(o));
+
+		sampler.reset(new Sampler());
+
 		initialised = true;
 	}
+}
+
+static void PrepareToDraw(DrawList *d, int width, int height)
+{
+	Shaders::Font::PS::pConstants_t c;
+	Shaders::Font::VS::vConstants_t v;
+
+	c.Color = Float4(1, 1, 1, 1);	
+	v.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
+	
+	d->SetShader(shader.get(), vertexBuffer.get(), sizeof(Shaders::Font::InputVertex));
+	d->SetMaterial(*material.get());
+	d->SetPSConstantData(c, 0);
+	d->SetVSConstantData(v, 0);
+	d->SetPSSampler(*sampler.get());
+	d->BeginTriangleList();
+}
+
+static void AddQuad(DrawList *d, Texture *t, Vec2f pos, Vec2f size, Point2D const &uv, Point2D const &uvSize)
+{
+	using v = Shaders::Font::InputVertex;
+	Vec2f topRight(pos.x + size.x, pos.y);
+	Vec2f bottomLeft(pos.x, pos.y + size.y);
+	Vec2f bottomRight(pos + size);
+	float tw = t->FWidth();
+	float th = t->FHeight();
+	half left = uv.x / tw;	// Font util should prescale these...
+	half top = uv.y / th;
+	half right = (uv.x + uvSize.x) / tw;
+	half bottom = (uv.y + uvSize.y) / th;
+	d->AddVertex<v>({ pos, { left, top } });
+	d->AddVertex<v>({ topRight, { right, top } });
+	d->AddVertex<v>({ bottomLeft, { left, bottom} });
+	d->AddVertex<v>({ topRight, { right, top } });
+	d->AddVertex<v>({ bottomRight, { right, bottom } });
+	d->AddVertex<v>({ bottomLeft, { left, bottom} });
+}
+
+static void ExecuteDrawList(DrawList *d, ID3D11DeviceContext *context)
+{
+	d->Execute(context);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -113,8 +152,8 @@ namespace DX
 	void FontManager::CleanUp()
 	{
 		initialised = false;
-		vertexShader.reset();
-		pixelShader.reset();
+		material.reset();
+		shader.reset();
 		vertexBuffer.reset();
 	}
 
@@ -126,7 +165,7 @@ namespace DX
 		, mLayers(null)
 		, mKerningValues(null)
 		, mGraphics(null)
-		, mContext(null)
+		, mDrawList(null)
 	{
 		sAllFonts.push_back(this);
 	}
@@ -138,13 +177,12 @@ namespace DX
 		sAllFonts.remove(this);
 		for(int i = 0; i<mPageCount; ++i)
 		{
-			DX::Release(mPages[i]);
+			Delete(mPages[i]);
 		}
-		//DeleteArray(mPages);
-		//DeleteArray(mGlyphs);
-		//DeleteArray(mLayers);
-		//DeleteArray(mKerningValues);
-		//DeleteArray(mGraphics);
+		Delete(mGlyphs);
+		Delete(mLayers);
+		Delete(mKerningValues);
+		Delete(mGraphics);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -154,8 +192,11 @@ namespace DX
 		mName = ToLower(tstring(filename));
 
 		wstring buffer;
-		xml_doc *doc = LoadUTF8XMLFile(Format(TEXT("data\\%s.bitmapfont"), WideStringFromTString(filename)).c_str(), buffer);
-
+		xml_doc *doc = LoadUTF8XMLFile(Format(TEXT("%s.bitmapfont"), filename).c_str(), buffer);
+		if(doc == null)
+		{
+			return;
+		}
 		node *root = doc->first_node(L"BitmapFont");
 
 		if(root != null)
@@ -268,7 +309,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool Font::DrawChar(int layer, Vec2f &cursor, ID3D11DeviceContext *context, wchar c, Color color)
+	bool Font::DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color)
 	{
 		bool rc = false;
 		Map::const_iterator i = mGlyphMap.find(c);
@@ -278,18 +319,19 @@ namespace DX
 			if(layer < glyph.imageTableSize)
 			{
 				Graphic &graphic = glyph.imageTable[layer];
-				if(mSpriteList == null && mCurrentPageIndex != graphic.pageIndex)
+				if(mDrawList == null && mCurrentPageIndex != graphic.pageIndex)
 				{
 					Texture *t = mPages[graphic.pageIndex];
 					if(mCurrentPageIndex != -1)
 					{
-						spriteList.EndSpriteRun();
+						drawList->End();
 					}
-					spriteList.SetTexture(t);
-					spriteList.BeginSpriteRun();
+					drawList->SetPSTexture(*t);
+					drawList->BeginTriangleList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
-				spriteList.AddSpriteEx(cursor + graphic.drawOffset, Vec2f(graphic.size), graphic.position, graphic.position + graphic.size, color);
+				Texture *page = mPages[mCurrentPageIndex];
+				AddQuad(drawList, page, cursor + graphic.drawOffset, Vec2f(graphic.size), graphic.position, graphic.position + graphic.size);
 			}
 			cursor.x += glyph.advance;
 			rc = true;
@@ -299,7 +341,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Vec2f Font::MeasureChar(char c, Vec2f *offsetOf)
+	Vec2f Font::MeasureChar(wchar c, Vec2f *offsetOf)
 	{
 		Vec2f offset;
 		float right = 0;
@@ -539,54 +581,39 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(SpriteList &spriteList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
+	void Font::DrawString(DrawList *drawList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
 	{
-		assert(mSpriteList == null);
-		DrawStringInternal(&spriteList, text.c_str(), pos, horizAlign, vertAlign);
+		assert(mDrawList == null);
+		DrawStringInternal(drawList, text.c_str(), pos, horizAlign, vertAlign);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(SpriteList *spriteList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
+	void Font::DrawString(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
 	{
-		assert(mSpriteList == null);
-		DrawStringInternal(spriteList, text.c_str(), pos, horizAlign, vertAlign);
+		assert(mDrawList == null);
+		DrawStringInternal(drawList, text, pos, horizAlign, vertAlign);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(SpriteList &spriteList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		assert(mSpriteList == null);
-		DrawStringInternal(&spriteList, text, pos, horizAlign, vertAlign);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::DrawString(SpriteList *spriteList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		assert(mSpriteList == null);
-		DrawStringInternal(spriteList, text, pos, horizAlign, vertAlign);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::BeginMultipleStrings(SpriteList *spriteList)
+	void Font::BeginMultipleStrings(DrawList *drawList)
 	{
 		// Only single tpage fonts can get the benefit
 		assert(mPageCount == 1);
 
-		mSpriteList = spriteList;
-		mSpriteList->SetTexture(mPages[0]);
-		mSpriteList->BeginSpriteRun();
+		mDrawList = drawList;
+		mDrawList->End();
+		mDrawList->SetPSTexture(*mPages[0], 0);
+		mDrawList->BeginTriangleList();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void Font::EndMultipleStrings()
 	{
-		mSpriteList->EndSpriteRun();
-		mSpriteList = null;
+		mDrawList->End();
+		mDrawList = null;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -605,7 +632,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawStringInternal(SpriteList *spriteList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
+	void Font::DrawStringInternal(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
 	{
 		Vec2f drawOffset;
 		Vec2f offset;
@@ -614,7 +641,7 @@ namespace DX
 
 		mCurrentPageIndex = -1;
 
-		SpriteList *spriteListInternal = (mSpriteList != null) ? mSpriteList : spriteList;
+		DrawList *drawListInternal = (mDrawList != null) ? mDrawList : drawList;
 
 		switch(vertAlign)
 		{
@@ -679,7 +706,7 @@ namespace DX
 			Vec2f linkBottomRight;
 			int linkChars = 0;
 
-			Color linkColor = FromRGB(64, 192, 224);
+			Color linkColor = Color(64, 192, 224);
 
 			UTF8Decoder decoder(text);
 			wchar c;
@@ -761,13 +788,13 @@ namespace DX
 					++linkChars;
 					col = linkColor;
 				}
-				DrawChar(i, cursor, *spriteListInternal, c, col);
+				DrawChar(i, cursor, drawListInternal, c, col);
 			}
 		}
 		pos = cursor;
-		if(mSpriteList == null)
+		if(mDrawList == null)
 		{
-			spriteListInternal->EndSpriteRun();
+			drawListInternal->End();
 		}
 	}
 

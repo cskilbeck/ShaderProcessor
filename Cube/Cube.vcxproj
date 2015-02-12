@@ -197,10 +197,28 @@
     <ProjectReference Include="..\DX\DX.vcxproj">
       <Project>{73884195-8231-4ad9-80ed-8f41d03f4160}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\ShaderProcessor\ShaderProcessor.vcxproj">
+      <Project>{9f563558-ce4f-431e-bb85-7ffd22cfe562}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Colored.shader" />
+    <SPOCK Include="Colored.shader">
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </GeometryShaderFunction>
+    </SPOCK>
     <SPOCK Include="Phong.shader" />
+    <SPOCK Include="Sprite.shader">
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
+    </SPOCK>
     <SPOCK Include="UI.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

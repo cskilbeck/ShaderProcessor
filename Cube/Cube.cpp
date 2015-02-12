@@ -1,8 +1,13 @@
 //////////////////////////////////////////////////////////////////////
 // Aspect Ratio
-// SpriteList / Geometry Shader support
+// SpriteList
 // Font
 // Fix ViewMatrix Axes Y/Z up etc
+
+// Split up DX.lib:
+// DXBase: enough for ShaderProcessor
+// DXUtil: everything else
+// DX: DXBase + DXUtil
 
 #include "stdafx.h"
 
@@ -68,10 +73,10 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 void MyDXWindow::CreateGrid()
 {
-	using namespace Shaders::Colored;
+	using namespace Shaders;
 
-	gridVB.reset(new VertBuffer(806, null, DynamicUsage, Writeable));
-	InputVertex *v = gridVB->Map(Context());
+	gridVB.reset(new Colored::VertBuffer(806, null, DynamicUsage, Writeable));
+	Colored::InputVertex *v = gridVB->Map(Context());
 	for(int x = -1000; x <= 1000; x += 10)
 	{
 		float a = (float)x;
@@ -98,10 +103,10 @@ void MyDXWindow::CreateGrid()
 
 void MyDXWindow::CreateOctahedron()
 {
-	using namespace Shaders::Colored;
+	using namespace Shaders;
 
-	octahedronVB.reset(new VertBuffer(6));
-	InputVertex *v = octahedronVB->Data();
+	octahedronVB.reset(new Colored::VertBuffer(6));
+	Colored::InputVertex *v = octahedronVB->Data();
 	float f = sqrtf(2) / 2.0f;
 	v[0] = { {  0,  0,  1 }, 0xffffffff };
 	v[1] = { { -f,  f,  0 }, 0xffffffff };
@@ -133,29 +138,34 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	vsSolidColor.reset(new Shaders::Colored::VS());
-	psSolidColor.reset(new Shaders::Colored::PS());
+	//font = FontManager::Load(TEXT("data\\fixedsys"));
+	font = null;
+
+	coloredShader.reset(new Shaders::Colored());
+
+	Shaders::Colored c;
+	c.VertexShader.VertConstants.Commit(Context());
+	c.Activate(Context());
 
 	CreateGrid();
 	CreateOctahedron();
 
-	vsPhong.reset(new Shaders::Phong::VS());
-	psPhong.reset(new Shaders::Phong::PS());
+	phongShader.reset(new Shaders::Phong());
 
 	texture.reset(new Texture(TEXT("temp.jpg")));
 	sampler.reset(new Sampler());
 
-	psPhong->picTexture = texture.get();
-	psPhong->tex1Sampler = sampler.get();
+	phongShader->PixelShader.picTexture = texture.get();
+	phongShader->PixelShader.tex1Sampler = sampler.get();
 
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
-	psPhong->Light.lightPos = Float3(0, -15, 0);
-	psPhong->Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	psPhong->Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	psPhong->Light.specColor = Float3(1, 1, 0.8f);
-	psPhong->Light.Commit(Context());
+	phongShader->PixelShader.Light.lightPos = Float3(0, -15, 0);
+	phongShader->PixelShader.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
+	phongShader->PixelShader.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	phongShader->PixelShader.Light.specColor = Float3(1, 1, 0.8f);
+	phongShader->PixelShader.Light.Commit(Context());
 
 	MaterialOptions o;
 	o.blend = BlendDisabled;
@@ -165,13 +175,12 @@ bool MyDXWindow::OnCreate()
 	o.depthWrite = DepthWriteDisabled;
 	blendEnabled.Create(o);
 
-	vsUI.reset(new Shaders::UI::VS());
-	psUI.reset(new Shaders::UI::PS());
+	MaterialOptions uiOptions;
+
+	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12));
 	uiTexture.reset(new Texture(TEXT("temp.png")));
 	uiSampler.reset(new Sampler());
-
-	MaterialOptions uiOptions;
 	uiOptions.blend = BlendEnabled;
 	uiOptions.depth = DepthDisabled;
 	uiOptions.culling = CullingNone;
@@ -179,12 +188,15 @@ bool MyDXWindow::OnCreate()
 	uiOptions.depthWrite = DepthWriteDisabled;
 	uiMaterial.Create(uiOptions);
 
-	vsUI->vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
-	vsUI->vConstants.Commit(Context());
-	psUI->pConstants.Color = Float4(1, 1, 1, 1);
-	psUI->pConstants.Commit(Context());
-	psUI->page = uiTexture.get();
-	psUI->smplr = uiSampler.get();
+	uiShader->VertexShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	uiShader->VertexShader.vConstants.Commit(Context());
+	uiShader->PixelShader.pConstants.Color = Float4(1, 1, 1, 1);
+	uiShader->PixelShader.pConstants.Commit(Context());
+	uiShader->PixelShader.page = uiTexture.get();
+	uiShader->PixelShader.smplr = uiSampler.get();
+
+	spriteShader.reset(new Shaders::Sprite());
+	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2));
 
 	return true;
 }
@@ -235,48 +247,44 @@ void MyDXWindow::OnDraw()
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
 
-	blendDisabled.Activate(Context());
-
-	Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-	vsPhong->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-	vsPhong->VertConstants.ModelMatrix = Transpose(modelMatrix);
-	vsPhong->VertConstants.Commit(Context());
-
-	psPhong->Camera.cameraPos = camera.position;
-	psPhong->Camera.Commit(Context());
-
-	vsPhong->Activate(Context());
-	psPhong->Activate(Context());
-	cubeVerts->Activate(Context());
-	cubeIndices->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
-
-	modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-	modelMatrix *= TranslationMatrix(Vec4(psPhong->Light.lightPos));
-	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-	vsSolidColor->VertConstants.Commit(Context());
-
-	vsSolidColor->Activate(Context());
-	psSolidColor->Activate(Context());
-	octahedronVB->Activate(Context());
-	octahedronIB->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
-
-	vsSolidColor->VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
-	vsSolidColor->VertConstants.Commit(Context());
-
-	blendEnabled.Activate(Context());
-
-	gridVB->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Context()->Draw(gridVB->Count(), 0);
+	{
+		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
+		Shaders::Phong::VS &vs = phongShader->VertexShader;
+		Shaders::Phong::PS &ps = phongShader->PixelShader;
+		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
+		vs.VertConstants.Commit(Context());
+		ps.Camera.cameraPos = camera.position;
+		ps.Camera.Commit(Context());
+		phongShader->Activate(Context());
+		cubeVerts->Activate(Context());
+		cubeIndices->Activate(Context());
+		blendDisabled.Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
+	}
 
 	{
-		using v = Shaders::UI::InputVertex;
-		Shaders::UI::PS::pConstants_t c;
-		drawList.SetShader(vsUI.get(), psUI.get(), UIVerts.get(), sizeof(v));
+		Shaders::Colored::VS &vs = coloredShader->VertexShader;
+		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
+		modelMatrix *= TranslationMatrix(Vec4(phongShader->PixelShader.Light.lightPos));
+		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vs.VertConstants.Commit(Context());
+		coloredShader->Activate(Context());
+		octahedronVB->Activate(Context());
+		octahedronIB->Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
+		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
+		vs.VertConstants.Commit(Context());
+		blendEnabled.Activate(Context());
+		gridVB->Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		Context()->Draw(gridVB->Count(), 0);
+	}
+
+	{
+		drawList.SetShader(uiShader.get(), UIVerts.get(), sizeof(Shaders::UI::InputVertex));
 		drawList.SetMaterial(uiMaterial);
 
 		float w = 100 + sinf(mFrame * 0.2f) * 30;
@@ -286,16 +294,20 @@ void MyDXWindow::OnDraw()
 		float x1 = x0 + w;
 		float y1 = y0 + h;
 
+		Shaders::UI::PS::pConstants_t c;
 		c.Color = Float4(1, 1, 1, sinf((float)mFrame * 0.2f) * 0.5f + 0.5f);
-		drawList.SetPSConstantData(c, psUI->pConstants.Index());
-		drawList.BeginTriangleList();
-		drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
-		drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
-		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-		drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
-		drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
-		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-		drawList.End();
+		drawList.SetPSConstantData(c, uiShader->PixelShader.pConstants.Index());
+		{
+			using v = Shaders::UI::InputVertex;
+			drawList.BeginTriangleList();
+			drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
+			drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
+			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+			drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
+			drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
+			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+			drawList.End();
+		}
 
 		w = 100 + sinf(mFrame * 0.1f) * 30;
 		h = 200 + sinf(mFrame * 0.4f) * 30;
@@ -305,30 +317,54 @@ void MyDXWindow::OnDraw()
 		y1 = y0 + h;
 
 		c.Color = Float4(1, 1, 1, 1);
-		drawList.SetPSConstantData(c, psUI->pConstants.Index());
-		drawList.BeginTriangleList();
-		drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
-		drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
-		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-		drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
-		drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
-		drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-		drawList.End();
+		drawList.SetPSConstantData(c, uiShader->PixelShader.pConstants.Index());
+		{
+			using v = Shaders::UI::InputVertex;
+			drawList.BeginTriangleList();
+			drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
+			drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
+			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+			drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
+			drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
+			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
+			drawList.End();
+		}
 		drawList.Execute(Context());
 	}
+
+	spriteShader->GeometryShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	spriteShader->GeometryShader.vConstants.Commit(Context());
+	spriteShader->Activate(Context());
+	Shaders::Sprite::InputVertex *v = spriteVerts->Data();
+	v[0].Position = { 320, 240 }; v[0].Size = { 50, 100 }; v[0].Color = 0xffffffff;
+	v[1].Position = { 520, 140 }; v[1].Size = { 100, 100 }; v[1].Color = 0xff0000ff;
+	spriteVerts->Commit(Context());
+	spriteVerts->Activate(Context());
+	spriteShader->Activate(Context());
+	uiMaterial.Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	Context()->Draw(spriteVerts->Count(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void MyDXWindow::OnDestroy()
 {
-	vsSolidColor.reset();
-	psSolidColor.reset();
-	vsPhong.reset();
-	psPhong.reset();
+	coloredShader.reset();
+	phongShader.reset();
 	texture.reset();
 	sampler.reset();
 	cubeVerts.reset();
 	blendEnabled.Release();
 	blendDisabled.Release();
+
+	uiShader.reset();
+	UIVerts.reset();
+	uiTexture.reset();
+	uiSampler.reset();
+	uiMaterial.Release();
+	Release(font);
+
+	spriteShader.reset();
+	spriteVerts.reset();
 }

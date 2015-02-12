@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 
-#include "DX.h"
+#include "DXBase.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -88,7 +88,6 @@ namespace DX
 		File f;
 		if(!f.Open(filename))
 		{
-			ErrorMsgBox(Format(TEXT("Error opening %s"), filename).c_str());
 			return false;
 		}
 

@@ -191,12 +191,11 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 	if(Defaults == null)
 	{
 		OutputComment("no defaults for %s", mDesc.Name);
-		OutputLine();
 	}
 	else
 	{
 		OutputLine("// %s defaults\n", mDesc.Name);
-		OutputLine("extern uint32 ALIGNED(16) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
+		OutputLine("extern uint32 __declspec(align(16)) WEAKSYM %s_%s_Defaults[%d] =", shaderName.c_str(), mDesc.Name, mDesc.Size / sizeof(uint32));
 		OutputIndent("{");
 		Indent();
 		sep = "";

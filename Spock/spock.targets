@@ -18,7 +18,7 @@
           AfterTargets="$(SPOCKAfterTargets)"
           Condition="'@(SPOCK)' != ''"
           Outputs="%(SPOCK.HeaderFile)"
-          Inputs="%(SPOCK.Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile)"
+          Inputs="%(SPOCK.Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile);$(SolutionDir)Spock\ShaderProcessor.exe"
           DependsOnTargets="_SelectedFiles">
 
     <ItemGroup Condition="'@(SelectedFiles)' != ''">
@@ -44,11 +44,12 @@
            Inputs="%(SPOCK.Inputs)"
            VertexShaderFunction="%(SPOCK.VertexShaderFunction)"
            PixelShaderFunction="%(SPOCK.PixelShaderFunction)"
+           GeometryShaderFunction="%(SPOCK.GeometryShaderFunction)"
            HeaderFile="%(SPOCK.HeaderFile)"
            EmbedObject="%(SPOCK.EmbedObject)"
+           ShaderModel="%(SPOCK.ShaderModel)"
            GenerateDebugInformation="%(SPOCK.GenerateDebugInformation)"
            DisableOptimizer="%(SPOCK.DisableOptimizer)"
-           ShaderModel="%(SPOCK.ShaderModel)"
            IncludePaths="%(SPOCK.IncludePaths)"
            WarnOnError="%(SPOCK.WarnOnError)"
            CommandLineTemplate="%(SPOCK.CommandLineTemplate)"

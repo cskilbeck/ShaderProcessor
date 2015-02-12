@@ -11,4 +11,5 @@ using namespace DX;
 #include "Phong_Shader.h"
 #include "Colored_Shader.h"
 #include "UI_Shader.h"
+#include "Sprite_Shader.h"
 #include "Cube.h"

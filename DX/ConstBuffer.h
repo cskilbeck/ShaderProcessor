@@ -43,7 +43,7 @@ namespace DX
 			{
 				memset(this, 0, sizeof(definition));
 			}
-			DXI(ConstantBuffer<definition>::Create(1, (definition *)this));
+			DXI(ConstantBuffer<definition>::Create(1, (definition *)this, DefaultUsage, NotCPUAccessible));
 			parent->mConstBuffers.push_back(this);
 			parent->mConstBufferPointers.push_back(mBuffer);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);

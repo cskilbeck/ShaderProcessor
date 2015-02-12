@@ -4,6 +4,17 @@
 
 //////////////////////////////////////////////////////////////////////
 
+enum ShaderType
+{
+	Vertex = 0,
+	Hull = 1,
+	Domain = 2,
+	Geometry = 3,
+	Pixel = 4,
+	Compute = 5,
+	NumShaderTypes = 6
+};
+
 enum StorageType
 {
 	Float_type,
@@ -21,18 +32,6 @@ enum StorageType
 	Typeless32_type,
 	Typeless16_type,
 	Typeless8_type
-};
-
-//////////////////////////////////////////////////////////////////////
-
-enum ShaderType
-{
-	Vertex = 0,
-	Hull = 1,
-	Domain = 2,
-	Geometry = 3,
-	Pixel = 4,
-	Compute = 5
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -220,6 +219,9 @@ struct HLSLShader
 	HLSLShader(tstring const &filename);
 	virtual ~HLSLShader();
 
+	void OutputData();
+	void OutputStruct();
+
 	void OutputHeaderFile();
 	void OutputConstBufferNamesAndOffsets();
 	void OutputResourceNames();
@@ -232,8 +234,10 @@ struct HLSLShader
 	void OutputInputElements();
 	void OutputInputStruct();
 	void OutputBlob();
+	void OutputMemberVariable();
 
 	string Name() const;
+	string RefName() const;
 	char const *ShaderTypeName() const;
 	void *GetConstantBuffer(char const *name);
 
@@ -276,9 +280,16 @@ static inline int GetIndex(string const &name, HLSLShader::IntMap const &map)
 
 //////////////////////////////////////////////////////////////////////
 
-inline string HLSLShader::Name() const
+inline string HLSLShader::RefName() const
 {
 	return string(mShaderTypeDesc.refName);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+inline string HLSLShader::Name() const
+{
+	return mName + "_" + string(mShaderTypeDesc.refName);
 }
 
 //////////////////////////////////////////////////////////////////////

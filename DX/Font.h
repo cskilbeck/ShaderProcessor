@@ -6,33 +6,6 @@
 
 namespace DX
 {
-	struct RefCounted
-	{
-		RefCounted()
-			: mRefCount(1)
-		{
-		}
-
-		virtual ~RefCounted()
-		{
-		}
-
-		void AddRef()
-		{
-			++mRefCount;
-		}
-
-		void Release()
-		{
-			if(--mRefCount == 0)
-			{
-				delete this;
-			}
-		}
-
-		int mRefCount;
-	};
-
 	struct Font : RefCounted
 	{
 		struct Link
@@ -57,20 +30,20 @@ namespace DX
 			VBottom = 6
 		};
 
-		bool DrawChar(int layer, Vec2f &cursor, ID3D11DeviceContext *context, wchar c, Color color);
+		bool DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color);
 		Vec2f MeasureChar(wchar c, Vec2f *offsetOf = null);
-		Vec2f MeasureString(wchar const *text, Vec2f *offset = null, vector<Link> *links = null) const;
+		Vec2f MeasureString(char const *text, Vec2f *offset = null, vector<Link> *links = null) const;
 		int GetHeight() const;
 		float GetBaseline() const;
-		wstring WrapText(wstring txt, uint pixelWidth, wstring lineBreak);
+		string WrapText(string txt, uint pixelWidth, string lineBreak);
 
-		void DrawString(ID3D11DeviceContext *context, wstring const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawString(ID3D11DeviceContext *context, wchar const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
+		void DrawString(DrawList *drawList, wstring const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
+		void DrawString(DrawList *drawList, wchar const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
 
-		void DrawString(ID3D11DeviceContext *context, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawString(ID3D11DeviceContext *context, char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
+		void DrawString(DrawList *drawList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
+		void DrawString(DrawList *drawList, char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
 
-		void BeginMultipleStrings(ID3D11DeviceContext *context);
+		void BeginMultipleStrings(DrawList *drawList);
 		void DrawStringMultiple(wstring const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
 		void DrawStringMultiple(wchar const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
 		void DrawStringMultiple(string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
@@ -88,7 +61,7 @@ namespace DX
 
 		friend struct FontManager;
 
-		void DrawStringInternal(ID3D11DeviceContext *context, wchar const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign);
+		void DrawStringInternal(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign);
 
 		void LoadFromFile(tchar const *filename);
 
@@ -115,7 +88,7 @@ namespace DX
 		Layer *					mLayers;
 		KerningValue *			mKerningValues;
 		Graphic *				mGraphics;
-		ID3D11DeviceContext *	mContext;
+		DrawList *				mDrawList;
 	};
 
 	//////////////////////////////////////////////////////////////////////

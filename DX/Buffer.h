@@ -192,14 +192,14 @@ namespace DX
 
 		void Set(ID3D11DeviceContext *context, T *data)
 		{
-			Set((byte *)data);
+			TypelessBuffer::Set(content, (byte *)data);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		T &operator[](uint index)
 		{
-			return *(T *)(mData + index * sizeof(T));
+			return ((T *)mData)[index];
 		}
 
 		//////////////////////////////////////////////////////////////////////

@@ -9,9 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
-    <Filter Include="HLSL">
-      <UniqueIdentifier>{26ca7db9-be75-4a77-82b6-0544f6fe3d43}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -73,11 +70,5 @@
     <ClCompile Include="HLSLShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Phong.shader">
-      <Filter>HLSL</Filter>
-    </None>
-    <None Include="Font.shader" />
   </ItemGroup>
 </Project>

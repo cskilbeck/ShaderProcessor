@@ -6,6 +6,19 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
+
+	enum ShaderType
+	{
+		Vertex = 0,
+		Hull = 1,
+		Domain = 2,
+		Geometry = 3,
+		Pixel = 4,
+		Compute = 5,
+		NumShaderTypes = 6
+	};
+
 	struct Shader
 	{
 		char const **						mConstBufferNames;
@@ -90,4 +103,10 @@ namespace DX
 
 	};
 
+	struct ShaderState : Aligned16
+	{
+		virtual void Activate_V(ID3D11DeviceContext *context) = 0;
+
+		Shader *Shaders[NumShaderTypes];
+	};
 }

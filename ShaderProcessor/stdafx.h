@@ -3,7 +3,7 @@
 
 #include "targetver.h"
 
-#include "DX.h"
+#include "DXBase\DXBase.h"
 
 #include "printer.h"
 #include "TypeDefinition.h"

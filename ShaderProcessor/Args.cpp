@@ -72,9 +72,14 @@ option::Descriptor const usage[] =
 	{ SOURCE, 0, "", "source", Arg::NonEmpty, "--source=sourceFile (required). Specify the source HLSL file." },
 	{ VERTEXMAIN, 0, "", "vs", Arg::NonEmpty, "--vs=vsMainFunction (optional). Specify a Vertex Shader main function, if there is one." },
 	{ PIXELMAIN, 0, "", "ps", Arg::NonEmpty, "--ps=psMainFunction (optional). Specify a Pixel Shader main function, if there is one." },
+	{ GEOMETRYMAIN, 0, "", "gs", Arg::NonEmpty, "--gs=gsMainFunction (optional). Specify a Geometry Shader main function, if there is one." },
 	{ SMVERSION, 0, "", "sm", Arg::ShaderModel, "--sm=shadermodel (eg 4_0)(required). Specify the Shader Model (4_0, 4_1, 5_0, 4_0_level_9_1, 4_0_level_9_3)" },
 	{ HEADER, 0, "", "header", Arg::NonEmpty, "--header=headerFile. Where to output the header file to. If not specified, goes to stdout." },
-	{ EMBEDBYTECODE, 0, "", "embedbytecode", Arg::Flag, "--embedbytecode (optional). Embed the shader byte code in the header file." },
+	{ EMBEDBYTECODE, 0, "", "embedObject", Arg::Optional, "--embedbytecode (optional). Embed the shader byte code in the header file." },
+	{ DISABLEOPTIMIZATION, 0, "", "disableOptimization", Arg::Optional, "--disableOptimization (optional). Turn off the Shader Compiler Optimizer" },
+	{ INCLUDEDEBUGINFO, 0, "", "includeDebugInfo", Arg::Optional, "--includeDebugInfo (optional). Switch this on to enable graphics debugging in Visual Studio"  },
+	{ ERRORONWARNING, 0, "", "errorOnWarning", Arg::Optional, "--errorOnWarning (optional). Return an error code if warnings are generated" },
+	{ INCLUDEPATH, 0, "", "includePath", Arg::NonEmpty, "--includePath=\"path1;path2\" (optional). Set the include path" },
 	{ 0, 0, null, null, null, null }
 };
 

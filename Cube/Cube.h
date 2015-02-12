@@ -10,15 +10,13 @@ struct MyDXWindow: DXWindow
 
 	FPSCamera camera;
 
-	Ptr<Shaders::Phong::VS> vsPhong;
-	Ptr<Shaders::Phong::PS> psPhong;
+	Ptr<Shaders::Phong> phongShader;
 	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
+	Ptr<IndexBuffer<uint16>> cubeIndices;
 	Ptr<Texture> texture;
 	Ptr<Sampler> sampler;
-	Ptr<IndexBuffer<uint16>> cubeIndices;
 
-	Ptr<Shaders::Colored::VS> vsSolidColor;
-	Ptr<Shaders::Colored::PS> psSolidColor;
+	Ptr<Shaders::Colored> coloredShader;
 	Ptr<Shaders::Colored::VertBuffer> gridVB;
 	Ptr<Shaders::Colored::VertBuffer> octahedronVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
@@ -31,12 +29,15 @@ struct MyDXWindow: DXWindow
 	Vec4f cubeRot;
 
 	DrawList drawList;
-	Ptr<Shaders::UI::VS> vsUI;
-	Ptr<Shaders::UI::PS> psUI;
+	Ptr<Shaders::UI> uiShader;
 	Ptr<Shaders::UI::VertBuffer> UIVerts;
 	Ptr<Texture> uiTexture;
 	Ptr<Sampler> uiSampler;
 	Material uiMaterial;
+	Font *font;
+
+	Ptr<Shaders::Sprite> spriteShader;
+	Ptr<Shaders::Sprite::VertBuffer> spriteVerts;
 
 	//////////////////////////////////////////////////////////////////////
 

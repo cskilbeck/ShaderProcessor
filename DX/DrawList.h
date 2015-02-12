@@ -12,7 +12,7 @@ namespace DX
 		~DrawList();
 
 		void Reset();
-		void SetShader(VertexShader *vs, PixelShader *ps, TypelessBuffer *vb, uint vertexSize);
+		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetMaterial(Material &m);
 		void SetPSTexture(Texture &t, uint index = 0);
 		void SetPSSampler(Sampler &s, uint index = 0);

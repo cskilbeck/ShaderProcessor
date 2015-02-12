@@ -15,7 +15,7 @@ namespace DX
 		};
 	};
 
-	template<> struct IndexBufferFormat < uint16 >
+	template<> struct IndexBufferFormat<uint16>
 	{
 		enum
 		{
@@ -23,7 +23,7 @@ namespace DX
 		};
 	};
 
-	template<> struct IndexBufferFormat < uint32 >
+	template<> struct IndexBufferFormat<uint32>
 	{
 		enum
 		{
@@ -33,7 +33,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct IndexBuffer: Buffer < T >
+	template <typename T> struct IndexBuffer: Buffer<T>
 	{
 		static_assert(IndexBufferFormat<T>::format != DXGI_FORMAT_UNKNOWN, "Only uint16 or uint32 index buffers are supported");
 

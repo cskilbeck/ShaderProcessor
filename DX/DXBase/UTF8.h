@@ -13,7 +13,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	extern const uint8 utf8d[];
+	//extern const uint8 utf8d[];
 
 	struct UTF8Decoder
 	{
@@ -33,39 +33,6 @@ namespace DX
 
 		// returns: 0 = end of stream, 0xffffffff = decode error, else decoded unicode character
 		// calling Next() after it has returned 0 or -1 is undefined (crash)
-		wchar Next()
-		{
-			char b;
-			for(;;)
-			{
-				if(inputSize == 0)
-				{
-					return 0;
-				}
-
-				--inputSize;
-				currentPtr = ptr;
-				b = *ptr++;
-				if(b == 0)
-				{
-					return 0;
-				}
-
-				uint8 data = utf8d[(uint8)b];
-				stat = utf8d[256 + (stat << 4) + (data >> 4)];
-				b = (b ^ (uint8)(data << 4));
-				unic = (unic << 6) | b;
-				if(stat == 0)
-				{
-					wchar temp = unic;
-					unic = 0;
-					return temp;
-				}
-				if(stat == 1)
-				{
-					return (wchar)-1;
-				}
-			}
-		}
+		wchar Next();
 	};
 }

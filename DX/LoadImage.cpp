@@ -44,7 +44,7 @@
 #include <memory>
 #include <string>
 
-#include "Util.h"
+#include "DXBase\Util.h"
 #include "LoadImage.h"
 
 #if (_WIN32_WINNT >= 0x0602 /*_WIN32_WINNT_WIN8*/) && !defined(DXGI_1_2_FORMATS)

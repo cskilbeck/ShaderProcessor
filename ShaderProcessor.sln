@@ -5,15 +5,20 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShaderProcessor", "ShaderProcessor\ShaderProcessor.vcxproj", "{9F563558-CE4F-431E-BB85-7FFD22CFE562}"
 	ProjectSection(ProjectDependencies) = postProject
-		{73884195-8231-4AD9-80ED-8F41D03F4160} = {73884195-8231-4AD9-80ED-8F41D03F4160}
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10} = {8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX", "DX\DX.vcxproj", "{73884195-8231-4AD9-80ED-8F41D03F4160}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10} = {8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cube", "Cube\Cube.vcxproj", "{69F7A2E0-9831-4746-830C-039D2B360005}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562} = {9F563558-CE4F-431E-BB85-7FFD22CFE562}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DXBase", "DX\DXBase\DXBase.vcxproj", "{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,10 +34,12 @@ Global
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Debug|Win32.ActiveCfg = Debug|Win32
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Debug|Win32.Build.0 = Debug|Win32
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Debug|x64.ActiveCfg = Debug|x64
+		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Debug|x64.Build.0 = Debug|x64
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|Any CPU.ActiveCfg = Release|Win32
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|Win32.ActiveCfg = Release|Win32
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|Win32.Build.0 = Release|Win32
 		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|x64.ActiveCfg = Release|x64
+		{9F563558-CE4F-431E-BB85-7FFD22CFE562}.Release|x64.Build.0 = Release|x64
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|Win32.ActiveCfg = Debug|Win32
 		{73884195-8231-4AD9-80ED-8F41D03F4160}.Debug|Win32.Build.0 = Debug|Win32
@@ -53,6 +60,16 @@ Global
 		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|Win32.Build.0 = Release|Win32
 		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|x64.ActiveCfg = Release|x64
 		{69F7A2E0-9831-4746-830C-039D2B360005}.Release|x64.Build.0 = Release|x64
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Debug|Win32.Build.0 = Debug|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Debug|x64.ActiveCfg = Debug|x64
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Debug|x64.Build.0 = Debug|x64
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Release|Any CPU.ActiveCfg = Release|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Release|Win32.ActiveCfg = Release|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Release|Win32.Build.0 = Release|Win32
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Release|x64.ActiveCfg = Release|x64
+		{8A5D13CD-5BE9-43C1-977C-0BCE4CF6CA10}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

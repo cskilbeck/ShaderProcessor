@@ -105,35 +105,33 @@ namespace
 			eType = it_Shader
 		};
 
-		VertexShader *mVertexShader;
-		PixelShader *mPixelShader;
+		ShaderState *mShader;
 		TypelessBuffer *mVertexBuffer;
 		uint mVertexSize;
 
 		void SetPSTexture(TextureItem *t)
 		{
-			((Shader *)mPixelShader)->mTextures[t->mIndex] = t->mTexture;
+			mShader->Shaders[Pixel]->mTextures[t->mIndex] = t->mTexture;
 		}
 
 		void SetPSSampler(SamplerItem *s)
 		{
-			((Shader *)mPixelShader)->mSamplers[s->mIndex] = s->mSampler;
+			mShader->Shaders[Pixel]->mSamplers[s->mIndex] = s->mSampler;
 		}
 
 		void SetVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
-			mVertexShader->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(VSConstBufferItem));
+			mShader->Shaders[Vertex]->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(VSConstBufferItem));
 		}
 
 		void SetPSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
-			mPixelShader->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(PSConstBufferItem));
+			mShader->Shaders[Pixel]->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(PSConstBufferItem));
 		}
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			mVertexShader->Activate(context);
-			mPixelShader->Activate(context);
+			mShader->Activate_V(context);
 			mVertexBuffer->Commit(context);
 			uint stride = mVertexSize;
 			uint offset = 0;
@@ -223,6 +221,19 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertSize)
+	{
+		ShaderItem *i = Add<ShaderItem>();
+		i->mShader = shader;
+		i->mVertexBuffer = vb;
+		i->mVertexSize = vertSize;
+		mVertPointer = vb->Data();
+		mVertCount = 0;
+		mVertBase = 0;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::SetMaterial(Material &m)
 	{
 		Add<MaterialItem>()->mMaterial = &m;
@@ -244,20 +255,6 @@ namespace DX
 		SamplerItem *si = Add<SamplerItem>();
 		si->mSampler = &s;
 		si->mIndex = index;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetShader(VertexShader *vs, PixelShader *ps, TypelessBuffer *vb, uint vertSize)
-	{
-		ShaderItem *i = Add<ShaderItem>();
-		i->mVertexShader = vs;
-		i->mPixelShader = ps;
-		i->mVertexBuffer = vb;
-		i->mVertexSize = vertSize;
-		mVertPointer = vb->Data();
-		mVertCount = 0;
-		mVertBase = 0;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -304,9 +301,12 @@ namespace DX
 	void DrawList::End()
 	{
 		DrawCallItem *d = (DrawCallItem *)mCurrentDrawCallItem;
-		d->mCount = mVertCount;
-		mVertBase += mVertCount;
-		mVertCount = 0;
+		if(d != null)
+		{
+			d->mCount = mVertCount;
+			mVertBase += mVertCount;
+			mVertCount = 0;
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -3,7 +3,7 @@
 // Allow creation without a window (headless: CreateDevice())
 // Specify HW or reference driver
 
-#include "DX.h"
+#include "DXBase.h"
 
 //////////////////////////////////////////////////////////////////////
 

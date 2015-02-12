@@ -35,6 +35,20 @@ namespace DX
 
 	struct Material
 	{
+		Material()
+		{
+		}
+
+		Material(MaterialOptions const &options)
+		{
+			DXT(Create(options));
+		}
+
+		~Material()
+		{
+			Release();
+		}
+
 		HRESULT Create(MaterialOptions const &options)
 		{
 			CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
