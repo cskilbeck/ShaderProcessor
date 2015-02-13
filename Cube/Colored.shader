@@ -2,7 +2,7 @@
 
 cbuffer VertConstants
 {
-	matrix TransformMatrix = matrix(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+	matrix TransformMatrix;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -54,7 +54,7 @@ namespace
 		};
 
 		Texture *mTexture;
-		uint mIndex;
+		uint32 mIndex;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -67,33 +67,35 @@ namespace
 		};
 
 		Sampler *mSampler;
-		uint mIndex;
+		uint32 mIndex;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct VSConstBufferItem: Item
+	struct ConstBufferItem: Item
+	{
+		uint32 mIndex;
+		uint32 mSize;
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	struct VSConstBufferItem: ConstBufferItem
 	{
 		enum
 		{
 			eType = it_VSConstants
 		};
-
-		uint32 mIndex;
-		uint32 mSize;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct PSConstBufferItem: Item
+	struct PSConstBufferItem: ConstBufferItem
 	{
 		enum
 		{
 			eType = it_PSConstants
 		};
-
-		uint32 mIndex;
-		uint32 mSize;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -107,26 +109,41 @@ namespace
 
 		ShaderState *mShader;
 		TypelessBuffer *mVertexBuffer;
-		uint mVertexSize;
+		uint32 mVertexSize;
+
+		void SetTexture(ShaderType shaderType, TextureItem *t)
+		{
+			mShader->Shaders[shaderType]->mTextures[t->mIndex] = t->mTexture;
+		}
+
+		void SetSampler(ShaderType shaderType, SamplerItem *s)
+		{
+			mShader->Shaders[shaderType]->mSamplers[s->mIndex] = s->mSampler;
+		}
+
+		void SetConstants(ShaderType shaderType, ConstBufferItem *item, ID3D11DeviceContext *context)
+		{
+			mShader->Shaders[shaderType]->mConstBuffers[item->mIndex]->Set(context, (byte *)item + sizeof(ConstBufferItem));
+		}
 
 		void SetPSTexture(TextureItem *t)
 		{
-			mShader->Shaders[Pixel]->mTextures[t->mIndex] = t->mTexture;
+			SetTexture(Pixel, t);
 		}
 
 		void SetPSSampler(SamplerItem *s)
 		{
-			mShader->Shaders[Pixel]->mSamplers[s->mIndex] = s->mSampler;
+			SetSampler(Pixel, s);
 		}
 
 		void SetVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
-			mShader->Shaders[Vertex]->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(VSConstBufferItem));
+			SetConstants(Vertex, i, context);
 		}
 
 		void SetPSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
-			mShader->Shaders[Pixel]->mConstBuffers[i->mIndex]->Set(context, (byte *)i + sizeof(PSConstBufferItem));
+			SetConstants(Pixel, i, context);
 		}
 
 		void Activate(ID3D11DeviceContext *context)

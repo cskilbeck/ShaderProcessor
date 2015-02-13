@@ -38,6 +38,8 @@ struct MyDXWindow: DXWindow
 
 	Ptr<Shaders::Sprite> spriteShader;
 	Ptr<Shaders::Sprite::VertBuffer> spriteVerts;
+	Ptr<Texture> spriteTexture;
+	Ptr<Sampler> spriteSampler;
 
 	//////////////////////////////////////////////////////////////////////
 

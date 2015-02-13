@@ -161,11 +161,12 @@ bool MyDXWindow::OnCreate()
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
-	phongShader->PixelShader.Light.lightPos = Float3(0, -15, 0);
-	phongShader->PixelShader.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	phongShader->PixelShader.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	phongShader->PixelShader.Light.specColor = Float3(1, 1, 0.8f);
-	phongShader->PixelShader.Light.Commit(Context());
+	Shaders::Phong::PS &ps = phongShader->PixelShader;
+	ps.Light.lightPos = Float3(0, -15, 0);
+	ps.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
+	ps.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	ps.Light.specColor = Float3(1, 1, 0.8f);
+	ps.Light.Commit(Context());
 
 	MaterialOptions o;
 	o.blend = BlendDisabled;
@@ -197,6 +198,10 @@ bool MyDXWindow::OnCreate()
 
 	spriteShader.reset(new Shaders::Sprite());
 	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2));
+	spriteTexture.reset(new Texture(TEXT("temp.jpg")));
+	spriteSampler.reset(new Sampler());
+	spriteShader->PixelShader.smplr = spriteSampler.get();
+	spriteShader->PixelShader.page = spriteTexture.get();
 
 	return true;
 }
@@ -336,8 +341,23 @@ void MyDXWindow::OnDraw()
 	spriteShader->GeometryShader.vConstants.Commit(Context());
 	spriteShader->Activate(Context());
 	Shaders::Sprite::InputVertex *v = spriteVerts->Data();
-	v[0].Position = { 320, 240 }; v[0].Size = { 50, 100 }; v[0].Color = 0xffffffff;
-	v[1].Position = { 520, 140 }; v[1].Size = { 100, 100 }; v[1].Color = 0xff0000ff;
+	v[0].Position = { 320, 240 };
+	v[0].Size = { 100, 100 };
+	v[0].Color = 0xffffffff;
+	v[0].Rotation = mFrame * 0.03f;
+	v[0].Pivot = { 0.5f, 0.5f };
+	v[0].Scale = { 1, 1 };
+	v[0].UVa = { 0.0f, 0.0f };
+	v[0].UVb = { 1.0f, 1.0f };
+
+	v[1].Position = { 520, 140 };
+	v[1].Size = { 256, 256 };
+	v[1].Color = 0xffffff00;
+	v[1].Rotation = mFrame * 0.04f;
+	v[1].Pivot = { 0.0f, 0.5f };
+	v[1].Scale = { 1, 1 };
+	v[1].UVa = { 0.0f, 0.0f };
+	v[1].UVb = { 1.0f, 1.0f };
 	spriteVerts->Commit(Context());
 	spriteVerts->Activate(Context());
 	spriteShader->Activate(Context());
