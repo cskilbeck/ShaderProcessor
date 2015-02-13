@@ -75,7 +75,7 @@ namespace DX
 		{
 		}
 
-		HLSLVec3(t x, t y, t z) : x(x), y(y), z(z)
+		HLSLVec3(t x, t y, t z = 0) : x(x), y(y), z(z)
 		{
 		}
 	};
@@ -90,7 +90,7 @@ namespace DX
 		{
 		}
 
-		HLSLVec4(t x, t y, t z, t w) : x(x), y(y), z(z), w(w)
+		HLSLVec4(t x, t y, t z = 0, t w = 1) : x(x), y(y), z(z), w(w)
 		{
 		}
 	};
@@ -112,7 +112,7 @@ namespace DX
 		{
 		}
 
-		HLSLVec3(float x, float y, float z)
+		HLSLVec3(float x, float y, float z = 0)
 			: x(x)
 			, y(y)
 			, z(z)
@@ -140,7 +140,7 @@ namespace DX
 		{
 		}
 
-		HLSLVec4(float x, float y, float z, float w)
+		HLSLVec4(float x, float y, float z = 0, float w = 1)
 			: x(x)
 			, y(y)
 			, z(z)

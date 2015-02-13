@@ -39,8 +39,6 @@
       </StringProperty.DataSource>
     </StringProperty>
 
-    <!-- Non config-dependent -->
-
     <StringProperty Name="VertexShaderFunction"
                     Category="General"
                     DisplayName="Vertex Shader Main Function"
@@ -70,19 +68,7 @@
                   DisplayName="Embed Shader Object Code"
                   Description="Embed the shader object code in the header."
                   Switch="--embedObject" />
-    
-    <StringListProperty Name="IncludePaths"
-                        Category="General"
-                        DisplayName="Include Paths"
-                        Description="Set path for include files, separate multiple paths with semicolons."
-                        Switch="--includePath=" />
-    
-    <BoolProperty Name="WarnOnError"
-                  Category="General"
-                  DisplayName="Treat Warnings As Errors"
-                  Description="Return an error if warnings are generated."
-                  Switch="--errorOnWarning" />
-    
+
     <EnumProperty Name="ShaderModel"
                   Category="General"
                   DisplayName="Shader Model"
@@ -106,20 +92,84 @@
       <EnumValue Name="3" DisplayName="3" Switch="--optimizationLevel=3" />
     </EnumProperty>
 
-    <!-- Config-dependent -->
-
     <BoolProperty Name="GenerateDebugInformation"
                   Category="General"
                   DisplayName="Generate Debug Information"
                   Description="Generates Debug Information."
                   Switch="--debugInfo" />
-    
+
+    <BoolProperty Name="WarnOnError"
+                  Category="General"
+                  DisplayName="Treat Warnings As Errors"
+                  Description="Return an error if warnings are generated."
+                  Switch="--errorOnWarning" />
+
+    <StringListProperty Name="IncludePaths"
+                        Category="General"
+                        DisplayName="Include Paths"
+                        Description="Set path for include files, separate multiple paths with semicolons."
+                        Switch="--includePath=" />
+
     <BoolProperty Name="DisableOptimizer"
                   Category="General"
                   DisplayName="Disable Shader Optimization"
                   Description="Disable Shader Optimization."
                   Switch="--disableOptimization" />
-    
+
+    <BoolProperty Name="RowMajor"
+                  Category="General"
+                  DisplayName="Row major matrices"
+                  Description="Use matrices in row major order (default is column major)"
+                  Switch="--packRowMajor" />
+
+    <BoolProperty Name="PartialPrecision"
+                  Category="General"
+                  DisplayName="Partial precision maths"
+                  Description="Use partial precision maths on HW which supports it"
+                  Switch="--partialPrecision" />
+
+    <BoolProperty Name="NoPreshader"
+                  Category="General"
+                  DisplayName="No Preshader"
+                  Description="Disable preshader generation for known constants"
+                  Switch="--noPreshader" />
+
+    <BoolProperty Name="AvoidFlowControl"
+                  Category="General"
+                  DisplayName="Avoid Flow Control"
+                  Description="Hint to the compiler to avoid flow control instructions"
+                  Switch="--avoidFlowControl "/>
+
+    <BoolProperty Name="PreferFlowControl"
+                  Category="General"
+                  DisplayName="Prefer Flow Control"
+                  Description="Hint to the compiler to prefer flow control instructions"
+                  Switch="--preferFlowControl" />
+
+    <BoolProperty Name="EnableStrictness"
+                  Category="General"
+                  DisplayName="Enable Strict Mode"
+                  Description="Enable strict mode"
+                  Switch="--enableStrictness" />
+
+    <BoolProperty Name="IEEEStrictness"
+                  Category="General"
+                  DisplayName="IEEE Strictness Mode"
+                  Description="Enable IEEE strictness mode" 
+                  Switch="--ieeeStrictness" />
+
+    <BoolProperty Name="ResourcesMayAlias"
+                  Category="General"
+                  DisplayName="Resources May Alias"
+                  Description="UAVs and SRVs may alias for cs_5_0"
+                  Switch="--resourcesMayAlias" />
+
+    <StringProperty Name="AssemblyListingFile"
+                    Category="General"
+                    DisplayName="Assembly Listing File"
+                    Description="Assembly Listing File"
+                    Switch="--assemblyListingFile=" />
+
     <!-- Dynamics -->
 
     <DynamicEnumProperty Name="SPOCKBeforeTargets"

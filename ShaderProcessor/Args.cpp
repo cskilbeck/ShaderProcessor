@@ -108,7 +108,7 @@ option::Descriptor const usage[] =
 	{ AVOID_FLOW_CONTROL, 0, "", "avoidFlowControl", Arg::None, "--avoidFlowControl (optional). Hint to the compiler to avoid flow control instructions." },
 	{ PREFER_FLOW_CONTROL, 0, "", "preferFlowControl", Arg::None, "--preferFlowControl (optional). Hint to the compiler to prefer flow control instructions." },
 	{ ENABLE_STRICTNESS, 0, "", "enableStrictness", Arg::None, "--enableStrictness (optional). Enable strict mode." },
-	{ IEEE_STRICTNESS, 0, "", "ieeeStrictness", Arg::None, "--ieeeStrictness (optional). Enable IEEE strictness model." },
+	{ IEEE_STRICTNESS, 0, "", "ieeeStrictness", Arg::None, "--ieeeStrictness (optional). Enable IEEE strictness mode." },
 	{ RESOURCES_MAY_ALIAS, 0, "", "resourcesMayAlias", Arg::None, "--resourcesMayAlias (optional). UAVs and SRVs may alias for cs_5_0." },
 	{ OPTIMIZATION_LEVEL, 0, "", "optimizationLevel", Arg::OptimizationLevel, "--optimizationLevel=[0|1|2|3] (optional). Specify level of optimization (3 = most)." },
 	{ ASSEMBLY_LISTING_FILE, 0, "", "assemblyListingFile", Arg::NonEmpty, "--assemblyListingFile=filename (optional). Output assembly listing on successful compilation." },

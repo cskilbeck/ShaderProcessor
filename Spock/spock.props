@@ -17,6 +17,15 @@
       <WarnOnError>false</WarnOnError>
       <IncludePaths></IncludePaths>
       <DisableOptimizer>false</DisableOptimizer>
+      <RowMajor>false</RowMajor>
+      <PartialPrecision>false</PartialPrecision>
+      <NoPreshader>false</NoPreshader>
+      <AvoidFlowControl>false</AvoidFlowControl>
+      <PreferFlowControl>false</PreferFlowControl>
+      <EnableStrictness>false</EnableStrictness>
+      <IEEEStrictness>false</IEEEStrictness>
+      <ResourcesMayAlias>false</ResourcesMayAlias>
+      <AssemblyListingFile></AssemblyListingFile>
       <CommandLineTemplate>"$(SolutionDir)Spock\shaderprocessor.exe" [AllOptions] [AdditionalOptions] --source="%(FullPath)"</CommandLineTemplate>
       <ExecutionDescription>%(FileName)%(Extension)</ExecutionDescription>
     </SPOCK>

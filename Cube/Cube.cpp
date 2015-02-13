@@ -1,12 +1,15 @@
 //////////////////////////////////////////////////////////////////////
-// SpriteList
-// Font
-// Fix ViewMatrix Axes Y/Z up etc
-
-// Split up DX.lib:
-// DXBase: enough for ShaderProcessor
-// DXUtil: everything else
-// DX: DXBase + DXUtil
+// Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing
+// Hull/Domain shader support
+// Structured Buffers/UAV support
+// DrawList: simplify interface & use Map/UnMap for verts
+// DebugText using Font...
+// Console...?
+// Assimp
+// Animation
+// Bullet
+// Use RenderState for DrawList (no separate Material)
+// 
 
 #include "stdafx.h"
 
@@ -72,10 +75,8 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 void MyDXWindow::CreateGrid()
 {
-	using namespace Shaders;
-
-	gridVB.reset(new Colored::VertBuffer(806, null, DynamicUsage, Writeable));
-	Colored::InputVertex *v = gridVB->Map(Context());
+	vector<Shaders::Colored::InputVertex> v;
+	v.reserve(201 * 4 + 2);
 	for(int x = -1000; x <= 1000; x += 10)
 	{
 		float a = (float)x;
@@ -88,14 +89,14 @@ void MyDXWindow::CreateGrid()
 			cx = Color::BrightRed;
 			cy = Color::BrightGreen;
 		}
-		*v++ = { { b, a, 0 }, cx };
-		*v++ = { { t, a, 0 }, cx };
-		*v++ = { { a, b, 0 }, cy };
-		*v++ = { { a, t, 0 }, cy };
+		v.push_back({ { b, a, 0 }, cx });
+		v.push_back({ { t, a, 0 }, cx });
+		v.push_back({ { a, b, 0 }, cy });
+		v.push_back({ { a, t, 0 }, cy });
 	}
-	*v++ = { { 0, 0, 0 }, Color::Cyan };
-	*v++ = { { 0, 0, 1000 }, Color::Cyan };
-	gridVB->UnMap(Context());
+	v.push_back({ { 0, 0, 0 }, Color::Cyan });
+	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
+	gridVB.reset(new Shaders::Colored::VertBuffer(806, v.data(), StaticUsage));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -203,6 +204,8 @@ bool MyDXWindow::OnCreate()
 	spriteShader->PixelShader.smplr = spriteSampler.get();
 	spriteShader->PixelShader.page = spriteTexture.get();
 
+	timer.Reset();
+
 	return true;
 }
 
@@ -232,6 +235,8 @@ SByte4 SpriteFlip(int x, int y)
 
 void MyDXWindow::OnDraw()
 {
+	float deltaTime = (float)timer.Delta();
+
 	float moveSpeed = 1.0f;
 	float strafeSpeed = 1.0f;
 
@@ -358,15 +363,6 @@ void MyDXWindow::OnDraw()
 			drawList.End();
 		}
 
-		Font::SetupDrawList(&drawList, this);
-
-		font->Begin();
-		font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
-		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
-		font->DrawString("Hello World", Vec2f(120, 340));
-		font->DrawString("Hello World", Vec2f(320, 360));
-		font->End();
-
 		drawList.SetShader(coloredShader.get(), coloredVB.get(), sizeof(Shaders::Colored::InputVertex));
 		Shaders::Colored::VS::VertConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -374,11 +370,20 @@ void MyDXWindow::OnDraw()
 		drawList.SetVSConstantData(v, 0);
 		drawList.BeginTriangleStrip();
 		using q = Shaders::Colored::InputVertex;
-		drawList.AddVertex<q>({ { 0, 0, 0.0f }, 0x80000000 });
-		drawList.AddVertex<q>({ { 300, 0, 0.0f }, 0x80000000 });
-		drawList.AddVertex<q>({ { 0, 400, 0.0f }, 0x80000000 });
-		drawList.AddVertex<q>({ { 300, 400, 0.0f }, 0x80000ff });
+		drawList.AddVertex<q>({ { 0, 0 }, 0x80000000 });
+		drawList.AddVertex<q>({ { (float)ClientWidth(), 0 }, 0x80000000 });
+		drawList.AddVertex<q>({ { 0, 100 }, 0x80000000 });
+		drawList.AddVertex<q>({ { (float)ClientWidth(), 100 }, 0x80000000 });
 		drawList.End();
+
+		Font::SetupDrawList(&drawList, this);
+
+		font->Begin();
+		font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
+		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
+		font->DrawString("Hello World", Vec2f(120, 340));
+		font->DrawString(Format("DeltaTime %6.2fms (%dfps)", deltaTime * 1000, (int)(1/deltaTime)).c_str(), Vec2f(0, 0));
+		font->End();
 
 		drawList.Execute();
 	}

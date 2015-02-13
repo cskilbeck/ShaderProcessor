@@ -42,6 +42,8 @@ struct MyDXWindow: DXWindow
 	Ptr<Texture> spriteTexture;
 	Ptr<Sampler> spriteSampler;
 
+	Timer timer;
+
 	//////////////////////////////////////////////////////////////////////
 
 	MyDXWindow();

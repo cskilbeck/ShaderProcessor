@@ -36,9 +36,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Shaders\Colored.shader">
-      <Filter>Shader Files</Filter>
-    </SPOCK>
     <SPOCK Include="Shaders\Phong.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
@@ -46,6 +43,9 @@
       <Filter>Shader Files</Filter>
     </SPOCK>
     <SPOCK Include="Shaders\UI.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
+    <SPOCK Include="Shaders\Colored.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

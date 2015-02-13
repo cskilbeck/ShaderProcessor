@@ -211,6 +211,7 @@
       </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </GeometryShaderFunction>
+      <FileType>Document</FileType>
     </SPOCK>
     <SPOCK Include="Shaders\Phong.shader" />
     <SPOCK Include="Shaders\Sprite.shader">

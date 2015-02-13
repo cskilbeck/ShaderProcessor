@@ -53,6 +53,15 @@
            DisableOptimizer="%(SPOCK.DisableOptimizer)"
            IncludePaths="%(SPOCK.IncludePaths)"
            WarnOnError="%(SPOCK.WarnOnError)"
+           RowMajor="%(SPOCK.RowMajor)"
+           PartialPrecision="%(SPOCK.PartialPrecision)"
+           NoPreshader="%(SPOCK.NoPreshader)"
+           AvoidFlowControl="%(SPOCK.AvoidFlowControl)"
+           PreferFlowControl="%(SPOCK.PreferFlowControl)"
+           EnableStrictness="%(SPOCK.EnableStrictness)"
+           IEEEStrictness="%(SPOCK.IEEEStrictness)"
+           ResourcesMayAlias="%(SPOCK.ResourcesMayAlias)"
+           AssemblyListingFile="%(SPOCK.AssemblyListingFile)"
            CommandLineTemplate="%(SPOCK.CommandLineTemplate)"
            AdditionalOptions="%(SPOCK.AdditionalOptions)" />
   </Target>
