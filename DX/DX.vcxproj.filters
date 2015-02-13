@@ -83,9 +83,6 @@
     <ClInclude Include="DrawList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Font_Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GeometryShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>

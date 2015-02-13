@@ -21,10 +21,50 @@ struct ShaderArgType
 
 ShaderArgType shaderTypes[] =
 {
-	{ VERTEXMAIN, ShaderType::Vertex },
-	{ PIXELMAIN, ShaderType::Pixel },
-	{ GEOMETRYMAIN, ShaderType::Geometry }
+	{ VERTEX_MAIN, ShaderType::Vertex },
+	{ PIXEL_MAIN, ShaderType::Pixel },
+	{ GEOMETRY_MAIN, ShaderType::Geometry }
 };
+
+//////////////////////////////////////////////////////////////////////
+
+uint32 optionMap[][2]=
+{
+	{ DISABLE_OPTIMIZATION,	D3DCOMPILE_SKIP_OPTIMIZATION		},
+	{ INCLUDE_DEBUG_INFO,	D3DCOMPILE_DEBUG					},
+	{ ERROR_ON_WARNING,		D3DCOMPILE_WARNINGS_ARE_ERRORS		},
+	{ PACK_MATRIX_ROW_MAJOR,D3DCOMPILE_PACK_MATRIX_ROW_MAJOR	},
+	{ PARTIAL_PRECISION,	D3DCOMPILE_PARTIAL_PRECISION		},
+	{ NO_PRESHADER,			D3DCOMPILE_NO_PRESHADER				},
+	{ AVOID_FLOW_CONTROL,	D3DCOMPILE_AVOID_FLOW_CONTROL		},
+	{ PREFER_FLOW_CONTROL,	D3DCOMPILE_PREFER_FLOW_CONTROL		},
+	{ ENABLE_STRICTNESS,	D3DCOMPILE_ENABLE_STRICTNESS		},
+	{ IEEE_STRICTNESS,		D3DCOMPILE_IEEE_STRICTNESS			},
+	{ RESOURCES_MAY_ALIAS,	D3DCOMPILE_RESOURCES_MAY_ALIAS		}
+};
+
+uint32 GetFlags()
+{
+	uint32 flag = 0;
+	for(int i = 0; i < _countof(optionMap); ++i)
+	{
+		if(options[optionMap[i][0]])
+		{
+			flag |= optionMap[i][1];
+		}
+	}
+	if(options[OPTIMIZATION_LEVEL])
+	{
+		switch(atoi(options[OPTIMIZATION_LEVEL].arg))
+		{
+			case 0: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL0; break;
+			case 1: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL1; break;
+			case 2: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL2; break;
+			case 3: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL3; break;
+		}
+	}
+	return flag;
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -43,32 +83,18 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 	string refname = ToLower(desc->refName);
 	string shader = Format("%s_%s", refname.c_str(), shaderModel);	// eg vs_4_0
 	wstring fname = WideStringFromString(filename);
-	uint flags = 0;
+	uint flags = GetFlags();
 	string output = SetExtension(filename, TEXT(".cso"));
 	ID3DBlob *compiledShader;
 	ID3DBlob *errors = null;
-
-	if(options[INCLUDEDEBUGINFO])
-	{
-		flags |= D3DCOMPILE_DEBUG;
-	}
-
-	if(options[DISABLEOPTIMIZATION])
-	{
-		flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-	}
-	if(options[ERRORONWARNING])
-	{
-		flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-	}
-
-	// etc etc...
-
 	if(D3DCompileFromFile(fname.c_str(), null, D3D_COMPILE_STANDARD_FILE_INCLUDE, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors) == S_OK)
 	{
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
 		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
 		shaders[s->mShaderTypeDesc.type] = s;
+
+		// append to assembly listing file...
+
 		return true;
 	}
 	Printer::Output("/*\n");
@@ -108,19 +134,19 @@ int main(int argc, char *argv[])
 		return err_args;
 	}
 
-	if(!options[SOURCE])
+	if(!options[SOURCE_FILE])
 	{
 		fprintf(stderr, "No source file specified, exiting\n\n");
 		PrintUsage();
 		return err_nosource;
 	}
 
-	if(options[EMBEDBYTECODE])
+	if(options[EMBED_BYTECODE])
 	{
 		printf("!");
 	}
 
-	if(!options[SMVERSION])
+	if(!options[SHADER_MODEL_VERSION])
 	{
 		fprintf(stderr, "Shader model not specified, exiting\n");
 		PrintUsage();
@@ -128,9 +154,9 @@ int main(int argc, char *argv[])
 	}
 
 	Handle headerFile;
-	if(options[HEADER])
+	if(options[HEADER_FILE])
 	{
-		char const *name = options[HEADER].arg;
+		char const *name = options[HEADER_FILE].arg;
 		headerFile = CreateFile(name, GENERIC_WRITE, 0, null, CREATE_ALWAYS, 0, null);
 		if(!headerFile.IsValid())
 		{
@@ -145,7 +171,7 @@ int main(int argc, char *argv[])
 
 	Printer::SetHeaderFile(headerFile);
 
-	string fileName = GetFilename(options[SOURCE].arg);
+	string fileName = GetFilename(options[SOURCE_FILE].arg);
 
 	if(!headerFile.IsValid())
 	{
@@ -159,7 +185,7 @@ int main(int argc, char *argv[])
 		ShaderArgType &a = shaderTypes[i];
 		if(options[a.arg])
 		{
-			if(!CompileFile(options[SOURCE].arg, options[a.arg].arg, options[SMVERSION].arg, a.type))
+			if(!CompileFile(options[SOURCE_FILE].arg, options[a.arg].arg, options[SHADER_MODEL_VERSION].arg, a.type))
 			{
 				return err_compilerproblem;
 			}
@@ -173,8 +199,6 @@ int main(int argc, char *argv[])
 		return err_noshaderspecified;
 	}
 
-	// set up the Printer
-	// Output Header
 	HLSLShader::OutputHeader(fileName.c_str());
 
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
@@ -197,11 +221,10 @@ int main(int argc, char *argv[])
 	{
 		(*i).second->OutputInputElements();
 	}
-	// Output Structure Header
 
 	using namespace Printer;
 
-	string name = GetFilename(options[SOURCE].arg);
+	string name = GetFilename(options[SOURCE_FILE].arg);
 
 	OutputCommentLine("Shader struct");
 	OutputLine("struct %s : ShaderState", name.c_str());

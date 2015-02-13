@@ -3,7 +3,7 @@
 #include "DX.h"
 #include "RapidXML\rapidxml.hpp"
 #include "RapidXML\xml_util.h"
-#include "Font_Shader.h"
+#include "Font.Shader.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -32,8 +32,9 @@ struct Font::KerningValue
 struct Font::Graphic
 {
 	Vec2f drawOffset;			// add this to the cursor position before drawing it
-	Point2D position;				// top left on the texture page
-	Point2D size;					// size of graphic in pixels
+	Half2 size;					// size in pixels
+	Half2 topLeft;				// top left on the texture page
+	Half2 bottomRight;			// bottom right on the texture page
 	int pageIndex;				// which page it's on
 };
 
@@ -68,7 +69,7 @@ static void LoadShader()
 	{
 		shader.reset(new Shaders::Font());
 
-		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));	// Map/UnMap...
+		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096));	// Map/UnMap...
 
 		MaterialOptions o;
 		o.blend = BlendEnabled;
@@ -84,45 +85,23 @@ static void LoadShader()
 	}
 }
 
-static void PrepareToDraw(DrawList *d, int width, int height)
-{
-	Shaders::Font::PS::pConstants_t c;
-	Shaders::Font::VS::vConstants_t v;
+//////////////////////////////////////////////////////////////////////
 
-	c.Color = Float4(1, 1, 1, 1);	
+static void PrepareDrawList(DrawList *d, int width, int height)
+{
+	Shaders::Font::GS::vConstants_t v;
 	v.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
 	
 	d->SetShader(shader.get(), vertexBuffer.get(), sizeof(Shaders::Font::InputVertex));
 	d->SetMaterial(*material.get());
-	d->SetPSConstantData(c, 0);
-	d->SetVSConstantData(v, 0);
+	d->SetGSConstantData(v, 0);
 	d->SetPSSampler(*sampler.get());
-	d->BeginTriangleList();
 }
 
-static void AddQuad(DrawList *d, Texture *t, Vec2f pos, Vec2f size, Point2D const &uv, Point2D const &uvSize)
-{
-	using v = Shaders::Font::InputVertex;
-	Vec2f topRight(pos.x + size.x, pos.y);
-	Vec2f bottomLeft(pos.x, pos.y + size.y);
-	Vec2f bottomRight(pos + size);
-	float tw = t->FWidth();
-	float th = t->FHeight();
-	half left = uv.x / tw;	// Font util should prescale these...
-	half top = uv.y / th;
-	half right = (uv.x + uvSize.x) / tw;
-	half bottom = (uv.y + uvSize.y) / th;
-	d->AddVertex<v>({ pos, { left, top } });
-	d->AddVertex<v>({ topRight, { right, top } });
-	d->AddVertex<v>({ bottomLeft, { left, bottom} });
-	d->AddVertex<v>({ topRight, { right, top } });
-	d->AddVertex<v>({ bottomRight, { right, bottom } });
-	d->AddVertex<v>({ bottomLeft, { left, bottom} });
-}
+//////////////////////////////////////////////////////////////////////
 
-static void ExecuteDrawList(DrawList *d, ID3D11DeviceContext *context)
+static void AddQuad(DrawList *d, Texture *t, Vec2f pos, Vec2f size, Vec2f uva, Vec2f uvb)
 {
-	d->Execute(context);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -147,6 +126,13 @@ namespace DX
 		return f;
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
+	void FontManager::PrepareToDraw(DrawList &drawList, Window const * const window)
+	{
+		PrepareDrawList(&drawList, window->ClientWidth(), window->ClientHeight());
+	}
+		
 	//////////////////////////////////////////////////////////////////////
 
 	void FontManager::CleanUp()
@@ -219,10 +205,10 @@ namespace DX
 				if(mLayerCount != 0)
 				{
 					mPages = new Texture *[mPageCount];
-
+					string path = GetPath(filename) + GetFilename(filename);
 					for(int i = 0; i<mPageCount; ++i)
 					{
-						mPages[i] = new Texture(Format(TEXT("data\\%s%d.dds"), filename, i).c_str());
+						mPages[i] = new Texture(Format(TEXT("%s%d.png"), path.c_str(), i).c_str());
 					}
 
 					mLayers = new Layer[mLayerCount];
@@ -281,12 +267,19 @@ namespace DX
 									while(graphicNode != null)
 									{
 										Graphic &gr = mGraphics[graphicIndex++];
+										gr.pageIndex = GetInt(graphicNode, L"page");
+
+										Texture *t = mPages[gr.pageIndex];
+										float tw = t->FWidth();
+										float th = t->FHeight();
 
 										gr.drawOffset = Vec2f(GetFloat(graphicNode, L"offsetX"), GetFloat(graphicNode, L"offsetY"));
-										gr.pageIndex = GetInt(graphicNode, L"page");
-										gr.position = Point2D(GetInt(graphicNode, L"x"), GetInt(graphicNode, L"y"));
-										gr.size = Point2D(GetInt(graphicNode, L"w"), GetInt(graphicNode, L"h"));
+										Vec2f size = Vec2f(GetFloat(graphicNode, L"w"), GetFloat(graphicNode, L"h"));
+										Vec2f pos = Vec2f(GetFloat(graphicNode, L"x"), GetFloat(graphicNode, L"y"));
 
+										gr.size = Half2(size.x, size.y);
+										gr.topLeft = Half2(pos.x / tw, pos.y / th);
+										gr.bottomRight = Half2((pos.x + size.x) / tw, (pos.y + size.y) / th);
 										graphicNode = graphicNode->next_sibling();
 
 										++numGraphics;
@@ -305,38 +298,6 @@ namespace DX
 			}
 		}
 		delete doc;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool Font::DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color)
-	{
-		bool rc = false;
-		Map::const_iterator i = mGlyphMap.find(c);
-		if(i != mGlyphMap.end())
-		{
-			Glyph &glyph = mGlyphs[i->second];
-			if(layer < glyph.imageTableSize)
-			{
-				Graphic &graphic = glyph.imageTable[layer];
-				if(mDrawList == null && mCurrentPageIndex != graphic.pageIndex)
-				{
-					Texture *t = mPages[graphic.pageIndex];
-					if(mCurrentPageIndex != -1)
-					{
-						drawList->End();
-					}
-					drawList->SetPSTexture(*t);
-					drawList->BeginTriangleList();
-					mCurrentPageIndex = graphic.pageIndex;
-				}
-				Texture *page = mPages[mCurrentPageIndex];
-				AddQuad(drawList, page, cursor + graphic.drawOffset, Vec2f(graphic.size), graphic.position, graphic.position + graphic.size);
-			}
-			cursor.x += glyph.advance;
-			rc = true;
-		}
-		return rc;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -583,7 +544,6 @@ namespace DX
 
 	void Font::DrawString(DrawList *drawList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
 	{
-		assert(mDrawList == null);
 		DrawStringInternal(drawList, text.c_str(), pos, horizAlign, vertAlign);
 	}
 
@@ -591,43 +551,44 @@ namespace DX
 
 	void Font::DrawString(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
 	{
-		assert(mDrawList == null);
 		DrawStringInternal(drawList, text, pos, horizAlign, vertAlign);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::BeginMultipleStrings(DrawList *drawList)
+	bool Font::DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color)
 	{
-		// Only single tpage fonts can get the benefit
-		assert(mPageCount == 1);
-
-		mDrawList = drawList;
-		mDrawList->End();
-		mDrawList->SetPSTexture(*mPages[0], 0);
-		mDrawList->BeginTriangleList();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::EndMultipleStrings()
-	{
-		mDrawList->End();
-		mDrawList = null;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::DrawStringMultiple(string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		DrawStringInternal(null, text.c_str(), pos, horizAlign, vertAlign);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::DrawStringMultiple(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		DrawStringInternal(null, text, pos, horizAlign, vertAlign);
+		bool rc = false;
+		Map::const_iterator i = mGlyphMap.find(c);
+		if(i != mGlyphMap.end())
+		{
+			Glyph &glyph = mGlyphs[i->second];
+			if(layer < glyph.imageTableSize)
+			{
+				Graphic &graphic = glyph.imageTable[layer];
+				if(mDrawList == null && mCurrentPageIndex != graphic.pageIndex)
+				{
+					Texture *t = mPages[graphic.pageIndex];
+					if(mCurrentPageIndex != -1)
+					{
+						drawList->End();
+					}
+					drawList->SetPSTexture(*t);
+					drawList->BeginPointList();
+					mCurrentPageIndex = graphic.pageIndex;
+				}
+				Shaders::Font::InputVertex v;
+				v.Position = cursor + graphic.drawOffset;
+				v.Size = graphic.size;
+				v.UVa = graphic.topLeft;
+				v.UVb = graphic.bottomRight;
+				v.Color = color;
+				drawList->AddVertex(v);
+			}
+			cursor.x += glyph.advance;
+			rc = true;
+		}
+		return rc;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -792,10 +753,6 @@ namespace DX
 			}
 		}
 		pos = cursor;
-		if(mDrawList == null)
-		{
-			drawListInternal->End();
-		}
 	}
 
 	//////////////////////////////////////////////////////////////////////

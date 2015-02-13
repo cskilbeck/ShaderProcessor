@@ -8,8 +8,8 @@
 using namespace DX;
 
 #include "FPSCamera.h"
-#include "Phong_Shader.h"
-#include "Colored_Shader.h"
-#include "UI_Shader.h"
-#include "Sprite_Shader.h"
+#include "Shaders\Phong.shader.h"
+#include "Shaders\Colored.shader.h"
+#include "Shaders\UI.shader.h"
+#include "Shaders\Sprite.shader.h"
 #include "Cube.h"

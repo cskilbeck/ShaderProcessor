@@ -202,7 +202,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Colored.shader">
+    <SPOCK Include="Shaders\Colored.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -212,14 +212,14 @@
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </GeometryShaderFunction>
     </SPOCK>
-    <SPOCK Include="Phong.shader" />
-    <SPOCK Include="Sprite.shader">
+    <SPOCK Include="Shaders\Phong.shader" />
+    <SPOCK Include="Shaders\Sprite.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
     </SPOCK>
-    <SPOCK Include="UI.shader" />
+    <SPOCK Include="Shaders\UI.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

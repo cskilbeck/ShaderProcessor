@@ -25,7 +25,6 @@
 
 namespace DX
 {
-
 	using Byte = uint8;
 	using SByte = int8;
 	using Short = int16;
@@ -200,6 +199,8 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct Color;
+
 	template <> struct HLSLVec4 < Byte >
 	{
 		uint32 c;
@@ -216,6 +217,8 @@ namespace DX
 		{
 			c = color; return *this;
 		}
+
+		HLSLVec4<Byte> &operator = (Color color);
 
 		operator uint32() const
 		{

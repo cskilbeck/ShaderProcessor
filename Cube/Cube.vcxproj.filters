@@ -36,16 +36,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Colored.shader">
+    <SPOCK Include="Shaders\Colored.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Phong.shader">
+    <SPOCK Include="Shaders\Phong.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="UI.shader">
+    <SPOCK Include="Shaders\Sprite.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Sprite.shader">
+    <SPOCK Include="Shaders\UI.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

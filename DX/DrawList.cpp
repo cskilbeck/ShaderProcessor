@@ -16,6 +16,7 @@ namespace
 		it_Sampler,
 		it_Shader,
 		it_VSConstants,
+		it_GSConstants,
 		it_PSConstants,
 		it_DrawCall
 	};
@@ -90,6 +91,16 @@ namespace
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct GSConstBufferItem: ConstBufferItem
+	{
+		enum
+		{
+			eType = it_GSConstants
+		};
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct PSConstBufferItem: ConstBufferItem
 	{
 		enum
@@ -139,6 +150,11 @@ namespace
 		void SetVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
 		{
 			SetConstants(Vertex, i, context);
+		}
+
+		void SetGSConstants(GSConstBufferItem *i, ID3D11DeviceContext *context)
+		{
+			SetConstants(Geometry, i, context);
 		}
 
 		void SetPSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
@@ -219,6 +235,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::SetGSConsts(byte *data, uint size, uint index)
+	{
+		GSConstBufferItem *i = Add<GSConstBufferItem>();
+		AddData(data, size);
+		i->mIndex = index;
+		i->mSize = size;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::SetPSConsts(byte *data, uint size, uint index)
 	{
 		PSConstBufferItem *i = Add<PSConstBufferItem>();
@@ -287,6 +313,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::BeginPointList()
+	{
+		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::BeginTriangleList()
 	{
 		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -323,6 +356,7 @@ namespace DX
 			d->mCount = mVertCount;
 			mVertBase += mVertCount;
 			mVertCount = 0;
+			mCurrentDrawCallItem = null;
 		}
 	}
 
@@ -367,6 +401,12 @@ namespace DX
 					t += sizeof(VSConstBufferItem) + ((VSConstBufferItem *)t)->mSize;
 					break;
 
+				case it_GSConstants:
+					assert(csi != null);
+					csi->SetGSConstants((GSConstBufferItem *)t, context);
+					t += sizeof(GSConstBufferItem) + ((GSConstBufferItem *)t)->mSize;
+					break;
+
 				case it_PSConstants:
 					assert(csi != null);
 					csi->SetPSConstants((PSConstBufferItem *)t, context);
@@ -379,6 +419,10 @@ namespace DX
 					((DrawCallItem *)t)->Execute(context);
 					t += sizeof(DrawCallItem);
 					break;
+
+				default:
+					assert(false && "Corrupt DrawList!");
+					return;
 			}
 		}
 

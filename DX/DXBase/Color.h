@@ -297,4 +297,11 @@ namespace DX
 
 	};
 
+	//////////////////////////////////////////////////////////////////////
+	// Yuck - have to put this after Color is defined...
+
+	inline HLSLVec4<Byte> &HLSLVec4<Byte>::operator = (Color color)
+	{
+		c = color.mColor; return *this;
+	}
 }

@@ -46,6 +46,7 @@
            PixelShaderFunction="%(SPOCK.PixelShaderFunction)"
            GeometryShaderFunction="%(SPOCK.GeometryShaderFunction)"
            HeaderFile="%(SPOCK.HeaderFile)"
+           OptimizationLevel="%(SPOCK.OptimizationLevel)"
            EmbedObject="%(SPOCK.EmbedObject)"
            ShaderModel="%(SPOCK.ShaderModel)"
            GenerateDebugInformation="%(SPOCK.GenerateDebugInformation)"

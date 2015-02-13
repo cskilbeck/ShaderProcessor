@@ -96,6 +96,7 @@ namespace DX
 	struct FontManager
 	{
 		static Font *Load(tchar const *name);
+		static void PrepareToDraw(DrawList &drawList, Window const * const window);
 		static void CleanUp();
 	};
 }

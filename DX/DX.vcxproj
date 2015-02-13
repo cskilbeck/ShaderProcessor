@@ -27,7 +27,6 @@
     <ClInclude Include="DX.h" />
     <ClInclude Include="DXWindow.h" />
     <ClInclude Include="Font.h" />
-    <ClInclude Include="Font_Shader.h" />
     <ClInclude Include="GeometryShader.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Keyboard.h" />
@@ -73,7 +72,12 @@
     <ClCompile Include="WinMessages.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Font.shader" />
+    <SPOCK Include="Font.shader">
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
+    </SPOCK>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ShaderProcessor\ShaderProcessor.vcxproj">

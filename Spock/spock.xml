@@ -96,6 +96,16 @@
       <EnumValue Name="6" DisplayName="5_0" Switch="--sm=5_0" />
     </EnumProperty>
 
+    <EnumProperty Name="OptimizationLevel"
+                  Category="General"
+                  DisplayName="Optimization Level"
+                  Description="Compiler optimization level: 0 = least, 3 = most.">
+      <EnumValue Name="0" DisplayName="0" Switch="--optimizationLevel=0" />
+      <EnumValue Name="1" DisplayName="1" Switch="--optimizationLevel=1" />
+      <EnumValue Name="2" DisplayName="2" Switch="--optimizationLevel=2" />
+      <EnumValue Name="3" DisplayName="3" Switch="--optimizationLevel=3" />
+    </EnumProperty>
+
     <!-- Config-dependent -->
 
     <BoolProperty Name="GenerateDebugInformation"

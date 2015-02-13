@@ -21,9 +21,5 @@ namespace DX
 		bool Released(uint keyCode);
 		void Update();
 		void Reset();
-
-		//////////////////////////////////////////////////////////////////////
-
 	}
-
 }

@@ -1,5 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-// Aspect Ratio
 // SpriteList
 // Font
 // Fix ViewMatrix Axes Y/Z up etc
@@ -55,7 +54,7 @@ static uint16 indices[36] =
 
 //////////////////////////////////////////////////////////////////////
 
-MyDXWindow::MyDXWindow() : DXWindow(640, 480, TEXT("Cube"), DepthBufferEnabled)
+MyDXWindow::MyDXWindow() : DXWindow(640, 480, TEXT("Cube"), DepthBufferEnabled), camera(this)
 {
 }
 
@@ -138,8 +137,7 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	//font = FontManager::Load(TEXT("data\\fixedsys"));
-	font = null;
+	font = FontManager::Load(TEXT("Data\\debug"));
 
 	coloredShader.reset(new Shaders::Colored());
 
@@ -152,7 +150,7 @@ bool MyDXWindow::OnCreate()
 
 	phongShader.reset(new Shaders::Phong());
 
-	texture.reset(new Texture(TEXT("temp.jpg")));
+	texture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	sampler.reset(new Sampler());
 
 	phongShader->PixelShader.picTexture = texture.get();
@@ -180,7 +178,7 @@ bool MyDXWindow::OnCreate()
 
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12));
-	uiTexture.reset(new Texture(TEXT("temp.png")));
+	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
 	uiOptions.blend = BlendEnabled;
 	uiOptions.depth = DepthDisabled;
@@ -198,7 +196,7 @@ bool MyDXWindow::OnCreate()
 
 	spriteShader.reset(new Shaders::Sprite());
 	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2));
-	spriteTexture.reset(new Texture(TEXT("temp.jpg")));
+	spriteTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	spriteSampler.reset(new Sampler());
 	spriteShader->PixelShader.smplr = spriteSampler.get();
 	spriteShader->PixelShader.page = spriteTexture.get();
@@ -334,6 +332,13 @@ void MyDXWindow::OnDraw()
 			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
 			drawList.End();
 		}
+
+		FontManager::PrepareToDraw(drawList, this);
+		font->DrawString(&drawList, "Hello World", Vec2f(120, 440));
+		font->DrawString(&drawList, "Hello World", Vec2f(220, 460));
+		font->DrawString(&drawList, "Hello World", Vec2f(120, 340));
+		font->DrawString(&drawList, "Hello World", Vec2f(320, 360));
+		drawList.End();
 		drawList.Execute(Context());
 	}
 

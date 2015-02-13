@@ -9,9 +9,10 @@
       <VertexShaderFunction>vsMain</VertexShaderFunction>
       <PixelShaderFunction>psMain</PixelShaderFunction>
       <GeometryShaderFunction></GeometryShaderFunction>
-      <HeaderFile>$(ProjectDir)%(FileName)_Shader.h</HeaderFile>
+      <HeaderFile>%(FullPath).h</HeaderFile>
       <EmbedObject>true</EmbedObject>
       <ShaderModel>4</ShaderModel>
+      <OptimizationLevel>3</OptimizationLevel>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <WarnOnError>false</WarnOnError>
       <IncludePaths></IncludePaths>
