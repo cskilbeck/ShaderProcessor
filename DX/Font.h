@@ -30,25 +30,18 @@ namespace DX
 			VBottom = 6
 		};
 
-		bool DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color);
 		Vec2f MeasureChar(wchar c, Vec2f *offsetOf = null);
 		Vec2f MeasureString(char const *text, Vec2f *offset = null, vector<Link> *links = null) const;
 		int GetHeight() const;
 		float GetBaseline() const;
 		string WrapText(string txt, uint pixelWidth, string lineBreak);
 
-		void DrawString(DrawList *drawList, wstring const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawString(DrawList *drawList, wchar const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
+		static void SetupDrawList(DrawList *drawList, Window const * const window);
+		static void SetupContext(ID3D11DeviceContext *context, Window const * const window);
 
-		void DrawString(DrawList *drawList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawString(DrawList *drawList, char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
-
-		void BeginMultipleStrings(DrawList *drawList);
-		void DrawStringMultiple(wstring const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawStringMultiple(wchar const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
-		void DrawStringMultiple(string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign = HLeft, Font::VerticalAlign vertAlign = VTop);
-		void DrawStringMultiple(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop);
-		void EndMultipleStrings();
+		void Begin();
+		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
+		void End();
 
 		tstring mName;
 
@@ -59,9 +52,9 @@ namespace DX
 		Font();
 		~Font();
 
-		friend struct FontManager;
+		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
 
-		void DrawStringInternal(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign);
+		friend struct FontManager;
 
 		void LoadFromFile(tchar const *filename);
 
@@ -82,13 +75,14 @@ namespace DX
 
 		int					mCurrentPageIndex;
 
-		Map						mGlyphMap;
-		Texture **				mPages;
-		Glyph *					mGlyphs;
-		Layer *					mLayers;
-		KerningValue *			mKerningValues;
-		Graphic *				mGraphics;
-		DrawList *				mDrawList;
+		Map					mGlyphMap;
+		Texture **			mPages;
+		Glyph *				mGlyphs;
+		Layer *				mLayers;
+		KerningValue *		mKerningValues;
+		Graphic *			mGraphics;
+
+		static DrawList *	mDrawList;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -96,7 +90,6 @@ namespace DX
 	struct FontManager
 	{
 		static Font *Load(tchar const *name);
-		static void PrepareToDraw(DrawList &drawList, Window const * const window);
 		static void CleanUp();
 	};
 }

@@ -134,7 +134,8 @@ namespace
 
 		void SetConstants(ShaderType shaderType, ConstBufferItem *item, ID3D11DeviceContext *context)
 		{
-			mShader->Shaders[shaderType]->mConstBuffers[item->mIndex]->Set(context, (byte *)item + sizeof(ConstBufferItem));
+			// Calls UpdateSubresource
+			mShader->Shaders[shaderType]->mConstBuffers[item->mIndex]->Update(context, (byte *)item + sizeof(ConstBufferItem));
 		}
 
 		void SetPSTexture(TextureItem *t)
@@ -181,8 +182,8 @@ namespace
 			eType = it_DrawCall
 		};
 
-		uint32 mBase;
 		uint32 mCount;
+		uint32 mBase;
 		uint32 mTopology;
 
 		void Execute(ID3D11DeviceContext *context)
@@ -202,17 +203,18 @@ namespace DX
 	DrawList::DrawList()
 		: mItemBuffer(new byte[8192]) // TODO
 	{
-		Reset();
+		Reset(null);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::Reset()
+	void DrawList::Reset(ID3D11DeviceContext *context)
 	{
+		mContext = context;
 		mItemPointer = mItemBuffer;
-		mVertBase = 0;
-		mVertCount = 0;
+		mVertBase = null;
 		mVertPointer = null;
+		mCurrentDrawCallItem = null;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -267,12 +269,12 @@ namespace DX
 	void DrawList::SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertSize)
 	{
 		ShaderItem *i = Add<ShaderItem>();
+		mCurrentShader = shader;
 		i->mShader = shader;
 		i->mVertexBuffer = vb;
 		i->mVertexSize = vertSize;
-		mVertPointer = vb->Data();
-		mVertCount = 0;
-		mVertBase = 0;
+		mVertZero = mVertBase = mVertPointer = vb->Data();
+		mVertexSize = vertSize;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -306,8 +308,6 @@ namespace DX
 	{
 		DrawCallItem *i = Add<DrawCallItem>();
 		mCurrentDrawCallItem = (void *)i;
-		i->mBase = mVertBase;
-		i->mCount = 0;
 		i->mTopology = topology;
 	}
 
@@ -353,16 +353,16 @@ namespace DX
 		DrawCallItem *d = (DrawCallItem *)mCurrentDrawCallItem;
 		if(d != null)
 		{
-			d->mCount = mVertCount;
-			mVertBase += mVertCount;
-			mVertCount = 0;
+			d->mBase = (mVertBase - mVertZero) / mVertexSize;
+			d->mCount = (mVertPointer - mVertBase) / mVertexSize;
+			mVertBase = mVertPointer;
 			mCurrentDrawCallItem = null;
 		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::Execute(ID3D11DeviceContext *context)
+	void DrawList::Execute()
 	{
 		byte *end = mItemPointer;
 		byte *t = mItemBuffer;
@@ -374,7 +374,7 @@ namespace DX
 			switch(((Item *)t)->mType)
 			{
 				case it_Material:
-					((MaterialItem *)t)->mMaterial->Activate(context);
+					((MaterialItem *)t)->mMaterial->Activate(mContext);
 					t += sizeof(MaterialItem);
 					break;
 
@@ -397,26 +397,26 @@ namespace DX
 
 				case it_VSConstants:
 					assert(csi != null);
-					csi->SetVSConstants((VSConstBufferItem *)t, context);
+					csi->SetVSConstants((VSConstBufferItem *)t, mContext);
 					t += sizeof(VSConstBufferItem) + ((VSConstBufferItem *)t)->mSize;
 					break;
 
 				case it_GSConstants:
 					assert(csi != null);
-					csi->SetGSConstants((GSConstBufferItem *)t, context);
+					csi->SetGSConstants((GSConstBufferItem *)t, mContext);
 					t += sizeof(GSConstBufferItem) + ((GSConstBufferItem *)t)->mSize;
 					break;
 
 				case it_PSConstants:
 					assert(csi != null);
-					csi->SetPSConstants((PSConstBufferItem *)t, context);
+					csi->SetPSConstants((PSConstBufferItem *)t, mContext);
 					t += sizeof(PSConstBufferItem) + ((PSConstBufferItem *)t)->mSize;
 					break;
 
 				case it_DrawCall:
 					assert(csi != null);
-					csi->Activate(context);
-					((DrawCallItem *)t)->Execute(context);
+					csi->Activate(mContext);
+					((DrawCallItem *)t)->Execute(mContext);
 					t += sizeof(DrawCallItem);
 					break;
 
@@ -427,7 +427,7 @@ namespace DX
 		}
 
 		mItemPointer = mItemBuffer;
-		mVertBase = 0;
-		mVertCount = 0;
+		mVertBase = null;
+		mVertPointer = null;
 	}
 }

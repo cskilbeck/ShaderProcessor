@@ -19,6 +19,8 @@ namespace
 	Ptr<Material> material;
 }
 
+DrawList *Font::mDrawList = null;
+
 //////////////////////////////////////////////////////////////////////
 
 struct Font::KerningValue
@@ -69,7 +71,7 @@ static void LoadShader()
 	{
 		shader.reset(new Shaders::Font());
 
-		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096));	// Map/UnMap...
+		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096));	// Map/UnMap...one day...
 
 		MaterialOptions o;
 		o.blend = BlendEnabled;
@@ -80,28 +82,10 @@ static void LoadShader()
 		material.reset(new Material(o));
 
 		sampler.reset(new Sampler());
+		shader->PixelShader.smplr = sampler.get();
 
 		initialised = true;
 	}
-}
-
-//////////////////////////////////////////////////////////////////////
-
-static void PrepareDrawList(DrawList *d, int width, int height)
-{
-	Shaders::Font::GS::vConstants_t v;
-	v.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
-	
-	d->SetShader(shader.get(), vertexBuffer.get(), sizeof(Shaders::Font::InputVertex));
-	d->SetMaterial(*material.get());
-	d->SetGSConstantData(v, 0);
-	d->SetPSSampler(*sampler.get());
-}
-
-//////////////////////////////////////////////////////////////////////
-
-static void AddQuad(DrawList *d, Texture *t, Vec2f pos, Vec2f size, Vec2f uva, Vec2f uvb)
-{
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -128,13 +112,6 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void FontManager::PrepareToDraw(DrawList &drawList, Window const * const window)
-	{
-		PrepareDrawList(&drawList, window->ClientWidth(), window->ClientHeight());
-	}
-		
-	//////////////////////////////////////////////////////////////////////
-
 	void FontManager::CleanUp()
 	{
 		initialised = false;
@@ -145,13 +122,50 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void Font::SetupDrawList(DrawList *drawList, Window const * const window)
+	{
+		mDrawList = drawList;
+		Shaders::Font::GS::vConstants_t v;
+		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		mDrawList->SetShader(shader.get(), vertexBuffer.get(), sizeof(Shaders::Font::InputVertex));
+		mDrawList->SetMaterial(*material.get());
+		mDrawList->SetGSConstantData(v, 0);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
+	{
+		shader->GeometryShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		shader->GeometryShader.vConstants.Commit(context);
+		vertexBuffer->Activate(context);
+		material->Activate(context);
+		// vertexBufferPointer for stashing verts into
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::End()
+	{
+		mDrawList->End();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Begin()
+	{
+		mCurrentPageIndex = -1;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	Font::Font()
 		: mPages(null)
 		, mGlyphs(null)
 		, mLayers(null)
 		, mKerningValues(null)
 		, mGraphics(null)
-		, mDrawList(null)
+		, mCurrentPageIndex(-1)
 	{
 		sAllFonts.push_back(this);
 	}
@@ -542,21 +556,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(DrawList *drawList, string const &text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		DrawStringInternal(drawList, text.c_str(), pos, horizAlign, vertAlign);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::DrawString(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
-	{
-		DrawStringInternal(drawList, text, pos, horizAlign, vertAlign);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool Font::DrawChar(int layer, Vec2f &cursor, DrawList *drawList, wchar c, Color color)
+	bool Font::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
 	{
 		bool rc = false;
 		Map::const_iterator i = mGlyphMap.find(c);
@@ -566,15 +566,15 @@ namespace DX
 			if(layer < glyph.imageTableSize)
 			{
 				Graphic &graphic = glyph.imageTable[layer];
-				if(mDrawList == null && mCurrentPageIndex != graphic.pageIndex)
+				if(mCurrentPageIndex != graphic.pageIndex)
 				{
 					Texture *t = mPages[graphic.pageIndex];
 					if(mCurrentPageIndex != -1)
 					{
-						drawList->End();
+						mDrawList->End();
 					}
-					drawList->SetPSTexture(*t);
-					drawList->BeginPointList();
+					mDrawList->SetPSTexture(*t);
+					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
 				Shaders::Font::InputVertex v;
@@ -583,7 +583,14 @@ namespace DX
 				v.UVa = graphic.topLeft;
 				v.UVb = graphic.bottomRight;
 				v.Color = color;
-				drawList->AddVertex(v);
+				if(mDrawList != null)
+				{
+					mDrawList->AddVertex(v);
+				}
+				else
+				{
+					// immediate mode, stash into vertpointer++
+				}
 			}
 			cursor.x += glyph.advance;
 			rc = true;
@@ -593,16 +600,12 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawStringInternal(DrawList *drawList, char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign)
+	void Font::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
 	{
 		Vec2f drawOffset;
 		Vec2f offset;
 		Vec2f stringSize;
 		bool measured = false;
-
-		mCurrentPageIndex = -1;
-
-		DrawList *drawListInternal = (mDrawList != null) ? mDrawList : drawList;
 
 		switch(vertAlign)
 		{
@@ -651,105 +654,108 @@ namespace DX
 		Vec2f cursor;
 		for(int i = 0; i < mLayerCount; ++i)
 		{
-			Layer &l = mLayers[i];
-			cursor = pos + l.offset + offset;
-
-			uint32 layerColor = l.color;
-			uint32 currentColor = 0xffffffff;//Color::White;
-			uint32 colorMask = 0xFFFFFFFF;
-
-			bool escape = false;
-			bool inHash = false;
-			bool inLink = false;
-			int inShift = 0;
-
-			Vec2f linkTopLeft;
-			Vec2f linkBottomRight;
-			int linkChars = 0;
-
-			Color linkColor = Color(64, 192, 224);
-
-			UTF8Decoder decoder(text);
-			wchar c;
-			while((c = decoder.Next()) > 0)
+			if((layerMask & (1 << i)) != 0)
 			{
-				if(inHash)
+				Layer &l = mLayers[i];
+				cursor = pos + l.offset + offset;
+
+				uint32 layerColor = l.color;
+				uint32 currentColor = 0xffffffff;//Color::White;
+				uint32 colorMask = 0xFFFFFFFF;
+
+				bool escape = false;
+				bool inHash = false;
+				bool inLink = false;
+				int inShift = 0;
+
+				Vec2f linkTopLeft;
+				Vec2f linkBottomRight;
+				int linkChars = 0;
+
+				Color linkColor = Color(64, 192, 224);
+
+				UTF8Decoder decoder(text);
+				wchar c;
+				while((c = decoder.Next()) > 0)
 				{
-					if(c == '#')
+					if(inHash)
 					{
-						inHash = false;
+						if(c == '#')
+						{
+							inHash = false;
+						}
+						else
+						{
+							inShift -= 4;
+
+							if(inShift >= 0)
+							{
+								wchar cl = (wchar)tolower(c);
+
+								if(cl == '-')
+								{
+									colorMask &= ~0xf << inShift;
+								}
+								else if(cl >= '0' && cl <= '9')
+								{
+									colorMask |= 0xf << inShift;
+									currentColor |= (cl - '0') << inShift;
+								}
+								else if(cl >= 'a' && cl <= 'f')
+								{
+									colorMask |= 0xf << inShift;
+									currentColor |= (cl - 'a' + 10) << inShift;
+								}
+							}
+						}
+						continue;
 					}
 					else
 					{
-						inShift -= 4;
-
-						if(inShift >= 0)
+						if(escape)
 						{
-							wchar cl = (wchar)tolower(c);
-
-							if(cl == '-')
+							escape = false;
+						}
+						else
+						{
+							if(c == '\\')
 							{
-								colorMask &= ~0xf << inShift;
+								escape = true;
+								continue;
 							}
-							else if(cl >= '0' && cl <= '9')
+							else if(c == '@')
 							{
-								colorMask |= 0xf << inShift;
-								currentColor |= (cl - '0') << inShift;
+								inLink = !inLink;
+								continue;
 							}
-							else if(cl >= 'a' && cl <= 'f')
+							else if(c == '\n')
 							{
-								colorMask |= 0xf << inShift;
-								currentColor |= (cl - 'a' + 10) << inShift;
+								cursor.x = pos.x + l.offset.x + offset.x;
+								cursor.y += mHeight;
+								continue;
+							}
+							else if(c == '#')
+							{
+								if(!inHash)
+								{
+									inHash = true;
+									colorMask = 0x00000000;
+									currentColor = 0x00000000;
+									inShift = 32;
+								}
+								continue;
 							}
 						}
 					}
-					continue;
-				}
-				else
-				{
-					if(escape)
+
+					Color col = (layerColor & ~colorMask) | (currentColor & colorMask);
+					if(inLink)
 					{
-						escape = false;
+						++linkChars;
+						col = linkColor;
 					}
-					else
-					{
-						if(c == '\\')
-						{
-							escape = true;
-							continue;
-						}
-						else if(c == '@')
-						{
-							inLink = !inLink;
-							continue;
-						}
-						else if(c == '\n')
-						{
-							cursor.x = pos.x + l.offset.x + offset.x;
-							cursor.y += mHeight;
-							continue;
-						}
-						else if(c == '#')
-						{
-							if(!inHash)
-							{
-								inHash = true;
-								colorMask = 0x00000000;
-								currentColor = 0x00000000;
-								inShift = 32;
-							}
-							continue;
-						}
-					}
+					DrawChar(i, cursor, c, col);
 				}
-
-				Color col = (layerColor & ~colorMask) | (currentColor & colorMask);
-				if(inLink)
-				{
-					++linkChars;
-					col = linkColor;
-				}
-				DrawChar(i, cursor, drawListInternal, c, col);
 			}
 		}
 		pos = cursor;

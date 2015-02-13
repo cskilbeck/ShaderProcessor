@@ -11,7 +11,7 @@ namespace DX
 		DrawList();
 		~DrawList();
 
-		void Reset();
+		void Reset(ID3D11DeviceContext *context);
 		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetMaterial(Material &m);
 		void SetPSTexture(Texture &t, uint index = 0);
@@ -26,7 +26,7 @@ namespace DX
 		void BeginLineStrip();
 		template <typename T> void AddVertex(T const &vertex);
 		void End();
-		void Execute(ID3D11DeviceContext *context);
+		void Execute();
 
 	private:
 
@@ -40,10 +40,15 @@ namespace DX
 
 		byte *mItemBuffer;
 		byte *mItemPointer;
-		uint32 mVertBase;
-		uint32 mVertCount;
+		uint32 mVertexSize;
+
+		byte *mVertZero;
 		byte *mVertPointer;
+		byte *mVertBase;
+		
 		void *mCurrentDrawCallItem;
+		ID3D11DeviceContext *mContext;
+		ShaderState *mCurrentShader;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -60,9 +65,9 @@ namespace DX
 
 	template <typename T> inline void DrawList::AddVertex(T const &vertex)
 	{
+		assert(sizeof(T) == mVertexSize);
 		*((T *)mVertPointer) = vertex;
 		mVertPointer += sizeof(T);
-		++mVertCount;
 	}
 
 	//////////////////////////////////////////////////////////////////////

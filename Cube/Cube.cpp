@@ -141,6 +141,8 @@ bool MyDXWindow::OnCreate()
 
 	coloredShader.reset(new Shaders::Colored());
 
+	coloredVB.reset(new Shaders::Colored::VertBuffer(128));
+
 	Shaders::Colored c;
 	c.VertexShader.VertConstants.Commit(Context());
 	c.Activate(Context());
@@ -195,7 +197,7 @@ bool MyDXWindow::OnCreate()
 	uiShader->PixelShader.smplr = uiSampler.get();
 
 	spriteShader.reset(new Shaders::Sprite());
-	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2));
+	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2, null, DynamicUsage, Writeable));
 	spriteTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	spriteSampler.reset(new Sampler());
 	spriteShader->PixelShader.smplr = spriteSampler.get();
@@ -205,6 +207,28 @@ bool MyDXWindow::OnCreate()
 }
 
 //////////////////////////////////////////////////////////////////////
+
+template<int xf, int yf> SByte4 Flip()
+{
+	static_assert(xf >= 0 && xf <= 1 && yf >= 0 && yf <= 1, "Flip: 0 or 1 for x & y");
+	int x = xf * 255;
+	int y = yf * 255;
+	return { (SByte)(x & 127), (SByte)(y & 127), (SByte)(127 - x), (SByte)(127 - y) };
+}
+
+static SByte4 flips[4] = 
+{
+	{ Flip<0, 0>() },
+	{ Flip<1, 0>() },
+	{ Flip<0, 1>() },
+	{ Flip<1, 1>() }
+};
+
+SByte4 SpriteFlip(int x, int y)
+{
+	assert(x >= 0 && x <= 1 && y >= 0 && y <= 1);
+	return flips[x + y * 2];
+}
 
 void MyDXWindow::OnDraw()
 {
@@ -287,6 +311,7 @@ void MyDXWindow::OnDraw()
 	}
 
 	{
+		drawList.Reset(Context());
 		drawList.SetShader(uiShader.get(), UIVerts.get(), sizeof(Shaders::UI::InputVertex));
 		drawList.SetMaterial(uiMaterial);
 
@@ -333,19 +358,36 @@ void MyDXWindow::OnDraw()
 			drawList.End();
 		}
 
-		FontManager::PrepareToDraw(drawList, this);
-		font->DrawString(&drawList, "Hello World", Vec2f(120, 440));
-		font->DrawString(&drawList, "Hello World", Vec2f(220, 460));
-		font->DrawString(&drawList, "Hello World", Vec2f(120, 340));
-		font->DrawString(&drawList, "Hello World", Vec2f(320, 360));
+		Font::SetupDrawList(&drawList, this);
+
+		font->Begin();
+		font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
+		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
+		font->DrawString("Hello World", Vec2f(120, 340));
+		font->DrawString("Hello World", Vec2f(320, 360));
+		font->End();
+
+		drawList.SetShader(coloredShader.get(), coloredVB.get(), sizeof(Shaders::Colored::InputVertex));
+		Shaders::Colored::VS::VertConstants_t v;
+		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+		drawList.SetMaterial(uiMaterial);
+		drawList.SetVSConstantData(v, 0);
+		drawList.BeginTriangleStrip();
+		using q = Shaders::Colored::InputVertex;
+		drawList.AddVertex<q>({ { 0, 0, 0.0f }, 0x80000000 });
+		drawList.AddVertex<q>({ { 300, 0, 0.0f }, 0x80000000 });
+		drawList.AddVertex<q>({ { 0, 400, 0.0f }, 0x80000000 });
+		drawList.AddVertex<q>({ { 300, 400, 0.0f }, 0x80000ff });
 		drawList.End();
-		drawList.Execute(Context());
+
+		drawList.Execute();
 	}
 
 	spriteShader->GeometryShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
 	spriteShader->GeometryShader.vConstants.Commit(Context());
-	spriteShader->Activate(Context());
-	Shaders::Sprite::InputVertex *v = spriteVerts->Data();
+
+	Shaders::Sprite::InputVertex *v = spriteVerts->Map(Context());
+
 	v[0].Position = { 320, 240 };
 	v[0].Size = { 100, 100 };
 	v[0].Color = 0xffffffff;
@@ -354,16 +396,19 @@ void MyDXWindow::OnDraw()
 	v[0].Scale = { 1, 1 };
 	v[0].UVa = { 0.0f, 0.0f };
 	v[0].UVb = { 1.0f, 1.0f };
+	v[0].Flip = SpriteFlip(1, 1);
 
 	v[1].Position = { 520, 140 };
-	v[1].Size = { 256, 256 };
+	v[1].Size = { 64, 64 };
 	v[1].Color = 0xffffff00;
-	v[1].Rotation = mFrame * 0.04f;
-	v[1].Pivot = { 0.0f, 0.5f };
-	v[1].Scale = { 1, 1 };
+	v[1].Rotation = mFrame * 0.0275f;
+	v[1].Pivot = { 0.5f, 0.5f };
+	v[1].Scale = { sinf(mFrame * 0.1f) * 0.25f + 0.75f, 1 };
+	v[1].Flip = SpriteFlip(0, 0);
 	v[1].UVa = { 0.0f, 0.0f };
 	v[1].UVb = { 1.0f, 1.0f };
-	spriteVerts->Commit(Context());
+
+	spriteVerts->UnMap(Context());
 	spriteVerts->Activate(Context());
 	spriteShader->Activate(Context());
 	uiMaterial.Activate(Context());
@@ -392,4 +437,6 @@ void MyDXWindow::OnDestroy()
 
 	spriteShader.reset();
 	spriteVerts.reset();
+
+	FontManager::CleanUp();
 }

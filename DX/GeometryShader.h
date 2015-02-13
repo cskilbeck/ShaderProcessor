@@ -32,5 +32,4 @@ namespace DX
 
 		DXPtr<ID3D11GeometryShader> mGeometryShader;
 	};
-
 }

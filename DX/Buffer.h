@@ -110,6 +110,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void Update(ID3D11DeviceContext *context, byte *data)
+		{
+			context->UpdateSubresource(mBuffer, 0, null, data, 0, 0);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		uint32 Size() const
 		{
 			return mSize;

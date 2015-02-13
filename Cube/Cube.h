@@ -19,6 +19,7 @@ struct MyDXWindow: DXWindow
 	Ptr<Shaders::Colored> coloredShader;
 	Ptr<Shaders::Colored::VertBuffer> gridVB;
 	Ptr<Shaders::Colored::VertBuffer> octahedronVB;
+	Ptr<Shaders::Colored::VertBuffer> coloredVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
 
 	Material blendEnabled;

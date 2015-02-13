@@ -20,6 +20,7 @@ struct VS_INPUT
 	float2 UVb: float_UVb;
 	float Rotation: float_Rotation;
 	float4 Color: byte_Color;
+	float4 UVFlip: norm8_Flip;	// X = UVOffsetX, Y = UVOffsetY, Z = UVScaleX, W = UVScaleY
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -53,13 +54,17 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 	float sin, cos;
 	sincos(i[0].Rotation, sin, cos);
 
-	float2 pivot = i[0].Pivot * i[0].Size;
+	float2 size = i[0].Size;
+	float2 pivot = i[0].Pivot * size;
+
+	float2 uvoff = i[0].UVFlip.xy;
+	float2 uvscale = i[0].UVFlip.zw;
 
 	float2 c[4];
 	float2 uv[4];
 
 	c[0] = -pivot;
-	c[3] = i[0].Size - pivot;
+	c[3] = size - pivot;
 	c[1] = float2(c[3].x, c[0].y);
 	c[2] = float2(c[0].x, c[3].y);
 
@@ -74,7 +79,7 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 		PS_INPUT o;
 		o.Position = mul(float4(rotate(c[j] * i[0].Scale, sin, cos) + i[0].Position, 0.5, 1), TransformMatrix);
 		o.Color = i[0].Color;
-		o.UV = uv[j];
+		o.UV = uv[j] * uvscale + uvoff;
 		stream.Append(o);
 	}
 }
