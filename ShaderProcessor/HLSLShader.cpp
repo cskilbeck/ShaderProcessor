@@ -514,25 +514,31 @@ static char const *comment = "//////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputHeader(char const *filename) // static
+void HLSLShader::OutputHeader(char const *filename, char const *namespace_) // static
 {
 	OutputCommentLine("%s.h - auto generated file, do not edit", filename);
 	OutputLine("#pragma once");
 	OutputLine("#pragma pack(push, 4)");
 	OutputLine();
-	OutputLine("namespace Shaders");
-	Indent("{");
-	OutputLine();
+	if(namespace_ != null)
+	{
+		OutputLine("namespace %s", namespace_);
+		Indent("{");
+		OutputLine();
+	}
 	OutputLine("using namespace DX;");
 	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputFooter(char const *filename) // static
+void HLSLShader::OutputFooter(char const *filename, char const *namespace_) // static
 {
-	UnIndent("}");
-	OutputLine();
+	if(namespace_ != null)
+	{
+		UnIndent("}");
+		OutputLine();
+	}
 	OutputLine("#pragma pack(pop)");
 }
 
@@ -655,9 +661,10 @@ void HLSLShader::OutputConstBufferMembers()
 	}
 
 	OutputComment("Const Buffers");
+	int index = 0;
 	for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
 	{
-		(*i)->MemberOutput(this->Name());
+		(*i)->MemberOutput(this->Name(), index++);
 	}
 }
 
@@ -811,7 +818,7 @@ void HLSLShader::OutputInputElements()
 
 void HLSLShader::OutputMemberVariable()
 {
-	OutputLine("%s %sShader;", mShaderTypeDesc.refName, mShaderTypeDesc.name);
+	OutputLine("%s %s;", mShaderTypeDesc.refName, ToLower(mShaderTypeDesc.refName).c_str());
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -45,6 +45,13 @@ namespace
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Vec2f GetVec2f(node *node, wchar const *x, wchar const *y)
+	{
+		return Vec2f(GetFloat(node, x), GetFloat(node, y));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline uint32 GetHex32(node *node, wchar const *name)
 	{
 		uint32 number = 0;

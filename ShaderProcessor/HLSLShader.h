@@ -213,8 +213,8 @@ struct HLSLShader
 	int									mSamplers;
 	int									mResources;
 
-	static void OutputHeader(char const *filename);
-	static void OutputFooter(char const *filename);
+	static void OutputHeader(char const *filename, char const *namespace_);
+	static void OutputFooter(char const *filename, char const *namespace_);
 	
 	HLSLShader(tstring const &filename);
 	virtual ~HLSLShader();

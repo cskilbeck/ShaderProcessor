@@ -47,7 +47,8 @@ enum optionIndex
 	PREFER_FLOW_CONTROL,
 	ENABLE_STRICTNESS,
 	IEEE_STRICTNESS,
-	RESOURCES_MAY_ALIAS
+	RESOURCES_MAY_ALIAS,
+	NAMESPACE
 };
 
 bool ParseArgs(int argc, char *argv[], vector<option::Option> &options);

@@ -112,6 +112,7 @@ option::Descriptor const usage[] =
 	{ RESOURCES_MAY_ALIAS, 0, "", "resourcesMayAlias", Arg::None, "--resourcesMayAlias (optional). UAVs and SRVs may alias for cs_5_0." },
 	{ OPTIMIZATION_LEVEL, 0, "", "optimizationLevel", Arg::OptimizationLevel, "--optimizationLevel=[0|1|2|3] (optional). Specify level of optimization (3 = most)." },
 	{ ASSEMBLY_LISTING_FILE, 0, "", "assemblyListingFile", Arg::NonEmpty, "--assemblyListingFile=filename (optional). Output assembly listing on successful compilation." },
+	{ NAMESPACE, 0, "", "namespace", Arg::NonEmpty, "--namespace=Namespace (optional). Enclose Shader definition in a namespace." },
 	{ 0, 0, null, null, null, null }
 };
 

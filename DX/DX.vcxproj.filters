@@ -89,6 +89,9 @@
     <ClInclude Include="RenderState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp">
@@ -129,7 +132,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Font.shader">
+    <SPOCK Include="Shaders\Sprite.shader">
+      <Filter>Shaders</Filter>
+    </SPOCK>
+    <SPOCK Include="Shaders\Font.shader">
       <Filter>Shaders</Filter>
     </SPOCK>
   </ItemGroup>

@@ -285,6 +285,7 @@ namespace Shaders
 			};
 
 			ConstBuffer<vConstants_t> vConstants;
+			enum { vConstants_index = 0 };
 
 			// Constructor
 
@@ -335,20 +336,20 @@ namespace Shaders
 		//////////////////////////////////////////////////////////////////////
 		// Members
 
-		VS VertexShader;
-		GS GeometryShader;
-		PS PixelShader;
+		VS vs;
+		GS gs;
+		PS ps;
 
 		//////////////////////////////////////////////////////////////////////
 		// Constructor
 
 		Sprite()
 		{
-			Shaders[Vertex] = &VertexShader;
+			Shaders[Vertex] = &vs;
 			Shaders[Hull] = null;
 			Shaders[Domain] = null;
-			Shaders[Geometry] = &GeometryShader;
-			Shaders[Pixel] = &PixelShader;
+			Shaders[Geometry] = &gs;
+			Shaders[Pixel] = &ps;
 			Shaders[Compute] = null;
 		}
 
@@ -357,11 +358,11 @@ namespace Shaders
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			VertexShader.Activate(context);
+			vs.Activate(context);
 			context->HSSetShader(null, null, 0);
 			context->DSSetShader(null, null, 0);
-			GeometryShader.Activate(context);
-			PixelShader.Activate(context);
+			gs.Activate(context);
+			ps.Activate(context);
 			context->CSSetShader(null, null, 0);
 		}
 

@@ -57,6 +57,12 @@
                     Description="GS Main function, if there is one"
                     Switch="--gs=" />
 
+    <StringProperty Name="Namespace"
+                    Category="General"
+                    DisplayName="Namespace to put shader into"
+                    Description="If this is blank, shader will be in the global namespace"
+                    Switch="--namespace=" />
+
     <StringProperty Name="HeaderFile"
                     Category="General"
                     DisplayName="Header File Name"

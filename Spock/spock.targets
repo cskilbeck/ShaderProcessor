@@ -45,6 +45,7 @@
            VertexShaderFunction="%(SPOCK.VertexShaderFunction)"
            PixelShaderFunction="%(SPOCK.PixelShaderFunction)"
            GeometryShaderFunction="%(SPOCK.GeometryShaderFunction)"
+           Namespace="%(SPOCK.Namespace)"
            HeaderFile="%(SPOCK.HeaderFile)"
            OptimizationLevel="%(SPOCK.OptimizationLevel)"
            EmbedObject="%(SPOCK.EmbedObject)"

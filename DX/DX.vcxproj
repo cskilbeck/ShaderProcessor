@@ -37,6 +37,7 @@
     <ClInclude Include="RenderState.h" />
     <ClInclude Include="Sampler.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="VertexBuffer.h" />
@@ -72,11 +73,15 @@
     <ClCompile Include="WinMessages.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Font.shader">
+    <SPOCK Include="Shaders\Font.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
-      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
-      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DXShaders</Namespace>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
+    </SPOCK>
+    <SPOCK Include="Shaders\Sprite.shader">
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
     </SPOCK>
   </ItemGroup>
   <ItemGroup>

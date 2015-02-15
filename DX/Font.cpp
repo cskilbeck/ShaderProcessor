@@ -3,7 +3,7 @@
 #include "DX.h"
 #include "RapidXML\rapidxml.hpp"
 #include "RapidXML\xml_util.h"
-#include "Font.Shader.h"
+#include "Shaders\Font.Shader.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -13,8 +13,8 @@ namespace
 
 	linked_list<Font, &Font::mListNode> sAllFonts;
 	bool initialised = false;
-	Ptr<Shaders::Font> shader;
-	Ptr<Shaders::Font::VertBuffer> vertexBuffer;
+	Ptr<DXShaders::Font> shader;
+	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
 	Ptr<Material> material;
 }
@@ -69,9 +69,9 @@ static void LoadShader()
 {
 	if(!initialised)
 	{
-		shader.reset(new Shaders::Font());
+		shader.reset(new DXShaders::Font());
 
-		vertexBuffer.reset(new Shaders::Font::VertBuffer(4096));	// Map/UnMap...one day...
+		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096));	// Map/UnMap...one day...
 
 		MaterialOptions o;
 		o.blend = BlendEnabled;
@@ -82,7 +82,7 @@ static void LoadShader()
 		material.reset(new Material(o));
 
 		sampler.reset(new Sampler());
-		shader->PixelShader.smplr = sampler.get();
+		shader->ps.smplr = sampler.get();
 
 		initialised = true;
 	}
@@ -125,9 +125,9 @@ namespace DX
 	void Font::SetupDrawList(DrawList *drawList, Window const * const window)
 	{
 		mDrawList = drawList;
-		Shaders::Font::GS::vConstants_t v;
+		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		mDrawList->SetShader(shader.get(), vertexBuffer.get(), sizeof(Shaders::Font::InputVertex));
+		mDrawList->SetShader(shader.get(), vertexBuffer.get(), sizeof(DXShaders::Font::InputVertex));
 		mDrawList->SetMaterial(*material.get());
 		mDrawList->SetGSConstantData(v, 0);
 	}
@@ -136,8 +136,8 @@ namespace DX
 
 	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
 	{
-		shader->GeometryShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		shader->GeometryShader.vConstants.Commit(context);
+		shader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		shader->gs.vConstants.Commit(context);
 		vertexBuffer->Activate(context);
 		material->Activate(context);
 		// vertexBufferPointer for stashing verts into
@@ -577,7 +577,7 @@ namespace DX
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
-				Shaders::Font::InputVertex v;
+				DXShaders::Font::InputVertex v;
 				v.Position = cursor + graphic.drawOffset;
 				v.Size = graphic.size;
 				v.UVa = graphic.topLeft;

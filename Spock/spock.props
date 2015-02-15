@@ -9,6 +9,7 @@
       <VertexShaderFunction>vsMain</VertexShaderFunction>
       <PixelShaderFunction>psMain</PixelShaderFunction>
       <GeometryShaderFunction></GeometryShaderFunction>
+      <Namespace>Shaders</Namespace>
       <HeaderFile>%(FullPath).h</HeaderFile>
       <EmbedObject>true</EmbedObject>
       <ShaderModel>4</ShaderModel>

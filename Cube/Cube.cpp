@@ -145,7 +145,7 @@ bool MyDXWindow::OnCreate()
 	coloredVB.reset(new Shaders::Colored::VertBuffer(128));
 
 	Shaders::Colored c;
-	c.VertexShader.VertConstants.Commit(Context());
+	c.vs.VertConstants.Commit(Context());
 	c.Activate(Context());
 
 	CreateGrid();
@@ -156,13 +156,13 @@ bool MyDXWindow::OnCreate()
 	texture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	sampler.reset(new Sampler());
 
-	phongShader->PixelShader.picTexture = texture.get();
-	phongShader->PixelShader.tex1Sampler = sampler.get();
+	phongShader->ps.picTexture = texture.get();
+	phongShader->ps.tex1Sampler = sampler.get();
 
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
-	Shaders::Phong::PS &ps = phongShader->PixelShader;
+	Shaders::Phong::PS &ps = phongShader->ps;
 	ps.Light.lightPos = Float3(0, -15, 0);
 	ps.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
 	ps.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
@@ -190,19 +190,21 @@ bool MyDXWindow::OnCreate()
 	uiOptions.depthWrite = DepthWriteDisabled;
 	uiMaterial.Create(uiOptions);
 
-	uiShader->VertexShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
-	uiShader->VertexShader.vConstants.Commit(Context());
-	uiShader->PixelShader.pConstants.Color = Float4(1, 1, 1, 1);
-	uiShader->PixelShader.pConstants.Commit(Context());
-	uiShader->PixelShader.page = uiTexture.get();
-	uiShader->PixelShader.smplr = uiSampler.get();
+	uiShader->vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	uiShader->vs.vConstants.Commit(Context());
+	uiShader->ps.pConstants.Color = Float4(1, 1, 1, 1);
+	uiShader->ps.pConstants.Commit(Context());
+	uiShader->ps.page = uiTexture.get();
+	uiShader->ps.smplr = uiSampler.get();
 
 	spriteShader.reset(new Shaders::Sprite());
 	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2, null, DynamicUsage, Writeable));
 	spriteTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	spriteSampler.reset(new Sampler());
-	spriteShader->PixelShader.smplr = spriteSampler.get();
-	spriteShader->PixelShader.page = spriteTexture.get();
+	spriteShader->ps.smplr = spriteSampler.get();
+	spriteShader->ps.page = spriteTexture.get();
+
+	spriteSheet.reset(new SpriteSheet(Context(), TEXT("Data\\spriteSheet.xml")));
 
 	timer.Reset();
 
@@ -210,28 +212,6 @@ bool MyDXWindow::OnCreate()
 }
 
 //////////////////////////////////////////////////////////////////////
-
-template<int xf, int yf> SByte4 Flip()
-{
-	static_assert(xf >= 0 && xf <= 1 && yf >= 0 && yf <= 1, "Flip: 0 or 1 for x & y");
-	int x = xf * 255;
-	int y = yf * 255;
-	return { (SByte)(x & 127), (SByte)(y & 127), (SByte)(127 - x), (SByte)(127 - y) };
-}
-
-static SByte4 flips[4] = 
-{
-	{ Flip<0, 0>() },
-	{ Flip<1, 0>() },
-	{ Flip<0, 1>() },
-	{ Flip<1, 1>() }
-};
-
-SByte4 SpriteFlip(int x, int y)
-{
-	assert(x >= 0 && x <= 1 && y >= 0 && y <= 1);
-	return flips[x + y * 2];
-}
 
 void MyDXWindow::OnDraw()
 {
@@ -281,8 +261,8 @@ void MyDXWindow::OnDraw()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-		Shaders::Phong::VS &vs = phongShader->VertexShader;
-		Shaders::Phong::PS &ps = phongShader->PixelShader;
+		Shaders::Phong::VS &vs = phongShader->vs;
+		Shaders::Phong::PS &ps = phongShader->ps;
 		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
 		vs.VertConstants.Commit(Context());
@@ -297,9 +277,9 @@ void MyDXWindow::OnDraw()
 	}
 
 	{
-		Shaders::Colored::VS &vs = coloredShader->VertexShader;
+		Shaders::Colored::VS &vs = coloredShader->vs;
 		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-		modelMatrix *= TranslationMatrix(Vec4(phongShader->PixelShader.Light.lightPos));
+		modelMatrix *= TranslationMatrix(Vec4(phongShader->ps.Light.lightPos));
 		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 		vs.VertConstants.Commit(Context());
 		coloredShader->Activate(Context());
@@ -329,7 +309,7 @@ void MyDXWindow::OnDraw()
 
 		Shaders::UI::PS::pConstants_t c;
 		c.Color = Float4(1, 1, 1, sinf((float)mFrame * 0.2f) * 0.5f + 0.5f);
-		drawList.SetPSConstantData(c, uiShader->PixelShader.pConstants.Index());
+		drawList.SetPSConstantData(c, Shaders::UI::PS::pConstants_index);
 		{
 			using v = Shaders::UI::InputVertex;
 			drawList.BeginTriangleList();
@@ -350,7 +330,7 @@ void MyDXWindow::OnDraw()
 		y1 = y0 + h;
 
 		c.Color = Float4(1, 1, 1, 1);
-		drawList.SetPSConstantData(c, uiShader->PixelShader.pConstants.Index());
+		drawList.SetPSConstantData(c, uiShader->ps.pConstants.Index());
 		{
 			using v = Shaders::UI::InputVertex;
 			drawList.BeginTriangleList();
@@ -388,10 +368,10 @@ void MyDXWindow::OnDraw()
 		drawList.Execute();
 	}
 
-	spriteShader->GeometryShader.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
-	spriteShader->GeometryShader.vConstants.Commit(Context());
+	spriteShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	spriteShader->gs.vConstants.Commit(Context());
 
-	Shaders::Sprite::InputVertex *v = spriteVerts->Map(Context());
+	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 
 	v[0].Position = { 320, 240 };
 	v[0].Size = { 100, 100 };
@@ -401,7 +381,7 @@ void MyDXWindow::OnDraw()
 	v[0].Scale = { 1, 1 };
 	v[0].UVa = { 0.0f, 0.0f };
 	v[0].UVb = { 1.0f, 1.0f };
-	v[0].Flip = SpriteFlip(1, 1);
+	v[0].SetFlip(1, 1);
 
 	v[1].Position = { 520, 140 };
 	v[1].Size = { 64, 64 };
@@ -409,7 +389,7 @@ void MyDXWindow::OnDraw()
 	v[1].Rotation = mFrame * 0.0275f;
 	v[1].Pivot = { 0.5f, 0.5f };
 	v[1].Scale = { sinf(mFrame * 0.1f) * 0.25f + 0.75f, 1 };
-	v[1].Flip = SpriteFlip(0, 0);
+	v[1].SetFlip(0, 0);
 	v[1].UVa = { 0.0f, 0.0f };
 	v[1].UVb = { 1.0f, 1.0f };
 
@@ -419,6 +399,16 @@ void MyDXWindow::OnDraw()
 	uiMaterial.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
+
+	spriteSheet->SetScreenSize(Context(), mClientWidth, mClientHeight);
+	Sprite *s = (*spriteSheet)["temp.jpg"];
+	spriteSheet->BeginRun(Context());
+	spriteSheet->Add(s,
+					 { sinf(mFrame * 0.01f) * 200 + 200, cosf(mFrame * 0.03f) * 200 + 200 },
+					 { sinf(mFrame * 0.02f) * 0.1f + 0.2f, cosf(mFrame * 0.015f) * 0.1f + 0.2f },
+					 { 0.5f, 0.5f },
+					 mFrame * 0.3f);
+	spriteSheet->ExecuteRun(Context());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -442,6 +432,9 @@ void MyDXWindow::OnDestroy()
 
 	spriteShader.reset();
 	spriteVerts.reset();
+	spriteSampler.reset();
+
+	spriteSheet.reset();
 
 	FontManager::CleanUp();
 }

@@ -22,7 +22,7 @@ Texture2D page;
 struct VS_INPUT
 {
 	float2 Position : float_Position;
-	half2 TexCoord : half_TexCoord;
+	float2 TexCoord : half_TexCoord;
 };
 
 //////////////////////////////////////////////////////////////////////

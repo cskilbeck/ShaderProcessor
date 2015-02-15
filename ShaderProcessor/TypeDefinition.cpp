@@ -235,7 +235,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 
 //////////////////////////////////////////////////////////////////////
 
-void TypeDefinition::MemberOutput(string const &shaderName)
+void TypeDefinition::MemberOutput(string const &shaderName, int index)
 {
 	uint padID = 0;
 	uint fieldCount = 0;
@@ -260,6 +260,7 @@ void TypeDefinition::MemberOutput(string const &shaderName)
 	UnIndent("};");
 	OutputLine();
 	OutputLine("ConstBuffer<%s_t> %s;", mDesc.Name, mDesc.Name);
+	OutputLine("enum { %s_index = %d };", mDesc.Name, index);
 	OutputLine();
 }
 

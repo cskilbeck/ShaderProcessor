@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with TexturePacker http://www.codeandweb.com/texturepacker-->
+<!-- $TexturePacker:SmartUpdate:c9ce3983f24919ec1aecc4879f9bc290:59e7a6c4e1b0217e3d71ae46e267ca97:1f5082dd25efd46d832fd7c3e4d09628$ -->
+<!--Format:
+n  => name of the sprite
+x  => sprite x pos in texture
+y  => sprite y pos in texture
+w  => sprite width (may be trimmed)
+h  => sprite height (may be trimmed)
+pX => x pos of the pivot point (relative to sprite width)
+pY => y pos of the pivot point (relative to sprite height)
+oX => sprite's x-corner offset (only available if trimmed)
+oY => sprite's y-corner offset (only available if trimmed)
+oW => sprite's original width (only available if trimmed)
+oH => sprite's original height (only available if trimmed)
+r => 'y' only set if sprite is rotated
+-->
+<TextureAtlas imagePath="spriteSheet.png" width="1024" height="1024">
+    <sprite n="debug0.png" x="327" y="1" w="512" h="128" pX="0.5" pY="0.5"/>
+    <sprite n="temp.jpg" x="1" y="527" w="204" h="204" pX="0.5" pY="0.5"/>
+    <sprite n="temp.png" x="1" y="1" w="325" h="525" pX="0.5" pY="0.5"/>
+</TextureAtlas>

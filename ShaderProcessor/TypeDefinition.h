@@ -24,7 +24,7 @@ struct TypeDefinition
 	~TypeDefinition();
 	
 	void StaticsOutput(DX::string const &shaderName);
-	void MemberOutput(DX::string const &shaderName);
+	void MemberOutput(DX::string const &shaderName, int index);
 	void ConstructorOutput(int index);
 
 	D3D11_SHADER_BUFFER_DESC				mDesc;

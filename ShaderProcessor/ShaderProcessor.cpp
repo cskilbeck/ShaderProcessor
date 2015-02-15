@@ -199,7 +199,9 @@ int main(int argc, char *argv[])
 		return err_noshaderspecified;
 	}
 
-	HLSLShader::OutputHeader(fileName.c_str());
+	char const *namespaceIn = options[NAMESPACE] ? options[NAMESPACE].arg : null;
+
+	HLSLShader::OutputHeader(fileName.c_str(), namespaceIn);
 
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{
@@ -259,7 +261,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			OutputLine("Shaders[%s] = &%sShader;", name, name);
+			OutputLine("Shaders[%s] = &%s;", name, ToLower(ShaderTypeDescs[i].refName).c_str());;
 		}
 	}
 	UnIndent("}");
@@ -279,7 +281,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			OutputLine("%sShader.Activate(context);", ShaderTypeDescs[i].name);
+			OutputLine("%s.Activate(context);", ToLower(ShaderTypeDescs[i].refName).c_str());
 		}
 	}
 	UnIndent("}");
@@ -290,7 +292,8 @@ int main(int argc, char *argv[])
 	OutputLine("Activate(context);");
 	UnIndent("}");
 	UnIndent("};");
-	HLSLShader::OutputFooter(fileName.c_str());
+
+	HLSLShader::OutputFooter(fileName.c_str(), namespaceIn);
 
 	return success;
 }
