@@ -11,7 +11,7 @@ namespace DX
 		DrawList();
 		~DrawList();
 
-		void Reset(ID3D11DeviceContext *context);
+		template<typename T, typename U> void Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer, Material &material);
 		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetMaterial(Material &m);
 		void SetPSTexture(Texture &t, uint index = 0);
@@ -25,6 +25,7 @@ namespace DX
 		void BeginLineList();
 		void BeginLineStrip();
 		template <typename T> void AddVertex(T const &vertex);
+		template <typename T> T &GetVertex();
 		void End();
 		void Execute();
 
@@ -48,8 +49,26 @@ namespace DX
 		
 		void *mCurrentDrawCallItem;
 		ID3D11DeviceContext *mContext;
+		TypelessBuffer *mCurrentVertexBuffer;
 		ShaderState *mCurrentShader;
 	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	template<typename T, typename U> inline void DrawList::Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer, Material &material)
+	{
+		if(mCurrentVertexBuffer != null && mVertBase != null)
+		{
+			// Yank
+			mCurrentVertexBuffer->UnMap(mContext);
+		}
+		mCurrentVertexBuffer = vertbuffer;
+		mContext = context;
+		mItemPointer = mItemBuffer;
+		mCurrentDrawCallItem = null;
+		SetShader(shader, vertbuffer, sizeof(T::InputVertex));
+		SetMaterial(material);
+	}
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -68,6 +87,16 @@ namespace DX
 		assert(sizeof(T) == mVertexSize);
 		*((T *)mVertPointer) = vertex;
 		mVertPointer += sizeof(T);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	template <typename T> inline T &DrawList::GetVertex()
+	{
+		assert(sizeof(T) == mVertexSize);
+		T *p = (T *)mVertPointer;
+		mVertPointer += sizeof(T);
+		return *p;
 	}
 
 	//////////////////////////////////////////////////////////////////////

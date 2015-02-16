@@ -10,6 +10,8 @@ struct MyDXWindow: DXWindow
 
 	FPSCamera camera;
 
+	RenderState<Shaders::Phong> phongRenderState;
+
 	Ptr<Shaders::Phong> phongShader;
 	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
 	Ptr<IndexBuffer<uint16>> cubeIndices;
@@ -35,7 +37,8 @@ struct MyDXWindow: DXWindow
 	Ptr<Texture> uiTexture;
 	Ptr<Sampler> uiSampler;
 	Material uiMaterial;
-	Font *font;
+
+	Ptr<Font> font;
 
 	Ptr<Shaders::Sprite> spriteShader;
 	Ptr<Shaders::Sprite::VertBuffer> spriteVerts;

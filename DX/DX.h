@@ -24,6 +24,5 @@
 #include "DrawList.h"
 #include "Font.h"
 #include "Sprite.h"
-#include "Win32.h"
 #include "Window.h"
 #include "DXWindow.h"

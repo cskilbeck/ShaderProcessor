@@ -57,8 +57,9 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 	float2 size = i[0].Size;
 	float2 pivot = i[0].Pivot * size;
 
-	float2 uvoff = i[0].UVFlip.xy;
-	float2 uvscale = i[0].UVFlip.zw;
+	float2 uvs = i[0].UVb - i[0].UVa;
+	float2 uvoff = i[0].UVFlip.xy * uvs;
+	float2 uvscale = i[0].UVFlip.zw * uvs;
 
 	float2 c[4];
 	float2 uv[4];
@@ -68,10 +69,10 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 	c[1] = float2(c[3].x, c[0].y);
 	c[2] = float2(c[0].x, c[3].y);
 
-	uv[0] = i[0].UVa;
-	uv[1] = float2(i[0].UVb.x, i[0].UVa.y);
-	uv[2] = float2(i[0].UVa.x, i[0].UVb.y);
-	uv[3] = i[0].UVb;
+	uv[0] = float2(0, 0);
+	uv[1] = float2(1, 0);
+	uv[2] = float2(0, 1);
+	uv[3] = float2(1, 1);
 
 	stream.RestartStrip();
 	for(int j=0; j<4; ++j)
@@ -79,7 +80,7 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 		PS_INPUT o;
 		o.Position = mul(float4(rotate(c[j] * i[0].Scale, sin, cos) + i[0].Position, 0.5, 1), TransformMatrix);
 		o.Color = i[0].Color;
-		o.UV = uv[j] * uvscale + uvoff;
+		o.UV = uv[j] * uvscale + uvoff + i[0].UVa;
 		stream.Append(o);
 	}
 }

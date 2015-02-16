@@ -329,7 +329,9 @@ namespace DX
 				break;
 
 			case WM_DESTROY:
+				BeforeDestroy.Fire(&WindowEvent(this));
 				OnDestroy();
+				AfterDestroy.Fire(&WindowEvent(this));
 				PostQuitMessage(0);
 				break;
 

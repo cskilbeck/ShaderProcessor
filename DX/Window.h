@@ -6,10 +6,118 @@
 
 namespace DX
 {
+	struct Window;
+
+	struct Event
+	{
+	};
+
+	struct WindowEvent : Event
+	{
+		Window *window;
+
+		WindowEvent(Window *w) : window(w)
+		{
+		}
+	};
+
+	struct KeyboardEvent: WindowEvent
+	{
+		enum Action : uint16
+		{
+			Pressed = 0,
+			Released = 1
+		};
+
+		Action	action;
+		wchar	key;
+
+		KeyboardEvent(Window *w, Action action, wchar key)
+			: WindowEvent(w)
+			, action(action)
+			, key(key)
+		{
+		}
+	};
+
+	struct MouseEvent: WindowEvent
+	{
+		Point2DS position;
+
+		MouseEvent(Window *w, int x, int y)
+			: WindowEvent(w)
+			, position(x, y)
+		{
+		}
+	};
+
+	struct MouseButtonEvent: MouseEvent
+	{
+		enum Buttons: uint16
+		{
+			Left = 1,
+			Right = 2,
+			Middle = 4
+		};
+
+		enum Action: uint16
+		{
+			Pressed = 0,
+			Released = 1
+		};
+
+		Buttons buttons;
+		Action action;
+
+		MouseButtonEvent(Window *w, int x, int y, Buttons buttons, Action action)
+			: MouseEvent(w, x, y)
+			, buttons(buttons)
+			, action(action)
+		{
+		}
+	};
+
+	using EventFunction = std::function < void(Event &event) > ;
+
+	struct EventHandler : list_node<EventHandler>
+	{
+		EventFunction handler;	// CRAP! Not templated...
+	};
+
+	struct EventList
+	{
+		linked_list<EventHandler> handlers;
+
+		EventHandler *AddListener(EventFunction function)
+		{
+			EventHandler *e = new EventHandler();	// CRAP! Heap allocation...
+			e->handler = function;
+			handlers.push_back(e);
+			return e;
+		}
+
+		void Remove(EventHandler *e)
+		{
+			handlers.remove(e);
+			delete e;
+		}
+
+		void Fire(void *event)
+		{
+			for(auto &e : handlers)
+			{
+				e.handler(*(Event *)event);
+			}
+		}
+	};
+
 	struct Window
 	{
 		Window(int width = 640, int height = 480, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);
 		~Window();
+
+		EventList BeforeDestroy;
+		EventList AfterDestroy;
 
 		virtual bool OnCreate();
 		virtual bool OnUpdate();
@@ -77,21 +185,21 @@ namespace DX
 
 		friend LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-		int								mWidth;
-		int								mHeight;
-		int								mClientWidth;
-		int								mClientHeight;
-		HWND							mHWND;
-		HWND							mParentHWND;
-		HINSTANCE						mHINST;
-		bool							mActive;
-		bool							mResizing;
-		bool							mMessageWait;
-		tstring							mCaption;
-		tstring							mClassName;
-		uint32							mWindowStyle;
+		int			mWidth;
+		int			mHeight;
+		int			mClientWidth;
+		int			mClientHeight;
+		HWND		mHWND;
+		HWND		mParentHWND;
+		HINSTANCE	mHINST;
+		bool		mActive;
+		bool		mResizing;
+		bool		mMessageWait;
+		tstring		mCaption;
+		tstring		mClassName;
+		uint32		mWindowStyle;
 
-		static int						sWindowClassIndex;
+		static int	sWindowClassIndex;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -166,4 +274,14 @@ namespace DX
 		return mMessageWait;
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
+	inline Point2D GetPointFromParam(uintptr param)
+	{
+		return Point2D((int16)LOWORD(param), (int16)HIWORD(param));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	char const *GetWM_Name(uint message);
 }

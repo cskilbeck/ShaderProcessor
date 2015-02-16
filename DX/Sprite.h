@@ -38,6 +38,27 @@ namespace DX
 			assert(x >= 0 && x <= 1 && y >= 0 && y <= 1);
 			Flip = flips[x + y * 2];
 		}
+
+		void Set(
+			Sprite const &o,
+			Vec2f pos,
+			Vec2f scale = { 1, 1 },
+			Vec2f pivot = { 0.5f, 0.5f },
+			float rotation = 0,
+			DX::Color color = Color::White,
+			bool xflip = false,
+			bool yflip = false)
+		{
+			Position = pos;
+			Pivot = pivot;
+			Size = o.Size;
+			Scale = scale;
+			UVa = o.UVa;
+			UVb = o.UVb;
+			Rotation = rotation;
+			Color = color;
+			SetFlip(xflip, yflip);
+		}
 	};
 
 	struct SpriteSheet
@@ -62,14 +83,16 @@ namespace DX
 		{
 		}
 
-		Sprite *operator[] (char const *name)
+		Sprite const &operator[] (char const *name)
 		{
 			auto f = mSheet.find(name);
 			if(f != mSheet.end())
 			{
-				return &mSprites[f->second];
+				return mSprites[f->second];
 			}
-			return null;
+			assert(false);
+			static Sprite s;
+			return s;
 		}
 
 		void BeginRun(ID3D11DeviceContext *context)
@@ -83,7 +106,7 @@ namespace DX
 			*mVertPointer++ = *sprite;
 		}
 
-		void Add(Sprite *sprite,
+		void Add(Sprite const &sprite,
 				 Vec2f pos,
 				 Vec2f scale = { 1, 1 },
 				 Vec2f pivot = { 0.5f, 0.5f },
@@ -95,10 +118,10 @@ namespace DX
 			Sprite *s = (Sprite *)mVertPointer++;
 			s->Position = pos;
 			s->Pivot = pivot;
-			s->Size = sprite->Size;
+			s->Size = sprite.Size;
 			s->Scale = scale;
-			s->UVa = sprite->UVa;
-			s->UVb = sprite->UVb;
+			s->UVa = sprite.UVa;
+			s->UVb = sprite.UVb;
 			s->Rotation = rotation;
 			s->Color = color;
 			s->SetFlip(xflip, yflip);
@@ -106,13 +129,43 @@ namespace DX
 
 		void ExecuteRun(ID3D11DeviceContext *context)
 		{
-			uint count = mVertPointer - mVertBase;
+			uint count = (uint)(mVertPointer - mVertBase);
 			mShader->Activate(context);
 			mMaterial.Activate(context);
 			mVertexBuffer->UnMap(context);
 			mVertexBuffer->Activate(context);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			context->Draw(count, 0);
+		}
+
+		void SetupDrawlist(DrawList &d)
+		{
+			d.SetShader(mShader.get(), mVertexBuffer.get(), sizeof(Shaders::Sprite::InputVertex));
+			d.SetMaterial(mMaterial);
+			d.BeginPointList();
+		}
+
+		void AddToDrawList(
+				DrawList &d,
+				Sprite const &sprite,
+				Vec2f pos,
+				Vec2f scale = { 1, 1 },
+				Vec2f pivot = { 0.5f, 0.5f },
+				float rotation = 0,
+				Color color = Color::White,
+				bool xflip = false,
+				bool yflip = false)
+		{
+			Sprite &q = d.GetVertex<Sprite>();
+			q.Position = pos;
+			q.Pivot = pivot;
+			q.Size = sprite.Size;
+			q.Scale = scale;
+			q.UVa = sprite.UVa;
+			q.UVb = sprite.UVb;
+			q.Rotation = rotation;
+			q.Color = color;
+			q.SetFlip(xflip, yflip);
 		}
 
 		void SetScreenSize(ID3D11DeviceContext *context, int width, int height)
@@ -137,8 +190,9 @@ namespace DX
 			mVertexBuffer.reset(new Shaders::Sprite::VertBuffer(500, null, DynamicUsage, Writeable));
 		}
 
-		~SpriteSheet()
+		virtual ~SpriteSheet()
 		{
+			mSampler.reset();
 		}
 
 		HRESULT Load(tchar const *filename)

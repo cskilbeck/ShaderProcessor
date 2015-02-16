@@ -51,6 +51,7 @@
 // DX
 
 #include "Types.h"
+#include "Win32.h"
 #include "Aligned.h"
 #include "RefCounted.h"
 #include "linked_list.h"

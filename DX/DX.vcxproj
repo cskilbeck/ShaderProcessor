@@ -43,7 +43,6 @@
     <ClInclude Include="VertexBuffer.h" />
     <ClInclude Include="VertexShader.h" />
     <ClInclude Include="Viewport.h" />
-    <ClInclude Include="Win32.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
@@ -66,7 +65,6 @@
     <ClCompile Include="LoadImage.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="Win32.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -78,10 +76,16 @@
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DXShaders</Namespace>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">DXShaders</Namespace>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
     </SPOCK>
     <SPOCK Include="Shaders\Sprite.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
     </SPOCK>
   </ItemGroup>
   <ItemGroup>

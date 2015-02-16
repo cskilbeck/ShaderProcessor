@@ -2,14 +2,13 @@
 // Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing
 // Hull/Domain shader support
 // Structured Buffers/UAV support
-// DrawList: simplify interface & use Map/UnMap for verts
+// DrawList: simplify interface
 // DebugText using Font...
 // Console...?
 // Assimp
 // Animation
 // Bullet
 // Use RenderState for DrawList (no separate Material)
-// 
 
 #include "stdafx.h"
 
@@ -138,11 +137,12 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	font = FontManager::Load(TEXT("Data\\debug"));
+	FontManager::Init(this);
+	font.reset(FontManager::Load(TEXT("Data\\debug")));
 
 	coloredShader.reset(new Shaders::Colored());
 
-	coloredVB.reset(new Shaders::Colored::VertBuffer(128));
+	coloredVB.reset(new Shaders::Colored::VertBuffer(128, null, DynamicUsage, Writeable));
 
 	Shaders::Colored c;
 	c.vs.VertConstants.Commit(Context());
@@ -180,7 +180,7 @@ bool MyDXWindow::OnCreate()
 	MaterialOptions uiOptions;
 
 	uiShader.reset(new Shaders::UI());
-	UIVerts.reset(new Shaders::UI::VertBuffer(12));
+	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
 	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
 	uiOptions.blend = BlendEnabled;
@@ -296,9 +296,7 @@ void MyDXWindow::OnDraw()
 	}
 
 	{
-		drawList.Reset(Context());
-		drawList.SetShader(uiShader.get(), UIVerts.get(), sizeof(Shaders::UI::InputVertex));
-		drawList.SetMaterial(uiMaterial);
+		drawList.Reset(Context(), uiShader.get(), UIVerts.get(), uiMaterial);
 
 		float w = 100 + sinf(mFrame * 0.2f) * 30;
 		float h = 200 + sinf(mFrame * 0.3f) * 30;
@@ -343,10 +341,9 @@ void MyDXWindow::OnDraw()
 			drawList.End();
 		}
 
-		drawList.SetShader(coloredShader.get(), coloredVB.get(), sizeof(Shaders::Colored::InputVertex));
+		drawList.Reset(Context(), coloredShader.get(), coloredVB.get(), uiMaterial);
 		Shaders::Colored::VS::VertConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
-		drawList.SetMaterial(uiMaterial);
 		drawList.SetVSConstantData(v, 0);
 		drawList.BeginTriangleStrip();
 		using q = Shaders::Colored::InputVertex;
@@ -356,8 +353,7 @@ void MyDXWindow::OnDraw()
 		drawList.AddVertex<q>({ { (float)ClientWidth(), 100 }, 0x80000000 });
 		drawList.End();
 
-		Font::SetupDrawList(&drawList, this);
-
+		Font::SetupDrawList(Context(), drawList, this);
 		font->Begin();
 		font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
 		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
@@ -370,7 +366,6 @@ void MyDXWindow::OnDraw()
 
 	spriteShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
 	spriteShader->gs.vConstants.Commit(Context());
-
 	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 
 	v[0].Position = { 320, 240 };
@@ -400,14 +395,26 @@ void MyDXWindow::OnDraw()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
 
+	Sprite const &s = (*spriteSheet)["temp.png"];
+	Sprite const &t = (*spriteSheet)["temp.jpg"];
 	spriteSheet->SetScreenSize(Context(), mClientWidth, mClientHeight);
-	Sprite *s = (*spriteSheet)["temp.jpg"];
+
+	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get(), spriteSheet->mMaterial);
+	drawList.BeginPointList();
+	Sprite &q = drawList.GetVertex<Sprite>();
+	q.Set(t, { 600, 400 });
+	q.Rotation = mFrame * 0.01f;
+	drawList.End();
+	drawList.Execute();
+
 	spriteSheet->BeginRun(Context());
 	spriteSheet->Add(s,
-					 { sinf(mFrame * 0.01f) * 200 + 200, cosf(mFrame * 0.03f) * 200 + 200 },
-					 { sinf(mFrame * 0.02f) * 0.1f + 0.2f, cosf(mFrame * 0.015f) * 0.1f + 0.2f },
+					 { sinf(mFrame * 0.007f) * 200 + 200, cosf(mFrame * 0.009f) * 200 + 200 },
+					 { sinf(mFrame * 0.008f) * 0.1f + 0.2f, cosf(mFrame * 0.006f) * 0.1f + 0.2f },
 					 { 0.5f, 0.5f },
-					 mFrame * 0.3f);
+					 0,
+					 Color::White,
+					 (mFrame >> 6) & 1, (mFrame >> 5) & 1);
 	spriteSheet->ExecuteRun(Context());
 }
 
@@ -428,13 +435,11 @@ void MyDXWindow::OnDestroy()
 	uiTexture.reset();
 	uiSampler.reset();
 	uiMaterial.Release();
-	Release(font);
+	font.reset();
 
 	spriteShader.reset();
 	spriteVerts.reset();
 	spriteSampler.reset();
 
 	spriteSheet.reset();
-
-	FontManager::CleanUp();
 }

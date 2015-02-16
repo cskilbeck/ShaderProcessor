@@ -166,7 +166,7 @@ namespace
 		void Activate(ID3D11DeviceContext *context)
 		{
 			mShader->Activate_V(context);
-			mVertexBuffer->Commit(context);
+			mVertexBuffer->UnMap(context);
 			uint stride = mVertexSize;
 			uint offset = 0;
 			context->IASetVertexBuffers(0, 1, &mVertexBuffer->Handle(), &stride, &offset);
@@ -202,19 +202,10 @@ namespace DX
 
 	DrawList::DrawList()
 		: mItemBuffer(new byte[8192]) // TODO
+		, mCurrentVertexBuffer(null)
+		, mCurrentShader(null)
+		, mCurrentDrawCallItem(null)
 	{
-		Reset(null);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::Reset(ID3D11DeviceContext *context)
-	{
-		mContext = context;
-		mItemPointer = mItemBuffer;
-		mVertBase = null;
-		mVertPointer = null;
-		mCurrentDrawCallItem = null;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -273,7 +264,7 @@ namespace DX
 		i->mShader = shader;
 		i->mVertexBuffer = vb;
 		i->mVertexSize = vertSize;
-		mVertZero = mVertBase = mVertPointer = vb->Data();
+		mVertZero = mVertBase = mVertPointer = vb->Map(mContext);
 		mVertexSize = vertSize;
 	}
 
@@ -353,8 +344,8 @@ namespace DX
 		DrawCallItem *d = (DrawCallItem *)mCurrentDrawCallItem;
 		if(d != null)
 		{
-			d->mBase = (mVertBase - mVertZero) / mVertexSize;
-			d->mCount = (mVertPointer - mVertBase) / mVertexSize;
+			d->mBase = (uint32)((mVertBase - mVertZero) / mVertexSize);
+			d->mCount = (uint32)((mVertPointer - mVertBase) / mVertexSize);
 			mVertBase = mVertPointer;
 			mCurrentDrawCallItem = null;
 		}

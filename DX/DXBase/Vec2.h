@@ -8,8 +8,7 @@
 
 namespace DX
 {
-
-	struct Point2D;
+	template<typename T> struct Point2;
 	struct Size2D;
 
 	//////////////////////////////////////////////////////////////////////
@@ -44,7 +43,7 @@ namespace DX
 			return Float2(x, y);
 		}
 
-		explicit Vec2f(Point2D const &p);
+		explicit Vec2f(Point2<POINT> const &p);
 		explicit Vec2f(Size2D const &s);
 
 		Vec2f const &operator = (Vec2f const &b)
@@ -142,7 +141,7 @@ namespace DX
 			return DirectX::XMFLOAT2(x, y);
 		}
 
-		Vec2f &operator = (Point2D const &p);
+		Vec2f &operator = (Point2<POINT> const &p);
 		Vec2f operator - (Size2D const &s);
 
 		string ToString() const;

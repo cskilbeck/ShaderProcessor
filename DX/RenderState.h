@@ -17,7 +17,13 @@ namespace DX
 
 		RenderState(MaterialOptions &materialOptions)
 		{
-			DXT(Create(materialOptions, new shader()));
+			DXT(Create(materialOptions));
+		}
+
+		HRESULT Create(MaterialOptions &materialOptions)
+		{
+			DXR(Create(materialOptions, new shader()));
+			return S_OK;
 		}
 
 		HRESULT Create(MaterialOptions &materialOptions, shader *s)

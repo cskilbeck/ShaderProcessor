@@ -47,9 +47,6 @@
     <ClInclude Include="Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Win32.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="LoadImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -101,9 +98,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Win32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="LoadImage.cpp">

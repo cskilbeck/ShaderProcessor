@@ -17,6 +17,23 @@ namespace
 	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
 	Ptr<Material> material;
+
+	void fontCleanup(Event &e)
+	{
+		WindowEvent &w = (WindowEvent &)e;
+
+		// destruct (but not delete) all the outstanding font instances, warning as we go
+		while(!sAllFonts.empty())
+		{
+			Font *f = sAllFonts.head();
+			TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
+			f->~Font();
+		}
+		material.reset();
+		shader.reset();
+		sampler.reset();
+		vertexBuffer.reset();
+	}
 }
 
 DrawList *Font::mDrawList = null;
@@ -71,7 +88,7 @@ static void LoadShader()
 	{
 		shader.reset(new DXShaders::Font());
 
-		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096));	// Map/UnMap...one day...
+		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
 
 		MaterialOptions o;
 		o.blend = BlendEnabled;
@@ -92,10 +109,14 @@ static void LoadShader()
 
 namespace DX
 {
+	void FontManager::Init(Window *window)
+	{
+		window->AfterDestroy.AddListener(fontCleanup);
+		LoadShader();
+	}
+
 	Font *FontManager::Load(tchar const *name)
 	{
-		LoadShader();
-
 		tstring l = ToLower(name);
 		for(auto &f : sAllFonts)
 		{
@@ -112,24 +133,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void FontManager::CleanUp()
+	void Font::SetupDrawList(ID3D11DeviceContext *context, DrawList &drawList, Window const * const window)
 	{
-		initialised = false;
-		material.reset();
-		shader.reset();
-		vertexBuffer.reset();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::SetupDrawList(DrawList *drawList, Window const * const window)
-	{
-		mDrawList = drawList;
+		mDrawList = &drawList;
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		mDrawList->SetShader(shader.get(), vertexBuffer.get(), sizeof(DXShaders::Font::InputVertex));
-		mDrawList->SetMaterial(*material.get());
-		mDrawList->SetGSConstantData(v, 0);
+		mDrawList->Reset(context, shader.get(), vertexBuffer.get(), *material.get());
+		mDrawList->SetGSConstantData(v, DXShaders::Font::GS::vConstants_index);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -577,15 +587,14 @@ namespace DX
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
-				DXShaders::Font::InputVertex v;
-				v.Position = cursor + graphic.drawOffset;
-				v.Size = graphic.size;
-				v.UVa = graphic.topLeft;
-				v.UVb = graphic.bottomRight;
-				v.Color = color;
 				if(mDrawList != null)
 				{
-					mDrawList->AddVertex(v);
+					DXShaders::Font::InputVertex &v = mDrawList->GetVertex<DXShaders::Font::InputVertex>();
+					v.Position = cursor + graphic.drawOffset;
+					v.Size = graphic.size;
+					v.UVa = graphic.topLeft;
+					v.UVb = graphic.bottomRight;
+					v.Color = color;
 				}
 				else
 				{

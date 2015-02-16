@@ -72,7 +72,7 @@ std::map<ShaderType, HLSLShader *> shaders;
 
 //////////////////////////////////////////////////////////////////////
 
-bool CompileFile(char const *filename, char const *mainFunction, char const *shaderModel, ShaderType type)
+bool CompileFile(Resource &file, char const *filename, char const *mainFunction, char const *shaderModel, ShaderType type)
 {
 	ShaderTypeDesc const *desc = ShaderTypeDescFromType(type);
 	if(desc == null)
@@ -87,7 +87,7 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 	string output = SetExtension(filename, TEXT(".cso"));
 	ID3DBlob *compiledShader;
 	ID3DBlob *errors = null;
-	if(D3DCompileFromFile(fname.c_str(), null, D3D_COMPILE_STANDARD_FILE_INCLUDE, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors) == S_OK)
+	if(SUCCEEDED(D3DCompile(file.Data(), file.Size(), filename, null, null, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors)))
 	{
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
 		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
@@ -97,17 +97,16 @@ bool CompileFile(char const *filename, char const *mainFunction, char const *sha
 
 		return true;
 	}
-	Printer::Output("/*\n");
 	if(errors != null)
 	{
-		Printer::Output("%s\n", errors->GetBufferPointer());
+		Printer::Output("/*\n%s*/\n", errors->GetBufferPointer());
 		printf("%s", errors->GetBufferPointer());
+		OutputDebugString((LPCSTR)errors->GetBufferPointer());
 	}
 	else
 	{
-		Printer::Output("Unknown D3DCompileFromFile error\n");
+		Printer::Output("// Unknown D3DCompileFromFile error\n");
 	}
-	Printer::Output("*/\n");
 	return false;
 }
 
@@ -123,6 +122,7 @@ enum
 	err_cantwritetoheaderfile,
 	err_compilerproblem,
 	err_noshaderspecified,
+	err_cantloadsourcefile
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -179,13 +179,20 @@ int main(int argc, char *argv[])
 		return err_cantwritetoheaderfile;
 	}
 
+	FileResource sourceFile(options[SOURCE_FILE].arg);
+	if(!sourceFile.IsValid())
+	{
+		fprintf(stderr, "Error loading %s, exiting\n", options[SOURCE_FILE].arg);
+		return err_cantloadsourcefile;
+	}
+
 	int shadersCompiled = 0;
 	for(int i = 0; i < _countof(shaderTypes); ++i)
 	{
 		ShaderArgType &a = shaderTypes[i];
 		if(options[a.arg])
 		{
-			if(!CompileFile(options[SOURCE_FILE].arg, options[a.arg].arg, options[SHADER_MODEL_VERSION].arg, a.type))
+			if(!CompileFile(sourceFile, options[SOURCE_FILE].arg, options[a.arg].arg, options[SHADER_MODEL_VERSION].arg, a.type))
 			{
 				return err_compilerproblem;
 			}

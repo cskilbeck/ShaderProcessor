@@ -36,7 +36,7 @@ namespace DX
 		float GetBaseline() const;
 		string WrapText(string txt, uint pixelWidth, string lineBreak);
 
-		static void SetupDrawList(DrawList *drawList, Window const * const window);
+		static void SetupDrawList(ID3D11DeviceContext *context, DrawList &drawList, Window const * const window);
 		static void SetupContext(ID3D11DeviceContext *context, Window const * const window);
 
 		void Begin();
@@ -47,10 +47,11 @@ namespace DX
 
 		list_node<Font> mListNode;
 
+		~Font();
+
 	private:
 
 		Font();
-		~Font();
 
 		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
 
@@ -89,7 +90,7 @@ namespace DX
 
 	struct FontManager
 	{
+		static void Init(Window *window);
 		static Font *Load(tchar const *name);
-		static void CleanUp();
 	};
 }

@@ -16,8 +16,7 @@ namespace DX
 #define TRACE(x, ...) if (false) {} else (x);
 #endif
 
-	long ErrorMsgBox(tchar const *msg, long error);
-	long ErrorMsgBox(tchar const *msg);
+	void ErrorMessageBox(tchar const *msg, ...);
 
 	HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
 

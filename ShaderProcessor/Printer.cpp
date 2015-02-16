@@ -16,7 +16,7 @@ namespace
 		if(!s.empty())
 		{
 			DWORD wrote;
-			WriteFile(outputFile, s.data(), s.length(), &wrote, null);
+			WriteFile(outputFile, s.data(), (DWORD)s.length(), &wrote, null);
 		}
 	}
 
@@ -24,7 +24,7 @@ namespace
 	{
 		if(s)
 		{
-			size_t l = strlen(s);
+			DWORD l = (DWORD)strlen(s);
 			DWORD wrote;
 			WriteFile(outputFile, s, l, &wrote, null);
 		}
