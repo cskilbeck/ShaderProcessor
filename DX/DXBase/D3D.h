@@ -366,6 +366,7 @@ namespace DX
 			}
 			DXI(mContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView));
 
+			// default viewport for now
 			D3D11_VIEWPORT vp;
 			vp.TopLeftX = 0.0f;
 			vp.TopLeftY = 0.0f;

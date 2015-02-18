@@ -1,11 +1,26 @@
 //////////////////////////////////////////////////////////////////////
 // Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing
-// Hull/Domain shader support
-// Structured Buffers/UAV support
-// DrawList: simplify interface
+// Model hierarchy
+// Skinning
+// 2D UI Elements
 // Assimp
 // Bullet
-// Fix the Event system (templated, no heap allocations)
+// Fix the Event system (get rid of heap allocations, make it flexible)
+// Push DepthStencil/Rasterizer/Blend states down into Shader base class
+// Track resources and clean them up automatically (with warnings, like Font does)
+//		Textures
+//		Samplers
+//		etc
+// Start the long and laborious process of making it platform agnostic
+//		ShaderProcessor (harumph, wtf to do about that? Cg?)
+// ShaderProcessor
+//		Structured Buffers/UAV support
+//		Hull/Domain shader support
+//		Instancing support / multiple vertex streams
+//		Assembly Listing file
+//		deal with multiple render targets
+//		enable mode where bytecode not embedded (somehow!?)
+//		* documentation generator for shader #pragmas
 
 #include "stdafx.h"
 
@@ -53,7 +68,7 @@ static uint16 indices[36] =
 
 //////////////////////////////////////////////////////////////////////
 
-MyDXWindow::MyDXWindow() : DXWindow(640, 480, TEXT("Cube"), DepthBufferEnabled), camera(this)
+MyDXWindow::MyDXWindow() : DXWindow(640, 480, TEXT("Cube"), DepthBufferEnabled, Windowed), camera(this)
 {
 }
 
@@ -322,10 +337,10 @@ void MyDXWindow::OnDraw()
 		drawList.SetVSConstantData(v, 0);
 		drawList.BeginTriangleStrip();
 		using q = Shaders::Colored::InputVertex;
-		drawList.AddVertex<q>({ { 0, 0 }, 0x80000000 });
-		drawList.AddVertex<q>({ { (float)ClientWidth(), 0 }, 0x80000000 });
-		drawList.AddVertex<q>({ { 0, 100 }, 0x80000000 });
-		drawList.AddVertex<q>({ { (float)ClientWidth(), 100 }, 0x80000000 });
+		drawList.AddVertex<q>({ { 0, 0, 0.5f }, 0x80000000 });
+		drawList.AddVertex<q>({ { (float)ClientWidth(), 0, 0.5f }, 0x80000000 });
+		drawList.AddVertex<q>({ { 0, 100, 0.5f }, 0x80000000 });
+		drawList.AddVertex<q>({ { (float)ClientWidth(), 100, 0.5f }, 0x80000000 });
 		drawList.End();
 
 		Font::SetupDrawList(Context(), drawList, this);

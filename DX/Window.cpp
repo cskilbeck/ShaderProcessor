@@ -327,12 +327,13 @@ namespace DX
 				{
 					Close();
 				}
+				Created.Fire(WindowEvent(this));
 				break;
 
 			case WM_DESTROY:
-				BeforeDestroy.Fire(WindowEvent(this));
+				Destroying.Fire(WindowEvent(this));
 				OnDestroy();
-				AfterDestroy.Fire(WindowEvent(this));
+				Destroyed.Fire(WindowEvent(this));
 				PostQuitMessage(0);
 				break;
 

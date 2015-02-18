@@ -1,6 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-// deal with multiple render targets
-// enable mode where bytecode not embedded (somehow!?)
 
 #include "stdafx.h"
 #include <istream>
@@ -171,13 +169,44 @@ CD3D11_BLEND_DESC blendDesc(D3D11_DEFAULT);
 
 enum param_type
 {
-	bool_param,
-	inverse_bool_param,
-	enum_param,
-	float_param,
-	uint8_param,
-	int_param
+	bool_param = 0,
+	inverse_bool_param = 1,
+	enum_param = 2,
+	float_param = 3,
+	uint8_param = 4,
+	int_param = 5
 };
+
+std::map<param_type, char const *> param_names =
+{
+	{ bool_param, "bool" },
+	{ inverse_bool_param, "bool" },
+	{ enum_param, "enum" },
+	{ float_param, "float" },
+	{ uint8_param, "byte" },
+	{ int_param, "int" }
+};
+
+std::map<param_type, char const *> param_print_strings =
+{
+	{ bool_param, "%d" },
+	{ inverse_bool_param, "%d" },
+	{ float_param, "%f" },
+	{ uint8_param, "%02x" },
+	{ int_param, "%d" }
+};
+
+char const *param_type_name(param_type t)
+{
+	auto f = param_names.find(t);
+	return (f == param_names.end()) ? "??" : f->second;
+}
+
+char const *param_printf_string(param_type t)
+{
+	auto f = param_print_strings.find(t);
+	return (f == param_print_strings.end()) ? "" : f->second;
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -533,6 +562,61 @@ std::map<string, vector<parameter>> params =
 
 //////////////////////////////////////////////////////////////////////
 
+char const *bool_vals[] =
+{
+	"false", "true"
+};
+
+void OutputPragmaDocs()
+{
+	// reet
+	// map<string, vector<parameter>>
+
+	for(auto &token : params)
+	{
+		printf("#pragma %s(options)\n", token.first.c_str());
+		for(auto &p : token.second)
+		{
+			printf("  %s = ", p.name);
+			switch(p.type)
+			{
+				case enum_param:
+					{
+						char sep = '[';
+						for(auto &e : p.enum_list)
+						{
+							printf("%c%s", sep, e.first.c_str());
+							if(e.second == *((uint32 *)p.target))
+							{
+								printf("*");
+							}
+							sep = '|';
+						}
+						printf("]\n");
+					}
+					break;
+				case bool_param:
+					printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[(*((BOOL *)p.target)) & 1]);
+					break;
+				case inverse_bool_param:
+					printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[1 - ((*((BOOL *)p.target)) & 1)]);
+					break;
+				case uint8_param:
+					printf("%s (default = 0x%s)\n", param_type_name(p.type),Format(param_printf_string(p.type), *((uint8 *)p.target)).c_str());
+					break;
+				case float_param:
+					printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((float *)p.target)).c_str());
+					break;
+				case int_param:
+					printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((int32 *)p.target)).c_str());
+					break;
+			}
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 uint ScanMaterialOptions(Resource &file, string &result)
 {
 	std::regex rgx(R"(^#pragma\s+(.+)\((.*)\))");
@@ -675,6 +759,12 @@ int main(int argc, char *argv[])
 	{
 		emit_error("Usage");
 		return err_args;
+	}
+
+	if(options[PRAGMA_OPTIONS])
+	{
+		OutputPragmaDocs();
+		return success;
 	}
 
 	if(!options[SOURCE_FILE])

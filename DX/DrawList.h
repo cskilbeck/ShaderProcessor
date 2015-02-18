@@ -38,6 +38,15 @@ namespace DX
 		void SetGSConsts(byte *data, uint size, uint index);
 		void SetPSConsts(byte *data, uint size, uint index);
 
+		void UnMapCurrentVertexBuffer()
+		{
+			if(mCurrentVertexBuffer != null && mVertBase != null)
+			{
+				mCurrentVertexBuffer->UnMap(mContext);
+			}
+			mCurrentVertexBuffer = null;
+		}
+
 		byte *mItemBuffer;
 		byte *mItemPointer;
 		uint32 mVertexSize;
@@ -56,14 +65,9 @@ namespace DX
 
 	template<typename T, typename U> inline void DrawList::Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer)
 	{
-		if(mCurrentVertexBuffer != null && mVertBase != null)
-		{
-			// Yank
-			mCurrentVertexBuffer->UnMap(mContext);
-		}
+		UnMapCurrentVertexBuffer();
 		mCurrentVertexBuffer = vertbuffer;
 		mContext = context;
-		mItemPointer = mItemBuffer;
 		mCurrentDrawCallItem = null;
 		SetShader(shader, vertbuffer, sizeof(T::InputVertex));
 	}

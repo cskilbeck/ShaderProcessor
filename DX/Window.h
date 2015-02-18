@@ -85,10 +85,11 @@ namespace DX
 		Window(int width = 640, int height = 480, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);
 		~Window();
 
+		Event<WindowEvent> Created;
 		Event<WindowActivationEvent> Activated;
 		Event<WindowActivationEvent> Deactivated;
-		Event<WindowEvent> BeforeDestroy;
-		Event<WindowEvent> AfterDestroy;
+		Event<WindowEvent> Destroying;
+		Event<WindowEvent> Destroyed;
 		Event<KeyboardEvent> KeyPressed;
 		Event<KeyboardEvent> KeyReleased;
 		Event<MouseEvent> MouseMoved;

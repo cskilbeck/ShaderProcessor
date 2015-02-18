@@ -87,7 +87,7 @@ namespace DX
 	{
 		LoadShader();
 
-		window->AfterDestroy.AddListener([] (WindowEvent const &)
+		window->Destroyed.AddListener([] (WindowEvent const &)
 		{
 			while(!sAllFonts.empty())
 			{

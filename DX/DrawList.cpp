@@ -153,7 +153,6 @@ namespace
 		void Activate(ID3D11DeviceContext *context)
 		{
 			mShader->Activate_V(context);
-			mVertexBuffer->UnMap(context);
 			uint stride = mVertexSize;
 			uint offset = 0;
 			context->IASetVertexBuffers(0, 1, &mVertexBuffer->Handle(), &stride, &offset);
@@ -192,6 +191,7 @@ namespace DX
 		, mCurrentVertexBuffer(null)
 		, mCurrentShader(null)
 		, mCurrentDrawCallItem(null)
+		, mItemPointer(mItemBuffer)
 	{
 	}
 
@@ -251,6 +251,7 @@ namespace DX
 		i->mShader = shader;
 		i->mVertexBuffer = vb;
 		i->mVertexSize = vertSize;
+		mCurrentVertexBuffer = vb;
 		mVertZero = mVertBase = mVertPointer = vb->Map(mContext);
 		mVertexSize = vertSize;
 	}
@@ -335,6 +336,8 @@ namespace DX
 
 	void DrawList::Execute()
 	{
+		UnMapCurrentVertexBuffer();
+
 		byte *end = mItemPointer;
 		byte *t = mItemBuffer;
 
