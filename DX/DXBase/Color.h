@@ -51,17 +51,10 @@ namespace DX
 		{
 		}
 
-		Color(byte a, byte r, byte g, byte b)
+		Color(byte r, byte g, byte b, byte a = 0xff)
 		{
-			mColor = (uint32)a << kAlphaOffset |
-				(uint32)r << kRedOffset |
-				(uint32)g << kGreenOffset |
-				(uint32)b << kBlueOffset;
-		}
-
-		Color(byte r, byte g, byte b)
-		{
-			mColor = 0xff << kAlphaOffset |
+			mColor =
+				(uint32)a << kAlphaOffset |
 				(uint32)r << kRedOffset |
 				(uint32)g << kGreenOffset |
 				(uint32)b << kBlueOffset;
@@ -94,19 +87,22 @@ namespace DX
 			return *this;
 		}
 
-		uint32 Alpha() const
+		uint Alpha() const
 		{
 			return (mColor >> kAlphaOffset) & 0xff;
 		}
-		uint32 Red() const
+
+		uint Red() const
 		{
 			return (mColor >> kRedOffset) & 0xff;
 		}
-		uint32 Green() const
+
+		uint Green() const
 		{
 			return (mColor >> kGreenOffset) & 0xff;
 		}
-		uint32 Blue() const
+
+		uint Blue() const
 		{
 			return (mColor >> kBlueOffset) & 0xff;
 		}
@@ -115,14 +111,17 @@ namespace DX
 		{
 			mColor = (mColor & kAlphaMask) | ((uint32)a << kAlphaOffset);
 		}
+
 		void SetRed(byte r)
 		{
 			mColor = (mColor & kRedMask) | ((uint32)r << kRedOffset);
 		}
+
 		void SetGreen(byte g)
 		{
 			mColor = (mColor & kGreenMask) | ((uint32)g << kGreenOffset);
 		}
+
 		void SetBlue(byte b)
 		{
 			mColor = (mColor & kBlueMask) | ((uint32)b << kBlueOffset);
@@ -145,9 +144,9 @@ namespace DX
 		Color operator * (Color const &o)
 		{
 			return Color(Alpha()	* o.Alpha() >> 8,
-						 Red()	* o.Red() >> 8,
+						 Red()		* o.Red() >> 8,
 						 Green()	* o.Green() >> 8,
-						 Blue()	* o.Blue() >> 8);
+						 Blue()		* o.Blue() >> 8);
 		}
 
 		enum: uint32

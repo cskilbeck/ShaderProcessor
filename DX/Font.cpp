@@ -553,6 +553,7 @@ namespace DX
 
 	bool Font::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
 	{
+		assert(mDrawList != null);
 		bool rc = false;
 		Map::const_iterator i = mGlyphMap.find(c);
 		if(i != mGlyphMap.end())
@@ -572,19 +573,13 @@ namespace DX
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
-				if(mDrawList != null)
-				{
-					DXShaders::Font::InputVertex &v = mDrawList->GetVertex<DXShaders::Font::InputVertex>();
-					v.Position = cursor + graphic.drawOffset;
-					v.Size = graphic.size;
-					v.UVa = graphic.topLeft;
-					v.UVb = graphic.bottomRight;
-					v.Color = color;
-				}
-				else
-				{
-					// immediate mode, stash into vertpointer++
-				}
+				using Vert = DXShaders::Font::InputVertex;
+				Vert &v = mDrawList->AddVertex<Vert>();
+				v.Position = cursor + graphic.drawOffset;
+				v.Size = graphic.size;
+				v.UVa = graphic.topLeft;
+				v.UVb = graphic.bottomRight;
+				v.Color = color;
 			}
 			cursor.x += glyph.advance;
 			rc = true;

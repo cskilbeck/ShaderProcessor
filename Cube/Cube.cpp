@@ -268,21 +268,24 @@ void MyDXWindow::OnDraw()
 	}
 
 	{
-		Shaders::Colored::VS &vs = coloredShader->vs;
-		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-		modelMatrix *= TranslationMatrix(Vec4(phongShader->ps.Light.lightPos));
-		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vs.VertConstants.Commit(Context());
 		coloredShader->Activate(Context());
-		octahedronVB->Activate(Context());
-		octahedronIB->Activate(Context());
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
+
+		Shaders::Colored::VS &vs = coloredShader->vs;
+
 		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
 		vs.VertConstants.Commit(Context());
 		gridVB->Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(gridVB->Count(), 0);
+
+		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
+		modelMatrix *= TranslationMatrix(Vec4(phongShader->ps.Light.lightPos));
+		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vs.VertConstants.Commit(Context());
+		octahedronVB->Activate(Context());
+		octahedronIB->Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
 	}
 
 	{
@@ -390,7 +393,7 @@ void MyDXWindow::OnDraw()
 
 	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
 	drawList.BeginPointList();
-	Sprite &q = drawList.GetVertex<Sprite>();
+	Sprite &q = drawList.AddVertex<Sprite>();
 	q.Set(t, { 600, 400 });
 	q.Rotation = mFrame * 0.01f;
 	drawList.End();

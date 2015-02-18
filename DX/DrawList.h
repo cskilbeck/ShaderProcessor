@@ -24,7 +24,7 @@ namespace DX
 		void BeginLineList();
 		void BeginLineStrip();
 		template <typename T> void AddVertex(T const &vertex);
-		template <typename T> T &GetVertex();
+		template <typename T> T &AddVertex();
 		void End();
 		void Execute();
 
@@ -38,14 +38,7 @@ namespace DX
 		void SetGSConsts(byte *data, uint size, uint index);
 		void SetPSConsts(byte *data, uint size, uint index);
 
-		void UnMapCurrentVertexBuffer()
-		{
-			if(mCurrentVertexBuffer != null && mVertBase != null)
-			{
-				mCurrentVertexBuffer->UnMap(mContext);
-			}
-			mCurrentVertexBuffer = null;
-		}
+		void UnMapCurrentVertexBuffer();
 
 		byte *mItemBuffer;
 		byte *mItemPointer;
@@ -93,7 +86,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> inline T &DrawList::GetVertex()
+	template <typename T> inline T &DrawList::AddVertex()
 	{
 		assert(sizeof(T) == mVertexSize);
 		T *p = (T *)mVertPointer;

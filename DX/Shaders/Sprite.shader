@@ -85,7 +85,7 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 	for(int j=0; j<4; ++j)
 	{
 		PS_INPUT o;
-		o.Position = mul(float4(rotate(c[j] * i[0].Scale, sin, cos) + i[0].Position, 0.5, 1), TransformMatrix);
+		o.Position = mul(float4(rotate(c[j] * i[0].Scale, sin, cos) + i[0].Position, 0, 1), TransformMatrix);
 		o.Color = i[0].Color;
 		o.UV = uv[j] * uvscale + uvoff + i[0].UVa;
 		stream.Append(o);

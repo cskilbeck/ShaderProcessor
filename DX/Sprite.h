@@ -153,7 +153,7 @@ namespace DX
 				bool xflip = false,
 				bool yflip = false)
 		{
-			Sprite &q = d.GetVertex<Sprite>();
+			Sprite &q = d.AddVertex<Sprite>();
 			q.Position = pos;
 			q.Pivot = pivot;
 			q.Size = sprite.Size;

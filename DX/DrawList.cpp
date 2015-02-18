@@ -205,6 +205,17 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::UnMapCurrentVertexBuffer()
+	{
+		if(mCurrentVertexBuffer != null && mVertBase != null)
+		{
+			mCurrentVertexBuffer->UnMap(mContext);
+		}
+		mCurrentVertexBuffer = null;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::SetVSConsts(byte *data, uint size, uint index)
 	{
 		VSConstBufferItem *i = Add<VSConstBufferItem>();
