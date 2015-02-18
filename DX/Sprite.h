@@ -72,7 +72,6 @@ namespace DX
 		Ptr<Sampler>						mSampler;
 		Ptr<VertexBuffer<Vert>>				mVertexBuffer;
 		Vert *								mCurrentVert;
-		Material							mMaterial;
 		tstring								mName;
 		uint32								mScreenWidth;
 		uint32								mScreenHeight;
@@ -131,7 +130,6 @@ namespace DX
 		{
 			uint count = (uint)(mVertPointer - mVertBase);
 			mShader->Activate(context);
-			mMaterial.Activate(context);
 			mVertexBuffer->UnMap(context);
 			mVertexBuffer->Activate(context);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
@@ -141,7 +139,6 @@ namespace DX
 		void SetupDrawlist(DrawList &d)
 		{
 			d.SetShader(mShader.get(), mVertexBuffer.get(), sizeof(Shaders::Sprite::InputVertex));
-			d.SetMaterial(mMaterial);
 			d.BeginPointList();
 		}
 
@@ -181,12 +178,6 @@ namespace DX
 			mShader.reset(new Shaders::Sprite());
 			mShader->ps.page = mPage.get();
 			mShader->ps.smplr = mSampler.get();
-			MaterialOptions o;
-			o.blend = BlendEnabled;
-			o.depth = DepthDisabled;
-			o.depthWrite = DepthWriteDisabled;
-			o.culling = CullingNone;
-			DXT(mMaterial.Create(o));
 			mVertexBuffer.reset(new Shaders::Sprite::VertBuffer(500, null, DynamicUsage, Writeable));
 		}
 

@@ -1,5 +1,11 @@
 //////////////////////////////////////////////////////////////////////
 
+#pragma depth(disabled)
+#pragma depth_write(disabled)
+#pragma blend_0(enabled, src=src_alpha, dest=inv_src_alpha, op=add)
+
+//////////////////////////////////////////////////////////////////////
+
 cbuffer vConstants
 {
 	matrix TransformMatrix;
@@ -20,7 +26,7 @@ struct VS_INPUT
 	float2 UVb: float_UVb;
 	float Rotation: float_Rotation;
 	float4 Color: byte_Color;
-	float4 UVFlip: norm8_Flip;	// X = UVOffsetX, Y = UVOffsetY, Z = UVScaleX, W = UVScaleY
+	float4 UVFlip: norm8_Flip;
 };
 
 //////////////////////////////////////////////////////////////////////

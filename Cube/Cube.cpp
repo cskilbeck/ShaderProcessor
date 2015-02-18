@@ -3,12 +3,9 @@
 // Hull/Domain shader support
 // Structured Buffers/UAV support
 // DrawList: simplify interface
-// DebugText using Font...
-// Console...?
 // Assimp
-// Animation
 // Bullet
-// Use RenderState for DrawList (no separate Material)
+// Fix the Event system (templated, no heap allocations)
 
 #include "stdafx.h"
 
@@ -144,10 +141,6 @@ bool MyDXWindow::OnCreate()
 
 	coloredVB.reset(new Shaders::Colored::VertBuffer(128, null, DynamicUsage, Writeable));
 
-	Shaders::Colored c;
-	c.vs.VertConstants.Commit(Context());
-	c.Activate(Context());
-
 	CreateGrid();
 	CreateOctahedron();
 
@@ -169,26 +162,10 @@ bool MyDXWindow::OnCreate()
 	ps.Light.specColor = Float3(1, 1, 0.8f);
 	ps.Light.Commit(Context());
 
-	MaterialOptions o;
-	o.blend = BlendDisabled;
-	blendDisabled.Create(o);
-
-	o.blend = BlendEnabled;
-	o.depthWrite = DepthWriteDisabled;
-	blendEnabled.Create(o);
-
-	MaterialOptions uiOptions;
-
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
 	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
-	uiOptions.blend = BlendEnabled;
-	uiOptions.depth = DepthDisabled;
-	uiOptions.culling = CullingNone;
-	uiOptions.fillMode = FillModeSolid;
-	uiOptions.depthWrite = DepthWriteDisabled;
-	uiMaterial.Create(uiOptions);
 
 	uiShader->vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
 	uiShader->vs.vConstants.Commit(Context());
@@ -271,7 +248,6 @@ void MyDXWindow::OnDraw()
 		phongShader->Activate(Context());
 		cubeVerts->Activate(Context());
 		cubeIndices->Activate(Context());
-		blendDisabled.Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}
@@ -289,14 +265,13 @@ void MyDXWindow::OnDraw()
 		Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
 		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
 		vs.VertConstants.Commit(Context());
-		blendEnabled.Activate(Context());
 		gridVB->Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(gridVB->Count(), 0);
 	}
 
 	{
-		drawList.Reset(Context(), uiShader.get(), UIVerts.get(), uiMaterial);
+		drawList.Reset(Context(), uiShader.get(), UIVerts.get());
 
 		float w = 100 + sinf(mFrame * 0.2f) * 30;
 		float h = 200 + sinf(mFrame * 0.3f) * 30;
@@ -341,7 +316,7 @@ void MyDXWindow::OnDraw()
 			drawList.End();
 		}
 
-		drawList.Reset(Context(), coloredShader.get(), coloredVB.get(), uiMaterial);
+		drawList.Reset(Context(), coloredShader.get(), coloredVB.get());
 		Shaders::Colored::VS::VertConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
 		drawList.SetVSConstantData(v, 0);
@@ -358,7 +333,7 @@ void MyDXWindow::OnDraw()
 		font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
 		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
 		font->DrawString("Hello World", Vec2f(120, 340));
-		font->DrawString(Format("DeltaTime %6.2fms (%dfps)", deltaTime * 1000, (int)(1/deltaTime)).c_str(), Vec2f(0, 0));
+		font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1/deltaTime)).c_str(), Vec2f(0, 0));
 		font->End();
 
 		drawList.Execute();
@@ -391,7 +366,6 @@ void MyDXWindow::OnDraw()
 	spriteVerts->UnMap(Context());
 	spriteVerts->Activate(Context());
 	spriteShader->Activate(Context());
-	uiMaterial.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
 
@@ -399,7 +373,7 @@ void MyDXWindow::OnDraw()
 	Sprite const &t = (*spriteSheet)["temp.jpg"];
 	spriteSheet->SetScreenSize(Context(), mClientWidth, mClientHeight);
 
-	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get(), spriteSheet->mMaterial);
+	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
 	drawList.BeginPointList();
 	Sprite &q = drawList.GetVertex<Sprite>();
 	q.Set(t, { 600, 400 });
@@ -427,14 +401,11 @@ void MyDXWindow::OnDestroy()
 	texture.reset();
 	sampler.reset();
 	cubeVerts.reset();
-	blendEnabled.Release();
-	blendDisabled.Release();
 
 	uiShader.reset();
 	UIVerts.reset();
 	uiTexture.reset();
 	uiSampler.reset();
-	uiMaterial.Release();
 	font.reset();
 
 	spriteShader.reset();

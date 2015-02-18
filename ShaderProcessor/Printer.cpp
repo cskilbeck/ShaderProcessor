@@ -169,4 +169,24 @@ namespace Printer
 		WriteFile(outputFile, buffer, n, &wrote, null);
 		WriteString(crlf2);
 	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void OutputBinary(void const *data, int sizeOfData)
+	{
+		char *sep = "";
+		uint32 *d = (uint32 *)data;
+		for(int i = 0; i < sizeOfData/ 4; ++i)
+		{
+			Output(sep);
+			if((i & 7) == 0)
+			{
+				OutputLine();
+				OutputIndent();
+			}
+			Output("0x%08x", d[i]);
+			sep = ",";
+		}
+		OutputLine();
+	}
 }

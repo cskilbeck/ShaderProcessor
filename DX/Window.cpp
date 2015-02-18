@@ -312,7 +312,8 @@ namespace DX
 	{
 		MINMAXINFO *mminfo;
 		PAINTSTRUCT ps;
-		Point2D mousePos;
+		MousePos mousePos;
+		Point2D mouseScreenPos;
 
 		switch(msg)
 		{
@@ -329,9 +330,9 @@ namespace DX
 				break;
 
 			case WM_DESTROY:
-				BeforeDestroy.Fire(&WindowEvent(this));
+				BeforeDestroy.Fire(WindowEvent(this));
 				OnDestroy();
-				AfterDestroy.Fire(&WindowEvent(this));
+				AfterDestroy.Fire(WindowEvent(this));
 				PostQuitMessage(0);
 				break;
 
@@ -352,8 +353,10 @@ namespace DX
 
 			case WM_MOUSEWHEEL:
 				Mouse::WheelDelta = (float)(HIWORD(wParam)) / WHEEL_DELTA;
-				mousePos = GetPointFromParam(lParam);
-				ScreenToClient(hWnd, &mousePos);
+				mouseScreenPos = GetPoint2DFromParam(lParam);
+				ScreenToClient(hWnd, &mouseScreenPos);
+				mousePos.x = (int16)mouseScreenPos.x;
+				mousePos.y = (int16)mouseScreenPos.y;
 				OnMouseWheel(mousePos, (int16)HIWORD(wParam), wParam);
 				break;
 
@@ -379,54 +382,66 @@ namespace DX
 			case WM_KEYDOWN:
 				Keyboard::LastKeyPressed = (int)wParam;
 				OnKeyDown((int)wParam, lParam);
+				KeyPressed.Fire(KeyboardEvent(this, (int)wParam));
 				break;
 
 			case WM_KEYUP:
 				OnKeyUp((int)wParam, lParam);
+				KeyReleased.Fire(KeyboardEvent(this, (int)wParam));
 				break;
 
 			case WM_MOUSEMOVE:
-				OnMouseMove(GetPointFromParam(lParam), wParam);
+				mousePos = GetMousePosFromParam(lParam);
+				OnMouseMove(mousePos, wParam);
+				MouseMoved.Fire(MouseEvent(this, mousePos));
 				break;
 
 			case WM_LBUTTONDBLCLK:
-				OnLeftMouseDoubleClick(GetPointFromParam(lParam));
+				OnLeftMouseDoubleClick(GetMousePosFromParam(lParam));
+				MouseDoubleClicked.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDBLCLK:
-				OnRightMouseDoubleClick(GetPointFromParam(lParam));
+				OnRightMouseDoubleClick(GetMousePosFromParam(lParam));
+				MouseDoubleClicked.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_LBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Left;
 				Mouse::Held |= Mouse::Button::Left;
-				OnLeftButtonDown(GetPointFromParam(lParam), wParam);
+				OnLeftButtonDown(GetMousePosFromParam(lParam), wParam);
+				MouseButtonPressed.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_LBUTTONUP:
 				Mouse::Released |= Mouse::Button::Left;
 				Mouse::Held &= ~Mouse::Button::Left;
-				OnLeftButtonUp(GetPointFromParam(lParam), wParam);
+				OnLeftButtonUp(GetMousePosFromParam(lParam), wParam);
+				MouseButtonReleased.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Right;
 				Mouse::Held |= Mouse::Button::Right;
-				OnRightButtonDown(GetPointFromParam(lParam), wParam);
+				OnRightButtonDown(GetMousePosFromParam(lParam), wParam);
+				MouseButtonPressed.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_RBUTTONUP:
 				Mouse::Released |= Mouse::Button::Right;
 				Mouse::Held &= ~Mouse::Button::Right;
-				OnRightButtonUp(GetPointFromParam(lParam), wParam);
+				OnRightButtonUp(GetMousePosFromParam(lParam), wParam);
+				MouseButtonReleased.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_ACTIVATEAPP:
 				SetActive(wParam == TRUE);
+				Activated.Fire(WindowActivationEvent(this, IsActive()));
 				break;
 
 			case WM_ACTIVATE:
 				SetActive(wParam != WA_INACTIVE);
+				Activated.Fire(WindowActivationEvent(this, IsActive()));
 				break;
 
 			case WM_CLOSE:
@@ -545,43 +560,43 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnMouseMove(Point2D pos, uintptr flags)
+	void Window::OnMouseMove(MousePos pos, uintptr flags)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnLeftMouseDoubleClick(Point2D pos)
+	void Window::OnLeftMouseDoubleClick(MousePos pos)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnRightMouseDoubleClick(Point2D pos)
+	void Window::OnRightMouseDoubleClick(MousePos pos)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnLeftButtonDown(Point2D pos, uintptr flags)
+	void Window::OnLeftButtonDown(MousePos pos, uintptr flags)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnLeftButtonUp(Point2D pos, uintptr flags)
+	void Window::OnLeftButtonUp(MousePos pos, uintptr flags)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnRightButtonDown(Point2D pos, uintptr flags)
+	void Window::OnRightButtonDown(MousePos pos, uintptr flags)
 	{
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnRightButtonUp(Point2D pos, uintptr flags)
+	void Window::OnRightButtonUp(MousePos pos, uintptr flags)
 	{
 	}
 
@@ -605,7 +620,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::OnMouseWheel(Point2D pos, int delta, uintptr flags)
+	void Window::OnMouseWheel(MousePos pos, int delta, uintptr flags)
 	{
 	}
 

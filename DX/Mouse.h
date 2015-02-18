@@ -8,6 +8,8 @@ namespace DX
 {
 	struct Window;
 
+	using MousePos = Point2DS;
+
 	namespace Mouse
 	{
 		//////////////////////////////////////////////////////////////////////

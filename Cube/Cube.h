@@ -10,8 +10,6 @@ struct MyDXWindow: DXWindow
 
 	FPSCamera camera;
 
-	RenderState<Shaders::Phong> phongRenderState;
-
 	Ptr<Shaders::Phong> phongShader;
 	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
 	Ptr<IndexBuffer<uint16>> cubeIndices;
@@ -24,9 +22,6 @@ struct MyDXWindow: DXWindow
 	Ptr<Shaders::Colored::VertBuffer> coloredVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
 
-	Material blendEnabled;
-	Material blendDisabled;
-
 	Vec4f cubePos;
 	Vec4f cubeScale;
 	Vec4f cubeRot;
@@ -36,7 +31,6 @@ struct MyDXWindow: DXWindow
 	Ptr<Shaders::UI::VertBuffer> UIVerts;
 	Ptr<Texture> uiTexture;
 	Ptr<Sampler> uiSampler;
-	Material uiMaterial;
 
 	Ptr<Font> font;
 

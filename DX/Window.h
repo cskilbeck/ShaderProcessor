@@ -8,116 +8,93 @@ namespace DX
 {
 	struct Window;
 
-	struct Event
-	{
-	};
+	//////////////////////////////////////////////////////////////////////
 
-	struct WindowEvent : Event
+	struct WindowEvent
 	{
 		Window *window;
 
-		WindowEvent(Window *w) : window(w)
+		WindowEvent(Window *window) : window(window)
 		{
 		}
 	};
 
+	//////////////////////////////////////////////////////////////////////
+
+	struct WindowActivationEvent: WindowEvent
+	{
+		bool active;
+
+		WindowActivationEvent(Window *window, bool active)
+			: WindowEvent(window)
+			, active(active)
+		{
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct KeyboardEvent: WindowEvent
 	{
-		enum Action : uint16
-		{
-			Pressed = 0,
-			Released = 1
-		};
-
-		Action	action;
 		wchar	key;
 
-		KeyboardEvent(Window *w, Action action, wchar key)
+		KeyboardEvent(Window *w, wchar key)
 			: WindowEvent(w)
-			, action(action)
 			, key(key)
 		{
 		}
 	};
 
+	//////////////////////////////////////////////////////////////////////
+
 	struct MouseEvent: WindowEvent
 	{
-		Point2DS position;
+		MousePos position;
 
-		MouseEvent(Window *w, int x, int y)
+		MouseEvent(Window *w, MousePos pos)
 			: WindowEvent(w)
-			, position(x, y)
+			, position(pos)
 		{
 		}
 	};
 
+	//////////////////////////////////////////////////////////////////////
+
 	struct MouseButtonEvent: MouseEvent
 	{
-		enum Buttons: uint16
+		enum Buttons
 		{
 			Left = 1,
 			Right = 2,
 			Middle = 4
 		};
 
-		enum Action: uint16
-		{
-			Pressed = 0,
-			Released = 1
-		};
-
 		Buttons buttons;
-		Action action;
 
-		MouseButtonEvent(Window *w, int x, int y, Buttons buttons, Action action)
-			: MouseEvent(w, x, y)
+		MouseButtonEvent(Window *w, MousePos pos, Buttons buttons)
+			: MouseEvent(w, pos)
 			, buttons(buttons)
-			, action(action)
 		{
 		}
 	};
 
-	using EventFunction = std::function < void(Event &event) > ;
-
-	struct EventHandler : list_node<EventHandler>
-	{
-		EventFunction handler;	// CRAP! Not templated...
-	};
-
-	struct EventList
-	{
-		linked_list<EventHandler> handlers;
-
-		EventHandler *AddListener(EventFunction function)
-		{
-			EventHandler *e = new EventHandler();	// CRAP! Heap allocation...
-			e->handler = function;
-			handlers.push_back(e);
-			return e;
-		}
-
-		void Remove(EventHandler *e)
-		{
-			handlers.remove(e);
-			delete e;
-		}
-
-		void Fire(void *event)
-		{
-			for(auto &e : handlers)
-			{
-				e.handler(*(Event *)event);
-			}
-		}
-	};
+	//////////////////////////////////////////////////////////////////////
 
 	struct Window
 	{
 		Window(int width = 640, int height = 480, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);
 		~Window();
 
-		EventList BeforeDestroy;
-		EventList AfterDestroy;
+		Event<WindowActivationEvent> Activated;
+		Event<WindowActivationEvent> Deactivated;
+		Event<WindowEvent> BeforeDestroy;
+		Event<WindowEvent> AfterDestroy;
+		Event<KeyboardEvent> KeyPressed;
+		Event<KeyboardEvent> KeyReleased;
+		Event<MouseEvent> MouseMoved;
+		Event<MouseButtonEvent> MouseButtonPressed;
+		Event<MouseButtonEvent> MouseButtonReleased;
+		Event<MouseButtonEvent> MouseDoubleClicked;
 
 		virtual bool OnCreate();
 		virtual bool OnUpdate();
@@ -125,14 +102,14 @@ namespace DX
 		virtual void OnDestroy();
 		virtual void OnMoved();
 		virtual void OnResized();
-		virtual void OnMouseMove(Point2D pos, uintptr flags);
-		virtual void OnMouseWheel(Point2D pos, int delta, uintptr flags);
-		virtual void OnLeftMouseDoubleClick(Point2D pos);
-		virtual void OnRightMouseDoubleClick(Point2D pos);
-		virtual void OnLeftButtonDown(Point2D pos, uintptr flags);
-		virtual void OnLeftButtonUp(Point2D pos, uintptr flags);
-		virtual void OnRightButtonDown(Point2D pos, uintptr flags);
-		virtual void OnRightButtonUp(Point2D pos, uintptr flags);
+		virtual void OnMouseMove(MousePos pos, uintptr flags);
+		virtual void OnMouseWheel(MousePos pos, int delta, uintptr flags);
+		virtual void OnLeftMouseDoubleClick(MousePos pos);
+		virtual void OnRightMouseDoubleClick(MousePos pos);
+		virtual void OnLeftButtonDown(MousePos pos, uintptr flags);
+		virtual void OnLeftButtonUp(MousePos pos, uintptr flags);
+		virtual void OnRightButtonDown(MousePos pos, uintptr flags);
+		virtual void OnRightButtonUp(MousePos pos, uintptr flags);
 		virtual void OnChar(int key, uintptr flags);
 		virtual void OnKeyDown(int key, uintptr flags);
 		virtual void OnKeyUp(int key, uintptr flags);
@@ -276,9 +253,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Point2D GetPointFromParam(uintptr param)
+	inline Point2D GetPoint2DFromParam(uintptr param)
 	{
 		return Point2D((int16)LOWORD(param), (int16)HIWORD(param));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline MousePos GetMousePosFromParam(uintptr param)
+	{
+		return MousePos((int16)LOWORD(param), (int16)HIWORD(param));
 	}
 
 	//////////////////////////////////////////////////////////////////////

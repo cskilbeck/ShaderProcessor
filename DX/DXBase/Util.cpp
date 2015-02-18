@@ -8,27 +8,60 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
+
+	string Format_V(char const *fmt, va_list v)
+	{
+		char buffer[512];
+		int l = _vscprintf(fmt, v);
+		if(l >= _countof(buffer))
+		{
+			char *buf = new char[l + 1];
+			_vsnprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
+			string s(buf);
+			delete(buf);
+			return s;
+		}
+		_vsnprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
+		return string(buffer);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	wstring Format_V(wchar const *fmt, va_list v)
+	{
+		wchar buffer[512];
+		int l = _vscwprintf(fmt, v);
+		if(l >= _countof(buffer))
+		{
+			wchar *buf = new wchar[l + 1];
+			_vsnwprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
+			wstring s(buf);
+			delete(buf);
+			return s;
+		}
+		_vsnwprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
+		return wstring(buffer);
+	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void Trace(wchar const *strMsg, ...)
 	{
-		wchar strBuffer[512];
 		va_list args;
 		va_start(args, strMsg);
-		_vsnwprintf_s(strBuffer, _countof(strBuffer), strMsg, args);
+		OutputDebugStringW(Format_V(strMsg, args).c_str());
 		va_end(args);
-		OutputDebugStringW(strBuffer);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void Trace(char const *strMsg, ...)
 	{
-		char strBuffer[512];
 		va_list args;
 		va_start(args, strMsg);
-		_vsnprintf_s(strBuffer, _countof(strBuffer), strMsg, args);
+		OutputDebugStringA(Format_V(strMsg, args).c_str());
 		va_end(args);
-		OutputDebugStringA(strBuffer);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -117,22 +150,18 @@ namespace DX
 
 	wstring Format(wchar const *fmt, ...)
 	{
-		wchar buffer[1024];
 		va_list v;
 		va_start(v, fmt);
-		vswprintf_s(buffer, fmt, v);
-		return wstring(buffer);
+		return Format_V(fmt, v);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	string Format(char const *fmt, ...)
 	{
-		char buffer[1024];
 		va_list v;
 		va_start(v, fmt);
-		_vsnprintf_s(buffer, sizeof(buffer), fmt, v);
-		return string(buffer);
+		return Format_V(fmt, v);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -276,12 +305,11 @@ namespace DX
 
 	void ErrorMessageBox(tchar const *format, ...)
 	{
-		tchar buffer[1024];
 		va_list v;
 		va_start(v, format);
-		_vstprintf_s(buffer, format, v);
-		MessageBox(NULL, buffer, TEXT("Error"), MB_ICONEXCLAMATION);
-		TRACE(Format(TEXT("%s\n"), buffer).c_str());
+		tstring s = Format_V(format, v);
+		MessageBox(NULL, s.c_str(), TEXT("Error"), MB_ICONEXCLAMATION);
+		TRACE(Format(TEXT("%s\n"), s.c_str()).c_str());
 		//assert(false);
 	}
 

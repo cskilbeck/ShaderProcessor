@@ -2,6 +2,7 @@
 
 #include "DXBase\DXBase.h"
 
+#include "Event.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Timer.h"
@@ -11,7 +12,6 @@
 #include "LoadImage.h"
 #include "Texture.h"
 #include "Sampler.h"
-#include "Material.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "IndexBuffer.h"
@@ -20,7 +20,6 @@
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "GeometryShader.h"
-#include "RenderState.h"
 #include "DrawList.h"
 #include "Font.h"
 #include "Sprite.h"

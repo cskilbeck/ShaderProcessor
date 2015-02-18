@@ -16,24 +16,6 @@ namespace
 	Ptr<DXShaders::Font> shader;
 	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
-	Ptr<Material> material;
-
-	void fontCleanup(Event &e)
-	{
-		WindowEvent &w = (WindowEvent &)e;
-
-		// destruct (but not delete) all the outstanding font instances, warning as we go
-		while(!sAllFonts.empty())
-		{
-			Font *f = sAllFonts.head();
-			TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
-			f->~Font();
-		}
-		material.reset();
-		shader.reset();
-		sampler.reset();
-		vertexBuffer.reset();
-	}
 }
 
 DrawList *Font::mDrawList = null;
@@ -90,14 +72,6 @@ static void LoadShader()
 
 		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
 
-		MaterialOptions o;
-		o.blend = BlendEnabled;
-		o.depth = DepthDisabled;
-		o.depthWrite = DepthWriteDisabled;
-		o.culling = CullingNone;
-		o.fillMode = FillModeSolid;
-		material.reset(new Material(o));
-
 		sampler.reset(new Sampler());
 		shader->ps.smplr = sampler.get();
 
@@ -111,8 +85,20 @@ namespace DX
 {
 	void FontManager::Init(Window *window)
 	{
-		window->AfterDestroy.AddListener(fontCleanup);
 		LoadShader();
+
+		window->AfterDestroy.AddListener([] (WindowEvent const &)
+		{
+			while(!sAllFonts.empty())
+			{
+				Font *f = sAllFonts.head();
+				TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
+				f->~Font();
+			}
+			shader.reset();
+			sampler.reset();
+			vertexBuffer.reset();
+		});
 	}
 
 	Font *FontManager::Load(tchar const *name)
@@ -138,7 +124,7 @@ namespace DX
 		mDrawList = &drawList;
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		mDrawList->Reset(context, shader.get(), vertexBuffer.get(), *material.get());
+		mDrawList->Reset(context, shader.get(), vertexBuffer.get());
 		mDrawList->SetGSConstantData(v, DXShaders::Font::GS::vConstants_index);
 	}
 
@@ -149,7 +135,6 @@ namespace DX
 		shader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		shader->gs.vConstants.Commit(context);
 		vertexBuffer->Activate(context);
-		material->Activate(context);
 		// vertexBufferPointer for stashing verts into
 	}
 

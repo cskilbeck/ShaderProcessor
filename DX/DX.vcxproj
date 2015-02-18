@@ -26,15 +26,14 @@
     <ClInclude Include="DrawList.h" />
     <ClInclude Include="DX.h" />
     <ClInclude Include="DXWindow.h" />
+    <ClInclude Include="Event.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="GeometryShader.h" />
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="LoadImage.h" />
-    <ClInclude Include="Material.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="PixelShader.h" />
-    <ClInclude Include="RenderState.h" />
     <ClInclude Include="Sampler.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Sprite.h" />

@@ -6,6 +6,8 @@
 
 namespace DX
 {
+	string Format_V(char const *format, va_list v);
+	wstring Format_V(wchar const *format, va_list v);
 
 	void Trace(wchar const *strMsg, ...);
 	void Trace(char const *strMsg, ...);
@@ -290,10 +292,19 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	template <typename T> std::basic_string<T> Trim(std::basic_string<T> str)
+	{
+		str.erase(0, str.find_first_not_of(" \t\r\n"));
+		str.erase(str.find_last_not_of(" \t\r\n") + 1);
+		return str;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	template <class container_t, class string_t, class char_t>
 	void tokenize(string_t const &str, container_t &tokens, char_t const *delimiters, bool includeEmpty = true)
 	{
-		string_t::size_type end = 0, start = 0, len = str.length();
+		string_t::size_type end = 0, start = 0, len = str.size();
 		while(end < len)
 		{
 			end = str.find_first_of(delimiters, start);

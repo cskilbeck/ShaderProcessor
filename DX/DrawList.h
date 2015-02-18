@@ -11,9 +11,8 @@ namespace DX
 		DrawList();
 		~DrawList();
 
-		template<typename T, typename U> void Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer, Material &material);
+		template<typename T, typename U> void Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer);
 		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
-		void SetMaterial(Material &m);
 		void SetPSTexture(Texture &t, uint index = 0);
 		void SetPSSampler(Sampler &s, uint index = 0);
 		template <typename T> void SetVSConstantData(T &data, uint index);
@@ -55,7 +54,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename T, typename U> inline void DrawList::Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer, Material &material)
+	template<typename T, typename U> inline void DrawList::Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer)
 	{
 		if(mCurrentVertexBuffer != null && mVertBase != null)
 		{
@@ -67,7 +66,6 @@ namespace DX
 		mItemPointer = mItemBuffer;
 		mCurrentDrawCallItem = null;
 		SetShader(shader, vertbuffer, sizeof(T::InputVertex));
-		SetMaterial(material);
 	}
 
 	//////////////////////////////////////////////////////////////////////

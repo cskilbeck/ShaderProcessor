@@ -11,7 +11,6 @@ namespace
 	enum ItemType
 	{
 		it_Invalid = 0,
-		it_Material,
 		it_Texture,
 		it_Sampler,
 		it_Shader,
@@ -31,18 +30,6 @@ namespace
 		};
 
 		uint32 mType;
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct MaterialItem: Item
-	{
-		enum
-		{
-			eType = it_Material
-		};
-
-		Material *mMaterial;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -270,13 +257,6 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::SetMaterial(Material &m)
-	{
-		Add<MaterialItem>()->mMaterial = &m;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
 	void DrawList::SetPSTexture(Texture &t, uint index)
 	{
 		TextureItem *ti = Add<TextureItem>();
@@ -364,11 +344,6 @@ namespace DX
 		{
 			switch(((Item *)t)->mType)
 			{
-				case it_Material:
-					((MaterialItem *)t)->mMaterial->Activate(mContext);
-					t += sizeof(MaterialItem);
-					break;
-
 				case it_Texture:
 					assert(csi != null);
 					csi->SetPSTexture((TextureItem *)t);

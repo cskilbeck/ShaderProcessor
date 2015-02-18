@@ -8,6 +8,34 @@ namespace Shaders
 {
 	using namespace DX;
 
+	// D3D11_DEPTH_STENCIL_DESC
+	uint32 WEAKSYM Phong_DepthStencilDesc[] = 
+	{
+		0x00000001,0x00000001,0x00000002,0x00000000,0x0000ffff,0x00000001,0x00000001,0x00000001,
+		0x00000008,0x00000001,0x00000001,0x00000001,0x00000008
+	};
+
+	// D3D11_RASTERIZER_DESC
+	uint32 WEAKSYM Phong_RasterizerDesc[] = 
+	{
+		0x00000003,0x00000003,0x00000000,0x00000000,0x00000000,0x00000000,0x00000001,0x00000000,
+		0x00000000,0x00000000
+	};
+
+	// D3D11_BLEND_DESC
+	uint32 WEAKSYM Phong_BlendDesc[] = 
+	{
+		0x00000000,0x00000000,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f,0x00000000,0x00000002,0x00000001,0x00000001,0x00000002,0x00000001,
+		0x00000001,0xcccccc0f
+	};
+
 	//////////////////////////////////////////////////////////////////////
 	// Data for Phong_VS
 
@@ -309,6 +337,10 @@ namespace Shaders
 		VS vs;
 		PS ps;
 
+		DXPtr<ID3D11DepthStencilState> depthStencilState;
+		DXPtr<ID3D11RasterizerState> rasterizerState;
+		DXPtr<ID3D11BlendState> blendState;
+
 		//////////////////////////////////////////////////////////////////////
 		// Constructor
 
@@ -320,6 +352,10 @@ namespace Shaders
 			Shaders[Geometry] = null;
 			Shaders[Pixel] = &ps;
 			Shaders[Compute] = null;
+
+			DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)Phong_DepthStencilDesc, &depthStencilState);
+			DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)Phong_RasterizerDesc, &rasterizerState);
+			DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)Phong_BlendDesc, &blendState);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -327,6 +363,10 @@ namespace Shaders
 
 		void Activate(ID3D11DeviceContext *context)
 		{
+			context->OMSetDepthStencilState(depthStencilState, 0);
+			context->OMSetBlendState(blendState, null, 0xffffffff);
+			context->RSSetState(rasterizerState);
+
 			vs.Activate(context);
 			context->HSSetShader(null, null, 0);
 			context->DSSetShader(null, null, 0);
