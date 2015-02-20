@@ -8,7 +8,7 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	enum ShaderType
+	enum ShaderType : uint32
 	{
 		Vertex = 0,
 		Hull = 1,
@@ -18,6 +18,49 @@ namespace DX
 		Compute = 5,
 		NumShaderTypes = 6
 	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	struct Shader;
+
+	struct ShaderState: Aligned16
+	{
+		//////////////////////////////////////////////////////////////////////
+
+		virtual void Activate_V(ID3D11DeviceContext *context)
+		{
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		DXPtr<ID3D11BlendState>				mBlendState;
+		DXPtr<ID3D11DepthStencilState>		mDepthStencilState;
+		DXPtr<ID3D11RasterizerState>		mRasterizerState;
+
+		Shader *Shaders[NumShaderTypes];
+
+		//////////////////////////////////////////////////////////////////////
+
+		ShaderState(uint32 const *blendDesc,
+					uint32 const *depthStencilDesc,
+					uint32 const *rasterizerDesc)
+		{
+			DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)blendDesc, &mBlendState);
+			DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)depthStencilDesc, &mDepthStencilState);
+			DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)rasterizerDesc, &mRasterizerState);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void SetState(ID3D11DeviceContext *context)
+		{
+			context->OMSetBlendState(mBlendState, null, 0xffffffff);
+			context->OMSetDepthStencilState(mDepthStencilState, 0);
+			context->RSSetState(mRasterizerState);
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
 
 	struct Shader
 	{
@@ -101,12 +144,5 @@ namespace DX
 			}
 		}
 
-	};
-
-	struct ShaderState : Aligned16
-	{
-		virtual void Activate_V(ID3D11DeviceContext *context) = 0;
-
-		Shader *Shaders[NumShaderTypes];
 	};
 }

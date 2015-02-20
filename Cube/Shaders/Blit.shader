@@ -1,21 +1,27 @@
 //////////////////////////////////////////////////////////////////////
 
-#pragma blend(0, enabled, src=src_alpha, dest=inv_src_alpha, op=add)
-#pragma depth(enabled, write=disabled)
+#pragma depth(disabled, write=disabled)
+#pragma culling(mode=none)
+#pragma blend(0, disabled)
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer VertConstants
+cbuffer vConstants
 {
 	matrix TransformMatrix;
 }
 
 //////////////////////////////////////////////////////////////////////
 
+sampler smplr;
+Texture2D page;
+
+//////////////////////////////////////////////////////////////////////
+
 struct VS_INPUT
 {
-	float3 Position : float_Position;
-	float4 Color : byte_Color;
+	float2 Position : float_Position;
+	float2 TexCoord : half_TexCoord;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -23,7 +29,7 @@ struct VS_INPUT
 struct PS_INPUT
 {
 	float4 Position : SV_Position;
-	float4 Color : COLOR0;
+	float2 TexCoord : TEXCOORD2;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -31,8 +37,8 @@ struct PS_INPUT
 PS_INPUT vsMain(VS_INPUT v)
 {
 	PS_INPUT o;
-	o.Position = mul(float4(v.Position, 1), TransformMatrix);
-	o.Color = v.Color;
+	o.Position = mul(float4(v.Position.xy, 0, 1), TransformMatrix);
+	o.TexCoord = v.TexCoord;
 	return o;
 }
 
@@ -40,5 +46,5 @@ PS_INPUT vsMain(VS_INPUT v)
 
 float4 psMain(PS_INPUT i) : SV_TARGET
 {
-	return i.Color;
+	return page.Sample(smplr, i.TexCoord);
 }

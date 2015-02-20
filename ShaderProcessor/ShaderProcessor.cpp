@@ -72,6 +72,7 @@ uint32 GetFlags()
 //////////////////////////////////////////////////////////////////////
 
 std::map<ShaderType, HLSLShader *> shaders;
+HLSLShader *shader_array[NumShaderTypes];
 
 //////////////////////////////////////////////////////////////////////
 
@@ -95,6 +96,7 @@ bool CompileFile(string &file, char const *filename, char const *mainFunction, c
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
 		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
 		shaders[s->mShaderTypeDesc.type] = s;
+		shader_array[s->mShaderTypeDesc.type] = s;
 
 		// append to assembly listing file...
 
@@ -128,7 +130,8 @@ enum
 	err_noshaderspecified,
 	err_cantloadsourcefile,
 	err_unknownpragma,
-	err_malformedpragma
+	err_malformedpragma,
+	err_unknownkey
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -223,12 +226,12 @@ struct parameter
 //////////////////////////////////////////////////////////////////////
 // Process key=value entries in #pragma token(key=value)s
 
-std::map<param_type, std::function<void(string const &value, parameter const &param)>> paramHandlerMap =
+std::map<param_type, std::function<void(string const &value, parameter const &param, uintptr offset)>> paramHandlerMap =
 {
 	//////////////////////////////////////////////////////////////////////
 	// bool
 	{
-		bool_param, [] (string const &value, parameter const &param)
+		bool_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			BOOL r = TRUE;
 			if(strcmp(value.c_str(), "false") == 0)
@@ -240,14 +243,14 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 				emit_warning("Invalid value %s for boolean parameter", value.c_str());
 			}
 			TRACE("\t%s = (BOOL)%d\n", param.name, r);
-			*((BOOL *)param.target) = r;
+			*((BOOL *)((byte *)param.target + offset)) = r;
 		}
 	},
 
 	//////////////////////////////////////////////////////////////////////
 	// inverse_bool
 	{
-		inverse_bool_param, [] (string const &value, parameter const &param)
+		inverse_bool_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			BOOL r = FALSE;
 			if(strcmp(value.c_str(), "false") == 0)
@@ -259,21 +262,21 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 				emit_warning("Invalid value %s for inverse boolean parameter", value.c_str());
 			}
 			TRACE("\t%s = (INV_BOOL)%d\n", param.name, r);
-			*((BOOL *)param.target) = r;
+			*((BOOL *)((byte *)param.target + offset)) = r;
 		}
 	},
 
 	//////////////////////////////////////////////////////////////////////
 	// enum
 	{
-		enum_param, [] (string const &value, parameter const &param)
+		enum_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			for(auto &e : param.enum_list)
 			{
 				if(strcmp(value.c_str(), e.first.c_str()) == 0)
 				{
 					TRACE("\t%s = (ENUM)%s (=%d)\n", param.name, e.first.c_str(), e.second);
-					*((DWORD *)param.target) = e.second;
+					*((DWORD *)((byte *)param.target + offset)) = e.second;
 					return;
 				}
 			}
@@ -284,11 +287,11 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 	//////////////////////////////////////////////////////////////////////
 	// float
 	{
-		float_param, [] (string const &value, parameter const &param)
+		float_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			char *end;
 			float f = strtof(value.c_str(), &end);
-			*((float *)param.target) = f;
+			*((float *)((byte *)param.target + offset)) = f;
 			TRACE("\t%s = (FLOAT)%f\n", param.name, f);
 		}
 	},
@@ -296,7 +299,7 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 	//////////////////////////////////////////////////////////////////////
 	// uint8
 	{
-		uint8_param, [] (string const &value, parameter const &param)
+		uint8_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			char *end;
 			long f = strtol(value.c_str(), &end, 10);
@@ -305,18 +308,18 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 				emit_warning("Value %d out of range (0-255), truncated", f);
 			}
 			TRACE("\t%s = (UINT8)%d\n", param.name, f);
-			*((uint8 *)param.target) = (uint8)f;
+			*((uint8 *)((byte *)param.target + offset)) = (uint8)f;
 		}
 	},
 
 	//////////////////////////////////////////////////////////////////////
 	// int
 	{
-		int_param, [] (string const &value, parameter const &param)
+		int_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
 			char *end;
 			long l = strtol(value.c_str(), &end, 10);
-			*((int *)param.target) = l;
+			*((int *)((byte *)param.target + offset)) = l;
 			TRACE("\t%s = (INT)%d\n", param.name, l);
 		}
 	},
@@ -421,18 +424,28 @@ MAP blend_map =
 
 //////////////////////////////////////////////////////////////////////
 
-std::map<string, vector<parameter>> params =
+struct param_vec
+{
+	uint32 max_index;
+	uint32 offset_size;
+	vector<parameter> params;
+};
+
+std::map<string, param_vec> params =
 {
 	//////////////////////////////////////////////////////////////////////
 	// DEPTH_STENCIL_STATE
 
 	{
-		"depth", 
+		"depth",
 		{
-			{ "enabled", bool_param, &depthStencilDesc.DepthEnable, {}  },
-			{ "disabled", inverse_bool_param, &depthStencilDesc.DepthEnable, {} },
-			{ "write", enum_param, &depthStencilDesc.DepthWriteMask, depth_write_map },
-			{ "comparison_func", enum_param, &depthStencilDesc.DepthFunc, comparison_map }
+			0, 0,
+			{
+				{ "enabled", bool_param, &depthStencilDesc.DepthEnable, {} },
+				{ "disabled", inverse_bool_param, &depthStencilDesc.DepthEnable, {} },
+				{ "write", enum_param, &depthStencilDesc.DepthWriteMask, depth_write_map },
+				{ "comparison_func", enum_param, &depthStencilDesc.DepthFunc, comparison_map }
+			}
 		}
 	},
 
@@ -441,10 +454,13 @@ std::map<string, vector<parameter>> params =
 	{
 		"stencil",
 		{
-			{ "enabled", bool_param, &depthStencilDesc.StencilEnable, {} },
-			{ "disabled", inverse_bool_param, &depthStencilDesc.StencilEnable, {} },
-			{ "read_mask", uint8_param, &depthStencilDesc.StencilReadMask, {} },
-			{ "write_mask", uint8_param, &depthStencilDesc.StencilWriteMask, {} }
+			0, 0,
+			{
+				{ "enabled", bool_param, &depthStencilDesc.StencilEnable, {} },
+				{ "disabled", inverse_bool_param, &depthStencilDesc.StencilEnable, {} },
+				{ "read_mask", uint8_param, &depthStencilDesc.StencilReadMask, {} },
+				{ "write_mask", uint8_param, &depthStencilDesc.StencilWriteMask, {} }
+			}
 		}
 	},
 
@@ -453,10 +469,13 @@ std::map<string, vector<parameter>> params =
 	{
 		"front_stencil",
 		{
-			{ "fail_op", enum_param, &depthStencilDesc.FrontFace.StencilFailOp, stencil_op_map },
-			{ "depth_fail_op", enum_param, &depthStencilDesc.FrontFace.StencilDepthFailOp, stencil_op_map },
-			{ "pass_op", enum_param, &depthStencilDesc.FrontFace.StencilPassOp, stencil_op_map },
-			{ "comparison_func", enum_param, &depthStencilDesc.FrontFace.StencilFunc, comparison_map }
+			0, 0,
+			{
+				{ "fail_op", enum_param, &depthStencilDesc.FrontFace.StencilFailOp, stencil_op_map },
+				{ "depth_fail_op", enum_param, &depthStencilDesc.FrontFace.StencilDepthFailOp, stencil_op_map },
+				{ "pass_op", enum_param, &depthStencilDesc.FrontFace.StencilPassOp, stencil_op_map },
+				{ "comparison_func", enum_param, &depthStencilDesc.FrontFace.StencilFunc, comparison_map }
+			}
 		}
 	},
 
@@ -465,10 +484,13 @@ std::map<string, vector<parameter>> params =
 	{
 		"back_stencil",
 		{
-			{ "fail_op", enum_param, &depthStencilDesc.BackFace.StencilFailOp, stencil_op_map },
-			{ "depth_fail_op", enum_param, &depthStencilDesc.BackFace.StencilDepthFailOp, stencil_op_map },
-			{ "pass_op", enum_param, &depthStencilDesc.BackFace.StencilPassOp, stencil_op_map },
-			{ "comparison_func", enum_param, &depthStencilDesc.BackFace.StencilFunc, comparison_map }
+			0, 0,
+			{
+				{ "fail_op", enum_param, &depthStencilDesc.BackFace.StencilFailOp, stencil_op_map },
+				{ "depth_fail_op", enum_param, &depthStencilDesc.BackFace.StencilDepthFailOp, stencil_op_map },
+				{ "pass_op", enum_param, &depthStencilDesc.BackFace.StencilPassOp, stencil_op_map },
+				{ "comparison_func", enum_param, &depthStencilDesc.BackFace.StencilFunc, comparison_map }
+			}
 		}
 	},
 
@@ -478,8 +500,11 @@ std::map<string, vector<parameter>> params =
 	{
 		"culling",
 		{
-			{ "mode", enum_param, &rasterizerDesc.CullMode, culling_mode_map },
-			{ "order", enum_param, &rasterizerDesc.FrontCounterClockwise, culling_order_map }
+			0, 0,
+			{
+				{ "mode", enum_param, &rasterizerDesc.CullMode, culling_mode_map },
+				{ "order", enum_param, &rasterizerDesc.FrontCounterClockwise, culling_order_map }
+			}
 		}
 	},
 
@@ -488,7 +513,10 @@ std::map<string, vector<parameter>> params =
 	{
 		"fill",
 		{
-			{ "mode", enum_param, &rasterizerDesc.FillMode, fill_mode_map }
+			0, 0,
+			{
+				{ "mode", enum_param, &rasterizerDesc.FillMode, fill_mode_map }
+			}
 		}
 	},
 
@@ -497,9 +525,12 @@ std::map<string, vector<parameter>> params =
 	{
 		"depth_bias",
 		{
-			{ "bias", int_param, &rasterizerDesc.DepthBias, {} },
-			{ "clamp", float_param, &rasterizerDesc.DepthBiasClamp, {} },
-			{ "slope_scaled_bias", float_param, &rasterizerDesc.SlopeScaledDepthBias, {} }
+			0, 0,
+			{
+				{ "bias", int_param, &rasterizerDesc.DepthBias, {} },
+				{ "clamp", float_param, &rasterizerDesc.DepthBiasClamp, {} },
+				{ "slope_scaled_bias", float_param, &rasterizerDesc.SlopeScaledDepthBias, {} }
+			}
 		}
 	},
 
@@ -508,8 +539,11 @@ std::map<string, vector<parameter>> params =
 	{
 		"depth_clip",
 		{
-			{ "enabled", bool_param, &rasterizerDesc.DepthClipEnable, {} },
-			{ "disabled", inverse_bool_param, &rasterizerDesc.DepthClipEnable, {} }
+			0, 0,
+			{
+				{ "enabled", bool_param, &rasterizerDesc.DepthClipEnable, {} },
+				{ "disabled", inverse_bool_param, &rasterizerDesc.DepthClipEnable, {} }
+			}
 		}
 	},
 
@@ -518,8 +552,11 @@ std::map<string, vector<parameter>> params =
 	{
 		"scissor",
 		{
-			{ "enabled", bool_param, &rasterizerDesc.ScissorEnable, {} },
-			{ "disabled", inverse_bool_param, &rasterizerDesc.ScissorEnable, {} }
+			0, 0,
+			{
+				{ "enabled", bool_param, &rasterizerDesc.ScissorEnable, {} },
+				{ "disabled", inverse_bool_param, &rasterizerDesc.ScissorEnable, {} }
+			}
 		}
 	},
 
@@ -528,8 +565,11 @@ std::map<string, vector<parameter>> params =
 	{
 		"multisample",
 		{
-			{ "enabled", bool_param, &rasterizerDesc.MultisampleEnable, {} },
-			{ "disabled", inverse_bool_param, &rasterizerDesc.MultisampleEnable, {} }
+			0, 0,
+			{
+				{ "enabled", bool_param, &rasterizerDesc.MultisampleEnable, {} },
+				{ "disabled", inverse_bool_param, &rasterizerDesc.MultisampleEnable, {} }
+			}
 		}
 	},
 
@@ -538,24 +578,30 @@ std::map<string, vector<parameter>> params =
 	{
 		"anti_aliased_line",
 		{
-			{ "enabled", bool_param, &rasterizerDesc.AntialiasedLineEnable, {} },
-			{ "disabled", inverse_bool_param, &rasterizerDesc.AntialiasedLineEnable, {} }
+			0, 0,
+			{
+				{ "enabled", bool_param, &rasterizerDesc.AntialiasedLineEnable, {} },
+				{ "disabled", inverse_bool_param, &rasterizerDesc.AntialiasedLineEnable, {} }
+			}
 		}
 	},
 
 	//////////////////////////////////////////////////////////////////////
 	// BLEND_STATE
 	{
-		"blend_0",
+		"blend",
 		{
-			{ "enabled", bool_param, &blendDesc.RenderTarget[0].BlendEnable, {} },
-			{ "disabled", inverse_bool_param, &blendDesc.RenderTarget[0].BlendEnable, {} },
-			{ "op", enum_param, &blendDesc.RenderTarget[0].BlendOp, blend_op_map },
-			{ "alpha_op", enum_param, &blendDesc.RenderTarget[0].BlendOpAlpha, blend_op_map },
-			{ "src", enum_param, &blendDesc.RenderTarget[0].SrcBlend, blend_map },
-			{ "dest", enum_param, &blendDesc.RenderTarget[0].DestBlend, blend_map },
-			{ "alpha_src", enum_param, &blendDesc.RenderTarget[0].SrcBlendAlpha, blend_map },
-			{ "alpha_dest", enum_param, &blendDesc.RenderTarget[0].DestBlendAlpha, blend_map }
+			8, sizeof(D3D11_RENDER_TARGET_BLEND_DESC),
+			{
+				{ "enabled", bool_param, &blendDesc.RenderTarget[0].BlendEnable, {} },
+				{ "disabled", inverse_bool_param, &blendDesc.RenderTarget[0].BlendEnable, {} },
+				{ "op", enum_param, &blendDesc.RenderTarget[0].BlendOp, blend_op_map },
+				{ "alpha_op", enum_param, &blendDesc.RenderTarget[0].BlendOpAlpha, blend_op_map },
+				{ "src", enum_param, &blendDesc.RenderTarget[0].SrcBlend, blend_map },
+				{ "dest", enum_param, &blendDesc.RenderTarget[0].DestBlend, blend_map },
+				{ "alpha_src", enum_param, &blendDesc.RenderTarget[0].SrcBlendAlpha, blend_map },
+				{ "alpha_dest", enum_param, &blendDesc.RenderTarget[0].DestBlendAlpha, blend_map }
+			}
 		}
 	}
 };
@@ -574,8 +620,13 @@ void OutputPragmaDocs()
 
 	for(auto &token : params)
 	{
-		printf("#pragma %s(options)\n", token.first.c_str());
-		for(auto &p : token.second)
+		string index = "";
+		if(token.second.max_index > 0)
+		{
+			index = Format("index %d-%d,", 0, token.second.max_index - 1);
+		}
+		printf("#pragma %s(%soptions)\n", token.first.c_str(), index.c_str());
+		for(auto &p : token.second.params)
 		{
 			printf("  %s = ", p.name);
 			switch(p.type)
@@ -687,6 +738,37 @@ uint ScanMaterialOptions(Resource &file, string &result)
 				// Now that we have a pragma we know about, we need to nobble it so
 				// the shader compiler doesn't emit a warning about an unknown pragma
 
+				uint max_index = p->second.max_index;
+				uint offset_size = p->second.offset_size;
+				vector<uint> indices;
+
+				// look for an index - an integer (#=true) in keyvals
+				// if we don't find one and max_index > 0, malformed pragma
+				// if we find more than one, warn
+				if(max_index > 0)
+				{
+					bool got_index = false;
+					for(uint idx = 0; idx < max_index; ++idx)
+					{
+						auto kv = keyVals.find(Format("%d", idx));
+						if(kv != keyVals.end())
+						{
+							indices.push_back(idx);
+							keyVals.erase(kv);
+							got_index = true;
+						}
+					}
+					if(!got_index)
+					{
+						emit_error("Missing index");
+						return err_malformedpragma;
+					}
+				}
+				else
+				{
+					indices.push_back(0);
+				}
+
 				for(auto &keyval : keyVals)
 				{
 					string keyname = keyval.first;
@@ -696,11 +778,8 @@ uint ScanMaterialOptions(Resource &file, string &result)
 
 					bool valid = false;
 
-					for(auto &option : p->second)
+					for(auto &option : p->second.params)
 					{
-						//TRACE("Is it option %s?\n", option.name);
-						// q is a reference to a parameter
-						// is keyName == q.name
 						if(strcmp(keyname.c_str(), option.name) == 0)
 						{
 							valid = true;
@@ -712,9 +791,19 @@ uint ScanMaterialOptions(Resource &file, string &result)
 							else
 							{
 								//TRACE("Yep\n");
-								fnc->second(keyValue, option);
+								for(auto index : indices)
+								{
+									TRACE("Index %d:", index);
+									fnc->second(keyValue, option, index * p->second.offset_size);
+								}
 							}
+							break;
 						}
+					}
+					if(!valid)
+					{
+						emit_error("Unknown key name %s", keyname.c_str());
+						return err_unknownkey;
 					}
 				}
 			}
@@ -821,7 +910,11 @@ int main(int argc, char *argv[])
 	}
 
 	string modified_source;
-	ScanMaterialOptions(sourceFile, modified_source);
+	int e = ScanMaterialOptions(sourceFile, modified_source);
+	if(e != success)
+	{
+		return e;
+	}
 
 	int shadersCompiled = 0;
 	for(int i = 0; i < _countof(shaderTypes); ++i)
@@ -894,46 +987,32 @@ int main(int argc, char *argv[])
 
 	// Material bits
 	OutputLine();
-	OutputLine("DXPtr<ID3D11DepthStencilState> depthStencilState;");
-	OutputLine("DXPtr<ID3D11RasterizerState> rasterizerState;");
-	OutputLine("DXPtr<ID3D11BlendState> blendState;");
 
-	OutputLine();
+	string shaderCtors;
+
+	shaderCtors = Format("%s_BlendDesc, ", name.c_str());
+	shaderCtors += Format("%s_DepthStencilDesc, ", name.c_str());
+	shaderCtors += Format("%s_RasterizerDesc", name.c_str());
+
+	// vs, ps etc else null
+
 	OutputCommentLine("Constructor");
-	OutputLine("%s()", name.c_str());
+	OutputLine("%s(): ShaderState(%s)", name.c_str(), shaderCtors.c_str());
 	Indent("{");
 	OutputLine();
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{
-		char const *name = ShaderTypeDescs[i].name;
-		auto f = shaders.find((ShaderType)i);
-		if(f == shaders.end())
-		{
-			OutputLine("Shaders[%s] = null;", name);
-		}
-		else
-		{
-			OutputLine("Shaders[%s] = &%s;", name, ToLower(ShaderTypeDescs[i].refName).c_str());;
-		}
+		OutputLine("Shaders[%s] = %s;", ShaderTypeDescs[i].name, (shader_array[i] == null) ? "null" : Format("&%s", ToLower(ShaderTypeDescs[i].refName).c_str()).c_str());
 	}
-
-	OutputLine();
-	OutputLine("DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)%s_DepthStencilDesc, &depthStencilState);", name.c_str());
-	OutputLine("DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)%s_RasterizerDesc, &rasterizerState);", name.c_str());
-	OutputLine("DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)%s_BlendDesc, &blendState);", name.c_str());
-
-	UnIndent("}");
+	UnIndent();
+	OutputLine("}");
 
 	OutputLine();
 	OutputCommentLine("Activate");
 	OutputLine("void Activate(ID3D11DeviceContext *context)");
 	Indent("{");
 	OutputLine();
-
-	OutputLine("context->OMSetDepthStencilState(depthStencilState, 0);");
-	OutputLine("context->OMSetBlendState(blendState, null, 0xffffffff);");
-	OutputLine("context->RSSetState(rasterizerState);");
-	OutputLine();
+	OutputLine("ShaderState::SetState(context);");
 
 	// Activate
 	for(uint i = 0; i < NumShaderTypes; ++i)

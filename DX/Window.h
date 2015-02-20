@@ -34,6 +34,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct WindowSizedEvent: WindowEvent
+	{
+		Rect2D windowPosition;
+		Size2D clientSize;
+
+		WindowSizedEvent(Window *w, Rect2D const &pos, Size2D const &size)
+			: WindowEvent(w)
+			, windowPosition(pos)
+			, clientSize(size)
+		{
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct KeyboardEvent: WindowEvent
 	{
 		wchar	key;
@@ -82,7 +97,7 @@ namespace DX
 
 	struct Window
 	{
-		Window(int width = 640, int height = 480, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);
+		Window(int width = 800, int height = 450, tchar const *caption = TEXT("Window"), uint32 windowStyle = WS_OVERLAPPEDWINDOW, tchar const *className = null, HWND parent = null);
 		~Window();
 
 		Event<WindowEvent> Created;
@@ -96,6 +111,7 @@ namespace DX
 		Event<MouseButtonEvent> MouseButtonPressed;
 		Event<MouseButtonEvent> MouseButtonReleased;
 		Event<MouseButtonEvent> MouseDoubleClicked;
+		Event<WindowSizedEvent> Resized;
 
 		virtual bool OnCreate();
 		virtual bool OnUpdate();
@@ -114,6 +130,10 @@ namespace DX
 		virtual void OnChar(int key, uintptr flags);
 		virtual void OnKeyDown(int key, uintptr flags);
 		virtual void OnKeyUp(int key, uintptr flags);
+		virtual void OnActivate();
+		virtual void OnDeactivate();
+		virtual void OnEnterSizeLoop();
+		virtual void OnExitSizeLoop();
 
 		void Open();
 		void Close();

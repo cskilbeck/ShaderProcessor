@@ -355,6 +355,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void ResetRenderTargetView()
+		{
+			DXI(mContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView));
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		HRESULT GetBackBuffer()
 		{
 			DXR(mSwapChain->GetBuffer(0, __uuidof(mBackBuffer), (void **)&mBackBuffer));
@@ -364,7 +371,7 @@ namespace DX
 				CreateDepthBuffer();
 				DXR(mDevice->CreateDepthStencilView(mDepthBuffer, null, &mDepthStencilView));
 			}
-			DXI(mContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView));
+			ResetRenderTargetView();
 
 			// default viewport for now
 			D3D11_VIEWPORT vp;

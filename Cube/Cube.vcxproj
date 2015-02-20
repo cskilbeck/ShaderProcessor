@@ -128,13 +128,6 @@
       <Command>
       </Command>
     </PreBuildEvent>
-    <CustomBuildStep>
-      <Command>$(SolutionDir)Debug\ShaderProcessor.exe --header $(SolutionDir)ShaderProcessor\output.h --source $(SolutionDir)ShaderProcessor\shader.hlsl --sm 4_0 --vs vsMain --ps psMain</Command>
-    </CustomBuildStep>
-    <CustomBuildStep>
-      <Outputs>$(SolutionDir)ShaderProcessor\output.h</Outputs>
-      <Inputs>$(SolutionDir)ShaderProcessor\shader.hlsl</Inputs>
-    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -202,6 +195,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <SPOCK Include="Shaders\Blit.shader" />
     <SPOCK Include="Shaders\Colored.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </GeometryShaderFunction>

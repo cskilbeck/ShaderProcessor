@@ -9,12 +9,13 @@ struct MyDXWindow: DXWindow
 	//////////////////////////////////////////////////////////////////////
 
 	FPSCamera camera;
+	FPSCamera dashCam;
 
-	Ptr<Shaders::Phong> phongShader;
+	Ptr<Shaders::Phong> cubeShader;
 	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
 	Ptr<IndexBuffer<uint16>> cubeIndices;
-	Ptr<Texture> texture;
-	Ptr<Sampler> sampler;
+	Ptr<Texture> cubeTexture;
+	Ptr<Sampler> cubeSampler;
 
 	Ptr<Shaders::Colored> coloredShader;
 	Ptr<Shaders::Colored::VertBuffer> gridVB;
@@ -41,7 +42,9 @@ struct MyDXWindow: DXWindow
 
 	Ptr<SpriteSheet> spriteSheet;
 
-	Timer timer;
+	Ptr<RenderTarget> renderTarget;
+	Ptr<Shaders::Blit> blitShader;
+	Ptr<Shaders::Blit::VertBuffer> blitVB;
 
 	//////////////////////////////////////////////////////////////////////
 

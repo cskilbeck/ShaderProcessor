@@ -13,11 +13,9 @@ namespace DX
 
 		template<typename T, typename U> void Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer);
 		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
-		void SetPSTexture(Texture &t, uint index = 0);
-		void SetPSSampler(Sampler &s, uint index = 0);
-		template <typename T> void SetVSConstantData(T &data, uint index);
-		template <typename T> void SetGSConstantData(T &data, uint index);
-		template <typename T> void SetPSConstantData(T &data, uint index);
+		void SetTexture(ShaderType shaderType, Texture &t, uint index = 0);
+		void SetSampler(ShaderType shaderType, Sampler &s, uint index = 0);
+		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
 		void BeginPointList();
 		void BeginTriangleList();
 		void BeginTriangleStrip();
@@ -34,9 +32,7 @@ namespace DX
 		byte *AddData(byte const *data, uint size);
 		void BeginDrawCall(uint32 topology);
 
-		void SetVSConsts(byte *data, uint size, uint index);
-		void SetGSConsts(byte *data, uint size, uint index);
-		void SetPSConsts(byte *data, uint size, uint index);
+		void SetConsts(ShaderType shaderType, byte *data, uint size, uint index);
 
 		void UnMapCurrentVertexBuffer();
 
@@ -96,22 +92,9 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> inline void DrawList::SetVSConstantData(T &data, uint index)
+	template <typename T> inline void DrawList::SetConstantData(ShaderType shaderType, T &data, uint index)
 	{
-		SetVSConsts((byte *)&data, sizeof(T), index);
+		SetConsts(shaderType, (byte *)&data, sizeof(T), index);
 	}
 
-	//////////////////////////////////////////////////////////////////////
-
-	template <typename T> inline void DrawList::SetGSConstantData(T &data, uint index)
-	{
-		SetGSConsts((byte *)&data, sizeof(T), index);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	template <typename T> inline void DrawList::SetPSConstantData(T &data, uint index)
-	{
-		SetPSConsts((byte *)&data, sizeof(T), index);
-	}
 }

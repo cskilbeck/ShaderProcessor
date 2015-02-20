@@ -2,9 +2,25 @@
 
 #include "DX.h"
 
+using namespace DX;
+
 //////////////////////////////////////////////////////////////////////
 
-using namespace DX;
+static Ptr<byte> ColorArray(int w, int h, Color c)
+{
+	Ptr<byte> pPixels(new byte[w * h * 4]);
+	for(int y = 0; y < h; ++y)
+	{
+		Color *row = (Color *)(pPixels.get() + y * w * 4);
+		for(int x = 0; x < w; ++x)
+		{
+			row[x] = c;
+		}
+	}
+	return pPixels;
+}
+
+//////////////////////////////////////////////////////////////////////
 
 static uint BPPFromTextureFormat(DXGI_FORMAT format)
 {
@@ -134,17 +150,26 @@ static uint BPPFromTextureFormat(DXGI_FORMAT format)
 
 namespace DX
 {
-
-	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height)
+	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget)
 	{
 		uint bpp = BPPFromTextureFormat(pixelFormat);
+		D3D11_SUBRESOURCE_DATA *psrd = null;
+
 		D3D11_SUBRESOURCE_DATA data[1];
-		data[0].pSysMem = (void *)buffer;
-		data[0].SysMemPitch = (width * bpp + 7) / 8;
-		data[0].SysMemSlicePitch = 0;
+		if(buffer != null)
+		{
+			data[0].pSysMem = (void *)buffer;
+			data[0].SysMemPitch = (width * bpp + 7) / 8;
+			data[0].SysMemSlicePitch = 0;
+			psrd = data;
+		}
 
 		CD3D11_TEXTURE2D_DESC desc(pixelFormat, width, height, 1, 1);
-		if(!FAILED(DX::Device->CreateTexture2D(&desc, data, &mTexture2D)))
+		if(renderTarget)
+		{
+			desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+		}
+		if(!FAILED(DX::Device->CreateTexture2D(&desc, psrd, &mTexture2D)))
 		{
 			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 			srvDesc.Format = pixelFormat;
@@ -190,25 +215,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels)
+	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget)
 	{
-		InitFromPixelBuffer(pixels, format, w, h);
+		InitFromPixelBuffer(pixels, format, w, h, isRenderTarget);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Texture::Texture(int width, int height, Color color)
 	{
-		Ptr<byte> pPixels(new byte[width * height * 4]);
-		for(int y = 0; y < height; ++y)
-		{
-			Color *row = (Color *)(pPixels.get() + y * width * 4);
-			for(int x = 0; x < width; ++x)
-			{
-				row[x] = color;
-			}
-		}
-		InitFromPixelBuffer(pPixels.get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height);
+		InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -216,5 +232,88 @@ namespace DX
 	Texture::~Texture()
 	{
 	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	RenderTarget::RenderTarget(int w, int h, RenderTargetDepthOption depthOption)
+		: Texture(w, h, DXGI_FORMAT_B8G8R8A8_UNORM, null, true)
+	{
+		DXT(CreateRenderTargetView());
+		if(depthOption == WithDepth)
+		{
+			DXT(CreateDepthBuffer());
+			DXT(CreateDepthStencilView());
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	RenderTarget::~RenderTarget()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT RenderTarget::CreateRenderTargetView()
+	{
+		CD3D11_RENDER_TARGET_VIEW_DESC desc(D3D11_RTV_DIMENSION_TEXTURE2D, DXGI_FORMAT_B8G8R8A8_UNORM);
+		DXR(DX::Device->CreateRenderTargetView(mTexture2D, &desc, &mRenderTargetView));
+		return S_OK;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT RenderTarget::CreateDepthBuffer()
+	{
+		D3D11_TEXTURE2D_DESC depth;
+		depth.Width = Width();
+		depth.Height = Height();
+		depth.MipLevels = 0;
+		depth.ArraySize = 1;
+		depth.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		depth.SampleDesc.Count = 1;
+		depth.SampleDesc.Quality = 0;
+		depth.Usage = D3D11_USAGE_DEFAULT;
+		depth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		depth.CPUAccessFlags = 0;
+		depth.MiscFlags = 0;
+		DXR(DX::Device->CreateTexture2D(&depth, null, &mDepthBuffer));
+		return S_OK;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT RenderTarget::CreateDepthStencilView()
+	{
+		DXT(DX::Device->CreateDepthStencilView(mDepthBuffer, null, &mDepthStencilView));
+		return S_OK;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void RenderTarget::Activate(ID3D11DeviceContext *context)
+	{
+		context->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void RenderTarget::Clear(ID3D11DeviceContext *context, Color color)
+	{
+		float rgba[4];
+		context->ClearRenderTargetView(mRenderTargetView, color.GetFloatsRGBA(rgba));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void RenderTarget::ClearDepth(ID3D11DeviceContext *context, DepthClearOption option, float z, byte stencil)
+	{
+		if(mDepthStencilView != null)
+		{
+			context->ClearDepthStencilView(mDepthStencilView, option, z, stencil);
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
 
 }

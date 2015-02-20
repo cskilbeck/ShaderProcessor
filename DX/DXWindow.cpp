@@ -12,6 +12,7 @@ namespace DX
 		, mFrame(0)
 		, mDXWindow(null)
 	{
+		mTimer.Reset();
 		mDXWindow = mHWND;
 		mMessageWait = false;
 	}
@@ -52,6 +53,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DXWindow::ResetRenderTargetView()
+	{
+		mDevice.ResetRenderTargetView();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DXWindow::OnResized()
 	{
 		mDevice.Resize(mClientWidth, mClientHeight);
@@ -62,6 +70,7 @@ namespace DX
 
 	bool DXWindow::OnUpdate()
 	{
+		mTimer.Update();
 		OnDraw();
 		Present();
 		if(!mResizing)
@@ -83,7 +92,35 @@ namespace DX
 	void DXWindow::Clear(Color color)
 	{
 		float rgba[4];
-		mDevice.mContext->ClearRenderTargetView(mDevice.mRenderTargetView, color.GetFloatsRGBA(rgba));
+		Context()->ClearRenderTargetView(mDevice.mRenderTargetView, color.GetFloatsRGBA(rgba));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnActivate()
+	{
+		mTimer.UnPause();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnDeactivate()
+	{
+		mTimer.Pause();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnEnterSizeLoop()
+	{
+		mTimer.Pause();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnExitSizeLoop()
+	{
+		mTimer.UnPause();
 	}
 
 	//////////////////////////////////////////////////////////////////////

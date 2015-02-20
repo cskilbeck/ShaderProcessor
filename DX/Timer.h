@@ -37,36 +37,67 @@ namespace DX
 
 		void Reset()
 		{
-			mStartTime = Ticks();
-			mOldTime = mStartTime;
+			mPaused = false;
+			mOldTicks = Ticks();
+			mCurrentTicks = 0;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		double Elapsed()
+		void Pause()
 		{
-			uint64 time = Ticks();
-			uint64 frequency = Frequency();
-			return (double)(time - mStartTime) / (double)frequency;
+			if(!mPaused)
+			{
+				mPaused = true;
+				mOldTicks = Ticks();
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void UnPause()
+		{
+			mPaused = false;
+			mDeltaTicks = 0;
+			mOldTicks = Ticks();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Update()
+		{
+			uint64 ticks = Ticks();
+			if(!mPaused)
+			{
+				mDeltaTicks = ticks - mOldTicks;
+				mCurrentTicks += mDeltaTicks;
+				mOldTicks = ticks;
+			}
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		double Delta()
 		{
-			uint64 time = Ticks();
-			uint64 frequency = Frequency();
-			double delta = (double)(time - mOldTime) / (double)frequency;
-			mOldTime = time;
-			return delta;
+			return (double)mDeltaTicks / Frequency();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-	private:
+		double WallTime()
+		{
+			return (double)mCurrentTicks / Frequency();
+		}
 
-		uint64 mStartTime;
-		uint64 mOldTime;
+		//////////////////////////////////////////////////////////////////////
+
+	protected:
+
+		uint64 mOldTicks;		// last rdtsc
+		uint64 mDeltaTicks;		// last difference (can't be paused)
+		uint64 mCurrentTicks;	// current tick count, might have been paused
+		bool mPaused;
 	};
 
+	//////////////////////////////////////////////////////////////////////
 }

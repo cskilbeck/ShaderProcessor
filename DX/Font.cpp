@@ -16,6 +16,7 @@ namespace
 	Ptr<DXShaders::Font> shader;
 	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
+	Delegate<WindowEvent> onDestroy;
 }
 
 DrawList *Font::mDrawList = null;
@@ -69,12 +70,9 @@ static void LoadShader()
 	if(!initialised)
 	{
 		shader.reset(new DXShaders::Font());
-
 		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
-
 		sampler.reset(new Sampler());
 		shader->ps.smplr = sampler.get();
-
 		initialised = true;
 	}
 }
@@ -87,7 +85,7 @@ namespace DX
 	{
 		LoadShader();
 
-		window->Destroyed.AddListener([] (WindowEvent const &)
+		onDestroy = [] (WindowEvent const &)
 		{
 			while(!sAllFonts.empty())
 			{
@@ -98,7 +96,9 @@ namespace DX
 			shader.reset();
 			sampler.reset();
 			vertexBuffer.reset();
-		});
+		};
+
+		window->Destroyed += onDestroy;
 	}
 
 	Font *FontManager::Load(tchar const *name)
@@ -125,7 +125,7 @@ namespace DX
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		mDrawList->Reset(context, shader.get(), vertexBuffer.get());
-		mDrawList->SetGSConstantData(v, DXShaders::Font::GS::vConstants_index);
+		mDrawList->SetConstantData(Geometry, v, DXShaders::Font::GS::vConstants_index);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -569,7 +569,7 @@ namespace DX
 					{
 						mDrawList->End();
 					}
-					mDrawList->SetPSTexture(*t);
+					mDrawList->SetTexture(Pixel, *t);
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}

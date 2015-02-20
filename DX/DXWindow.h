@@ -12,8 +12,9 @@ namespace DX
 		virtual ~DXWindow();
 
 		void Clear(DX::Color color);
+		void ClearDepth(DepthClearOption option, float z = 1.0f, byte stencil = 0);
 
-		void ClearDepth(DepthClearOption option, float z, byte stencil);
+		void ResetRenderTargetView();
 
 		virtual void OnDraw();
 
@@ -22,6 +23,10 @@ namespace DX
 		bool OnCreate() override;
 		void OnResized() override;
 		void OnDestroy() override;
+		void OnActivate() override;
+		void OnDeactivate() override;
+		void OnEnterSizeLoop() override;
+		void OnExitSizeLoop() override;
 
 		void Present();
 
@@ -38,6 +43,7 @@ namespace DX
 		D3DDevice	mDevice;
 		HWND		mDXWindow;
 		int			mFrame;
+		Timer		mTimer;
 	};
 
 }

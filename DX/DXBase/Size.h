@@ -18,6 +18,12 @@ namespace DX
 			cy = h;
 		}
 
+		Size2D(Size2D const &o)
+		{
+			cx = o.cx;
+			cy = o.cy;
+		}
+
 		explicit Size2D(Vec2f const &o)
 		{
 			cx = (int)o.x;

@@ -15,11 +15,11 @@ struct FPSCamera: Camera
 	FPSCamera(Window *w)
 		: position(Vec4(0, 0, 50))
 		, yaw(0)
-		, pitch(0)
+		, pitch(FLT_EPSILON)
 		, roll(0)
 		, window(w)
 	{
-		CalculatePerspectiveProjectionMatrix();
+		CalculatePerspectiveProjectionMatrix(0.5f, (float)w->ClientWidth() / w->ClientHeight());
 		Update();
 	}
 
@@ -47,7 +47,6 @@ struct FPSCamera: Camera
 
 	void Update()
 	{
-		CalculatePerspectiveProjectionMatrix(0.5f, (float)window->ClientWidth() / window->ClientHeight());
 		CalculateViewMatrix(position, roll, pitch, yaw);
 		CalculateViewProjectionMatrix();
 	}

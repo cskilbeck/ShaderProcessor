@@ -14,9 +14,10 @@ namespace
 		it_Texture,
 		it_Sampler,
 		it_Shader,
-		it_VSConstants,
-		it_GSConstants,
-		it_PSConstants,
+		it_Constants,
+		it_RenderTarget,
+		it_Clear,
+		it_ClearDepth,
 		it_DrawCall
 	};
 
@@ -41,6 +42,7 @@ namespace
 			eType = it_Texture
 		};
 
+		ShaderType mShaderType;
 		Texture *mTexture;
 		uint32 mIndex;
 	};
@@ -54,6 +56,7 @@ namespace
 			eType = it_Sampler
 		};
 
+		ShaderType mShaderType;
 		Sampler *mSampler;
 		uint32 mIndex;
 	};
@@ -62,38 +65,14 @@ namespace
 
 	struct ConstBufferItem: Item
 	{
+		enum
+		{
+			eType = it_Constants
+		};
+
+		ShaderType mShaderType;
 		uint32 mIndex;
 		uint32 mSize;
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct VSConstBufferItem: ConstBufferItem
-	{
-		enum
-		{
-			eType = it_VSConstants
-		};
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct GSConstBufferItem: ConstBufferItem
-	{
-		enum
-		{
-			eType = it_GSConstants
-		};
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	struct PSConstBufferItem: ConstBufferItem
-	{
-		enum
-		{
-			eType = it_PSConstants
-		};
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -109,45 +88,19 @@ namespace
 		TypelessBuffer *mVertexBuffer;
 		uint32 mVertexSize;
 
-		void SetTexture(ShaderType shaderType, TextureItem *t)
+		void SetTexture(TextureItem *t)
 		{
-			mShader->Shaders[shaderType]->mTextures[t->mIndex] = t->mTexture;
+			mShader->Shaders[t->mShaderType]->mTextures[t->mIndex] = t->mTexture;
 		}
 
-		void SetSampler(ShaderType shaderType, SamplerItem *s)
+		void SetSampler(SamplerItem *s)
 		{
-			mShader->Shaders[shaderType]->mSamplers[s->mIndex] = s->mSampler;
+			mShader->Shaders[s->mShaderType]->mSamplers[s->mIndex] = s->mSampler;
 		}
 
-		void SetConstants(ShaderType shaderType, ConstBufferItem *item, ID3D11DeviceContext *context)
+		void SetConstants(ConstBufferItem *item, ID3D11DeviceContext *context)
 		{
-			// Calls UpdateSubresource
-			mShader->Shaders[shaderType]->mConstBuffers[item->mIndex]->Update(context, (byte *)item + sizeof(ConstBufferItem));
-		}
-
-		void SetPSTexture(TextureItem *t)
-		{
-			SetTexture(Pixel, t);
-		}
-
-		void SetPSSampler(SamplerItem *s)
-		{
-			SetSampler(Pixel, s);
-		}
-
-		void SetVSConstants(VSConstBufferItem *i, ID3D11DeviceContext *context)
-		{
-			SetConstants(Vertex, i, context);
-		}
-
-		void SetGSConstants(GSConstBufferItem *i, ID3D11DeviceContext *context)
-		{
-			SetConstants(Geometry, i, context);
-		}
-
-		void SetPSConstants(PSConstBufferItem *i, ID3D11DeviceContext *context)
-		{
-			SetConstants(Pixel, i, context);
+			mShader->Shaders[item->mShaderType]->mConstBuffers[item->mIndex]->Update(context, (byte *)item + sizeof(ConstBufferItem));
 		}
 
 		void Activate(ID3D11DeviceContext *context)
@@ -216,41 +169,22 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::SetVSConsts(byte *data, uint size, uint index)
-	{
-		VSConstBufferItem *i = Add<VSConstBufferItem>();
-		AddData(data, size);
-		i->mIndex = index;
-		i->mSize = size;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetGSConsts(byte *data, uint size, uint index)
-	{
-		GSConstBufferItem *i = Add<GSConstBufferItem>();
-		AddData(data, size);
-		i->mIndex = index;
-		i->mSize = size;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetPSConsts(byte *data, uint size, uint index)
-	{
-		PSConstBufferItem *i = Add<PSConstBufferItem>();
-		AddData(data, size);
-		i->mIndex = index;
-		i->mSize = size;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
 	byte *DrawList::AddData(byte const *data, uint size)
 	{
 		memcpy(mItemPointer, data, size);
 		mItemPointer += size;
 		return mItemPointer;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::SetConsts(ShaderType shaderType, byte *data, uint size, uint index)
+	{
+		ConstBufferItem *i = Add<ConstBufferItem>();
+		AddData(data, size);
+		i->mShaderType = shaderType;
+		i->mIndex = index;
+		i->mSize = size;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -269,18 +203,20 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::SetPSTexture(Texture &t, uint index)
+	void DrawList::SetTexture(ShaderType shaderType, Texture &t, uint index)
 	{
 		TextureItem *ti = Add<TextureItem>();
+		ti->mShaderType = shaderType;
 		ti->mTexture = &t;
 		ti->mIndex = index;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::SetPSSampler(Sampler &s, uint index)
+	void DrawList::SetSampler(ShaderType shaderType, Sampler &s, uint index)
 	{
 		SamplerItem *si = Add<SamplerItem>();
+		si->mShaderType = shaderType;
 		si->mSampler = &s;
 		si->mIndex = index;
 	}
@@ -360,13 +296,13 @@ namespace DX
 			{
 				case it_Texture:
 					assert(csi != null);
-					csi->SetPSTexture((TextureItem *)t);
+					csi->SetTexture((TextureItem *)t);
 					t += sizeof(TextureItem);
 					break;
 
 				case it_Sampler:
 					assert(csi != null);
-					csi->SetPSSampler((SamplerItem *)t);
+					csi->SetSampler((SamplerItem *)t);
 					t += sizeof(SamplerItem);
 					break;
 
@@ -375,22 +311,10 @@ namespace DX
 					t += sizeof(ShaderItem);
 					break;
 
-				case it_VSConstants:
+				case it_Constants:
 					assert(csi != null);
-					csi->SetVSConstants((VSConstBufferItem *)t, mContext);
-					t += sizeof(VSConstBufferItem) + ((VSConstBufferItem *)t)->mSize;
-					break;
-
-				case it_GSConstants:
-					assert(csi != null);
-					csi->SetGSConstants((GSConstBufferItem *)t, mContext);
-					t += sizeof(GSConstBufferItem) + ((GSConstBufferItem *)t)->mSize;
-					break;
-
-				case it_PSConstants:
-					assert(csi != null);
-					csi->SetPSConstants((PSConstBufferItem *)t, mContext);
-					t += sizeof(PSConstBufferItem) + ((PSConstBufferItem *)t)->mSize;
+					csi->SetConstants((ConstBufferItem *)t, mContext);
+					t += sizeof(ConstBufferItem) + ((ConstBufferItem *)t)->mSize;
 					break;
 
 				case it_DrawCall:

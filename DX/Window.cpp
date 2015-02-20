@@ -327,13 +327,13 @@ namespace DX
 				{
 					Close();
 				}
-				Created.Fire(WindowEvent(this));
+				Created.Invoke(WindowEvent(this));
 				break;
 
 			case WM_DESTROY:
-				Destroying.Fire(WindowEvent(this));
+				Destroying.Invoke(WindowEvent(this));
 				OnDestroy();
-				Destroyed.Fire(WindowEvent(this));
+				Destroyed.Invoke(WindowEvent(this));
 				PostQuitMessage(0);
 				break;
 
@@ -369,10 +369,12 @@ namespace DX
 
 			case WM_ENTERSIZEMOVE:
 				mResizing = true;
+				OnEnterSizeLoop();
 				break;
 
 			case WM_EXITSIZEMOVE:
 				mResizing = false;
+				OnExitSizeLoop();
 				break;
 
 			case WM_CHAR:
@@ -383,66 +385,64 @@ namespace DX
 			case WM_KEYDOWN:
 				Keyboard::LastKeyPressed = (int)wParam;
 				OnKeyDown((int)wParam, lParam);
-				KeyPressed.Fire(KeyboardEvent(this, (int)wParam));
+				KeyPressed.Invoke(KeyboardEvent(this, (int)wParam));
 				break;
 
 			case WM_KEYUP:
 				OnKeyUp((int)wParam, lParam);
-				KeyReleased.Fire(KeyboardEvent(this, (int)wParam));
+				KeyReleased.Invoke(KeyboardEvent(this, (int)wParam));
 				break;
 
 			case WM_MOUSEMOVE:
 				mousePos = GetMousePosFromParam(lParam);
 				OnMouseMove(mousePos, wParam);
-				MouseMoved.Fire(MouseEvent(this, mousePos));
+				MouseMoved.Invoke(MouseEvent(this, mousePos));
 				break;
 
 			case WM_LBUTTONDBLCLK:
 				OnLeftMouseDoubleClick(GetMousePosFromParam(lParam));
-				MouseDoubleClicked.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseDoubleClicked.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDBLCLK:
 				OnRightMouseDoubleClick(GetMousePosFromParam(lParam));
-				MouseDoubleClicked.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseDoubleClicked.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_LBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Left;
 				Mouse::Held |= Mouse::Button::Left;
 				OnLeftButtonDown(GetMousePosFromParam(lParam), wParam);
-				MouseButtonPressed.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseButtonPressed.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_LBUTTONUP:
 				Mouse::Released |= Mouse::Button::Left;
 				Mouse::Held &= ~Mouse::Button::Left;
 				OnLeftButtonUp(GetMousePosFromParam(lParam), wParam);
-				MouseButtonReleased.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseButtonReleased.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Right;
 				Mouse::Held |= Mouse::Button::Right;
 				OnRightButtonDown(GetMousePosFromParam(lParam), wParam);
-				MouseButtonPressed.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseButtonPressed.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_RBUTTONUP:
 				Mouse::Released |= Mouse::Button::Right;
 				Mouse::Held &= ~Mouse::Button::Right;
 				OnRightButtonUp(GetMousePosFromParam(lParam), wParam);
-				MouseButtonReleased.Fire(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseButtonReleased.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
 				break;
 
 			case WM_ACTIVATEAPP:
 				SetActive(wParam == TRUE);
-				Activated.Fire(WindowActivationEvent(this, IsActive()));
 				break;
 
 			case WM_ACTIVATE:
 				SetActive(wParam != WA_INACTIVE);
-				Activated.Fire(WindowActivationEvent(this, IsActive()));
 				break;
 
 			case WM_CLOSE:
@@ -468,6 +468,15 @@ namespace DX
 	{
 		mActive = active;
 		Mouse::OnActivate(active, *this);
+		if(mActive)
+		{
+			OnActivate();
+		}
+		else
+		{
+			OnDeactivate();
+		}
+		Activated.Invoke(WindowActivationEvent(this, mActive));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -485,6 +494,8 @@ namespace DX
 		mClientHeight = rc.Height();
 
 		OnResized();
+
+		Resized.Invoke(WindowSizedEvent(this, rc, Size2D(mClientWidth, mClientHeight)));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -622,6 +633,30 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::OnMouseWheel(MousePos pos, int delta, uintptr flags)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnActivate()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnDeactivate()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnEnterSizeLoop()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnExitSizeLoop()
 	{
 	}
 

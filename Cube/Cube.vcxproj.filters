@@ -45,5 +45,8 @@
     <SPOCK Include="Shaders\Colored.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
+    <SPOCK Include="Shaders\Blit.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>
