@@ -33,10 +33,15 @@ namespace DX
 {
 	struct Sprite: Shaders::Sprite::InputVertex
 	{
-		void SetFlip(int x, int y)
+		static SByte4 Flips(int x, int y)
 		{
 			assert(x >= 0 && x <= 1 && y >= 0 && y <= 1);
-			Flip = flips[x + y * 2];
+			return flips[x + y * 2];
+		}
+
+		void SetFlip(int x, int y)
+		{
+			Flip = Flips(x, y);
 		}
 
 		void Set(

@@ -8,25 +8,24 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename T> struct Delegate
+	template<typename T> struct Delegate : list_node<Delegate<T>>
 	{
 		template<typename T> using DelegateFunction = std::function<void(T const &event)>;
 
 		Delegate(DelegateFunction<T> func = null)
-			: handler(func)
-			, owned(false)
+			: mHandler(func)
+			, mOwned(false)
 		{
 		}
 
 		Delegate &operator = (DelegateFunction<T> function)
 		{
-			handler = function;
+			mHandler = function;
 			return *this;
 		}
 
-		list_node<Delegate<T>> mListNode;
-		DelegateFunction<T> handler;
-		bool owned;
+		DelegateFunction<T> mHandler;
+		bool mOwned;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -35,10 +34,10 @@ namespace DX
 	{
 		~Event()
 		{
-			while(!handlers.empty())
+			while(!mHandlerList.empty())
 			{
-				Delegate<T> *h = handlers.pop_front();
-				if(h->owned)
+				Delegate<T> *h = mHandlerList.pop_front();
+				if(h->mOwned)
 				{
 					delete h;
 				}
@@ -47,33 +46,34 @@ namespace DX
 
 		void operator += (Delegate<T> &d)
 		{
-			handlers.push_back(d);
+			mHandlerList.push_back(d);
 		}
 
-		void operator += (Delegate<T>::DelegateFunction<T> callback)
+		Delegate<T> *operator += (Delegate<T>::DelegateFunction<T> callback)
 		{
 			Delegate<T> *d = new Delegate<T>(callback);
-			d->owned = true;
-			handlers.push_back(d);
+			d->mOwned = true;
+			mHandlerList.push_back(d);
+			return d;
 		}
 
 		void operator -= (Delegate<T> &d)
 		{
-			handlers.remove(d);
-			if(d->owned)
+			mHandlerList.remove(d);
+			if(d->mOwned)
 			{
-				// Huh?
+				// Huh? How did they get a pointer to the Delegate then?
 			}
 		}
 
 		void Invoke(T const &event)
 		{
-			for(auto &e : handlers)
+			for(auto &e : mHandlerList)
 			{
-				((Delegate<T> &)e).handler(event);
+				((Delegate<T> &)e).mHandler(event);
 			}
 		}
 
-		linked_list<Delegate<T>, &Delegate<T>::mListNode> handlers;
+		linked_list<Delegate<T>> mHandlerList;
 	};
 }

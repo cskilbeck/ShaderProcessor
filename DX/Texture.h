@@ -41,8 +41,8 @@ namespace DX
 	{
 		enum RenderTargetDepthOption
 		{
-			WithDepth = 0,
-			WithoutDepth = 1
+			WithDepthBuffer = 0,
+			WithoutDepthBuffer = 1
 		};
 
 		RenderTarget(int w, int h, RenderTargetDepthOption depthOption);

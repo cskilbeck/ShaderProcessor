@@ -155,9 +155,21 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	Resized += [this] (WindowSizedEvent const &s)
+	Resized += [this] (WindowSizedEvent const &e)
 	{
 		camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
+		float s = 256;
+		float r = FWidth();
+		float l = r - s;
+		Shaders::Blit::InputVertex *v = blitVB->Map(Context());
+		v[0] = { { l, 0 }, { 0, 0 } };
+		v[1] = { { r, 0 }, { 1, 0 } };
+		v[2] = { { l, s }, { 0, 1 } };
+		v[3] = { { r, s }, { 1, 1 } };
+		blitVB->UnMap(Context());
+		Shaders::Blit::VS &vs = blitShader->vs;
+		vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+		vs.vConstants.Commit(Context());
 	};
 
 	FontManager::Init(this);
@@ -209,10 +221,21 @@ bool MyDXWindow::OnCreate()
 
 	spriteSheet.reset(new SpriteSheet(Context(), TEXT("Data\\spriteSheet.xml")));
 
-	renderTarget.reset(new RenderTarget(256, 256, RenderTarget::WithDepth));
+	renderTarget.reset(new RenderTarget(256, 256, RenderTarget::WithDepthBuffer));
 
 	blitShader.reset(new Shaders::Blit());
 	blitVB.reset(new Shaders::Blit::VertBuffer(4, null, DynamicUsage, Writeable));
+
+	blitShader->ps.smplr = uiSampler.get();
+	blitShader->ps.page = renderTarget.get();
+
+	cubeShader->ps.Camera.cameraPos = dashCam.position;
+	cubeShader->ps.Camera.Commit(Context());
+
+	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
+	dashCam.position = Vec4(10, 10, 0);
+	dashCam.LookAt(Vec4(0, 50, 0));
+	dashCam.Update();
 
 	return true;
 }
@@ -389,7 +412,7 @@ void MyDXWindow::OnDraw()
 	v[0].Scale = { 1, 1 };
 	v[0].UVa = { 0.0f, 0.0f };
 	v[0].UVb = { 1.0f, 1.0f };
-	v[0].SetFlip(1, 1);
+	v[0].Flip = Sprite::Flips(1, 1);
 
 	v[1].Position = { 520, 140 };
 	v[1].Size = { 64, 64 };
@@ -397,7 +420,7 @@ void MyDXWindow::OnDraw()
 	v[1].Rotation = time * 0.9f;
 	v[1].Pivot = { 0.5f, 0.5f };
 	v[1].Scale = { sinf(time * 1.3f) * 0.25f + 0.75f, 1 };
-	v[1].SetFlip(0, 0);
+	v[1].Flip = Sprite::Flips(0, 0);
 	v[1].UVa = { 0.0f, 0.0f };
 	v[1].UVb = { 1.0f, 1.0f };
 
@@ -430,56 +453,29 @@ void MyDXWindow::OnDraw()
 	spriteSheet->ExecuteRun(Context());
 
 	{
-		renderTarget->Activate(Context());
-		renderTarget->Clear(Context(), Color::DarkBlue);
-		renderTarget->ClearDepth(Context(), DepthOnly);
-
-		dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
-		dashCam.position = camera.position;
-		dashCam.roll = camera.roll;
-		dashCam.yaw = camera.yaw;
-		dashCam.pitch = camera.pitch;
-		dashCam.Update();
-		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-
+		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 50, 0));
 		Shaders::Phong::VS &vs = cubeShader->vs;
-		Shaders::Phong::PS &ps = cubeShader->ps;
 		vs.VertConstants.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
 		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
-		ps.Camera.cameraPos = dashCam.position;
-
 		vs.VertConstants.Commit(Context());
-		ps.Camera.Commit(Context());
-		cubeShader->Activate(Context());
-
-		cubeVerts->Activate(Context());
-		cubeIndices->Activate(Context());
-
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}
+
+	renderTarget->Activate(Context());
+	renderTarget->Clear(Context(), Color::DarkBlue);
+	renderTarget->ClearDepth(Context(), DepthOnly);
+	Viewport(0, 0, renderTarget->FWidth(), renderTarget->FHeight(), 0, 1).Activate(Context());
+	cubeShader->Activate(Context());
+	cubeVerts->Activate(Context());
+	cubeIndices->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 
 	ResetRenderTargetView();
 
-	// now draw what we drew with the Blit shader
-	{
-		Shaders::Blit::VS &vs = blitShader->vs;
-		vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vs.vConstants.Commit(Context());
-		blitShader->ps.smplr = uiSampler.get();
-		blitShader->ps.page = renderTarget.get();
-		float s = 256;
-		Shaders::Blit::InputVertex *v = blitVB->Map(Context());
-		v[0].Position = Float2(0, 0);	v[0].TexCoord = Half2(0, 0);
-		v[1].Position = Float2(s, 0);	v[1].TexCoord = Half2(1, 0);
-		v[2].Position = Float2(0, s);	v[2].TexCoord = Half2(0, 1);
-		v[3].Position = Float2(s, s);	v[3].TexCoord = Half2(1, 1);
-		blitVB->UnMap(Context());
-		blitVB->Activate(Context());
-		blitShader->Activate(Context());
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		Context()->Draw(blitVB->Count(), 0);
-	}
+	blitVB->Activate(Context());
+	blitShader->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	Context()->Draw(blitVB->Count(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -357,6 +357,14 @@ namespace DX
 
 		void ResetRenderTargetView()
 		{
+			D3D11_VIEWPORT vp;
+			vp.TopLeftX = 0.0f;
+			vp.TopLeftY = 0.0f;
+			vp.Width = (float)mWidth;
+			vp.Height = (float)mHeight;
+			vp.MaxDepth = 1.0f;
+			vp.MinDepth = 0.0f;
+			DXI(mContext->RSSetViewports(1, &vp));
 			DXI(mContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView));
 		}
 
