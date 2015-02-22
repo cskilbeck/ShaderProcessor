@@ -1,13 +1,14 @@
 //////////////////////////////////////////////////////////////////////
+// Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing
-// Fix the font utility for once and good and proper
+// Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader
+// General purpose shader for Assimp viewer
 // 2D UI Elements/Scene
-// SWF importer/converted/player!?
+// SWF importer/converter/player!?
 // Assimp
 // Bullet
-// Fix the Event system (get rid of heap allocations, make it flexible)
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
 //		Samplers
@@ -21,9 +22,12 @@
 //		Assembly Listing file
 //		deal with multiple render targets
 //		enable mode where bytecode not embedded
-//		* documentation generator for shader #pragmas
-//		Shader Linking support...?
+//		Shader Linking/Interfaces support...?
+//		Nested structs
 //		Sampler/Texture defaults
+//		* documentation generator for shader #pragmas
+//		* Syntax highlighting for .shader files
+// * Fix the Event system (get rid of heap allocations, make it flexible)
 
 #include "stdafx.h"
 
@@ -158,14 +162,17 @@ bool MyDXWindow::OnCreate()
 	Resized += [this] (WindowSizedEvent const &e)
 	{
 		camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
-		float s = 256;
-		float r = FWidth();
-		float l = r - s;
+		float w = renderTarget->FWidth();
+		float h = renderTarget->FHeight();
+		float r = (float)ClientWidth() - 10;
+		float l = r - w;
+		float t = 10;
+		float b = t + h;
 		Shaders::Blit::InputVertex *v = blitVB->Map(Context());
-		v[0] = { { l, 0 }, { 0, 0 } };
-		v[1] = { { r, 0 }, { 1, 0 } };
-		v[2] = { { l, s }, { 0, 1 } };
-		v[3] = { { r, s }, { 1, 1 } };
+		v[0] = { { l, t }, { 0, 0 } };
+		v[1] = { { r, t }, { 1, 0 } };
+		v[2] = { { l, b }, { 0, 1 } };
+		v[3] = { { r, b }, { 1, 1 } };
 		blitVB->UnMap(Context());
 		Shaders::Blit::VS &vs = blitShader->vs;
 		vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -219,7 +226,7 @@ bool MyDXWindow::OnCreate()
 	spriteShader->ps.smplr = spriteSampler.get();
 	spriteShader->ps.page = spriteTexture.get();
 
-	spriteSheet.reset(new SpriteSheet(Context(), TEXT("Data\\spriteSheet.xml")));
+	spriteSheet.reset(new SpriteSheet(TEXT("Data\\spriteSheet.xml")));
 
 	renderTarget.reset(new RenderTarget(256, 256, RenderTarget::WithDepthBuffer));
 
@@ -233,8 +240,8 @@ bool MyDXWindow::OnCreate()
 	cubeShader->ps.Camera.Commit(Context());
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
-	dashCam.position = Vec4(10, 10, 0);
-	dashCam.LookAt(Vec4(0, 50, 0));
+	dashCam.position = Vec4(0, 0, 0);
+	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
 	return true;
@@ -432,13 +439,13 @@ void MyDXWindow::OnDraw()
 
 	Sprite const &s = (*spriteSheet)["temp.png"];
 	Sprite const &t = (*spriteSheet)["temp.jpg"];
-	spriteSheet->SetScreenSize(Context(), mClientWidth, mClientHeight);
+	spriteSheet->SetupTransform(Context(), mClientWidth, mClientHeight);
 
 	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
 	drawList.BeginPointList();
 	Sprite &q = drawList.AddVertex<Sprite>();
 	q.Set(t, { 600, 400 });
-	q.Rotation = time;
+	q.Rotation = time * PI / 2;
 	drawList.End();
 	drawList.Execute();
 
@@ -453,7 +460,8 @@ void MyDXWindow::OnDraw()
 	spriteSheet->ExecuteRun(Context());
 
 	{
-		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 50, 0));
+		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
+		//Matrix modelMatrix = ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
 		Shaders::Phong::VS &vs = cubeShader->vs;
 		vs.VertConstants.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
 		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
@@ -461,7 +469,7 @@ void MyDXWindow::OnDraw()
 	}
 
 	renderTarget->Activate(Context());
-	renderTarget->Clear(Context(), Color::DarkBlue);
+	renderTarget->Clear(Context(), 0x208040);
 	renderTarget->ClearDepth(Context(), DepthOnly);
 	Viewport(0, 0, renderTarget->FWidth(), renderTarget->FHeight(), 0, 1).Activate(Context());
 	cubeShader->Activate(Context());

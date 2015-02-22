@@ -12,7 +12,6 @@ namespace DX
 		~DrawList();
 
 		template<typename T, typename U> void Reset(ID3D11DeviceContext *context, T *shader, U *vertbuffer);
-		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetTexture(ShaderType shaderType, Texture &t, uint index = 0);
 		void SetSampler(ShaderType shaderType, Sampler &s, uint index = 0);
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
@@ -31,9 +30,8 @@ namespace DX
 		template<typename T> T *Add();
 		byte *AddData(byte const *data, uint size);
 		void BeginDrawCall(uint32 topology);
-
+		void SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetConsts(ShaderType shaderType, byte *data, uint size, uint index);
-
 		void UnMapCurrentVertexBuffer();
 
 		byte *mItemBuffer;

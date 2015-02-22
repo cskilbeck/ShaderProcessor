@@ -82,6 +82,7 @@ namespace DX
 		uint32								mScreenHeight;
 		Shaders::Sprite::InputVertex *		mVertBase;
 		Shaders::Sprite::InputVertex *		mVertPointer;
+		DrawList *							mDrawList;
 
 		SpriteSheet()
 		{
@@ -141,14 +142,21 @@ namespace DX
 			context->Draw(count, 0);
 		}
 
-		void SetupDrawlist(DrawList &d)
+		void SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
-			d.SetShader(mShader.get(), mVertexBuffer.get(), sizeof(Shaders::Sprite::InputVertex));
+			mShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
+			mShader->gs.vConstants.Commit(context);
+		}
+
+		void SetupDrawlist(ID3D11DeviceContext *context, DrawList &d, int width, int height)
+		{
+			mDrawList = &d;
+			SetupTransform(context, width, height);
+			d.Reset(context, mShader.get(), mVertexBuffer.get());
 			d.BeginPointList();
 		}
 
 		void AddToDrawList(
-				DrawList &d,
 				Sprite const &sprite,
 				Vec2f pos,
 				Vec2f scale = { 1, 1 },
@@ -158,7 +166,7 @@ namespace DX
 				bool xflip = false,
 				bool yflip = false)
 		{
-			Sprite &q = d.AddVertex<Sprite>();
+			Sprite &q = mDrawList->AddVertex<Sprite>();
 			q.Position = pos;
 			q.Pivot = pivot;
 			q.Size = sprite.Size;
@@ -167,16 +175,10 @@ namespace DX
 			q.UVb = sprite.UVb;
 			q.Rotation = rotation;
 			q.Color = color;
-			q.SetFlip(xflip, yflip);
+			q.Flip = Sprite::Flips(xflip, yflip);
 		}
 
-		void SetScreenSize(ID3D11DeviceContext *context, int width, int height)
-		{
-			mShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
-			mShader->gs.vConstants.Commit(context);
-		}
-
-		SpriteSheet(ID3D11DeviceContext *context, tchar const *filename)
+		SpriteSheet(tchar const *filename)
 		{
 			DXT(Load(filename));
 			mSampler.reset(new Sampler());
