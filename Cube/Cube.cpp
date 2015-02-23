@@ -411,7 +411,7 @@ void MyDXWindow::OnDraw()
 			font->End();
 
 			bigFont->Begin();
-			bigFont->DrawString("HELLO WORLD", Vec2f(FClientWidth() / 2.0f, FClientHeight() / 2.0f), Font::HCentre, Font::VCentre);
+			bigFont->DrawString("HELLO WORLD", FClientSize() / 2, Font::HCentre, Font::VCentre);
 			bigFont->End();
 
 		}
