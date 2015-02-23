@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
+// Move some things into Matrix from Camera
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
-// Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing
+// Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader
 // General purpose shader for Assimp viewer
@@ -352,7 +353,7 @@ void MyDXWindow::OnDraw()
 		Shaders::UI::PS::pConstants_t c;
 		Shaders::UI::VS::vConstants_t v;
 		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(1920, 1080));
-		c.Color = Float4(1, 1, 1, sinf(time) * 0.5f + 0.5f);
+		c.Color = Float4(1, 1, 1, sinf(time * 10) * 0.5f + 0.5f);
 		drawList.SetConstantData(Vertex, v, Shaders::UI::VS::vConstants_index);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
 		{
@@ -459,6 +460,9 @@ void MyDXWindow::OnDraw()
 	drawList.End();
 	drawList.Execute();
 
+	bool xflip = ((int)(time * 10) & 1) != 0;
+	bool yflip = ((int)(time * 5) * 1) != 0;
+
 	spriteSheet->BeginRun(Context());
 	spriteSheet->Add(s,
 					 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
@@ -466,7 +470,7 @@ void MyDXWindow::OnDraw()
 					 { 0.5f, 0.5f },
 					 0,
 					 Color::White,
-					 (mFrame >> 6) & 1, (mFrame >> 5) & 1);
+					 xflip, yflip);
 	spriteSheet->ExecuteRun(Context());
 
 	{

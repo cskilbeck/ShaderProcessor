@@ -106,14 +106,17 @@ namespace DX
 
 	void DXWindow::OnWindowPosChanged(WINDOWPOS *pos)
 	{
-		mTimer.UnPause();
+		if(!mResizing)
+		{
+			mTimer.UnPause();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DXWindow::OnNCMouseMove(MousePos pos, uintptr hitTestValue)
 	{
-		if(mTimer.Paused())
+		if(mTimer.Paused() && !mResizing)
 		{
 			mTimer.UnPause();
 		}
