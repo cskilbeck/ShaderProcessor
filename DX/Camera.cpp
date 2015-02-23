@@ -6,6 +6,7 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
 
 	Camera::Camera()
 	{
@@ -17,53 +18,23 @@ namespace DX
 
 	Matrix Camera::ViewMatrix(Vec4f target, Vec4f position, Vec4f up)
 	{
-		using namespace DirectX;
-		Vec4f direction(target - position);
-		Vec4f Z = Normalize(direction);
-		Vec4f X = Normalize(Cross(up, Z));
-		Vec4f Y = Cross(Z, X);
-		Vec4f nPosition = Negate(position);
-		Vec4f dx = Splat(Dot(X, nPosition));
-		Vec4f dy = Splat(Dot(Y, nPosition));
-		Vec4f dz = Splat(Dot(Z, nPosition));
-		Matrix m;
-		m.r[0] = Select(dx, Negate(X), gMMaskXYZ);
-		m.r[1] = Select(dy, Negate(Y), gMMaskXYZ);
-		m.r[2] = Select(dz, Negate(Z), gMMaskXYZ);
-		m.r[3] = IdentityMatrix.r[3];
-		return Transpose(m);
+		return DirectX::XMMatrixLookAtRH(position, target, up);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Matrix Camera::ViewMatrix(Vec4f position, float roll, float pitch, float yaw)
 	{
-		Matrix z = IdentityMatrix;	// Z UP not down...?
-		z.r[2] = Negate(z.r[2]);
-
 		Matrix m = IdentityMatrix;
 		m.r[3] = SetW(Negate(position), 1.0f);
-
-		// we use Z up, not Y, so swap roll, yaw
-		return m * z * DirectX::XMMatrixRotationRollPitchYaw(pitch, roll, yaw);
+		return m * DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Matrix Camera::PerspectiveProjection(float fov /* = 0.5f */, float aspectRatio /* = 4.0f / 3.0f */, float nearZ /* = 1.0f */, float farZ /* = 1000.0f */)
 	{
-		using namespace DirectX;
-		float s;
-		float c;
-		XMScalarSinCos(&s, &c, fov * 0.5f);
-		float h = c / s;
-		float w = h / aspectRatio;
-		float f = farZ / (farZ - nearZ);
-		float n = -f * nearZ;
-		return Matrix(w, 0, 0, 0,
-					  0, h, 0, 0,
-					  0, 0, f, 1,
-					  0, 0, n, 0);
+		return DirectX::XMMatrixPerspectiveFovRH(fov, aspectRatio, nearZ, farZ);
 	}
 
 	//////////////////////////////////////////////////////////////////////

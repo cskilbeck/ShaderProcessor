@@ -51,10 +51,6 @@ namespace DX
 	Window::Window(int width, int height, tchar const *caption, uint32 windowStyle, tchar const *className, HWND parent)
 		: mHWND(null)
 		, mHINST(null)
-		, mWidth(0)
-		, mHeight(0)
-		, mClientWidth(width)
-		, mClientHeight(height)
 		, mActive(false)
 		, mResizing(false)
 		, mCaption(caption == null ? tstring() : caption)
@@ -62,17 +58,18 @@ namespace DX
 		, mWindowStyle(windowStyle)
 		, mParentHWND(parent)
 	{
-		Rect2D r(0, 0, width, height);
-		AdjustWindowRectEx(&r, windowStyle, false, 0);
-		mWidth = r.Width();
-		mHeight = r.Height();
+		mWindowInfo.cbSize = sizeof(WINDOWINFO);
+
+		mWindowInfo.rcClient = Rect2D(0, 0, width, height);
+		mWindowInfo.rcWindow = mWindowInfo.rcClient;
+		AdjustWindowRectEx(&mWindowInfo.rcClient, windowStyle, false, 0);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::Open()
 	{
-		if(!Init(mWidth, mHeight))
+		if(!Init(WindowWidth(), WindowHeight()))
 		{
 			Close();
 		}
@@ -124,9 +121,6 @@ namespace DX
 			RegisterClassEx(&wcex);
 		}
 
-		mWidth = width;
-		mHeight = height;
-
 		assert((mParentHWND != null) == ((mWindowStyle & WS_CHILD) != 0));
 
 		mHWND = CreateWindowEx(0, mClassName.c_str(), mCaption.c_str(), mWindowStyle, CW_USEDEFAULT, 0, width, height, mParentHWND, null, mHINST, this);
@@ -136,6 +130,8 @@ namespace DX
 			ErrorMessageBox(TEXT("Failed to create window (%08x) - %s"), err, Win32ErrorMessage(err).c_str());
 			return false;
 		}
+
+		GetWindowInfo(mHWND, &mWindowInfo);
 		return true;
 	}
 
@@ -291,6 +287,13 @@ namespace DX
 	LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		Window *w;
+
+#if 1
+		if(GetKeyState(VK_CAPITAL) & 1)
+		{
+			TRACE("%08x: %s %08x,%08x\n", msg, GetWM_Name(msg), wParam, lParam);
+		}
+#endif
 
 		if(msg == WM_NCCREATE)
 		{
@@ -449,6 +452,26 @@ namespace DX
 				Close();
 				break;
 
+			case WM_NCMOUSEMOVE:
+				OnNCMouseMove(GetMousePosFromParam(lParam), wParam);
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+
+			case WM_NCLBUTTONDOWN:
+				OnNCLButtonDown(GetMousePosFromParam(lParam), wParam);
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+
+			case WM_NCLBUTTONUP:
+				OnNCLButtonUp(GetMousePosFromParam(lParam), wParam);
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+
+			case WM_WINDOWPOSCHANGED:
+				OnWindowPosChanged((WINDOWPOS *)lParam);
+				return DefWindowProc(hWnd, msg, wParam, lParam);
+
+			case WM_WINDOWPOSCHANGING:
+				OnWindowPosChanging((WINDOWPOS *)lParam);
+				break;
+
 			default:
 				return DefWindowProc(hWnd, msg, wParam, lParam);
 		}
@@ -483,35 +506,16 @@ namespace DX
 
 	void Window::DoResize()
 	{
-		Rect2D rc;
-
-		GetWindowRect(mHWND, &rc);
-		mWidth = rc.Width();
-		mHeight = rc.Height();
-
-		GetClientRect(mHWND, &rc);
-		mClientWidth = rc.Width();
-		mClientHeight = rc.Height();
-
+		GetWindowInfo(mHWND, &mWindowInfo);
 		OnResized();
-
-		Resized.Invoke(WindowSizedEvent(this, rc, Size2D(mClientWidth, mClientHeight)));
+		Resized.Invoke(WindowSizedEvent(this, (Rect2D &)mWindowInfo.rcWindow, Size2D(ClientWidth(), ClientHeight())));
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::DoMove()
 	{
-		Rect2D rc;
-
-		GetWindowRect(mHWND, &rc);
-		mWidth = rc.Width();
-		mHeight = rc.Height();
-
-		GetClientRect(mHWND, &rc);
-		mClientWidth = rc.Width();
-		mClientHeight = rc.Height();
-
+		GetWindowInfo(mHWND, &mWindowInfo);
 		OnMoved();
 	}
 
@@ -542,7 +546,7 @@ namespace DX
 		FillRect(ps.hdc, &ClientRect(), (HBRUSH)GetStockObject(WHITE_BRUSH));
 		tchar hello[] = TEXT("Override your OnPaint function, fool!");
 		SetTextAlign(ps.hdc, TA_CENTER | VTA_CENTER);
-		TextOut(ps.hdc, mWidth / 2, mHeight / 2, hello, _countof(hello) - 1);
+		TextOut(ps.hdc, ClientWidth() / 2, ClientHeight() / 2, hello, _countof(hello) - 1);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -591,6 +595,18 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::OnLeftButtonDown(MousePos pos, uintptr flags)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnNCLButtonDown(MousePos pos, uintptr hitTestValue)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnNCLButtonUp(MousePos pos, uintptr hitTestValue)
 	{
 	}
 
@@ -657,6 +673,24 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::OnExitSizeLoop()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnNCMouseMove(MousePos pos, uintptr hitTestValue)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnWindowPosChanged(WINDOWPOS *pos)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnWindowPosChanging(WINDOWPOS *pos)
 	{
 	}
 

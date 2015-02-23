@@ -134,6 +134,11 @@ namespace DX
 		virtual void OnDeactivate();
 		virtual void OnEnterSizeLoop();
 		virtual void OnExitSizeLoop();
+		virtual void OnNCLButtonDown(MousePos pos, uintptr hitTestValue);
+		virtual void OnNCLButtonUp(MousePos pos, uintptr hitTestValue);
+		virtual void OnWindowPosChanging(WINDOWPOS *pos);
+		virtual void OnWindowPosChanged(WINDOWPOS *pos);
+		virtual void OnNCMouseMove(MousePos pos, uintptr hitTestValue);
 
 		void Open();
 		void Close();
@@ -147,14 +152,25 @@ namespace DX
 		bool IsActive() const;
 
 		void Center();
-		int Width() const;
-		int Height() const;
+
+		int WindowWidth() const;
+		int WindowHeight() const;
+
 		int ClientWidth() const;
 		int ClientHeight() const;
-		float FWidth() const;
-		float FHeight() const;
-		Vec2f FSize() const;
+
+		float FClientWidth() const;
+		float FClientHeight() const;
+
+		float FWindowWidth() const;
+		float FWindowHeight() const;
+
+		Vec2f FWindowSize() const;
+		Vec2f FClientSize() const;
+
+		Rect2D WindowRect() const;
 		Rect2D ClientRect() const;
+
 		bool SetMessageWait(bool wait);
 		bool GetMessageWait() const;
 		void MoveTo(int x, int y);
@@ -183,10 +199,7 @@ namespace DX
 
 		friend LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-		int			mWidth;
-		int			mHeight;
-		int			mClientWidth;
-		int			mClientHeight;
+		WINDOWINFO	mWindowInfo;
 		HWND		mHWND;
 		HWND		mParentHWND;
 		HINSTANCE	mHINST;
@@ -202,60 +215,86 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline int Window::Width() const
+	inline int Window::WindowWidth() const
 	{
-		return mWidth;
+		return ((Rect2D &)mWindowInfo.rcWindow).Width();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline int Window::Height() const
+	inline int Window::WindowHeight() const
 	{
-		return mHeight;
+		return ((Rect2D &)mWindowInfo.rcWindow).Height();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline int Window::ClientWidth() const
 	{
-		return mClientWidth;
+		return ((Rect2D &)mWindowInfo.rcClient).Width();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline float Window::FClientHeight() const
+	{
+		return (float)((Rect2D &)mWindowInfo.rcClient).Height();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline float  Window::FClientWidth() const
+	{
+		return (float)((Rect2D &)mWindowInfo.rcClient).Width();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline int Window::ClientHeight() const
 	{
-		return mClientHeight;
+		return ((Rect2D &)mWindowInfo.rcClient).Height();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline float Window::FWidth() const
+	inline float Window::FWindowWidth() const
 	{
-		return (float)mWidth;
+		return (float)((Rect2D &)mWindowInfo.rcWindow).Width();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline float Window::FHeight() const
+	inline float Window::FWindowHeight() const
 	{
-		return (float)mHeight;
+		return (float)((Rect2D &)mWindowInfo.rcWindow).Height();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Vec2f Window::FSize() const
+	inline Vec2f Window::FWindowSize() const
 	{
-		return Vec2f(FWidth(), FHeight());
+		return Vec2f(FWindowWidth(), FWindowHeight());
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec2f Window::FClientSize() const
+	{
+		return Vec2f(FClientWidth(), FClientHeight());
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline Rect2D Window::ClientRect() const
 	{
-		Rect2D r;
-		GetClientRect(mHWND, &r);
-		return r;
+		return (Rect2D &)mWindowInfo.rcClient;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Rect2D Window::WindowRect() const
+	{
+		return (Rect2D &)mWindowInfo.rcWindow;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -276,14 +315,14 @@ namespace DX
 
 	inline Point2D GetPoint2DFromParam(uintptr param)
 	{
-		return Point2D((int16)LOWORD(param), (int16)HIWORD(param));
+		return Point2D((int16)GET_X_LPARAM(param), (int16)GET_Y_LPARAM(param));
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline MousePos GetMousePosFromParam(uintptr param)
 	{
-		return MousePos((int16)LOWORD(param), (int16)HIWORD(param));
+		return MousePos((int16)GET_X_LPARAM(param), (int16)GET_Y_LPARAM(param));
 	}
 
 	//////////////////////////////////////////////////////////////////////

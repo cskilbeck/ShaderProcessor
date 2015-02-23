@@ -33,6 +33,12 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		virtual ~ShaderState()
+		{
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		DXPtr<ID3D11BlendState>				mBlendState;
 		DXPtr<ID3D11DepthStencilState>		mDepthStencilState;
 		DXPtr<ID3D11RasterizerState>		mRasterizerState;

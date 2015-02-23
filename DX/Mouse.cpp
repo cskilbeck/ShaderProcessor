@@ -60,8 +60,8 @@ namespace DX
 				GetCursorPos(&p);
 				ScreenToClient(w.Handle(), &p);
 				POINT c;
-				c.x = w.Width() / 2;
-				c.y = w.Height() / 2;
+				c.x = w.WindowWidth() / 2;
+				c.y = w.WindowHeight() / 2;
 				Mouse::Delta = Vec2f((float)p.x - c.x, (float)p.y - c.y);
 				Position += Mouse::Delta;
 				ClientToScreen(w.Handle(), &c);
@@ -109,8 +109,8 @@ namespace DX
 					HideMouse();
 					SetCapture(w.Handle());
 					POINT p;
-					p.x = w.Width() / 2;
-					p.y = w.Height() / 2;
+					p.x = w.WindowWidth() / 2;
+					p.y = w.WindowHeight() / 2;
 					ClientToScreen(w.Handle(), &p);
 					SetCursorPos(p.x, p.y);
 				}

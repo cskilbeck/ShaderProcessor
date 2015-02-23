@@ -2,6 +2,7 @@
 
 #include "DXBase\DXBase.h"
 
+#include "Device.h"
 #include "Event.h"
 #include "Keyboard.h"
 #include "Mouse.h"

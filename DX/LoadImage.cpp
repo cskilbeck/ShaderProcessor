@@ -554,6 +554,7 @@ HRESULT CreateWICTextureFromMemory(_In_bytecount_(wicDataSize)	uint8_t const *wi
 	DXR(CreateTextureFromWIC(context.get(), frame.get(), texture, textureView, maxsize, createMipMaps));
 
 	SetDebugInfo(texture, textureView, L"WICTextureLoader");
+
 	return S_OK;
 }
 

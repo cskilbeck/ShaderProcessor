@@ -71,6 +71,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+    <SPOCKBeforeTargets>ClCompile</SPOCKBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>

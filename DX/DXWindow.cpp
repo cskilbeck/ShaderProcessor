@@ -6,9 +6,9 @@
 
 namespace DX
 {
-	DXWindow::DXWindow(int width, int height, tchar const *caption, DepthBufferOption depthBufferOption, FullScreenOption fullScreenOption)
+	DXWindow::DXWindow(int width, int height, tchar const *caption, DepthBufferOption depthBufferOption, FullScreenOption fullScreenOption, BackBufferCount backBufferCount)
 		: Window(width, height, caption, WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_OVERLAPPEDWINDOW | WS_SIZEBOX | WS_BORDER)
-		, mDevice(WithSwapChain, depthBufferOption, fullScreenOption)
+		, mD3D(WithSwapChain, backBufferCount, depthBufferOption, fullScreenOption)
 		, mFrame(0)
 		, mDXWindow(null)
 	{
@@ -21,14 +21,14 @@ namespace DX
 
 	bool DXWindow::OnCreate()
 	{
-		return Window::OnCreate() && SUCCEEDED(mDevice.Open(mHWND));
+		return Window::OnCreate() && SUCCEEDED(mD3D.Open(mHWND));
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DXWindow::OnDestroy()
 	{
-		mDevice.Close();
+		mD3D.Close();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -55,14 +55,14 @@ namespace DX
 
 	void DXWindow::ResetRenderTargetView()
 	{
-		mDevice.ResetRenderTargetView();
+		mD3D.ResetRenderTargetView();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DXWindow::OnResized()
 	{
-		mDevice.Resize(mClientWidth, mClientHeight);
+		mD3D.Resize(ClientWidth(), ClientHeight());
 		OnUpdate();
 	}
 
@@ -84,7 +84,7 @@ namespace DX
 
 	void DXWindow::Present()
 	{
-		mDevice.mSwapChain->Present(1, 0);
+		mD3D.mSwapChain->Present(1, 0);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -92,7 +92,31 @@ namespace DX
 	void DXWindow::Clear(Color color)
 	{
 		float rgba[4];
-		Context()->ClearRenderTargetView(mDevice.mRenderTargetView, color.GetFloatsRGBA(rgba));
+		Context()->ClearRenderTargetView(mD3D.mRenderTargetView, color.GetFloatsRGBA(rgba));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnWindowPosChanging(WINDOWPOS *pos)
+	{
+		mTimer.Pause();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnWindowPosChanged(WINDOWPOS *pos)
+	{
+		mTimer.UnPause();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DXWindow::OnNCMouseMove(MousePos pos, uintptr hitTestValue)
+	{
+		if(mTimer.Paused())
+		{
+			mTimer.UnPause();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -127,9 +151,9 @@ namespace DX
 
 	void DXWindow::ClearDepth(DepthClearOption option, float z, byte stencil)
 	{
-		if(mDevice.mDepthStencilView != null)
+		if(mD3D.mDepthStencilView != null)
 		{
-			Context()->ClearDepthStencilView(mDevice.mDepthStencilView, option, z, stencil);
+			Context()->ClearDepthStencilView(mD3D.mDepthStencilView, option, z, stencil);
 		}
 	}
 

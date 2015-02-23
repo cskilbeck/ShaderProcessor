@@ -15,7 +15,7 @@ struct FPSCamera: Camera
 	FPSCamera(Window *w)
 		: position(Vec4(0, 0, 50))
 		, yaw(0)
-		, pitch(FLT_EPSILON)
+		, pitch(-FLT_EPSILON)
 		, roll(0)
 		, window(w)
 	{
@@ -35,19 +35,19 @@ struct FPSCamera: Camera
 	void Move(Vec4f direction)
 	{
 		position += GetStrafeVector() * GetX(direction);
-		position += GetFlatForwardVector() * GetY(direction);
+		position += GetFlatForwardVector() * -GetY(direction);
 		position += Vec4(0, 0, GetZ(direction));
 	}
 
 	void Rotate(float pan, float tilt)
 	{
-		pitch = Constrain(pitch - tilt, FLT_EPSILON, PI - FLT_EPSILON);
+		pitch = Constrain(pitch + tilt, -PI + FLT_EPSILON, -FLT_EPSILON);
 		yaw += pan;
 	}
 
 	void Update()
 	{
-		CalculateViewMatrix(position, roll, pitch, yaw);
+		CalculateViewMatrix(position, yaw, pitch, roll);
 		CalculateViewProjectionMatrix();
 	}
 };

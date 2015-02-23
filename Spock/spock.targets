@@ -18,7 +18,7 @@
           AfterTargets="$(SPOCKAfterTargets)"
           Condition="'@(SPOCK)' != ''"
           Outputs="&quot;%(SPOCK.HeaderFile)&quot;"
-          Inputs="&quot;%(SPOCK.Identity)&quot;;%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile);$(SolutionDir)Spock\ShaderProcessor.exe"
+          Inputs="%(SPOCK.Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile)"
           DependsOnTargets="_SelectedFiles">
 
     <ItemGroup Condition="'@(SelectedFiles)' != ''">

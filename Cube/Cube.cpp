@@ -15,6 +15,7 @@
 //		etc
 // Start the long and laborious process of making it platform agnostic
 //		ShaderProcessor (harumph, wtf to do about that? Cg?)
+// Fix MSBuild Spock dependency bug (building everything)
 // ShaderProcessor
 //		Structured Buffers/UAV support
 //		Hull/Domain shader support
@@ -98,11 +99,15 @@ void MyDXWindow::CreateGrid()
 {
 	vector<Shaders::Colored::InputVertex> v;
 	v.reserve(201 * 4 + 2);
-	for(int x = -1000; x <= 1000; x += 10)
+	for(int x = -100; x <= 100; x += 10)
 	{
 		float a = (float)x;
-		float b = -1000;
-		float t = 1000;
+		float b = -100;
+		float t = 100;
+		if(x == 0)
+		{
+			t *= 10;
+		}
 		Color cx = 0x40FFFFFF;
 		Color cy = 0x40FFFFFF;
 		if(x == 0)
@@ -181,6 +186,7 @@ bool MyDXWindow::OnCreate()
 
 	FontManager::Init(this);
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
+	bigFont.reset(FontManager::Load(TEXT("Data\\Cooper_Black_48")));
 
 	coloredShader.reset(new Shaders::Colored());
 
@@ -390,18 +396,22 @@ void MyDXWindow::OnDraw()
 			drawList.BeginTriangleStrip();
 			using q = Shaders::Colored::InputVertex;
 			drawList.AddVertex<q>({ { 0, 0, 0.5f }, 0x80000000 });
-			drawList.AddVertex<q>({ { (float)ClientWidth(), 0, 0.5f }, 0x80000000 });
+			drawList.AddVertex<q>({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
 			drawList.AddVertex<q>({ { 0, 100, 0.5f }, 0x80000000 });
-			drawList.AddVertex<q>({ { (float)ClientWidth(), 100, 0.5f }, 0x80000000 });
+			drawList.AddVertex<q>({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
 			drawList.End();
 
 			Font::SetupDrawList(Context(), drawList, this);
 			font->Begin();
-			font->DrawString("Hello World", Vec2f(120, 440), Font::HLeft, Font::VTop, 2);
+			font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
 			font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
 			font->DrawString("Hello World", Vec2f(120, 340));
 			font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
 			font->End();
+
+			bigFont->Begin();
+			bigFont->DrawString("HELLO WORLD", Vec2f(FClientWidth() / 2.0f, FClientHeight() / 2.0f), Font::HCentre, Font::VCentre);
+			bigFont->End();
 
 		}
 		drawList.Execute();
@@ -411,7 +421,7 @@ void MyDXWindow::OnDraw()
 	spriteShader->gs.vConstants.Commit(Context());
 	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 
-	v[0].Position = { 320, 240 };
+	v[0].Position = { ClientWidth() - 100.0f, ClientHeight() - 100.0f };
 	v[0].Size = { 100, 100 };
 	v[0].Color = 0xffffffff;
 	v[0].Rotation = time;
@@ -439,12 +449,12 @@ void MyDXWindow::OnDraw()
 
 	Sprite const &s = (*spriteSheet)["temp.png"];
 	Sprite const &t = (*spriteSheet)["temp.jpg"];
-	spriteSheet->SetupTransform(Context(), mClientWidth, mClientHeight);
+	spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
 
 	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
 	drawList.BeginPointList();
 	Sprite &q = drawList.AddVertex<Sprite>();
-	q.Set(t, { 600, 400 });
+	q.Set(t, { 100, ClientHeight() - 100.0f });
 	q.Rotation = time * PI / 2;
 	drawList.End();
 	drawList.Execute();
@@ -501,6 +511,7 @@ void MyDXWindow::OnDestroy()
 	uiTexture.reset();
 	uiSampler.reset();
 	font.reset();
+	bigFont.reset();
 
 	spriteShader.reset();
 	spriteVerts.reset();

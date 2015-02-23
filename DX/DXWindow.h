@@ -8,7 +8,12 @@ namespace DX
 {
 	struct DXWindow: Window
 	{
-		DXWindow(int width, int height, tchar const *caption = TEXT("DXWindow"), DX::DepthBufferOption depthBufferOption = DX::DepthBufferDisabled, DX::FullScreenOption fullScreenOption = DX::Windowed);
+		DXWindow(int width, int height,
+				 tchar const *caption = TEXT("DXWindow"),
+				 DepthBufferOption depthBufferOption = DX::DepthBufferDisabled,
+				 FullScreenOption fullScreenOption = DX::Windowed,
+				 BackBufferCount backBufferCount = BackBufferCount(2));
+
 		virtual ~DXWindow();
 
 		void Clear(DX::Color color);
@@ -27,20 +32,23 @@ namespace DX
 		void OnDeactivate() override;
 		void OnEnterSizeLoop() override;
 		void OnExitSizeLoop() override;
+		void OnWindowPosChanging(WINDOWPOS *pos) override;
+		void OnWindowPosChanged(WINDOWPOS *pos) override;
+		void OnNCMouseMove(MousePos pos, uintptr hitTestValue) override;
 
 		void Present();
 
 		ID3D11Device *Device()
 		{
-			return mDevice.mDevice;
+			return mD3D.mDevice;
 		}
 
 		ID3D11DeviceContext *Context()
 		{
-			return mDevice.mContext;
+			return mD3D.mContext;
 		}
 
-		D3DDevice	mDevice;
+		D3DDevice	mD3D;
 		HWND		mDXWindow;
 		int			mFrame;
 		Timer		mTimer;

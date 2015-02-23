@@ -98,7 +98,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		Size2D GetSize() const
+		Size2D Size() const
 		{
 			return Size2D(Width(), Height());
 		}

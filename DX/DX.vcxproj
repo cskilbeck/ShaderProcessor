@@ -23,6 +23,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ConstBuffer.h" />
     <ClInclude Include="DeferredContext.h" />
+    <ClInclude Include="Device.h" />
     <ClInclude Include="DrawList.h" />
     <ClInclude Include="DX.h" />
     <ClInclude Include="DXWindow.h" />
