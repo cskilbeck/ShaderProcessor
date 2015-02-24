@@ -160,7 +160,6 @@ template<typename t, typename u> static char const *GetFrom(t &map, u n)
 
 namespace DX
 {
-	ID3D11Device *				Device;
 	HRESULT						__hr;
 
 	//////////////////////////////////////////////////////////////////////

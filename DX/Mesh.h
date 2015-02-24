@@ -31,7 +31,7 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		HRESULT Create(aiScene const *scene, ID3D11DeviceContext *context);
-		void Render(ID3D11DeviceContext *context, Matrix cameraMatrix);
+		void Render(ID3D11DeviceContext *context, Matrix cameraMatrix, Vec4f cameraPos);
 
 		void RenderNode(ID3D11DeviceContext *context, Node &node, Matrix const &transform);
 

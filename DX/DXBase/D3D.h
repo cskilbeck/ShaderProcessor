@@ -21,8 +21,6 @@ namespace DX
 #define SetDebugName if(false) {} else
 #endif
 
-	extern ID3D11Device *Device;
-
 	char const *GetDXGIFormatName(DXGI_FORMAT format);
 	char const *GetDXGIScanLineOrderingName(DXGI_MODE_SCANLINE_ORDER scanlineOrder);
 	char const *GetDXGIScalingModeName(DXGI_MODE_SCALING scalingMode);

@@ -316,4 +316,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	Texture *Texture::Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2)
+	{
+		Ptr<Color> buffer(new Color[w * h]);
+		Color cols[2] = { color1, color2 };
+
+		Color *c = buffer.get();
+		for(int y = 0; y < h; ++y)
+		{
+			int p = (y / gridHeight) & 1;
+			for(int x = 0; x < w; ++x)
+			{
+				int q = ((x + p) / gridWidth) & 1;
+				*c++ = cols[q];
+			}
+		}
+		return new Texture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, (byte *)buffer.get());
+	}
 }

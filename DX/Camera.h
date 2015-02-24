@@ -28,12 +28,6 @@ namespace DX
 		void				CalculateViewProjectionMatrix();
 		void				CalculateViewProjectionMatrix(Matrix const &modelMatrix);
 
-		static Matrix		ViewMatrix(Vec4f target, Vec4f position, Vec4f up);
-		static Matrix		ViewMatrix(Vec4f position, float yaw, float pitch, float roll);
-		static Matrix		PerspectiveProjection(float fov = 0.5f, float aspectRatio = 4.0f / 3.0f, float nearZ = 1.0f, float farZ = 1000.0f);
-		static Matrix		OrthoProjection3D(float width, float height, float nearZ = 1.0f, float farZ = 1000.0f);
-		static Matrix		OrthoProjection2D(int width, int height);
-
 		//////////////////////////////////////////////////////////////////////
 
 	protected:

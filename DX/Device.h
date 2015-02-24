@@ -19,6 +19,9 @@ namespace DX
 		uint mCount;
 	};
 
+	extern ID3D11Device *Device;
+	extern ID3D11DeviceContext *Context;
+
 	struct D3DDevice
 	{
 		//////////////////////////////////////////////////////////////////////
@@ -110,6 +113,7 @@ namespace DX
 			}
 
 			DX::Device = mDevice.get();
+			DX::Context = mContext.get();
 
 			auto i = DX::D3DLevelNames.find(mFeatureLevel);
 			if(i != DX::D3DLevelNames.end())
@@ -238,7 +242,9 @@ namespace DX
 #endif
 
 			mDevice.Release();
+			mContext.Release();
 			DX::Device = null;
+			DX::Context = null;
 
 #if defined(_DEBUG)
 			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);

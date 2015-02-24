@@ -144,7 +144,7 @@ namespace DX
 
 		void SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
-			mShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(width, height));
+			mShader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(width, height));
 			mShader->gs.vConstants.Commit(context);
 		}
 

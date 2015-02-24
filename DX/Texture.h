@@ -13,6 +13,8 @@ namespace DX
 		Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget = false);
 		virtual ~Texture();
 
+		static Texture *Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2);
+
 		void Update(ID3D11DeviceContext *sContext, byte *pixels);
 		int Width() const;
 		int Height() const;

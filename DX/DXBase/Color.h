@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	struct Color
 	{
 		uint32 mColor;
@@ -53,6 +52,19 @@ namespace DX
 
 		Color(byte r, byte g, byte b, byte a = 0xff)
 		{
+			mColor =
+				(uint32)a << kAlphaOffset |
+				(uint32)r << kRedOffset |
+				(uint32)g << kGreenOffset |
+				(uint32)b << kBlueOffset;
+		}
+
+		Color(float *abgr)
+		{
+			uint32 b = (uint32)(abgr[0] * 255.0f);
+			uint32 g = (uint32)(abgr[1] * 255.0f);
+			uint32 r = (uint32)(abgr[2] * 255.0f);
+			uint32 a = (uint32)(abgr[3] * 255.0f);
 			mColor =
 				(uint32)a << kAlphaOffset |
 				(uint32)r << kRedOffset |

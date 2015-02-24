@@ -180,10 +180,7 @@ namespace DX
 		Rect2D GetWindowRectFromClientRect(Rect2D const &clientRect);
 		Rect2D GetClientRectFromWindowRect(Rect2D const &windowRect);
 
-		HWND Handle() const
-		{
-			return mHWND;
-		}
+		HWND Handle() const;
 
 	protected:
 
@@ -212,6 +209,13 @@ namespace DX
 
 		static int	sWindowClassIndex;
 	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline HWND Window::Handle() const
+	{
+		return mHWND;
+	}
 
 	//////////////////////////////////////////////////////////////////////
 

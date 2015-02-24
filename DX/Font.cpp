@@ -123,7 +123,7 @@ namespace DX
 	{
 		mDrawList = &drawList;
 		DXShaders::Font::GS::vConstants_t v;
-		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		mDrawList->Reset(context, shader.get(), vertexBuffer.get());
 		mDrawList->SetConstantData(Geometry, v, DXShaders::Font::GS::vConstants_index);
 	}
@@ -132,7 +132,7 @@ namespace DX
 
 	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
 	{
-		shader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		shader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		shader->gs.vConstants.Commit(context);
 		vertexBuffer->Activate(context);
 		// vertexBufferPointer for stashing verts into

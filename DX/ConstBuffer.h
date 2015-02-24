@@ -23,6 +23,7 @@ namespace DX
 			DXR(Buffer<T>::Create(ConstantBufferType, count, data, usage, rwOption));
 			return S_OK;
 		}
+
 	};
 
 	//////////////////////////////////////////////////////////////////////

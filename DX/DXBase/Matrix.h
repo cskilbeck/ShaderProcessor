@@ -33,6 +33,11 @@ namespace DX
 	Matrix		TranslationMatrix(Vec4f translation);
 	Vec4f		TransformPoint(Vec4f pos, Matrix const &m);
 	Vec4f		GetPitchYawRollFromMatrix(Matrix const &m);
+	Matrix		ViewMatrix(Vec4f target, Vec4f position, Vec4f up);
+	Matrix		ViewMatrix(Vec4f position, float yaw, float pitch, float roll);
+	Matrix		PerspectiveProjection(float fov = 0.5f, float aspectRatio = 4.0f / 3.0f, float nearZ = 1.0f, float farZ = 1000.0f);
+	Matrix		OrthoProjection3D(float width, float height, float nearZ = 1.0f, float farZ = 1000.0f);
+	Matrix		OrthoProjection2D(int width, int height);
 
 	//////////////////////////////////////////////////////////////////////
 

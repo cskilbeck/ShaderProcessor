@@ -137,13 +137,6 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool Window::OnCreate()
-	{
-		return true;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
 	void Window::SetWindowRect(Rect2D const &r)
 	{
 		SetWindowPos(mHWND, null, r.left, r.top, r.Width(), r.Height(), SWP_NOZORDER);
@@ -153,14 +146,14 @@ namespace DX
 
 	long Window::GetStyle() const
 	{
-		return GetWindowLong(mHWND, GWL_STYLE);
+		return mWindowInfo.dwStyle;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	long Window::GetExStyle() const
 	{
-		return GetWindowLong(mHWND, GWL_EXSTYLE);
+		return mWindowInfo.dwExStyle;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -181,9 +174,7 @@ namespace DX
 
 	Rect2D Window::GetBorders() const
 	{
-		Rect2D rc(0, 0, 0, 0);
-		AdjustWindowRectEx(&rc, GetStyle(), HasMenu(), GetExStyle());
-		return rc;
+		return Rect2D(0, 0, mWindowInfo.cxWindowBorders, mWindowInfo.cyWindowBorders);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -547,6 +538,13 @@ namespace DX
 		tchar hello[] = TEXT("Override your OnPaint function, fool!");
 		SetTextAlign(ps.hdc, TA_CENTER | VTA_CENTER);
 		TextOut(ps.hdc, ClientWidth() / 2, ClientHeight() / 2, hello, _countof(hello) - 1);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool Window::OnCreate()
+	{
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////

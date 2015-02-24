@@ -2,13 +2,11 @@
 // Move some things into Matrix from Camera
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
-// Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader
-// General purpose shader for Assimp viewer
 // 2D UI Elements/Scene
 // SWF importer/converter/player!?
-// Assimp
+// Assimp / Default shader
 // Bullet
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
@@ -16,20 +14,22 @@
 //		etc
 // Start the long and laborious process of making it platform agnostic
 //		ShaderProcessor (harumph, wtf to do about that? Cg?)
-// Fix MSBuild Spock dependency bug (building everything)
 // ShaderProcessor
+//		Fix MSBuild Spock dependency bug (building everything)
+//		Use Map/UnMap for const buffers
 //		Structured Buffers/UAV support
 //		Hull/Domain shader support
 //		Instancing support / multiple vertex streams
 //		Assembly Listing file
 //		deal with multiple render targets
-//		enable mode where bytecode not embedded
+//		enable mode where bytecode not embedded but loaded from a file
 //		Shader Linking/Interfaces support...?
 //		Nested structs
 //		Sampler/Texture defaults
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 // * Fix the Event system (get rid of heap allocations, make it flexible)
+// * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 
 #include "stdafx.h"
 
@@ -181,22 +181,22 @@ bool MyDXWindow::OnCreate()
 		v[3] = { { r, b }, { 1, 1 } };
 		blitVB->UnMap(Context());
 		Shaders::Blit::VS &vs = blitShader->vs;
-		vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+		vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 		vs.vConstants.Commit(Context());
 	};
 
 	using namespace Assimp;
 	
-	DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
-	Importer importer;
-	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-	uint options =	aiProcess_Triangulate | // triangulate polygons with more than 3 edges
-					aiProcess_SortByPType | // make 'clean' meshes which consist of a single typ of primitives
-					0;
-	importer.ReadFile("data\\cube.dae", options);
-	scene.Create(importer.GetScene(), Context());
+	//DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
+	//Importer importer;
+	//importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+	//uint options =	aiProcess_Triangulate | // triangulate polygons with more than 3 edges
+	//				aiProcess_SortByPType | // make 'clean' meshes which consist of a single typ of primitives
+	//				0;
+	//importer.ReadFile("data\\duck.dae", options);
+	//scene.Create(importer.GetScene(), Context());
 
-	DefaultLogger::kill();
+	//DefaultLogger::kill();
 
 	FontManager::Init(this);
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
@@ -232,7 +232,7 @@ bool MyDXWindow::OnCreate()
 	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
 
-	uiShader->vs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	uiShader->vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	uiShader->vs.vConstants.Commit(Context());
 	uiShader->ps.pConstants.Color = Float4(1, 1, 1, 1);
 	uiShader->ps.pConstants.Commit(Context());
@@ -332,7 +332,10 @@ void MyDXWindow::OnDraw()
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}
 
-	scene.Render(Context(), ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * camera.GetTransformMatrix());
+	// set parameters for the Scene default renderer
+
+	//Matrix bob = TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
+	//scene.Render(Context(), ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * camera.GetTransformMatrix(bob), camera.position);
 
 	{
 		simpleShader->Activate(Context());
@@ -367,7 +370,7 @@ void MyDXWindow::OnDraw()
 
 		Shaders::UI::PS::pConstants_t c;
 		Shaders::UI::VS::vConstants_t v;
-		v.TransformMatrix = Transpose(Camera::OrthoProjection2D(1920, 1080));
+		v.TransformMatrix = Transpose(OrthoProjection2D(1920, 1080));
 		c.Color = Float4(1, 1, 1, sinf(time * 10) * 0.5f + 0.5f);
 		drawList.SetConstantData(Vertex, v, Shaders::UI::VS::vConstants_index);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
@@ -407,7 +410,7 @@ void MyDXWindow::OnDraw()
 		{
 			drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
 			Shaders::Simple::VS::VertConstants_t v;
-			v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+			v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 			drawList.SetConstantData(Vertex, v, 0);
 			drawList.BeginTriangleStrip();
 			using q = Shaders::Simple::InputVertex;
@@ -433,7 +436,7 @@ void MyDXWindow::OnDraw()
 		drawList.Execute();
 	}
 
-	spriteShader->gs.vConstants.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
+	spriteShader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	spriteShader->gs.vConstants.Commit(Context());
 	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 

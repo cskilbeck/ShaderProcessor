@@ -81,12 +81,12 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		byte *Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
+		byte * const Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
 		{
 			D3D11_MAPPED_SUBRESOURCE msr;
 			if(SUCCEEDED(context->Map(mBuffer, 0, mMapType, waitOption, &msr)))
 			{
-				return (byte *)msr.pData;
+				return (byte * const)msr.pData;
 			}
 			return null;
 		}
@@ -183,9 +183,9 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		T *Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
+		T * const Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
 		{
-			return (T *)TypelessBuffer::Map(context, waitOption);
+			return (T * const)TypelessBuffer::Map(context, waitOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
