@@ -71,7 +71,6 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
-    <SPOCKBeforeTargets>ClCompile</SPOCKBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -197,7 +196,7 @@
   </ItemGroup>
   <ItemGroup>
     <SPOCK Include="Shaders\Blit.shader" />
-    <SPOCK Include="Shaders\Colored.shader">
+    <SPOCK Include="Shaders\Simple.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

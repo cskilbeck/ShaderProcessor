@@ -98,7 +98,7 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 void MyDXWindow::CreateGrid()
 {
-	vector<Shaders::Colored::InputVertex> v;
+	vector<Shaders::Simple::InputVertex> v;
 	v.reserve(201 * 4 + 2);
 	for(int x = -100; x <= 100; x += 10)
 	{
@@ -123,7 +123,7 @@ void MyDXWindow::CreateGrid()
 	}
 	v.push_back({ { 0, 0, 0 }, Color::Cyan });
 	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
-	gridVB.reset(new Shaders::Colored::VertBuffer(806, v.data(), StaticUsage));
+	gridVB.reset(new Shaders::Simple::VertBuffer(806, v.data(), StaticUsage));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -132,8 +132,8 @@ void MyDXWindow::CreateOctahedron()
 {
 	using namespace Shaders;
 
-	octahedronVB.reset(new Colored::VertBuffer(6));
-	Colored::InputVertex *v = octahedronVB->Data();
+	octahedronVB.reset(new Simple::VertBuffer(6));
+	Simple::InputVertex *v = octahedronVB->Data();
 	float f = sqrtf(2) / 2.0f;
 	v[0] = { {  0,  0,  1 }, 0xffffffff };
 	v[1] = { { -f,  f,  0 }, 0xffffffff };
@@ -185,13 +185,26 @@ bool MyDXWindow::OnCreate()
 		vs.vConstants.Commit(Context());
 	};
 
+	using namespace Assimp;
+	
+	DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
+	Importer importer;
+	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+	uint options =	aiProcess_Triangulate | // triangulate polygons with more than 3 edges
+					aiProcess_SortByPType | // make 'clean' meshes which consist of a single typ of primitives
+					0;
+	importer.ReadFile("data\\cube.dae", options);
+	scene.Create(importer.GetScene(), Context());
+
+	DefaultLogger::kill();
+
 	FontManager::Init(this);
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
 	bigFont.reset(FontManager::Load(TEXT("Data\\Cooper_Black_48")));
 
-	coloredShader.reset(new Shaders::Colored());
+	simpleShader.reset(new Shaders::Simple());
 
-	coloredVB.reset(new Shaders::Colored::VertBuffer(128, null, DynamicUsage, Writeable));
+	simpleVB.reset(new Shaders::Simple::VertBuffer(128, null, DynamicUsage, Writeable));
 
 	CreateGrid();
 	CreateOctahedron();
@@ -319,10 +332,12 @@ void MyDXWindow::OnDraw()
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}
 
-	{
-		coloredShader->Activate(Context());
+	scene.Render(Context(), ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * camera.GetTransformMatrix());
 
-		Shaders::Colored::VS &vs = coloredShader->vs;
+	{
+		simpleShader->Activate(Context());
+
+		Shaders::Simple::VS &vs = simpleShader->vs;
 
 		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
 		vs.VertConstants.Commit(Context());
@@ -390,12 +405,12 @@ void MyDXWindow::OnDraw()
 		}
 
 		{
-			drawList.Reset(Context(), coloredShader.get(), coloredVB.get());
-			Shaders::Colored::VS::VertConstants_t v;
+			drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
+			Shaders::Simple::VS::VertConstants_t v;
 			v.TransformMatrix = Transpose(Camera::OrthoProjection2D(ClientWidth(), ClientHeight()));
 			drawList.SetConstantData(Vertex, v, 0);
 			drawList.BeginTriangleStrip();
-			using q = Shaders::Colored::InputVertex;
+			using q = Shaders::Simple::InputVertex;
 			drawList.AddVertex<q>({ { 0, 0, 0.5f }, 0x80000000 });
 			drawList.AddVertex<q>({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
 			drawList.AddVertex<q>({ { 0, 100, 0.5f }, 0x80000000 });
@@ -461,7 +476,7 @@ void MyDXWindow::OnDraw()
 	drawList.Execute();
 
 	bool xflip = ((int)(time * 10) & 1) != 0;
-	bool yflip = ((int)(time * 5) * 1) != 0;
+	bool yflip = ((int)(time * 5) & 1) != 0;
 
 	spriteSheet->BeginRun(Context());
 	spriteSheet->Add(s,
@@ -504,7 +519,7 @@ void MyDXWindow::OnDraw()
 
 void MyDXWindow::OnDestroy()
 {
-	coloredShader.reset();
+	simpleShader.reset();
 	cubeShader.reset();
 	cubeTexture.reset();
 	cubeSampler.reset();

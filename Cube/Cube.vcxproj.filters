@@ -42,10 +42,10 @@
     <SPOCK Include="Shaders\UI.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Shaders\Colored.shader">
+    <SPOCK Include="Shaders\Blit.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Shaders\Blit.shader">
+    <SPOCK Include="Shaders\Simple.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

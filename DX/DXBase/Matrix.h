@@ -89,13 +89,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline void CopyMatrix(void *f, DX::Matrix const &m)
+	inline Matrix const &CopyMatrix(void *f, DX::Matrix const &m)
 	{
 		Vec4f *p = (Vec4f *)f;
 		p[0] = m.r[0];
 		p[1] = m.r[1];
 		p[2] = m.r[2];
 		p[3] = m.r[3];
+		return m;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Matrix &CopyMatrix(DX::Matrix &m, void const *f)
+	{
+		Vec4f *p = (Vec4f *)f;
+		m.r[0] = p[0];
+		m.r[1] = p[1];
+		m.r[2] = p[2];
+		m.r[3] = p[3];
+		return m;
 	}
 
 }

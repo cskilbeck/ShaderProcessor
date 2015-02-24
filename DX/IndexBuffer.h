@@ -37,12 +37,12 @@ namespace DX
 	{
 		static_assert(IndexBufferFormat<T>::format != DXGI_FORMAT_UNKNOWN, "Only uint16 or uint32 index buffers are supported");
 
-		IndexBuffer(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		IndexBuffer(T count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
 			DXT(Create(count, data, usage, rwOption));
 		}
 
-		HRESULT Create(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		HRESULT Create(T count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
 			return Buffer<T>::Create(IndexBufferType, count, data, usage, rwOption);
 		}

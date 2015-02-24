@@ -17,17 +17,20 @@ struct MyDXWindow: DXWindow
 	Ptr<Texture> cubeTexture;
 	Ptr<Sampler> cubeSampler;
 
-	Ptr<Shaders::Colored> coloredShader;
-	Ptr<Shaders::Colored::VertBuffer> gridVB;
-	Ptr<Shaders::Colored::VertBuffer> octahedronVB;
-	Ptr<Shaders::Colored::VertBuffer> coloredVB;
+	Ptr<Shaders::Simple> simpleShader;
+	Ptr<Shaders::Simple::VertBuffer> gridVB;
+	Ptr<Shaders::Simple::VertBuffer> octahedronVB;
+	Ptr<Shaders::Simple::VertBuffer> simpleVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
 
 	Vec4f cubePos;
 	Vec4f cubeScale;
 	Vec4f cubeRot;
 
+	Scene scene;
+
 	DrawList drawList;
+
 	Ptr<Shaders::UI> uiShader;
 	Ptr<Shaders::UI::VertBuffer> UIVerts;
 	Ptr<Texture> uiTexture;

@@ -1,5 +1,13 @@
 #pragma once
 
+#include "assimp/include/assimp/Importer.hpp"
+#include "assimp/include/assimp/postprocess.h"
+#include "assimp/include/assimp/scene.h"
+#include "assimp/include/assimp/mesh.h"
+#include "assimp/include/assimp/DefaultLogger.hpp"
+#include "assimp/code/Win32DebugLogStream.h"
+#include "assimp/include/assimp/cimport.h"
+
 #include "DXBase\DXBase.h"
 
 #include "Device.h"
@@ -26,3 +34,6 @@
 #include "Sprite.h"
 #include "Window.h"
 #include "DXWindow.h"
+
+#include "Shaders/Default.shader.h"
+#include "Mesh.h"

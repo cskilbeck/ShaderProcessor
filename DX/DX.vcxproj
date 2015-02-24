@@ -33,6 +33,7 @@
     <ClInclude Include="IndexBuffer.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="LoadImage.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Mouse.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="Sampler.h" />
@@ -63,6 +64,7 @@
     </ClCompile>
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="LoadImage.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Mouse.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -71,6 +73,7 @@
     <ClCompile Include="WinMessages.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <SPOCK Include="Shaders\Default.shader" />
     <SPOCK Include="Shaders\Font.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
@@ -91,6 +94,9 @@
   <ItemGroup>
     <ProjectReference Include="..\ShaderProcessor\ShaderProcessor.vcxproj">
       <Project>{9f563558-ce4f-431e-bb85-7ffd22cfe562}</Project>
+    </ProjectReference>
+    <ProjectReference Include="assimp\workspaces\vc9\assimp.vcxproj">
+      <Project>{5691e159-2d9b-407f-971f-ea5c592dc524}</Project>
     </ProjectReference>
     <ProjectReference Include="DXBase\DXBase.vcxproj">
       <Project>{8a5d13cd-5be9-43c1-977c-0bce4cf6ca10}</Project>

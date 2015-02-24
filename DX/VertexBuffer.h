@@ -1,13 +1,7 @@
-//////////////////////////////////////////////////////////////////////
-
 #pragma once
-
-//////////////////////////////////////////////////////////////////////
 
 namespace DX
 {
-	//////////////////////////////////////////////////////////////////////
-
 	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
 		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
@@ -27,5 +21,4 @@ namespace DX
 			context->IASetVertexBuffers(0, 1, &mBuffer, &stride, &offset);
 		}
 	};
-
 }
