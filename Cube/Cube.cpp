@@ -1,5 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-// Move some things into Matrix from Camera
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
@@ -30,6 +29,7 @@
 //		* Fix MSBuild Spock dependency bug (building everything)
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
+// * Move some things into Matrix from Camera
 
 #include "stdafx.h"
 
@@ -219,7 +219,7 @@ bool MyDXWindow::OnCreate()
 	l->lightPos = lightPos;
 	l->ambientColor = Float3(0.3f, 0.2f, 0.4f);
 	l->diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	l->specColor = Float3(1, 1, 0.8f);
+	l->specColor = Float3(5, 5, 5);
 	ps.Light.UnMap();
 
 	uiShader.reset(new Shaders::UI());
@@ -435,10 +435,7 @@ void MyDXWindow::OnDraw()
 		drawList.Execute();
 	}
 
-	{
-		auto vc = spriteShader->gs.vConstants.Get();
-		vc->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	}
+	spriteShader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 
@@ -495,7 +492,6 @@ void MyDXWindow::OnDraw()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
-		//Matrix modelMatrix = ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
 		Shaders::Phong::VS &vs = cubeShader->vs;
 		auto vc = vs.VertConstants.Get();
 		vc->TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
