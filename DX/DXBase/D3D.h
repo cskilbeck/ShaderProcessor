@@ -39,7 +39,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	//#define DXTRACE TRACE
+//#define DXTRACE TRACE
 #define DXTRACE if (true) {} else
 
 #if defined(_DEBUG)

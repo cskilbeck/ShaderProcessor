@@ -250,6 +250,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	tstring ConcatenatePaths(tchar const *base, tchar const *relative)
+	{
+		// do all sorts of checks here...
+		return tstring(base) + relative;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	static struct PathComponents
 	{
 		tchar drive[_MAX_DRIVE];

@@ -144,8 +144,9 @@ namespace DX
 
 		void SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
-			mShader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(width, height));
-			mShader->gs.vConstants.Commit(context);
+			auto v = mShader->gs.vConstants.Map(context);
+			v->TransformMatrix = Transpose(OrthoProjection2D(width, height));
+			mShader->gs.vConstants.UnMap(context);
 		}
 
 		void SetupDrawlist(ID3D11DeviceContext *context, DrawList &d, int width, int height)

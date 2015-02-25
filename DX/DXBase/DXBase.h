@@ -51,11 +51,12 @@
 //////////////////////////////////////////////////////////////////////
 // DX
 
+#include "Aligned.h"
 #include "Types.h"
 #include "Win32.h"
-#include "Aligned.h"
-#include "RefCounted.h"
 #include "linked_list.h"
+#include "Pool.h"
+#include "RefCounted.h"
 #include "Half.h"
 #include "Vec4.h"
 #include "HLSLTypes.h"

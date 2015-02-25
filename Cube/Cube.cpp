@@ -15,7 +15,6 @@
 // Start the long and laborious process of making it platform agnostic
 //		ShaderProcessor (harumph, wtf to do about that? Cg?)
 // ShaderProcessor
-//		Fix MSBuild Spock dependency bug (building everything)
 //		Use Map/UnMap for const buffers
 //		Structured Buffers/UAV support
 //		Hull/Domain shader support
@@ -28,6 +27,7 @@
 //		Sampler/Texture defaults
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
+//		* Fix MSBuild Spock dependency bug (building everything)
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 
@@ -174,29 +174,21 @@ bool MyDXWindow::OnCreate()
 		float l = r - w;
 		float t = 10;
 		float b = t + h;
-		Shaders::Blit::InputVertex *v = blitVB->Map(Context());
-		v[0] = { { l, t }, { 0, 0 } };
-		v[1] = { { r, t }, { 1, 0 } };
-		v[2] = { { l, b }, { 0, 1 } };
-		v[3] = { { r, b }, { 1, 1 } };
-		blitVB->UnMap(Context());
+		auto bv = blitVB->Get();
+		bv[0] = { { l, t }, { 0, 0 } };
+		bv[1] = { { r, t }, { 1, 0 } };
+		bv[2] = { { l, b }, { 0, 1 } };
+		bv[3] = { { r, b }, { 1, 1 } };
+		bv.Release();
 		Shaders::Blit::VS &vs = blitShader->vs;
-		vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vs.vConstants.Commit(Context());
+		auto vc = vs.vConstants.Map(DX::Context);
+		vc->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		vs.vConstants.UnMap(DX::Context);
 	};
 
 	using namespace Assimp;
 	
-	//DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
-	//Importer importer;
-	//importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-	//uint options =	aiProcess_Triangulate | // triangulate polygons with more than 3 edges
-	//				aiProcess_SortByPType | // make 'clean' meshes which consist of a single typ of primitives
-	//				0;
-	//importer.ReadFile("data\\duck.dae", options);
-	//scene.Create(importer.GetScene(), Context());
-
-	//DefaultLogger::kill();
+	scene.Create(TEXT("data\\duck.dae"));
 
 	FontManager::Init(this);
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
@@ -220,22 +212,28 @@ bool MyDXWindow::OnCreate()
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
+	lightPos = Vec4(0, -15, 0, 0);
+
 	Shaders::Phong::PS &ps = cubeShader->ps;
-	ps.Light.lightPos = Float3(0, -15, 0);
-	ps.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	ps.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	ps.Light.specColor = Float3(1, 1, 0.8f);
-	ps.Light.Commit(Context());
+	auto l = ps.Light.Map();
+	l->lightPos = lightPos;
+	l->ambientColor = Float3(0.3f, 0.2f, 0.4f);
+	l->diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	l->specColor = Float3(1, 1, 0.8f);
+	ps.Light.UnMap();
 
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
 	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
 
-	uiShader->vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	uiShader->vs.vConstants.Commit(Context());
-	uiShader->ps.pConstants.Color = Float4(1, 1, 1, 1);
-	uiShader->ps.pConstants.Commit(Context());
+	{
+		auto t = uiShader->vs.vConstants.Get();
+		auto p = uiShader->ps.pConstants.Get();
+		t->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		p->Color = Float4(1, 1, 1, 1);
+	}
+
 	uiShader->ps.page = uiTexture.get();
 	uiShader->ps.smplr = uiSampler.get();
 
@@ -256,8 +254,9 @@ bool MyDXWindow::OnCreate()
 	blitShader->ps.smplr = uiSampler.get();
 	blitShader->ps.page = renderTarget.get();
 
-	cubeShader->ps.Camera.cameraPos = dashCam.position;
-	cubeShader->ps.Camera.Commit(Context());
+	auto cp = cubeShader->ps.Camera.Map();
+	cp->cameraPos = dashCam.position;
+	cubeShader->ps.Camera.UnMap();
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
 	dashCam.position = Vec4(0, 0, 0);
@@ -320,11 +319,13 @@ void MyDXWindow::OnDraw()
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
 		Shaders::Phong::VS &vs = cubeShader->vs;
 		Shaders::Phong::PS &ps = cubeShader->ps;
-		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
-		vs.VertConstants.Commit(Context());
-		ps.Camera.cameraPos = camera.position;
-		ps.Camera.Commit(Context());
+		auto vc = vs.VertConstants.Get();
+		vc->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vc->ModelMatrix = Transpose(modelMatrix);
+		vc.Release();
+		auto cp = ps.Camera.Get();
+		cp->cameraPos = camera.position;
+		cp.Release();
 		cubeShader->Activate(Context());
 		cubeVerts->Activate(Context());
 		cubeIndices->Activate(Context());
@@ -334,24 +335,22 @@ void MyDXWindow::OnDraw()
 
 	// set parameters for the Scene default renderer
 
-	//Matrix bob = TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
-	//scene.Render(Context(), ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * camera.GetTransformMatrix(bob), camera.position);
+	Matrix bob = ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
+	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
 
 	{
 		simpleShader->Activate(Context());
 
 		Shaders::Simple::VS &vs = simpleShader->vs;
 
-		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix());
-		vs.VertConstants.Commit(Context());
+		vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
 		gridVB->Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(gridVB->Count(), 0);
 
 		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-		modelMatrix *= TranslationMatrix(Vec4(cubeShader->ps.Light.lightPos));
-		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vs.VertConstants.Commit(Context());
+		modelMatrix *= TranslationMatrix(lightPos);
+		vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 		octahedronVB->Activate(Context());
 		octahedronIB->Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -406,7 +405,7 @@ void MyDXWindow::OnDraw()
 			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
 			drawList.End();
 		}
-
+		
 		{
 			drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
 			Shaders::Simple::VS::VertConstants_t v;
@@ -429,15 +428,18 @@ void MyDXWindow::OnDraw()
 			font->End();
 
 			bigFont->Begin();
-			bigFont->DrawString("HELLO WORLD", FClientSize() / 2, Font::HCentre, Font::VCentre);
+			bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
 			bigFont->End();
 
 		}
 		drawList.Execute();
 	}
 
-	spriteShader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	spriteShader->gs.vConstants.Commit(Context());
+	{
+		auto vc = spriteShader->gs.vConstants.Get();
+		vc->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	}
+
 	Sprite *v = (Sprite *)spriteVerts->Map(Context());
 
 	v[0].Position = { ClientWidth() - 100.0f, ClientHeight() - 100.0f };
@@ -495,9 +497,9 @@ void MyDXWindow::OnDraw()
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
 		//Matrix modelMatrix = ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
 		Shaders::Phong::VS &vs = cubeShader->vs;
-		vs.VertConstants.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
-		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
-		vs.VertConstants.Commit(Context());
+		auto vc = vs.VertConstants.Get();
+		vc->TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
+		vc->ModelMatrix = Transpose(modelMatrix);
 	}
 
 	renderTarget->Activate(Context());
@@ -540,4 +542,8 @@ void MyDXWindow::OnDestroy()
 	spriteSampler.reset();
 
 	spriteSheet.reset();
+
+	renderTarget.reset();
+
+	Texture::FlushAll();
 }

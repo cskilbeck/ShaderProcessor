@@ -6,6 +6,10 @@ using namespace DX;
 
 //////////////////////////////////////////////////////////////////////
 
+static linked_list<Texture, &Texture::mListNode> sAllTextures;
+
+//////////////////////////////////////////////////////////////////////
+
 static Ptr<byte> ColorArray(int w, int h, Color c)
 {
 	Ptr<byte> pPixels(new byte[w * h * 4]);
@@ -207,6 +211,7 @@ namespace DX
 	Texture::Texture(tchar const *name)
 		: mName(name)
 	{
+		sAllTextures.push_back(this);
 		if(!FAILED(CreateWICTextureFromFile(WideStringFromTString(mName).c_str(), (ID3D11Resource **)&mTexture2D, &mShaderResourceView)))
 		{
 			mTexture2D->GetDesc(&mTextureDesc);
@@ -217,6 +222,7 @@ namespace DX
 
 	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget)
 	{
+		sAllTextures.push_back(this);
 		InitFromPixelBuffer(pixels, format, w, h, isRenderTarget);
 	}
 
@@ -224,6 +230,7 @@ namespace DX
 
 	Texture::Texture(int width, int height, Color color)
 	{
+		sAllTextures.push_back(this);
 		InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false);
 	}
 
@@ -231,6 +238,37 @@ namespace DX
 
 	Texture::~Texture()
 	{
+		sAllTextures.remove(this);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Texture::FlushAll()
+	{
+		for(auto t : sAllTextures)
+		{
+			TRACE("Warning, dangling texture %s (%d,%d)\n", t.GetName().c_str(), t.Width(), t.Height());
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Texture *Texture::Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2)
+	{
+		Ptr<Color> buffer(new Color[w * h]);
+		Color cols[2] = { color1, color2 };
+
+		Color *c = buffer.get();
+		for(int y = 0; y < h; ++y)
+		{
+			int p = (y / gridHeight) & 1;
+			for(int x = 0; x < w; ++x)
+			{
+				int q = ((x + p) / gridWidth) & 1;
+				*c++ = cols[q];
+			}
+		}
+		return new Texture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, (byte *)buffer.get());
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -314,23 +352,4 @@ namespace DX
 		}
 	}
 
-	//////////////////////////////////////////////////////////////////////
-
-	Texture *Texture::Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2)
-	{
-		Ptr<Color> buffer(new Color[w * h]);
-		Color cols[2] = { color1, color2 };
-
-		Color *c = buffer.get();
-		for(int y = 0; y < h; ++y)
-		{
-			int p = (y / gridHeight) & 1;
-			for(int x = 0; x < w; ++x)
-			{
-				int q = ((x + p) / gridWidth) & 1;
-				*c++ = cols[q];
-			}
-		}
-		return new Texture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, (byte *)buffer.get());
-	}
 }

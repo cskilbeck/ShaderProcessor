@@ -6,7 +6,7 @@
 
 namespace DX
 {
-	struct Scene
+	struct Scene: Aligned16
 	{
 		//////////////////////////////////////////////////////////////////////
 
@@ -20,26 +20,26 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Node: Aligned16
+		struct Node
 		{
-			Matrix			mTransform;
-			Node *			mParent;
-			vector<Mesh *>	mMeshes;
-			vector<Node>	mChildren;
+			Matrix					mTransform;
+			Node *					mParent;
+			vector<Mesh *>			mMeshes;
+			aligned_vector<Node>	mChildren;
 		};
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(aiScene const *scene, ID3D11DeviceContext *context);
-		void Render(ID3D11DeviceContext *context, Matrix cameraMatrix, Vec4f cameraPos);
+		HRESULT Create(tchar const *filename);
 
-		void RenderNode(ID3D11DeviceContext *context, Node &node, Matrix const &transform);
+		void Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos);
+		void RenderNode(ID3D11DeviceContext *context, Node &node, Matrix const &transform, Matrix const &modelMatrix);
 
 		//////////////////////////////////////////////////////////////////////
 
+		Node								mRootNode;
 		Ptr<Shaders::Default>				mShader;
 		vector<Mesh>						mMeshes;
-		Node								mRootNode;
 
 		static Ptr<Texture>					mDefaultTexture;
 		static Ptr<Sampler>					mDefaultSampler;

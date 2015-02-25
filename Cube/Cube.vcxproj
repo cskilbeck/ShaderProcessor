@@ -190,9 +190,6 @@
     <ProjectReference Include="..\DX\DX.vcxproj">
       <Project>{73884195-8231-4ad9-80ed-8f41d03f4160}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\ShaderProcessor\ShaderProcessor.vcxproj">
-      <Project>{9f563558-ce4f-431e-bb85-7ffd22cfe562}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <SPOCK Include="Shaders\Blit.shader" />

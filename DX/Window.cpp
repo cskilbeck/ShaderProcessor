@@ -60,9 +60,8 @@ namespace DX
 	{
 		mWindowInfo.cbSize = sizeof(WINDOWINFO);
 
-		mWindowInfo.rcClient = Rect2D(0, 0, width, height);
-		mWindowInfo.rcWindow = mWindowInfo.rcClient;
-		AdjustWindowRectEx(&mWindowInfo.rcClient, windowStyle, false, 0);
+		mWindowInfo.rcWindow = mWindowInfo.rcClient = Rect2D(0, 0, width, height);
+		AdjustWindowRectEx(&mWindowInfo.rcWindow, windowStyle, false, 0);
 	}
 
 	//////////////////////////////////////////////////////////////////////

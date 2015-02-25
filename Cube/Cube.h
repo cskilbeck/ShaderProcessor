@@ -27,6 +27,8 @@ struct MyDXWindow: DXWindow
 	Vec4f cubeScale;
 	Vec4f cubeRot;
 
+	Vec4f lightPos;
+
 	Scene scene;
 
 	DrawList drawList;

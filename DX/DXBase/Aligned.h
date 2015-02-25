@@ -201,3 +201,4 @@ struct Aligned16 : Align16
 		_aligned_free(p);
 	}
 };
+

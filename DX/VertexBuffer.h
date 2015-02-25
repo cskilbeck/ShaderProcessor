@@ -4,12 +4,12 @@ namespace DX
 {
 	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
-		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
 			DXT(Create(vertCount, data, usage, rwOption));
 		}
 
-		HRESULT Create(uint count, vert *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		HRESULT Create(uint count, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
 			return Buffer<vert>::Create(VertexBufferType, count, data, usage, rwOption);
 		}

@@ -22,7 +22,8 @@ namespace DX
 
 	const nullptr_t null = nullptr;
 
-	template<typename T> using vector = std::vector<T>;
+	template<typename T> using vector = std::vector < T > ;
+	template<typename T> using aligned_vector = std::vector < T, aligned_allocator <T, 16> > ;
 	using string = std::string;
 	using wstring = std::wstring;
 	using tstring = std::basic_string < tchar > ;

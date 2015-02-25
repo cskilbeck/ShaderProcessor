@@ -17,8 +17,8 @@
           BeforeTargets="$(SPOCKBeforeTargets)"
           AfterTargets="$(SPOCKAfterTargets)"
           Condition="'@(SPOCK)' != ''"
-          Outputs="&quot;%(SPOCK.HeaderFile)&quot;"
-          Inputs="%(SPOCK.Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile)"
+          Outputs="%(SPOCK.HeaderFile)"
+          Inputs="%(Identity);%(SPOCK.AdditionalDependencies);$(MSBuildProjectFile)"
           DependsOnTargets="_SelectedFiles">
 
     <ItemGroup Condition="'@(SelectedFiles)' != ''">

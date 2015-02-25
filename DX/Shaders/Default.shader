@@ -71,6 +71,6 @@ float4 psMain(PS_INPUT i) : SV_TARGET
 	float3 halfDir = normalize(lightDir + viewDir);
 	float diffuse = max(dot(lightDir, i.Normal), 0);
 	float specAngle = max(dot(halfDir, i.Normal), 0);
-	float specular = pow(specAngle, 256);
+	float specular = pow(specAngle, 190);
 	return float4((ambientColor + diffuseColor * diffuse) * c.xyz + specular * specColor, c.w);
 }

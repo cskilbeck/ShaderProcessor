@@ -100,7 +100,11 @@ namespace
 
 		void SetConstants(ConstBufferItem *item, ID3D11DeviceContext *context)
 		{
-			mShader->Shaders[item->mShaderType]->mConstBuffers[item->mIndex]->Update(context, (byte *)item + sizeof(ConstBufferItem));
+			Shader *s = mShader->Shaders[item->mShaderType];
+			TypelessBuffer *b = s->mConstBuffers[item->mIndex];
+			void *p = b->Map(context);
+			memcpy(p, (byte *)item + sizeof(ConstBufferItem), item->mSize);
+			b->UnMap(context);
 		}
 
 		void Activate(ID3D11DeviceContext *context)

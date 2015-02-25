@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	using Matrix = DirectX::XMMATRIX;
 	using MatrixArray = float[4][4];
 	using Float4x4 = DX::Matrix;
@@ -96,11 +95,8 @@ namespace DX
 
 	inline Matrix const &CopyMatrix(void *f, DX::Matrix const &m)
 	{
-		Vec4f *p = (Vec4f *)f;
-		p[0] = m.r[0];
-		p[1] = m.r[1];
-		p[2] = m.r[2];
-		p[3] = m.r[3];
+		// f might be unaligned
+		memcpy(f, &m, sizeof(Matrix));
 		return m;
 	}
 
@@ -108,12 +104,22 @@ namespace DX
 
 	inline Matrix &CopyMatrix(DX::Matrix &m, void const *f)
 	{
-		Vec4f *p = (Vec4f *)f;
-		m.r[0] = p[0];
-		m.r[1] = p[1];
-		m.r[2] = p[2];
-		m.r[3] = p[3];
+		// f might be unaligned
+		memcpy(&m, f, sizeof(m));
 		return m;
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
+	extern Pool<Matrix> MatrixPool;
+
+	inline Matrix &MatrixAlloc()
+	{
+		return MatrixPool.Alloc();
+	}
+
+	inline void MatrixFree(Matrix &m)
+	{
+		MatrixPool.Free(m);
+	}
 }

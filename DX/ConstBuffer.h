@@ -36,15 +36,17 @@ namespace DX
 			, mDefaults(Defaults)
 			, mIndex(index)
 		{
+			DXI(ConstantBuffer<definition>::Create(1, null, DynamicUsage, Writeable));
+			definition *d = Map(DX::Context);
 			if(mDefaults != null)
 			{
-				memcpy(this, mDefaults, sizeof(definition)); // !!
+				memcpy(d, mDefaults, sizeof(definition)); // !!
 			}
 			else
 			{
-				memset(this, 0, sizeof(definition));
+				memset(d, 0, sizeof(definition));
 			}
-			DXI(ConstantBuffer<definition>::Create(1, (definition *)this, DefaultUsage, NotCPUAccessible));
+			UnMap(DX::Context);
 			parent->mConstBuffers.push_back(this);
 			parent->mConstBufferPointers.push_back(mBuffer);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
@@ -63,6 +65,24 @@ namespace DX
 				}
 			}
 			return false;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Update(ID3D11DeviceContext *context)
+		{
+			definition *d = Map(context);
+			memcpy(d, (definition *)this, sizeof(definition));
+			UnMap(context);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Update()
+		{
+			definition *d = Map(DX::Context);
+			memcpy(d, (definition *)this, sizeof(definition));
+			UnMap(DX::Context);
 		}
 
 		//////////////////////////////////////////////////////////////////////

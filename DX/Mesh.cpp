@@ -6,6 +6,8 @@ using namespace DX;
 
 //////////////////////////////////////////////////////////////////////
 
+#define final_assert(x) { if(!(x)) DebugBreak(); }
+
 namespace
 {
 	void ScanNodes(aiNode *node, std::function<void(aiNode *)> callback)
@@ -17,11 +19,10 @@ namespace
 		}
 	}
 
-	void CopyNodesWithMeshes(aiNode &node, Scene &scene, Scene::Node *targetParent, Matrix accTransform)
+	void CopyNodesWithMeshes(Matrix &accTransform, aiNode &node, Scene &scene, Scene::Node *targetParent)
 	{
 		Scene::Node *parent;
 		Matrix transform;
-
 		// if node has meshes, create a new Scene::Node for it
 		if(node.mNumMeshes > 0)
 		{
@@ -46,19 +47,12 @@ namespace
 		{
 			// if no meshes, skip the node, but keep its transformation
 			parent = targetParent;
-			Matrix t;
-			CopyMatrix(t, &node.mTransformation);
-			for(uint i = 0; i < 4; ++i)
-			{
-				TRACE("%f,%f,%f,%f\n", GetX(t.r[i]), GetY(t.r[i]), GetZ(t.r[i]), GetW(t.r[i]));
-			}
-			TRACE("\n");
-			transform = t * accTransform;
+ 			transform = XMLoadFloat4x4((const DirectX::XMFLOAT4X4 *)&node.mTransformation) * accTransform;
 		}
 		// continue for all child nodes
 		for(uint a = 0; a < node.mNumChildren; ++a)
 		{
-			CopyNodesWithMeshes(*node.mChildren[a], scene, parent, transform);
+			CopyNodesWithMeshes(transform, *node.mChildren[a], scene, parent);
 		}
 	}
 }
@@ -70,16 +64,30 @@ Ptr<Sampler> Scene::mDefaultSampler;
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Scene::Create(aiScene const *scene, ID3D11DeviceContext *context)
+HRESULT Scene::Create(tchar const *filename)
 {
+	using namespace Assimp;
+
+	DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
+	Importer importer;
+	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+	uint options = aiProcess_Triangulate | aiProcess_SortByPType;
+	importer.ReadFile(filename, options);
+	aiScene const *scene = importer.GetScene();
+	DefaultLogger::kill();
+
+	if(scene == null)
+	{
+		return ERROR_FILE_NOT_FOUND;
+	}
+
 	mRootNode.mTransform = IdentityMatrix;
 	mRootNode.mParent = null;
 
 	mShader.reset(new Shaders::Default());
 	mMeshes.resize(scene->mNumMeshes);
 
-
-
+	// Need to free these somehow...
 	if(!mDefaultTexture)
 	{
 		mDefaultTexture.reset(Texture::Grid(64, 64, 8, 8, Color::DarkGray, Color::LightGray));
@@ -89,11 +97,36 @@ HRESULT Scene::Create(aiScene const *scene, ID3D11DeviceContext *context)
 	Shaders::Default ::PS &ps = mShader->ps;
 	ps.picTexture = mDefaultTexture.get();
 	ps.tex1Sampler = mDefaultSampler.get();
-	ps.Light.lightPos = Float3(0, -15, 0);
-	ps.Light.ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	ps.Light.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	ps.Light.specColor = Float3(1, 1, 0.8f);
-	ps.Light.Commit(context);
+
+	auto l = ps.Light.Get();
+	l->lightPos = Float3(0, -45, 0);
+	l->ambientColor = Float3(0.5f, 0.5f, 0.5f);
+	l->diffuseColor = Float3(0.5f, 0.5f, 0.5f);
+	l->specColor = Float3(1, 1, 1);
+	l.Release();
+
+	// Material properties
+	for(uint m = 0; m < scene->mNumMaterials; ++m)
+	{
+		aiMaterial const &mat = *scene->mMaterials[m];
+		uint diffuseTextures = mat.GetTextureCount(aiTextureType_DIFFUSE);
+		if(diffuseTextures > 0)
+		{
+			aiString path;
+			mat.GetTexture(aiTextureType_DIFFUSE, 0, &path);
+			string texture(path.C_Str());
+			std::replace(texture.begin(), texture.end(), '/', '\\');
+			texture = ReplaceAll(texture, string(".\\"), string(""));
+
+			// can't handle TGA, look for a .PNG
+			if(_tcsicmp(GetExtension(path.C_Str()).c_str(), ".tga") == 0)
+			{
+				texture = SetExtension(texture.c_str(), ".png");
+			}
+			tstring texturePath = GetPath(filename) + TStringFromString(texture);
+			ps.picTexture = new Texture(texturePath.c_str());
+		}
+	}
 
 	for(uint m = 0; m < scene->mNumMeshes; ++m)
 	{
@@ -106,8 +139,8 @@ HRESULT Scene::Create(aiScene const *scene, ID3D11DeviceContext *context)
 		msh.mVertexBuffer = new VertexBuffer<Shaders::Default::InputVertex>(mesh.mNumVertices, null, DynamicUsage, Writeable);
 		msh.mIndexBuffer = new IndexBuffer<uint16>((uint16)mesh.mNumFaces * 3, null, DynamicUsage, Writeable);
 
-		uint16 *indices = msh.mIndexBuffer->Map(context);
-		Shaders::Default::InputVertex *verts = msh.mVertexBuffer->Map(context);
+		uint16 *indices = msh.mIndexBuffer->Map();
+		Shaders::Default::InputVertex *verts = msh.mVertexBuffer->Map();
 
 		uint x = 0;
 		for(uint f = 0; f < mesh.mNumFaces; ++f)
@@ -151,33 +184,28 @@ HRESULT Scene::Create(aiScene const *scene, ID3D11DeviceContext *context)
 				dst.Color = 0xffffffff;
 			}
 		}
-		msh.mIndexBuffer->UnMap(context);
-		msh.mVertexBuffer->UnMap(context);
+		msh.mIndexBuffer->UnMap();
+		msh.mVertexBuffer->UnMap();
 	}
 
-	// count the nodes
-	uint nodeCount = 0;
-	ScanNodes(scene->mRootNode, [&nodeCount] (aiNode *node)
-	{
-		++nodeCount;
-	});
-	
-	CopyNodesWithMeshes(*scene->mRootNode, *this, &mRootNode, IdentityMatrix);
+	CopyNodesWithMeshes(IdentityMatrix, *scene->mRootNode, *this, &mRootNode);
 
 	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix const &transform)
+void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix const &transform, Matrix const &modelMatrix)
 {
 	// use a bool which tells whether any of this node's children have anything to render
 	// if it's false, return;
 	// else:
 	if(!node.mMeshes.empty())
 	{
-		mShader->vs.VertConstants.TransformMatrix = Transpose(transform);
-		mShader->vs.VertConstants.Commit(context);
+		auto vc = mShader->vs.VertConstants.Get();
+		vc->TransformMatrix = Transpose(transform);
+		vc->ModelMatrix = modelMatrix;
+		vc.Release();
 		for(auto const m : node.mMeshes)
 		{
 			m->mVertexBuffer->Activate(context);
@@ -189,16 +217,15 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 	for(auto &node: node.mChildren)
 	{
 		Matrix mat = transform * node.mTransform;
-		RenderNode(context, node, mat);
+		RenderNode(context, node, mat, modelMatrix);
 	}
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void Scene::Render(ID3D11DeviceContext *context, Matrix cameraMatrix, Vec4f cameraPos)
+void Scene::Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos)
 {
-	mShader->ps.Camera.cameraPos = cameraPos;
-	mShader->ps.Camera.Commit(context);
+	mShader->ps.Camera.Get()->cameraPos = cameraPos;
 	mShader->Activate(context);
-	RenderNode(context, mRootNode, cameraMatrix);
+	RenderNode(context, mRootNode, cameraMatrix, Transpose(modelMatrix));
 }

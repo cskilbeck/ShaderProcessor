@@ -38,8 +38,8 @@ namespace DX
 		void Reset()
 		{
 			mPaused = false;
-			mOldTicks = Ticks();
 			mCurrentTicks = 0;
+			mOldTicks = Ticks();
 		}
 
 		//////////////////////////////////////////////////////////////////////

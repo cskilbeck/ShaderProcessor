@@ -36,14 +36,14 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		TypelessBuffer(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		TypelessBuffer(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
 			Create(type, size, data, usage, rwOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		HRESULT Create(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
 			mSize = size;
 			mData = data;
@@ -54,6 +54,11 @@ namespace DX
 			}
 			mMapType = (D3D11_MAP)0;
 			mUsage = usage;
+			if(mUsage == StaticUsage && rwOption != NotCPUAccessible)
+			{
+				TRACE("Warning: Setting CPU Access option to NotCPUAccessible\n");
+				rwOption = NotCPUAccessible;
+			}
 			mRWOption = rwOption;
 			D3D11_BUFFER_DESC desc;
 			desc.ByteWidth = mSize;
@@ -100,6 +105,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void UnMap()
+		{
+			DX::Context->Unmap(mBuffer, 0);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void Set(ID3D11DeviceContext *context, byte *data)
 		{
 			CleanUp();
@@ -112,7 +124,9 @@ namespace DX
 
 		void Update(ID3D11DeviceContext *context, byte *data)
 		{
-			context->UpdateSubresource(mBuffer, 0, null, data, 0, 0);
+			void *p = Map(context);
+			memcpy(p, data, mSize);
+			UnMap(context);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -140,7 +154,10 @@ namespace DX
 
 		void Commit(ID3D11DeviceContext *context)
 		{
-			context->UpdateSubresource(mBuffer, 0, null, mData, 0, 0);
+			void *p = Map(context);
+			assert(p != null);
+			memcpy(p, mData, mSize);
+			UnMap(context);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -160,6 +177,51 @@ namespace DX
 
 	template <typename T> struct Buffer: TypelessBuffer
 	{
+		//////////////////////////////////////////////////////////////////////
+
+		template <typename T> struct MappedResource
+		{
+			Buffer<T> *buffer;
+			T * resource;
+
+			MappedResource(Buffer<T> *buf)
+				: buffer(buf)
+			{
+				DXI(resource = buffer->Map());
+			}
+
+			MappedResource(MappedResource &other)
+			{
+				Release();
+				buffer = other.buffer;
+				DXI(resource = buffer->Map());
+			}
+
+			~MappedResource()
+			{
+				Release();
+			}
+
+			void Release()
+			{
+				if(resource != null)
+				{
+					DXI(buffer->UnMap(DX::Context));
+					resource = null;
+				}
+			}
+
+			T & operator [] (uint index)
+			{
+				return resource[index];
+			}
+
+			T * operator -> ()
+			{
+				return resource;
+			}
+		};
+
 		//////////////////////////////////////////////////////////////////////
 
 		Buffer()
@@ -186,6 +248,20 @@ namespace DX
 		T * const Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
 		{
 			return (T * const)TypelessBuffer::Map(context, waitOption);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		T * const Map(MapWaitOption waitOption = WaitForGPU)
+		{
+			return (T * const)TypelessBuffer::Map(DX::Context, waitOption);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		MappedResource<T> Get()
+		{
+			return MappedResource<T>(this);
 		}
 
 		//////////////////////////////////////////////////////////////////////

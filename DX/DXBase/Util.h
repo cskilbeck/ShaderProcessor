@@ -33,6 +33,8 @@ namespace DX
 
 	wstring Format(wchar const *fmt, ...);
 	string Format(char const *fmt, ...);
+
+	tstring ConcatenatePaths(tchar const *base, tchar const *relative);
 	tstring GetCurrentFolder();
 	tstring GetDrive(tchar const *path);
 	tstring GetPath(tchar const *path);
@@ -80,12 +82,13 @@ namespace DX
 
 	template<typename T> T ReplaceAll(T &str, T const &from, T const &to)
 	{
-		size_t start_pos;
-		while((start_pos = str.find(from, start_pos)) != T::npos)
+		size_t start_pos = 0;
+ 		while((start_pos = str.find(from, start_pos)) != T::npos)
 		{
 			str.replace(start_pos, from.length(), to);
 			start_pos += to.length();
 		}
+		return str;
 	}
 
 	//////////////////////////////////////////////////////////////////////

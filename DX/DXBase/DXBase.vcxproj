@@ -30,6 +30,7 @@
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Options.h" />
     <ClInclude Include="Point.h" />
+    <ClInclude Include="Pool.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="Rect.h" />
     <ClInclude Include="RefCounted.h" />

@@ -132,10 +132,8 @@ namespace DX
 
 	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
 	{
-		shader->gs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		shader->gs.vConstants.Commit(context);
+		shader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		vertexBuffer->Activate(context);
-		// vertexBufferPointer for stashing verts into
 	}
 
 	//////////////////////////////////////////////////////////////////////
