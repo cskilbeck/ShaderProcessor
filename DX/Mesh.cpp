@@ -99,10 +99,10 @@ HRESULT Scene::Create(tchar const *filename)
 	ps.tex1Sampler = mDefaultSampler.get();
 
 	auto l = ps.Light.Get();
-	l->lightPos = Float3(0, -45, 0);
-	l->ambientColor = Float3(0.5f, 0.5f, 0.5f);
-	l->diffuseColor = Float3(0.5f, 0.5f, 0.5f);
-	l->specColor = Float3(1, 1, 1);
+	l->lightPos = Float3(0, -15, 0);
+	l->ambientColor = Float3(0.4f, 0.4f, 0.4f);
+	l->diffuseColor = Float3(0.3f, 0.3f, 0.3f);
+	l->specColor = Float3(10, 10, 10);
 	l.Release();
 
 	// Material properties

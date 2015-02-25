@@ -42,7 +42,7 @@ namespace DX
 
 	inline Matrix Transpose(Matrix const &m)
 	{
-		return XMMatrixTranspose(m);
+		return DirectX::XMMatrixTranspose(m);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -95,8 +95,7 @@ namespace DX
 
 	inline Matrix const &CopyMatrix(void *f, DX::Matrix const &m)
 	{
-		// f might be unaligned
-		memcpy(f, &m, sizeof(Matrix));
+		DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4 *)f, m);
 		return m;
 	}
 
@@ -104,8 +103,7 @@ namespace DX
 
 	inline Matrix &CopyMatrix(DX::Matrix &m, void const *f)
 	{
-		// f might be unaligned
-		memcpy(&m, f, sizeof(m));
+		m = DirectX::XMLoadFloat4x4((DirectX::XMFLOAT4X4 *)f);
 		return m;
 	}
 
