@@ -151,94 +151,75 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\SingleThreadedShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-st|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\SingleThreadedShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-noboost-st|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\NoBoostShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-noboost-st|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\NoBoostShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-dll|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\DllShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-dll|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\DllShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-st|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\SingleThreadedShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-st|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\SingleThreadedShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-noboost-st|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\NoBoostShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-noboost-st|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
     <Import Project="shared\NoBoostShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug-dll|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\DllShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release-dll|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\DllShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="shared\LibShared.props" />
-    <Import Project="shared\FastSTL.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="shared\FastSTL.props" />
     <Import Project="shared\LibShared.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup>
-    <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
     <OutDir>./../../lib/$(ProjectName)_$(Configuration)_$(Platform)\</OutDir>
     <IntDir>./../../obj/$(ProjectName)_$(Configuration)_$(Platform)\</IntDir>
@@ -463,6 +444,9 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <PrecompiledHeaderFile>AssimpPCH.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release-noboost-st|x64'">
     <Midl>
@@ -498,6 +482,9 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
+    <Lib>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug-noboost-st|x64'">
     <Midl>
@@ -777,7 +764,6 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
     <ClInclude Include="..\..\contrib\zlib\zconf.in.h" />
     <ClInclude Include="..\..\contrib\zlib\zlib.h" />
     <ClInclude Include="..\..\contrib\zlib\zutil.h" />
-    <ClInclude Include="..\..\doc\dox.h" />
     <ClInclude Include="..\..\include\assimp\ai_assert.h" />
     <ClInclude Include="..\..\include\assimp\anim.h" />
     <ClInclude Include="..\..\include\assimp\camera.h" />
@@ -1540,12 +1526,6 @@ copy "$(OutDir)$(TargetFileName)" "$(ProjectDir)..\..\bin\assimpcmd_$(Configurat
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='release|x64'">
       </PrecompiledHeader>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="..\..\doc\datastructure.xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\doc\Preamble.txt" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\code\res\assimp.rc" />

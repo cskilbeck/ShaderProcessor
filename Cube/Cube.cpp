@@ -132,28 +132,26 @@ void MyDXWindow::CreateOctahedron()
 {
 	using namespace Shaders;
 
-	octahedronVB.reset(new Simple::VertBuffer(6));
-	Simple::InputVertex *v = octahedronVB->Data();
 	float f = sqrtf(2) / 2.0f;
-	v[0] = { {  0,  0,  1 }, 0xffffffff };
-	v[1] = { { -f,  f,  0 }, 0xffffffff };
-	v[2] = { {  f,  f,  0 }, 0xffffffff };
-	v[3] = { {  f, -f,  0 }, 0xffffffff };
-	v[4] = { { -f, -f,  0 }, 0xffffffff };
-	v[5] = { {  0,  0, -1 }, 0xffffffff };
-	octahedronVB->Commit(Context());
+	Simple::InputVertex v[6] =
+	{
+		{ { 0, 0, 1 }, 0xffffffff },
+		{ { -f, f, 0 }, 0xffffffff },
+		{ { f, f, 0 }, 0xffffffff },
+		{ { f, -f, 0 }, 0xffffffff },
+		{ { -f, -f, 0 }, 0xffffffff },
+		{ { 0, 0, -1 }, 0xffffffff }
+	};
+	octahedronVB.reset(new Simple::VertBuffer(6, v, StaticUsage));
 
-	octahedronIB.reset(new IndexBuffer<uint16>(3 * 8));
-	uint16 *o = octahedronIB->Data();
-	o[ 0] = 0; o[ 1] = 1; o[ 2] = 2;
-	o[ 3] = 0; o[ 4] = 2; o[ 5] = 3;
-	o[ 6] = 0; o[ 7] = 3; o[ 8] = 4;
-	o[ 9] = 0; o[10] = 4; o[11] = 1;
-	o[12] = 5; o[13] = 2; o[14] = 1;
-	o[15] = 5; o[16] = 3; o[17] = 2;
-	o[18] = 5; o[19] = 4; o[20] = 3;
-	o[21] = 5; o[22] = 1; o[23] = 4;
-	octahedronIB->Commit(Context());
+	uint16 o[24] =
+	{
+		0, 1, 2, 0, 2, 3,
+		0, 3, 4, 0, 4, 1,
+		5, 2, 1, 5, 3, 2,
+		5, 4, 3, 5, 1, 4
+	};
+	octahedronIB.reset(new IndexBuffer<uint16>(3 * 8, o, StaticUsage));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -181,14 +179,14 @@ bool MyDXWindow::OnCreate()
 		bv[3] = { { r, b }, { 1, 1 } };
 		bv.Release();
 		Shaders::Blit::VS &vs = blitShader->vs;
-		auto vc = vs.vConstants.Map(DX::Context);
-		vc->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vs.vConstants.UnMap(DX::Context);
+
+		vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		vs.vConstants.Update(DX::Context);
 	};
 
 	using namespace Assimp;
 	
-	scene.Create(TEXT("data\\duck.dae"));
+	scene.Load(TEXT("data\\duck.dae"));
 
 	FontManager::Init(this);
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
@@ -202,25 +200,22 @@ bool MyDXWindow::OnCreate()
 	CreateOctahedron();
 
 	cubeShader.reset(new Shaders::Phong());
-
 	cubeTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	cubeSampler.reset(new Sampler());
-
 	cubeShader->ps.picTexture = cubeTexture.get();
 	cubeShader->ps.tex1Sampler = cubeSampler.get();
-
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
 	lightPos = Vec4(0, -15, 0, 0);
 
 	Shaders::Phong::PS &ps = cubeShader->ps;
-	auto l = ps.Light.Map();
-	l->lightPos = lightPos;
-	l->ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	l->diffuseColor = Float3(0.6f, 0.7f, 0.5f);
-	l->specColor = Float3(5, 5, 5);
-	ps.Light.UnMap();
+	auto l = ps.Light;
+	l.lightPos = lightPos;
+	l.ambientColor = Float3(0.3f, 0.2f, 0.4f);
+	l.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	l.specColor = Float3(5, 5, 5);
+	l.Update();
 
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
@@ -254,9 +249,8 @@ bool MyDXWindow::OnCreate()
 	blitShader->ps.smplr = uiSampler.get();
 	blitShader->ps.page = renderTarget.get();
 
-	auto cp = cubeShader->ps.Camera.Map();
-	cp->cameraPos = dashCam.position;
-	cubeShader->ps.Camera.UnMap();
+	cubeShader->ps.Camera.cameraPos = dashCam.position;
+	cubeShader->ps.Camera.Update();
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
 	dashCam.position = Vec4(0, 0, 0);
@@ -525,21 +519,18 @@ void MyDXWindow::OnDestroy()
 	cubeTexture.reset();
 	cubeSampler.reset();
 	cubeVerts.reset();
-
 	uiShader.reset();
 	UIVerts.reset();
 	uiTexture.reset();
 	uiSampler.reset();
 	font.reset();
 	bigFont.reset();
-
 	spriteShader.reset();
 	spriteVerts.reset();
 	spriteSampler.reset();
-
 	spriteSheet.reset();
-
 	renderTarget.reset();
-
+	scene.Unload();
+	Scene::CleanUp();
 	Texture::FlushAll();
 }

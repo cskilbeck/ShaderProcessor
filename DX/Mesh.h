@@ -30,7 +30,8 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(tchar const *filename);
+		HRESULT Load(tchar const *filename);
+		void Unload();
 
 		void Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos);
 		void RenderNode(ID3D11DeviceContext *context, Node &node, Matrix const &transform, Matrix const &modelMatrix);
@@ -40,6 +41,8 @@ namespace DX
 		Node								mRootNode;
 		Ptr<Shaders::Default>				mShader;
 		vector<Mesh>						mMeshes;
+
+		static void CleanUp();
 
 		static Ptr<Texture>					mDefaultTexture;
 		static Ptr<Sampler>					mDefaultSampler;

@@ -6,7 +6,7 @@
 
 namespace DX
 {
-	template <typename T> struct Pool
+	template <typename T, uint alignment = 16> struct Pool
 	{
 		struct Dummy: list_node < Dummy >
 		{
@@ -20,16 +20,18 @@ namespace DX
 
 		Pool(uint n)
 		{
-			mPool = new T[n];
+			mPool = (T *)_aligned_malloc(sizeof(T) * n, alignment);
 			for(uint i = 0; i < n; ++i)
 			{
+				void *p = (void *)(&mPool[i]);
+				new(p)T(mPool[i]);
 				mFreeList.push_back((Dummy &)mPool[i]);
 			}
 		}
 
 		~Pool()
 		{
-			delete[] mPool;
+			_aligned_free(mPool);
 		}
 
 		T &Alloc()

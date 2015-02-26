@@ -6,8 +6,6 @@ using namespace DX;
 
 //////////////////////////////////////////////////////////////////////
 
-#define final_assert(x) { if(!(x)) DebugBreak(); }
-
 namespace
 {
 	void ScanNodes(aiNode *node, std::function<void(aiNode *)> callback)
@@ -64,7 +62,37 @@ Ptr<Sampler> Scene::mDefaultSampler;
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT Scene::Create(tchar const *filename)
+void Scene::Unload()
+{
+	for(uint i = 0; i < mShader->ps.mNumTextures; ++i)
+	{
+		Texture * &t = mShader->ps.mTextures[i];
+		if(t != null && t != mDefaultTexture.get())
+		{
+			Delete(t);
+		}
+	}
+	for(uint i = 0; i < mShader->ps.mNumSamplers; ++i)
+	{
+		Sampler * &s = mShader->ps.mSamplers[i];
+		if(s != null && s != mDefaultSampler.get())
+		{
+			Delete(s);
+		}
+	}
+
+	mShader.reset();
+
+	for(auto &mesh : mMeshes)
+	{
+		delete mesh.mIndexBuffer;
+		delete mesh.mVertexBuffer;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+HRESULT Scene::Load(tchar const *filename)
 {
 	using namespace Assimp;
 
@@ -78,6 +106,7 @@ HRESULT Scene::Create(tchar const *filename)
 
 	if(scene == null)
 	{
+		TRACE("Error loading %s: %s\n", filename, importer.GetErrorString());
 		return ERROR_FILE_NOT_FOUND;
 	}
 
@@ -94,9 +123,7 @@ HRESULT Scene::Create(tchar const *filename)
 		mDefaultSampler.reset(new Sampler());
 	}
 
-	Shaders::Default ::PS &ps = mShader->ps;
-	ps.picTexture = mDefaultTexture.get();
-	ps.tex1Sampler = mDefaultSampler.get();
+	Shaders::Default::PS &ps = mShader->ps;
 
 	auto l = ps.Light.Get();
 	l->lightPos = Float3(0, -15, 0);
@@ -125,6 +152,23 @@ HRESULT Scene::Create(tchar const *filename)
 			}
 			tstring texturePath = GetPath(filename) + TStringFromString(texture);
 			ps.picTexture = new Texture(texturePath.c_str());
+			ps.tex1Sampler = new Sampler();
+		}
+	}
+
+	// fill in default textures and samplers
+	for(uint i = 0; i < ps.mNumTextures; ++i)
+	{
+		if(ps.mTextures[i] == null)
+		{
+			ps.mTextures[i] = mDefaultTexture.get();
+		}
+	}
+	for(uint i = 0; i < ps.mNumSamplers; ++i)
+	{
+		if(ps.mSamplers[i] == null)
+		{
+			ps.mSamplers[i] = mDefaultSampler.get();
 		}
 	}
 
@@ -136,56 +180,62 @@ HRESULT Scene::Create(tchar const *filename)
 
 		mMeshes[m].mBase = 0;
 		mMeshes[m].mCount = (uint16)mesh.mNumFaces * 3;
-		msh.mVertexBuffer = new VertexBuffer<Shaders::Default::InputVertex>(mesh.mNumVertices, null, DynamicUsage, Writeable);
-		msh.mIndexBuffer = new IndexBuffer<uint16>((uint16)mesh.mNumFaces * 3, null, DynamicUsage, Writeable);
 
-		uint16 *indices = msh.mIndexBuffer->Map();
-		Shaders::Default::InputVertex *verts = msh.mVertexBuffer->Map();
-
-		uint x = 0;
-		for(uint f = 0; f < mesh.mNumFaces; ++f)
+		// create index buffer
 		{
-			aiFace const &face = mesh.mFaces[f];
-			if(face.mNumIndices == 3)
+			vector<uint16> indices;
+			indices.reserve(mesh.mNumFaces * 3);
+			uint x = 0;
+			for(uint f = 0; f < mesh.mNumFaces; ++f)
 			{
-				indices[x++] = face.mIndices[2];
-				indices[x++] = face.mIndices[1];
-				indices[x++] = face.mIndices[0];
+				aiFace const &face = mesh.mFaces[f];
+				if(face.mNumIndices == 3)
+				{
+					indices.push_back(face.mIndices[2]);
+					indices.push_back(face.mIndices[1]);
+					indices.push_back(face.mIndices[0]);
+				}
 			}
+			msh.mIndexBuffer = new IndexBuffer<uint16>((uint16)indices.size(), indices.data(), StaticUsage, NotCPUAccessible);
 		}
 
-		for(uint v = 0; v < mesh.mNumVertices; ++v)
+		// create vertex buffer
 		{
-			aiVector3D &src = mesh.mVertices[v];
-			Shaders::Default::InputVertex &dst = verts[v];
-			dst.Position = { src.x, src.y, src.z };
-			if(mesh.HasNormals())
+			using Vert = Shaders::Default::InputVertex;
+			vector<Vert> verts;
+			verts.resize(mesh.mNumVertices);
+			for(uint v = 0; v < mesh.mNumVertices; ++v)
 			{
-				dst.Normal = { mesh.mNormals[v].x, mesh.mNormals[v].y, mesh.mNormals[v].z };
+				aiVector3D &src = mesh.mVertices[v];
+				Vert &dst = verts[v];
+				dst.Position = { src.x, src.y, src.z };
+				if(mesh.HasNormals())
+				{
+					dst.Normal = { mesh.mNormals[v].x, mesh.mNormals[v].y, mesh.mNormals[v].z };
+				}
+				else
+				{
+					dst.Normal = { 1, 0, 0 };
+				}
+				if(mesh.HasTextureCoords(0))
+				{
+					dst.TexCoord = { mesh.mTextureCoords[0][v].x, mesh.mTextureCoords[0][v].y };
+				}
+				else
+				{
+					dst.TexCoord = { (float)(v & 1), (float)(1 - (v & 1)) };
+				}
+				if(mesh.HasVertexColors(0))
+				{
+					dst.Color = Color((float *)&mesh.mColors[0]);
+				}
+				else
+				{
+					dst.Color = 0xffffffff;
+				}
 			}
-			else
-			{
-				dst.Normal = { 1, 0, 0 };
-			}
-			if(mesh.HasTextureCoords(0))
-			{
-				dst.TexCoord = { mesh.mTextureCoords[0][v].x, mesh.mTextureCoords[0][v].y };
-			}
-			else
-			{
-				dst.TexCoord = { (float)(v & 1), (float)(1 - (v & 1)) };
-			}
-			if(mesh.HasVertexColors(0))
-			{
-				dst.Color = Color((float *)&mesh.mColors[0]);
-			}
-			else
-			{
-				dst.Color = 0xffffffff;
-			}
+			msh.mVertexBuffer = new VertexBuffer<Vert>((uint)verts.size(), verts.data(), StaticUsage, NotCPUAccessible);
 		}
-		msh.mIndexBuffer->UnMap();
-		msh.mVertexBuffer->UnMap();
 	}
 
 	CopyNodesWithMeshes(IdentityMatrix, *scene->mRootNode, *this, &mRootNode);
@@ -202,10 +252,9 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 	// else:
 	if(!node.mMeshes.empty())
 	{
-		auto vc = mShader->vs.VertConstants.Get();
-		vc->TransformMatrix = Transpose(transform);
-		vc->ModelMatrix = modelMatrix;
-		vc.Release();
+		mShader->vs.VertConstants.TransformMatrix = Transpose(transform);
+		mShader->vs.VertConstants.ModelMatrix = modelMatrix;
+		mShader->vs.VertConstants.Update(context);
 		for(auto const m : node.mMeshes)
 		{
 			m->mVertexBuffer->Activate(context);
@@ -225,7 +274,19 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 
 void Scene::Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos)
 {
-	mShader->ps.Camera.Get()->cameraPos = cameraPos;
+	mShader->ps.Camera.cameraPos = cameraPos;
+	mShader->ps.Camera.Update(context);
 	mShader->Activate(context);
 	RenderNode(context, mRootNode, cameraMatrix, Transpose(modelMatrix));
 }
+
+//////////////////////////////////////////////////////////////////////
+
+void Scene::CleanUp()
+{
+	mDefaultTexture.reset();
+	mDefaultSampler.reset();
+}
+
+//////////////////////////////////////////////////////////////////////
+

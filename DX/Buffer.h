@@ -47,7 +47,7 @@ namespace DX
 		{
 			mSize = size;
 			mData = data;
-			if(mData == null)
+			if(mData == null && usage == StaticUsage)
 			{
 				mData = new byte[size];
 				mOwnData = true;
@@ -68,7 +68,8 @@ namespace DX
 			desc.MiscFlags = 0;
 			desc.StructureByteStride = 0;
 			D3D11_SUBRESOURCE_DATA srd = { mData, 0, 0 };
-			DXR(DX::Device->CreateBuffer(&desc, &srd, &mBuffer));
+			D3D11_SUBRESOURCE_DATA *psrd = (mData == null) ? null : &srd;
+			DXR(DX::Device->CreateBuffer(&desc, psrd, &mBuffer));
 			switch(mRWOption)
 			{
 				case Readable:

@@ -36,17 +36,15 @@ namespace DX
 			, mDefaults(Defaults)
 			, mIndex(index)
 		{
-			DXI(ConstantBuffer<definition>::Create(1, null, DynamicUsage, Writeable));
-			definition *d = Map(DX::Context);
 			if(mDefaults != null)
 			{
-				memcpy(d, mDefaults, sizeof(definition)); // !!
+				memcpy(this, mDefaults, sizeof(definition));
 			}
 			else
 			{
-				memset(d, 0, sizeof(definition));
+				memset(this, 0, sizeof(definition));
 			}
-			UnMap(DX::Context);
+			DXI(ConstantBuffer<definition>::Create(1, this, DynamicUsage, Writeable));
 			parent->mConstBuffers.push_back(this);
 			parent->mConstBufferPointers.push_back(mBuffer);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);

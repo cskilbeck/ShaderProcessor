@@ -196,9 +196,6 @@
     <Filter Include="sources\exporters\ply">
       <UniqueIdentifier>{17d20929-1879-4e14-ac24-4ea519379bf9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="doc">
-      <UniqueIdentifier>{f488a713-5874-48af-ad57-ee5a69dbde6b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="resources">
       <UniqueIdentifier>{138b2a15-28a1-45d0-963d-fb89853a4ee3}</UniqueIdentifier>
     </Filter>
@@ -882,9 +879,6 @@
     <ClInclude Include="..\..\code\PlyExporter.h">
       <Filter>sources\exporters\ply</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\doc\dox.h">
-      <Filter>doc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\code\res\resource.h">
       <Filter>resources</Filter>
     </ClInclude>
@@ -1324,16 +1318,6 @@
     <ClCompile Include="..\..\code\PlyExporter.cpp">
       <Filter>sources\exporters\ply</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Xml Include="..\..\doc\datastructure.xml">
-      <Filter>doc</Filter>
-    </Xml>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="..\..\doc\Preamble.txt">
-      <Filter>doc</Filter>
-    </Text>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\code\res\assimp.rc">
