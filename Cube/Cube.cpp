@@ -1,11 +1,19 @@
 //////////////////////////////////////////////////////////////////////
+// Proper logging instead of a janky handful of macros
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader
+// Normal mapping
+// Shadow mapping
 // 2D UI Elements/Scene
 // SWF importer/converter/player!?
-// Assimp / Default shader
+// Assimp
+//		Default shader
+//		Preprocessor / native loader
+//		Shared vert/index buffers
+//		Named shader support
+//		Skeleton/Weights
 // Bullet
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
@@ -37,30 +45,30 @@
 
 static Shaders::Phong::InputVertex verts[24] =
 {
-	Float3(-1, +1, +1), Half2(0, 0), Color::White, Float3(0, 0, +1),// 00
-	Float3(+1, +1, +1), Half2(1, 0), Color::White, Float3(0, 0, +1),// 01
-	Float3(+1, -1, +1), Half2(1, 1), Color::White, Float3(0, 0, +1),// 02
-	Float3(-1, -1, +1), Half2(0, 1), Color::White, Float3(0, 0, +1),// 03
-	Float3(-1, -1, +1), Half2(0, 0), Color::White, Float3(0, -1, 0),// 04
-	Float3(+1, -1, +1), Half2(1, 0), Color::White, Float3(0, -1, 0),// 05
-	Float3(+1, -1, -1), Half2(1, 1), Color::White, Float3(0, -1, 0),// 06
-	Float3(-1, -1, -1), Half2(0, 1), Color::White, Float3(0, -1, 0),// 07
-	Float3(-1, -1, -1), Half2(0, 0), Color::White, Float3(0, 0, -1),// 08
-	Float3(+1, -1, -1), Half2(1, 0), Color::White, Float3(0, 0, -1),// 09
-	Float3(+1, +1, -1), Half2(1, 1), Color::White, Float3(0, 0, -1),// 10
-	Float3(-1, +1, -1), Half2(0, 1), Color::White, Float3(0, 0, -1),// 11
-	Float3(-1, +1, -1), Half2(0, 0), Color::White, Float3(0, +1, 0),// 12
-	Float3(+1, +1, -1), Half2(1, 0), Color::White, Float3(0, +1, 0),// 13
-	Float3(+1, +1, +1), Half2(1, 1), Color::White, Float3(0, +1, 0),// 14
-	Float3(-1, +1, +1), Half2(0, 1), Color::White, Float3(0, +1, 0),// 15
-	Float3(+1, +1, +1), Half2(0, 0), Color::White, Float3(+1, 0, 0),// 16
-	Float3(+1, +1, -1), Half2(1, 0), Color::White, Float3(+1, 0, 0),// 17
-	Float3(+1, -1, -1), Half2(1, 1), Color::White, Float3(+1, 0, 0),// 18
-	Float3(+1, -1, +1), Half2(0, 1), Color::White, Float3(+1, 0, 0),// 19
-	Float3(-1, +1, -1), Half2(0, 0), Color::White, Float3(-1, 0, 0),// 20
-	Float3(-1, +1, +1), Half2(1, 0), Color::White, Float3(-1, 0, 0),// 21
-	Float3(-1, -1, +1), Half2(1, 1), Color::White, Float3(-1, 0, 0),// 22
-	Float3(-1, -1, -1), Half2(0, 1), Color::White, Float3(-1, 0, 0),// 23
+	{ { -1, +1, +1 }, { 0, 0 }, 0xffffffff, {  0,  0, +1 } },// 00
+	{ { +1, +1, +1 }, { 1, 0 }, 0xffffffff, {  0,  0, +1 } },// 01
+	{ { +1, -1, +1 }, { 1, 1 }, 0xffffffff, {  0,  0, +1 } },// 02
+	{ { -1, -1, +1 }, { 0, 1 }, 0xffffffff, {  0,  0, +1 } },// 03
+	{ { -1, -1, +1 }, { 0, 0 }, 0xffffffff, {  0, -1,  0 } },// 04
+	{ { +1, -1, +1 }, { 1, 0 }, 0xffffffff, {  0, -1,  0 } },// 05
+	{ { +1, -1, -1 }, { 1, 1 }, 0xffffffff, {  0, -1,  0 } },// 06
+	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, {  0, -1,  0 } },// 07
+	{ { -1, -1, -1 }, { 0, 0 }, 0xffffffff, {  0,  0, -1 } },// 08
+	{ { +1, -1, -1 }, { 1, 0 }, 0xffffffff, {  0,  0, -1 } },// 09
+	{ { +1, +1, -1 }, { 1, 1 }, 0xffffffff, {  0,  0, -1 } },// 10
+	{ { -1, +1, -1 }, { 0, 1 }, 0xffffffff, {  0,  0, -1 } },// 11
+	{ { -1, +1, -1 }, { 0, 0 }, 0xffffffff, {  0, +1,  0 } },// 12
+	{ { +1, +1, -1 }, { 1, 0 }, 0xffffffff, {  0, +1,  0 } },// 13
+	{ { +1, +1, +1 }, { 1, 1 }, 0xffffffff, {  0, +1,  0 } },// 14
+	{ { -1, +1, +1 }, { 0, 1 }, 0xffffffff, {  0, +1,  0 } },// 15
+	{ { +1, +1, +1 }, { 0, 0 }, 0xffffffff, { +1,  0,  0 } },// 16
+	{ { +1, +1, -1 }, { 1, 0 }, 0xffffffff, { +1,  0,  0 } },// 17
+	{ { +1, -1, -1 }, { 1, 1 }, 0xffffffff, { +1,  0,  0 } },// 18
+	{ { +1, -1, +1 }, { 0, 1 }, 0xffffffff, { +1,  0,  0 } },// 19
+	{ { -1, +1, -1 }, { 0, 0 }, 0xffffffff, { -1,  0,  0 } },// 20
+	{ { -1, +1, +1 }, { 1, 0 }, 0xffffffff, { -1,  0,  0 } },// 21
+	{ { -1, -1, +1 }, { 1, 1 }, 0xffffffff, { -1,  0,  0 } },// 22
+	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, { -1,  0,  0 } } // 23
 };
 
 //////////////////////////////////////////////////////////////////////

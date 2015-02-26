@@ -96,13 +96,19 @@ HRESULT Scene::Load(tchar const *filename)
 {
 	using namespace Assimp;
 
+#if defined(_DEBUG)
 	DefaultLogger::create("", Logger::VERBOSE, aiDefaultLogStream_DEBUGGER);
+#endif
+
 	Importer importer;
 	importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
 	uint options = aiProcess_Triangulate | aiProcess_SortByPType;
 	importer.ReadFile(filename, options);
 	aiScene const *scene = importer.GetScene();
+
+#if defined(_DEBUG)
 	DefaultLogger::kill();
+#endif
 
 	if(scene == null)
 	{

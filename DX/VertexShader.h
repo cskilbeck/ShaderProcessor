@@ -12,35 +12,13 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		VertexShader(tchar const *filename,
-					 uint numConstBuffers, char const **constBufferNames,
+		VertexShader(uint numConstBuffers, char const **constBufferNames,
 					 uint numSamplers, char const **samplerNames,
 					 uint numTextures, char const **textureNames,
 					 Texture **textureArray,
-					 Sampler **samplerArray,
-					 D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+					 Sampler **samplerArray)
 			 : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
 		{
-			FileResource f(filename);
-			if(!f.IsValid())
-			{
-				throw("Shader file not found");
-			}
-			DXT(Create(f.Data(), f.Size(), inputElements, inputElementCount));
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		VertexShader(void const *blob, size_t size,
-					 uint numConstBuffers, char const **constBufferNames,
-					 uint numSamplers, char const **samplerNames,
-					 uint numTextures, char const **textureNames,
-					 Texture **textureArray,
-					 Sampler **samplerArray,
-					 D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
-			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
-		{
-			DXT(Create(blob, size, inputElements, inputElementCount));
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -63,6 +41,17 @@ namespace DX
 		{
 			DXR(Device->CreateVertexShader(blob, size, null, &mVertexShader));
 			DXR(Device->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		HRESULT Load(FileResource &f, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+		{
+			void const *p;
+			size_t s;
+			Shader::GetOffsetInCSOFile(f, ShaderType::Vertex, p, s);
+			DXR(Create(p, s, inputElements, inputElementCount));
 			return S_OK;
 		}
 

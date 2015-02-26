@@ -150,5 +150,13 @@ namespace DX
 			}
 		}
 
+		static void GetOffsetInCSOFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
+		{
+			byte *bp = (byte *)f.Data();
+			uint32 *off = (uint32 *)f.Data();
+			ptr = bp + off[type];
+			size = (bp + ((type < NumShaderTypes - 1) ? off[type + 1] : f.Size())) - (byte const *)ptr;
+		}
+
 	};
 }

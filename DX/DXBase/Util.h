@@ -12,10 +12,19 @@ namespace DX
 	void Trace(wchar const *strMsg, ...);
 	void Trace(char const *strMsg, ...);
 
+#define TRACE_ON Trace
+#define TRACE_OFF(...) if (false) {} else (__VA_ARGS__);
+
 #if defined(_DEBUG)
-#define TRACE Trace
+#	define ERR(...)		TRACE_ON(__VA_ARGS__)
+#	define TRACE(...)	TRACE_ON(__VA_ARGS__)
+#	define WARN(...)	TRACE_ON(__VA_ARGS__)
+#	define INFO(...)	TRACE_OFF(__VA_ARGS__)
 #else
-#define TRACE(x, ...) if (false) {} else (x);
+#	define ERR(...)		TRACE_OFF(__VA_ARGS__)
+#	define TRACE(...)	TRACE_OFF(__VA_ARGS__)
+#	define WARN(...)	TRACE_OFF(__VA_ARGS__)
+#	define INFO(...)	TRACE_OFF(__VA_ARGS__)
 #endif
 
 	void ErrorMessageBox(tchar const *msg, ...);
@@ -43,8 +52,8 @@ namespace DX
 	tstring SetExtension(tchar const *path, tchar const *ext);
 
 #ifndef PI
-#define PI 3.14159265f
-#define PI_2 (PI/2)
+#	define PI 3.14159265f
+#	define PI_2 (PI/2)
 #endif
 
 	//////////////////////////////////////////////////////////////////////

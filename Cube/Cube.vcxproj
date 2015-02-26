@@ -195,6 +195,7 @@
     <SPOCK Include="Shaders\Blit.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
     </SPOCK>
     <SPOCK Include="Shaders\Simple.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -208,14 +209,17 @@
       <FileType>Document</FileType>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
     </SPOCK>
     <SPOCK Include="Shaders\Phong.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
     </SPOCK>
     <SPOCK Include="Shaders\UI.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
     </SPOCK>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

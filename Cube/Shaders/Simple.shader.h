@@ -104,7 +104,7 @@ namespace Shaders
 			// Constructor
 
 			VS()
-				: VertexShader(TEXT("Data\\Simple_VS.cso"), 1, Simple_VS_ConstBufferNames, 0, null, 0, null, null, null, Simple_VS_InputElements, _countof(Simple_VS_InputElements))
+				: VertexShader(1, Simple_VS_ConstBufferNames, 0, null, 0, null, null, null)
 				, VertConstants(1, Simple_VS_VertConstants_Offsets, null, this, 0)
 			{
 			}
@@ -134,10 +134,16 @@ namespace Shaders
 
 		Simple(): ShaderState(Simple_BlendDesc, Simple_DepthStencilDesc, Simple_RasterizerDesc)
 		{
-			Shaders[Vertex] = &vs;
+			FileResource f(TEXT("Data\\Simple.shader.cso"));
+			if(f.IsValid())
+			{
+				vs.Load(f, Simple_VS_InputElements, _countof(Simple_VS_InputElements));
+				ps.Load(f);
+			}
 			Shaders[Hull] = null;
 			Shaders[Domain] = null;
 			Shaders[Geometry] = null;
+			Shaders[Vertex] = &vs;
 			Shaders[Pixel] = &ps;
 			Shaders[Compute] = null;
 		}
