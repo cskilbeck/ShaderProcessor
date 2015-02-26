@@ -200,8 +200,11 @@ struct HLSLShader
 
 	void const *						mBlob;
 	size_t								mSize;
-
 	string								mName;
+	string								mDataPath;
+	string								mDataRoot;
+
+	bool								mEmbedByteCode;
 
 	vector<Binding *>					mBindings;
 
@@ -236,6 +239,7 @@ struct HLSLShader
 	void OutputBlob();
 	void OutputMemberVariable();
 
+	string FileName();
 	string Name() const;
 	string RefName() const;
 	char const *ShaderTypeName() const;
@@ -249,7 +253,7 @@ struct HLSLShader
 	ConstantBufferBinding *GetCB(string const &name);
 	ConstantBufferBinding *GetConstantBuffer(int index);
 
-	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
+	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc, bool embedBytecode);
 	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
 	HRESULT CreateBindings();

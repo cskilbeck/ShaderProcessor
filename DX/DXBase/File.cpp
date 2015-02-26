@@ -12,15 +12,40 @@ namespace DX
 		h = CreateFile(filename, GENERIC_READ, FILE_SHARE_READ, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if(h == INVALID_HANDLE_VALUE)
 		{
+			TRACE(TEXT("Error opening %s\n"), filename);
 			error = ErrorMsgBox(Format(TEXT("Error opening %s"), filename).c_str());
 		}
+		TRACE(TEXT("Opened %s\n"), filename);
 		return h.IsValid();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool File::Create(tchar const *filename)
+	{
+		name = filename;
+		h = CreateFile(filename, GENERIC_WRITE, FILE_SHARE_READ, null, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+		if(h == INVALID_HANDLE_VALUE)
+		{
+			TRACE(TEXT("Error creating %s\n"), filename);
+			error = ErrorMsgBox(Format(TEXT("Error opening %s"), filename).c_str());
+		}
+		TRACE(TEXT("Created %s\n"), filename);
+		return h.IsValid();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	File::~File()
+	{
+		Close();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void File::Close()
 	{
+		TRACE(TEXT("Closing %s\n"), name.c_str());
 		h.Close();
 	}
 
@@ -44,6 +69,7 @@ namespace DX
 		if(GetFileSizeEx(h, (LARGE_INTEGER *)&fileSize))
 		{
 			error = ERROR_SUCCESS;
+			TRACE(TEXT("Size of %s is %ld bytes\n"), name.c_str(), fileSize);
 			return fileSize;
 		}
 		error = ErrorMsgBox(Format(TEXT("Error getting file size of %s"), name.c_str()).c_str());
@@ -58,9 +84,11 @@ namespace DX
 		error = ERROR_SUCCESS;
 		if(ReadFile(h, buffer, bytes, &got, null))
 		{
+			TRACE(TEXT("Read %d bytes from %s\n"), got, name.c_str());
 			return got;
 		}
 		error = GetLastError();
+		TRACE(TEXT("Error %08x reading %d bytes from %s\n"), error, bytes, name.c_str());
 		return 0;
 	}
 
@@ -72,9 +100,11 @@ namespace DX
 		error = ERROR_SUCCESS;
 		if(WriteFile(h, buffer, bytes, &wrote, null))
 		{
+			TRACE(TEXT("Wrote %d bytes to %s\n"), wrote, name.c_str());
 			return wrote;
 		}
 		error = GetLastError();
+		TRACE(TEXT("Error %08x writing %d bytes to %s\n"), error, bytes, name.c_str());
 		return 0;
 	}
 
@@ -115,6 +145,20 @@ namespace DX
 		*data = buf.release();
 		*size = (uint32)fileSize;
 		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Simple file saver
+
+	bool SaveFile(tchar const *filename, void *data, uint32 size)
+	{
+		assert(filename != null && data != null && size != 0);
+		File f;
+		if(!f.Create(filename))
+		{
+			return false;
+		}
+		return f.Write((uint32)size, data) > 0;
 	}
 
 }

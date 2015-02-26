@@ -47,6 +47,8 @@
            GeometryShaderFunction="%(SPOCK.GeometryShaderFunction)"
            Namespace="%(SPOCK.Namespace)"
            HeaderFile="%(SPOCK.HeaderFile)"
+           DataFolder="%(SPOCK.DataFolder)"
+           DataRoot="%(SPOCK.DataRoot)"
            OptimizationLevel="%(SPOCK.OptimizationLevel)"
            EmbedObject="%(SPOCK.EmbedObject)"
            ShaderModel="%(SPOCK.ShaderModel)"

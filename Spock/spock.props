@@ -11,6 +11,8 @@
       <GeometryShaderFunction></GeometryShaderFunction>
       <Namespace>Shaders</Namespace>
       <HeaderFile>%(FullPath).h</HeaderFile>
+      <DataFolder>Data</DataFolder>
+      <DataRoot>$(ProjectDir)</DataRoot>
       <EmbedObject>true</EmbedObject>
       <ShaderModel>4</ShaderModel>
       <OptimizationLevel>3</OptimizationLevel>

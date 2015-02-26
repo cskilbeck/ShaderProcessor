@@ -41,12 +41,11 @@ namespace Printer
 	{
 		if(txt != null)
 		{
-			char buffer[8192];
 			va_list v;
 			va_start(v, txt);
-			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
+			string s = Format_V(txt, v);
 			WriteString(indent);
-			WriteString(buffer);
+			WriteString(s.c_str());
 		}
 		indent += "\t";
 	}
@@ -58,12 +57,11 @@ namespace Printer
 		indent = indent.substr(0, indent.length() - 1);
 		if(txt != null)
 		{
-			char buffer[8192];
 			va_list v;
 			va_start(v, txt);
-			int n = _vsnprintf_s(buffer, sizeof(buffer), txt, v);
+			string s = Format_V(txt, v);
 			WriteString(indent);
-			WriteString(buffer);
+			WriteString(s.c_str());
 			WriteString("\n");
 		}
 	}
@@ -104,12 +102,11 @@ namespace Printer
 
 	void Output(char const *format, ...)
 	{
-		char buffer[8192];
 		va_list v;
 		va_start(v, format);
-		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
+		string s = Format_V(format, v);
 		DWORD wrote;
-		WriteFile(outputFile, buffer, n, &wrote, null);
+		WriteFile(outputFile, s.data(), (DWORD)s.size(), &wrote, null);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -123,13 +120,12 @@ namespace Printer
 
 	void OutputLine(char const *format, ...)
 	{
-		char buffer[1024];
 		va_list v;
 		va_start(v, format);
-		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
+		string s = Format_V(format, v);
 		DWORD wrote;
 		WriteString(indent);
-		WriteFile(outputFile, buffer, n, &wrote, null);
+		WriteFile(outputFile, s.data(), (DWORD)s.size(), &wrote, null);
 		OutputLine();
 	}
 
@@ -137,10 +133,9 @@ namespace Printer
 
 	void OutputCommentLine(char const *format, ...)
 	{
-		char buffer[8192];
 		va_list v;
 		va_start(v, format);
-		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
+		string s = Format_V(format, v);
 		DWORD wrote;
 		char const comment[] = "//////////////////////////////////////////////////////////////////////\n";
 		char const comment2[] = "// ";
@@ -149,7 +144,7 @@ namespace Printer
 		WriteString(comment);
 		WriteString(indent);
 		WriteString(comment2);
-		WriteFile(outputFile, buffer, n, &wrote, null);
+		WriteFile(outputFile, s.data(), (DWORD)s.size(), &wrote, null);
 		WriteString(crlf2);
 	}
 
@@ -157,16 +152,15 @@ namespace Printer
 
 	void OutputComment(char const *format, ...)
 	{
-		char buffer[8192];
 		va_list v;
 		va_start(v, format);
-		int n = _vsnprintf_s(buffer, sizeof(buffer), format, v);
+		string s = Format_V(format, v);
 		DWORD wrote;
 		char const comment2[] = "// ";
 		char const crlf2[] = "\n\n";
 		WriteString(indent);
 		WriteString(comment2);
-		WriteFile(outputFile, buffer, n, &wrote, null);
+		WriteFile(outputFile, s.data(), (DWORD)s.size(), &wrote, null);
 		WriteString(crlf2);
 	}
 

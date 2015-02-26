@@ -16,10 +16,22 @@ namespace
 	Ptr<DXShaders::Font> shader;
 	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
-	Delegate<WindowEvent> onDestroy;
-}
 
-DrawList *Font::mDrawList = null;
+	Window *fontManagerWindow;
+
+	Delegate<WindowEvent> onDestroy = [] (WindowEvent const &)
+	{
+		while(!sAllFonts.empty())
+		{
+			Font *f = sAllFonts.head();
+			TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
+			f->~Font();
+		}
+		shader.reset();
+		sampler.reset();
+		vertexBuffer.reset();
+	};
+}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -81,25 +93,26 @@ static void LoadShader()
 
 namespace DX
 {
-	void FontManager::Init(Window *window)
+	//////////////////////////////////////////////////////////////////////
+
+	void FontManager::Open(Window *window)
 	{
 		LoadShader();
-
-		onDestroy = [] (WindowEvent const &)
-		{
-			while(!sAllFonts.empty())
-			{
-				Font *f = sAllFonts.head();
-				TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
-				f->~Font();
-			}
-			shader.reset();
-			sampler.reset();
-			vertexBuffer.reset();
-		};
-
+		fontManagerWindow = window;
 		window->Destroyed += onDestroy;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void FontManager::Close()
+	{
+		fontManagerWindow->Destroyed -= onDestroy;
+		shader.reset();
+		vertexBuffer.reset();
+		sampler.reset();
+	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	Font *FontManager::Load(tchar const *name)
 	{
@@ -119,9 +132,15 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::SetupDrawList(ID3D11DeviceContext *context, DrawList &drawList, Window const * const window)
+	void Font::SetDrawList(DrawList &drawList)
 	{
 		mDrawList = &drawList;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Setup(ID3D11DeviceContext *context, Window const * const window)
+	{
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 		mDrawList->Reset(context, shader.get(), vertexBuffer.get());

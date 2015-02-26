@@ -6,8 +6,30 @@
 
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
+
 	struct PixelShader: Shader
 	{
+		//////////////////////////////////////////////////////////////////////
+
+		PixelShader(tchar const *filename,
+					uint numConstBuffers, char const **constBufferNames,
+					uint numSamplers, char const **samplerNames,
+					uint numTextures, char const **textureNames,
+					Texture **textureArray,
+					Sampler **samplerArray)
+			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+		{
+			FileResource f(filename);
+			if(!f.IsValid())
+			{
+				throw("Shader file not found");
+			}
+			DXT(Create(f.Data(), f.Size()));
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		PixelShader(void const *blob, size_t size,
 					uint numConstBuffers, char const **constBufferNames,
 					uint numSamplers, char const **samplerNames,
@@ -16,8 +38,10 @@ namespace DX
 					Sampler **samplerArray)
 			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
 		{
-			DXT(Device->CreatePixelShader(blob, size, null, &mPixelShader));
+			DXT(Create(blob, size));
 		}
+
+		//////////////////////////////////////////////////////////////////////
 
 		void Activate(ID3D11DeviceContext *context)
 		{
@@ -29,6 +53,16 @@ namespace DX
 			context->PSSetConstantBuffers(0, mNumConstBuffers, mConstBufferPointers.data());
 			context->PSSetShader(mPixelShader, null, 0);
 		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		HRESULT Create(void const *blob, size_t size)
+		{
+			DXT(Device->CreatePixelShader(blob, size, null, &mPixelShader));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
 
 		DXPtr<ID3D11PixelShader>			mPixelShader;
 	};

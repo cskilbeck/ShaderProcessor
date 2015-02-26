@@ -188,12 +188,12 @@ bool MyDXWindow::OnCreate()
 	
 	scene.Load(TEXT("data\\duck.dae"));
 
-	FontManager::Init(this);
+	FontManager::Open(this);
+
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
 	bigFont.reset(FontManager::Load(TEXT("Data\\Cooper_Black_48")));
 
 	simpleShader.reset(new Shaders::Simple());
-
 	simpleVB.reset(new Shaders::Simple::VertBuffer(128, null, DynamicUsage, Writeable));
 
 	CreateGrid();
@@ -210,10 +210,10 @@ bool MyDXWindow::OnCreate()
 	lightPos = Vec4(0, -15, 0, 0);
 
 	Shaders::Phong::PS &ps = cubeShader->ps;
-	auto l = ps.Light;
+	auto &l = ps.Light;
 	l.lightPos = lightPos;
-	l.ambientColor = Float3(0.3f, 0.2f, 0.4f);
-	l.diffuseColor = Float3(0.6f, 0.7f, 0.5f);
+	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
+	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
 	l.specColor = Float3(5, 5, 5);
 	l.Update();
 
@@ -221,16 +221,12 @@ bool MyDXWindow::OnCreate()
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
 	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
 	uiSampler.reset(new Sampler());
-
-	{
-		auto t = uiShader->vs.vConstants.Get();
-		auto p = uiShader->ps.pConstants.Get();
-		t->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		p->Color = Float4(1, 1, 1, 1);
-	}
-
 	uiShader->ps.page = uiTexture.get();
 	uiShader->ps.smplr = uiSampler.get();
+	uiShader->vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	uiShader->vs.vConstants.Update();
+	uiShader->ps.pConstants.Color = Float4(1, 1, 1, 1);
+	uiShader->ps.pConstants.Update();
 
 	spriteShader.reset(new Shaders::Sprite());
 	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2, null, DynamicUsage, Writeable));
@@ -311,15 +307,13 @@ void MyDXWindow::OnDraw()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-		Shaders::Phong::VS &vs = cubeShader->vs;
-		Shaders::Phong::PS &ps = cubeShader->ps;
-		auto vc = vs.VertConstants.Get();
-		vc->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vc->ModelMatrix = Transpose(modelMatrix);
-		vc.Release();
-		auto cp = ps.Camera.Get();
-		cp->cameraPos = camera.position;
-		cp.Release();
+		auto &vs = cubeShader->vs;
+		auto &ps = cubeShader->ps;
+		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
+		vs.VertConstants.Update(Context());
+		ps.Camera.cameraPos = camera.position;
+		ps.Camera.Update(Context());
 		cubeShader->Activate(Context());
 		cubeVerts->Activate(Context());
 		cubeIndices->Activate(Context());
@@ -332,26 +326,21 @@ void MyDXWindow::OnDraw()
 	Matrix bob = ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
 	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
 
-	{
-		simpleShader->Activate(Context());
-
-		Shaders::Simple::VS &vs = simpleShader->vs;
-
-		vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
-		gridVB->Activate(Context());
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-		Context()->Draw(gridVB->Count(), 0);
-
-		Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
-		modelMatrix *= TranslationMatrix(lightPos);
-		vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		octahedronVB->Activate(Context());
-		octahedronIB->Activate(Context());
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
-	}
+	simpleShader->Activate(Context());
+	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
+	gridVB->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	Context()->Draw(gridVB->Count(), 0);
+	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
+	modelMatrix *= TranslationMatrix(lightPos);
+	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+	octahedronVB->Activate(Context());
+	octahedronIB->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
 
 	{
+		using vrt = Shaders::UI::InputVertex;
 		drawList.Reset(Context(), uiShader.get(), UIVerts.get());
 
 		float w = 100 + sinf(time * 0.9f) * 30;
@@ -367,17 +356,14 @@ void MyDXWindow::OnDraw()
 		c.Color = Float4(1, 1, 1, sinf(time * 10) * 0.5f + 0.5f);
 		drawList.SetConstantData(Vertex, v, Shaders::UI::VS::vConstants_index);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
-		{
-			using v = Shaders::UI::InputVertex;
-			drawList.BeginTriangleList();
-			drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
-			drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
-			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-			drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
-			drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
-			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-			drawList.End();
-		}
+		drawList.BeginTriangleList();
+		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 } });
+		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 } });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 } });
+		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 } });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.End();
 
 		w = 100 + sinf(time * 1.1f) * 30;
 		h = 200 + sinf(time * 1.2f) * 30;
@@ -388,46 +374,48 @@ void MyDXWindow::OnDraw()
 
 		c.Color = Float4(1, 1, 1, 1);
 		drawList.SetConstantData(Pixel, c, uiShader->ps.pConstants.Index());
-		{
-			using v = Shaders::UI::InputVertex;
-			drawList.BeginTriangleList();
-			drawList.AddVertex<v>({ { x0, y0, }, { 0, 0 } });
-			drawList.AddVertex<v>({ { x1, y0 }, { 1, 0 } });
-			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-			drawList.AddVertex<v>({ { x1, y0, }, { 1, 0 } });
-			drawList.AddVertex<v>({ { x1, y1 }, { 1, 1 } });
-			drawList.AddVertex<v>({ { x0, y1 }, { 0, 1 } });
-			drawList.End();
-		}
-		
-		{
-			drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
-			Shaders::Simple::VS::VertConstants_t v;
-			v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-			drawList.SetConstantData(Vertex, v, 0);
-			drawList.BeginTriangleStrip();
-			using q = Shaders::Simple::InputVertex;
-			drawList.AddVertex<q>({ { 0, 0, 0.5f }, 0x80000000 });
-			drawList.AddVertex<q>({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
-			drawList.AddVertex<q>({ { 0, 100, 0.5f }, 0x80000000 });
-			drawList.AddVertex<q>({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
-			drawList.End();
-
-			Font::SetupDrawList(Context(), drawList, this);
-			font->Begin();
-			font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
-			font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
-			font->DrawString("Hello World", Vec2f(120, 340));
-			font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
-			font->End();
-
-			bigFont->Begin();
-			bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
-			bigFont->End();
-
-		}
-		drawList.Execute();
+		drawList.BeginTriangleList();
+		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 } });
+		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 } });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 } });
+		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 } });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.End();
 	}
+		
+	{
+		using vrt = Shaders::Simple::InputVertex;
+		drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
+
+		Shaders::Simple::VS::VertConstants_t v;
+		v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		drawList.SetConstantData(Vertex, v, 0);
+		drawList.BeginTriangleStrip();
+		drawList.AddVertex<vrt>({ { 0, 0, 0.5f }, 0x80000000 });
+		drawList.AddVertex<vrt>({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
+		drawList.AddVertex<vrt>({ { 0, 100, 0.5f }, 0x80000000 });
+		drawList.AddVertex<vrt>({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
+		drawList.End();
+
+		font->SetDrawList(drawList);
+
+		font->Setup(Context(), this);
+		font->Begin();
+		font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
+		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
+		font->DrawString("Hello World", Vec2f(120, 340));
+		font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
+		font->End();
+
+		bigFont->SetDrawList(drawList);
+		// no need to call Setup() again
+		bigFont->Begin();
+		bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
+		bigFont->End();
+
+	}
+	drawList.Execute();
 
 	spriteShader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 
@@ -486,10 +474,10 @@ void MyDXWindow::OnDraw()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
-		Shaders::Phong::VS &vs = cubeShader->vs;
-		auto vc = vs.VertConstants.Get();
-		vc->TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
-		vc->ModelMatrix = Transpose(modelMatrix);
+		auto &vc = cubeShader->vs.VertConstants;
+		vc.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
+		vc.ModelMatrix = Transpose(modelMatrix);
+		vc.Update();
 	}
 
 	renderTarget->Activate(Context());
@@ -528,9 +516,11 @@ void MyDXWindow::OnDestroy()
 	spriteShader.reset();
 	spriteVerts.reset();
 	spriteSampler.reset();
+	spriteTexture.reset();
 	spriteSheet.reset();
 	renderTarget.reset();
 	scene.Unload();
 	Scene::CleanUp();
 	Texture::FlushAll();
+	FontManager::Close();
 }

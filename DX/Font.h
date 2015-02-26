@@ -36,8 +36,10 @@ namespace DX
 		float GetBaseline() const;
 		string WrapText(string txt, uint pixelWidth, string lineBreak);
 
-		static void SetupDrawList(ID3D11DeviceContext *context, DrawList &drawList, Window const * const window);
-		static void SetupContext(ID3D11DeviceContext *context, Window const * const window);
+		void SetDrawList(DrawList &drawList);
+		void Setup(ID3D11DeviceContext *context, Window const * const window);
+
+		void SetupContext(ID3D11DeviceContext *context, Window const * const window);
 
 		void Begin();
 		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
@@ -82,15 +84,15 @@ namespace DX
 		Layer *				mLayers;
 		KerningValue *		mKerningValues;
 		Graphic *			mGraphics;
-
-		static DrawList *	mDrawList;
+		DrawList *			mDrawList;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
 	struct FontManager
 	{
-		static void Init(Window *window);
+		static void Open(Window *window);
+		static void Close();
 		static Font *Load(tchar const *name);
 	};
 }

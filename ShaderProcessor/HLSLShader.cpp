@@ -11,6 +11,9 @@
 // Allow row or column major matrices
 
 #include "stdafx.h"
+#include "Shlwapi.h"
+
+#pragma comment(lib, "Shlwapi.lib")
 
 using namespace Printer;
 
@@ -546,26 +549,40 @@ void HLSLShader::OutputFooter(char const *filename, char const *namespace_) // s
 
 void HLSLShader::OutputBlob()
 {
-	OutputCommentLine("Data for %s", Name().c_str());
-	OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
-	Indent("{");
-
-	char *sep = "";
-	uint32 *d = (uint32 *)mBlob;
-	for(uint i = 0; i < mSize / 4; ++i)
+	if(mEmbedByteCode)
 	{
-		Output(sep);
-		if((i & 7) == 0)
+		OutputCommentLine("Data for %s", Name().c_str());
+		OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
+		Indent("{");
+
+		char *sep = "";
+		uint32 *d = (uint32 *)mBlob;
+		for(uint i = 0; i < mSize / 4; ++i)
 		{
-			OutputLine();
-			OutputIndent();
+			Output(sep);
+			if((i & 7) == 0)
+			{
+				OutputLine();
+				OutputIndent();
+			}
+			Output("0x%08x", d[i]);
+			sep = ",";
 		}
-		Output("0x%08x", d[i]);
-		sep = ",";
+		OutputLine();
+		UnIndent("};");
+		OutputLine();
 	}
-	OutputLine();
-	UnIndent("};");
-	OutputLine();
+	else
+	{
+		OutputComment("Data for %s is in %s", Name().c_str(), FileName().c_str());
+
+		string outpath = mDataRoot;
+		if(outpath.back() != '\\')
+		{
+			outpath.append("\\");
+		}
+		SaveFile((outpath + FileName()).c_str(), (void *)mBlob, (uint32)mSize);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -731,23 +748,37 @@ void HLSLShader::OutputConstructor(string const extra)
 	string textureNames = (mResources > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
 	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
+	string data;
+	string size;
+	if(mEmbedByteCode)
+	{
+		data = Format("%s_Data", Name().c_str());
+		size = Format(", %d", mSize);
+	}
+	else
+	{
+		string escaped = ReplaceAll(FileName(), string("\\"), string("\\\\"));
+		data = Format("TEXT(\"%s\")", escaped.c_str());
+		size = "";
+	}
+
 	OutputComment("Constructor");
 	OutputLine("%s()", RefName().c_str());
 	Indent();
-	OutputLine(": %sShader(%s_Data, %d, %d, %s, %d, %s, %d, %s, %s, %s%s)",
-		   mShaderTypeDesc.name,
-		   Name().c_str(),
-		   mSize,
-		   mConstBuffers,
-		   constBufferNames.c_str(),
-		   mSamplers,
-		   samplerNames.c_str(),
-		   mResources,
-		   textureNames.c_str(),
-		   mResources > 0 ? "textures" : "null",
-		   mSamplers > 0 ? "samplers" : "null",
-		   extra.c_str()
-		   );
+	OutputLine(": %sShader(%s%s, %d, %s, %d, %s, %d, %s, %s, %s%s)",
+			   ShaderTypeName(),
+			    data.c_str(),
+			    size.c_str(),
+				mConstBuffers,
+				constBufferNames.c_str(),
+				mSamplers,
+				samplerNames.c_str(),
+				mResources,
+				textureNames.c_str(),
+				mResources > 0 ? "textures" : "null",
+				mSamplers > 0 ? "samplers" : "null",
+				extra.c_str()
+				);
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
 		(*i)->ConstructorOutput();
@@ -975,8 +1006,9 @@ HRESULT HLSLShader::CreateInputLayout()
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
+HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc, bool embedBytecode)
 {
+	mEmbedByteCode = embedBytecode;
 	mBlob = blob;
 	mSize = size;
 	mShaderTypeDesc = desc;
@@ -1015,4 +1047,16 @@ HRESULT HLSLShader::Destroy()
 char const *HLSLShader::ShaderTypeName() const
 {
 	return mShaderTypeDesc.name;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+string HLSLShader::FileName()
+{
+	// Use PathCombine... (except it nobbles relative paths...)
+	if(mDataPath.back() != '\\')
+	{
+		mDataPath.append("\\");
+	}
+	return mDataPath + Format("%s.cso", Name().c_str());
 }

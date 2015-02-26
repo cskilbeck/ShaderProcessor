@@ -68,7 +68,19 @@
                     DisplayName="Header File Name"
                     Description="Specify Output Header Filename."
                     Switch="--header=" />
-    
+
+    <StringProperty Name="DataFolder"
+                    Category="General"
+                    DisplayName="Data Folder (for .CSO files)"
+                    Description="Where the .CSO files will be saved, relative to the Data Root. Only used if Embed Shader Object Code is set to 'No'"
+                    Switch="--data_folder=" />
+
+    <StringProperty Name="DataRoot"
+                    Category="General"
+                    DisplayName="Root Project Folder"
+                    Description="Combined with Data Folder to determine output folder for .CSO files. Only used if Embed Shader Object Code is set to 'No'"
+                    Switch="--data_root=" />
+
     <BoolProperty Name="EmbedObject"
                   Category="General"
                   DisplayName="Embed Shader Object Code"

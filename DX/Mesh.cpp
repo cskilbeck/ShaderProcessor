@@ -127,8 +127,8 @@ HRESULT Scene::Load(tchar const *filename)
 
 	auto l = ps.Light.Get();
 	l->lightPos = Float3(0, -15, 0);
-	l->ambientColor = Float3(0.4f, 0.4f, 0.4f);
-	l->diffuseColor = Float3(0.3f, 0.3f, 0.3f);
+	l->ambientColor = Float3(0.1f, 0.1f, 0.1f);
+	l->diffuseColor = Float3(0.8f, 0.8f, 0.8f);
 	l->specColor = Float3(10, 10, 10);
 	l.Release();
 

@@ -94,12 +94,17 @@ bool CompileFile(string &file, char const *filename, char const *mainFunction, c
 	if(SUCCEEDED(D3DCompile(file.data(), file.size(), filename, null, null, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors)))
 	{
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
-		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
+		if(options[DATA_FOLDER])
+		{
+			s->mDataPath = string(options[DATA_FOLDER].arg);
+		}
+		if(options[DATA_ROOT])
+		{
+			s->mDataRoot = string(options[DATA_ROOT].arg);
+		}
+		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc, options[EMBED_BYTECODE] != null));
 		shaders[s->mShaderTypeDesc.type] = s;
 		shader_array[s->mShaderTypeDesc.type] = s;
-
-		// append to assembly listing file...
-
 		return true;
 	}
 	if(errors != null)

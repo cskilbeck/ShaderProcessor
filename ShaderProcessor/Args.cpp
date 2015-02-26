@@ -94,10 +94,10 @@ option::Descriptor const usage[] =
 	{ SOURCE_FILE, 0, "", "source", Arg::NonEmpty, "--source=sourceFile (required). Specify the source HLSL file." },
 	{ SHADER_MODEL_VERSION, 0, "", "sm", Arg::ShaderModel, "--sm=shadermodel (eg 4_0)(required). Specify the Shader Model (4_0, 4_1, 5_0, 4_0_level_9_1, 4_0_level_9_3)." },
 	{ HEADER_FILE, 0, "", "header", Arg::NonEmpty, "--header=headerFile (optional). Where to output the header file to. If not specified, goes to stdout." },
-	{ EMBED_BYTECODE, 0, "", "embedObject", Arg::Optional, "--embedbytecode (optional). Embed the shader byte code in the header file." },
-	{ DISABLE_OPTIMIZATION, 0, "", "disableOptimization", Arg::Optional, "--disableOptimization (optional). Turn off the Shader Compiler Optimizer." },
-	{ INCLUDE_DEBUG_INFO, 0, "", "includeDebugInfo", Arg::Optional, "--includeDebugInfo (optional). Switch this on to enable graphics debugging in Visual Studio."  },
-	{ ERROR_ON_WARNING, 0, "", "errorOnWarning", Arg::Optional, "--errorOnWarning (optional). Return an error code if warnings are generated." },
+	{ EMBED_BYTECODE, 0, "", "embedObject", Arg::None, "--embedbytecode (optional). Embed the shader byte code in the header file." },
+	{ DISABLE_OPTIMIZATION, 0, "", "disableOptimization", Arg::None, "--disableOptimization (optional). Turn off the Shader Compiler Optimizer." },
+	{ INCLUDE_DEBUG_INFO, 0, "", "debugInfo", Arg::None, "--includeDebugInfo (optional). Switch this on to enable graphics debugging in Visual Studio." },
+	{ ERROR_ON_WARNING, 0, "", "errorOnWarning", Arg::None, "--errorOnWarning (optional). Return an error code if warnings are generated." },
 	{ VERTEX_MAIN, 0, "", "vs", Arg::NonEmpty, "--vs=vsMainFunction (optional). Specify a Vertex Shader main function, if there is one." },
 	{ PIXEL_MAIN, 0, "", "ps", Arg::NonEmpty, "--ps=psMainFunction (optional). Specify a Pixel Shader main function, if there is one." },
 	{ GEOMETRY_MAIN, 0, "", "gs", Arg::NonEmpty, "--gs=gsMainFunction (optional). Specify a Geometry Shader main function, if there is one." },
@@ -113,6 +113,8 @@ option::Descriptor const usage[] =
 	{ OPTIMIZATION_LEVEL, 0, "", "optimizationLevel", Arg::OptimizationLevel, "--optimizationLevel=[0|1|2|3] (optional). Specify level of optimization (3 = most)." },
 	{ ASSEMBLY_LISTING_FILE, 0, "", "assemblyListingFile", Arg::NonEmpty, "--assemblyListingFile=filename (optional). Output assembly listing on successful compilation." },
 	{ NAMESPACE, 0, "", "namespace", Arg::NonEmpty, "--namespace=Namespace (optional). Enclose Shader definition in a namespace." },
+	{ DATA_FOLDER, 0, "", "data_folder", Arg::NonEmpty, "--data_folder=Data" },
+	{ DATA_ROOT, 0, "", "data_root", Arg::NonEmpty, "--data_root=..\\Projdir" },
 	{ PRAGMA_OPTIONS, 0, "", "pragma_options", Arg::None, "--pragma_options (optional). Show #pragma option documentation." },
 	{ 0, 0, null, null, null, null }
 };

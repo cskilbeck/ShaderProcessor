@@ -60,7 +60,7 @@ namespace DX
 		void operator -= (Delegate<T> &d)
 		{
 			mHandlerList.remove(d);
-			if(d->mOwned)
+			if(d.mOwned)
 			{
 				// Huh? How did they get a pointer to the Delegate then?
 			}
