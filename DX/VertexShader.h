@@ -25,13 +25,22 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			UpdateTextures();
-			UpdateSamplers();
+			ID3D11ShaderResourceView *srp[16];
+			ID3D11SamplerState *ssp[16];
 
+			uint resources = UpdateTextures(srp);
+			uint samples = UpdateSamplers(ssp);
+
+			uint c = 0;
+			for(auto b : mBindingInfo.mBindRuns)
+			{
+				context->VSSetConstantBuffers(b.mBindPoint, b.mBindCount, &mBindingInfo.mPointers[c]);
+				c += b.mBindCount;
+			}
+
+			context->VSSetShaderResources(0, resources, srp);
+			context->VSSetSamplers(0, samples, ssp);
 			context->IASetInputLayout(mInputLayout);
-			context->VSSetShaderResources(0, mNumTextures, mTexturePointers.data());
-			context->VSSetSamplers(0, mNumSamplers, mSamplerPointers.data());
-			context->VSSetConstantBuffers(0, mNumConstBuffers, mConstBufferPointers.data());
 			context->VSSetShader(mVertexShader, null, 0);
 		}
 
@@ -50,7 +59,7 @@ namespace DX
 		{
 			void const *p;
 			size_t s;
-			Shader::GetOffsetInCSOFile(f, ShaderType::Vertex, p, s);
+			Shader::GetOffsetInSOBFile(f, ShaderType::Vertex, p, s);
 			DXR(Create(p, s, inputElements, inputElementCount));
 			return S_OK;
 		}

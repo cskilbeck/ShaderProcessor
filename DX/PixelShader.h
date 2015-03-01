@@ -12,45 +12,35 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		PixelShader(tchar const *filename,
-					uint numConstBuffers, char const **constBufferNames,
+		PixelShader(uint numConstBuffers, char const **constBufferNames,
 					uint numSamplers, char const **samplerNames,
 					uint numTextures, char const **textureNames,
 					Texture **textureArray,
 					Sampler **samplerArray)
 			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
 		{
-			FileResource f(filename);
-			if(!f.IsValid())
-			{
-				throw("Shader file not found");
-			}
-			DXT(Create(f.Data(), f.Size()));
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		PixelShader(void const *blob, size_t size,
-					uint numConstBuffers, char const **constBufferNames,
-					uint numSamplers, char const **samplerNames,
-					uint numTextures, char const **textureNames,
-					Texture **textureArray,
-					Sampler **samplerArray)
-			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
-		{
-			DXT(Create(blob, size));
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			UpdateTextures();
-			UpdateSamplers();
+			ID3D11ShaderResourceView *srp[16];
+			ID3D11SamplerState *ssp[16];
 
-			context->PSSetShaderResources(0, mNumTextures, mTexturePointers.data());
-			context->PSSetSamplers(0, mNumSamplers, mSamplerPointers.data());
-			context->PSSetConstantBuffers(0, mNumConstBuffers, mConstBufferPointers.data());
+			uint resources = UpdateTextures(srp);
+			uint samples = UpdateSamplers(ssp);
+
+			context->PSSetShaderResources(0, resources, srp);
+			context->PSSetSamplers(0, samples, ssp);
+
+			uint c = 0;
+			for(auto b : mBindingInfo.mBindRuns)
+			{
+				context->PSSetConstantBuffers(b.mBindPoint, b.mBindCount, &mBindingInfo.mPointers[c]);
+				c += b.mBindCount;
+			}
+
 			context->PSSetShader(mPixelShader, null, 0);
 		}
 
@@ -59,6 +49,17 @@ namespace DX
 		HRESULT Create(void const *blob, size_t size)
 		{
 			DXT(Device->CreatePixelShader(blob, size, null, &mPixelShader));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		HRESULT Load(FileResource &f)
+		{
+			void const *p;
+			size_t s;
+			Shader::GetOffsetInSOBFile(f, ShaderType::Pixel, p, s);
+			DXT(Create(p, s));
 			return S_OK;
 		}
 

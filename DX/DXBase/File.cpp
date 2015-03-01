@@ -94,7 +94,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	uint32 File::Write(uint32 bytes, void *buffer)
+	uint32 File::Write(uint32 bytes, void const *buffer)
 	{
 		DWORD wrote;
 		error = ERROR_SUCCESS;
@@ -150,7 +150,7 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// Simple file saver
 
-	bool SaveFile(tchar const *filename, void *data, uint32 size)
+	bool SaveFile(tchar const *filename, void const *data, uint32 size)
 	{
 		assert(filename != null && data != null && size != 0);
 		File f;

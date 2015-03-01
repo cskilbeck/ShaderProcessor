@@ -169,3 +169,14 @@ void Binding::ShowAllBindings()
 		}
 	}
 }
+
+//////////////////////////////////////////////////////////////////////
+
+ConstantBufferBinding::ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
+	: Binding(s, desc)
+{
+	TypeDefinition *def = new TypeDefinition(s->mReflector, s->mConstBuffers, this);
+	s->mDefinitions.push_back(def);
+	s->mDefinitionIDs[def->mDesc.Name] = s->mConstBuffers;
+	definition = def;
+}

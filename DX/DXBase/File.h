@@ -15,7 +15,7 @@ namespace DX
 		bool IsOpen() const;
 		int64 Size();
 		uint32 Read(uint32 bytes, void *buffer);
-		uint32 Write(uint32 bytes, void *buffer);
+		uint32 Write(uint32 bytes, void const *buffer);
 
 		tstring name;
 		Handle h;
@@ -23,5 +23,5 @@ namespace DX
 	};
 
 	bool LoadFile(tchar const *filename, void **data, uint32 *size = null);
-	bool SaveFile(tchar const *filename, void *data, uint32 size);
+	bool SaveFile(tchar const *filename, void const *data, uint32 size);
 }

@@ -274,10 +274,13 @@ namespace DX
 
 		DXPtr<ID3D11Device>				mDevice;
 		DXPtr<ID3D11DeviceContext>		mContext;
+
 		DXPtr<IDXGISwapChain>			mSwapChain;
+
 		DXPtr<ID3D11Texture2D>			mBackBuffer;
 		DXPtr<ID3D11RenderTargetView>	mRenderTargetView;
-		DXPtr<ID3D11DepthStencilView>	mDepthStencilView;
+
 		DXPtr<ID3D11Texture2D>			mDepthBuffer;
+		DXPtr<ID3D11DepthStencilView>	mDepthStencilView;
 	};
 }

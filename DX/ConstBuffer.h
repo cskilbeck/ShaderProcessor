@@ -16,22 +16,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct ConstantBuffer: Buffer<T>
+	template <typename T> struct ConstantBuffer: Buffer<T, BoundBuffer>
 	{
-		HRESULT Create(uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		ConstantBuffer(uint bindPoint)
+			: Buffer<T, BoundBuffer>(bindPoint)
 		{
-			DXR(Buffer<T>::Create(ConstantBufferType, count, data, usage, rwOption));
-			return S_OK;
 		}
-
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
 	template<typename definition> struct ConstBuffer : definition, ConstantBuffer <definition>	// definition MUST be POD
 	{
-		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index)
-			: mOffsetCount(OffsetCount)
+		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
+			: ConstantBuffer<definition>(bindPoint)
+			, mOffsetCount(OffsetCount)
 			, mOffsets(Offsets)
 			, mDefaults(Defaults)
 			, mIndex(index)
@@ -44,9 +43,8 @@ namespace DX
 			{
 				memset(this, 0, sizeof(definition));
 			}
-			DXI(ConstantBuffer<definition>::Create(1, this, DynamicUsage, Writeable));
+			DXI(Create(BufferType::ConstantBufferType, 1, this, DynamicUsage, Writeable));
 			parent->mConstBuffers.push_back(this);
-			parent->mConstBufferPointers.push_back(mBuffer);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 		}
 

@@ -48,5 +48,8 @@
     <SPOCK Include="Shaders\Simple.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
+    <SPOCK Include="Shaders\Instanced.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>

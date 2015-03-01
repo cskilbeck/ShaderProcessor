@@ -13,13 +13,13 @@ void ConstantBufferBinding::StaticsOutput()
 
 void ConstantBufferBinding::MemberOutput()
 {
-	//definition->MemberOutput(mShader->Name());
+	definition->MemberOutput(mShader->Name(), mDesc.BindPoint);
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void ConstantBufferBinding::ConstructorOutput()
 {
-	definition->ConstructorOutput(this->mDesc.BindPoint);
+	definition->ConstructorOutput(mDesc.BindPoint);
 }
 

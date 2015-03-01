@@ -69,6 +69,11 @@ namespace DX
 			return S_OK;
 		}
 
+		ID3D11SamplerState *Handle() const
+		{
+			return mSamplerState.get();
+		}
+		
 		DXPtr<ID3D11SamplerState> mSamplerState;
 	};
 }

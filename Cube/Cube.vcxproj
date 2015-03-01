@@ -192,10 +192,23 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <SPOCK Include="Shaders\Instanced.shader">
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+    </SPOCK>
     <SPOCK Include="Shaders\Blit.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Simple.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -210,16 +223,31 @@
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Phong.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\UI.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

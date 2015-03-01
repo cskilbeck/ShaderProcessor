@@ -56,7 +56,7 @@ namespace DX
 			mUsage = usage;
 			if(mUsage == StaticUsage && rwOption != NotCPUAccessible)
 			{
-				TRACE("Warning: Setting CPU Access option to NotCPUAccessible\n");
+				INFO("INFO: Setting CPU Access option to NotCPUAccessible\n");
 				rwOption = NotCPUAccessible;
 			}
 			mRWOption = rwOption;
@@ -139,7 +139,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		ID3D11Buffer * &Handle()
+		ID3D11Buffer * Handle() const
 		{
 			return mBuffer.p;
 		}
@@ -176,16 +176,28 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct Buffer: TypelessBuffer
+	struct BoundBuffer : TypelessBuffer
+	{
+		uint mBindPoint;
+
+		BoundBuffer(uint bindPoint)
+			: mBindPoint(bindPoint)
+		{
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	template <typename T, typename U> struct Buffer: U
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		template <typename T> struct MappedResource
+		template <typename T, typename U> struct MappedResource
 		{
-			Buffer<T> *buffer;
+			Buffer<T, U> *buffer;
 			T * resource;
 
-			MappedResource(Buffer<T> *buf)
+			MappedResource(Buffer<T, U> *buf)
 				: buffer(buf)
 			{
 				DXI(resource = buffer->Map());
@@ -225,8 +237,15 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		Buffer(uint bindPoint)
+			: U(bindPoint)
+		{
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		Buffer()
-			: TypelessBuffer()
+			: U()
 		{
 		}
 
@@ -241,7 +260,7 @@ namespace DX
 
 		HRESULT Create(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
-			return TypelessBuffer::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
+			return U::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -260,16 +279,16 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		MappedResource<T> Get()
+		MappedResource<T, U> Get()
 		{
-			return MappedResource<T>(this);
+			return MappedResource<T, U>(this);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		void Set(ID3D11DeviceContext *context, T *data)
 		{
-			TypelessBuffer::Set(content, (byte *)data);
+			U::Set(content, (byte *)data);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -290,7 +309,7 @@ namespace DX
 
 		T *Data() const
 		{
-			return (T *)TypelessBuffer::Data();
+			return (T *)U::Data();
 		}
 	};
 

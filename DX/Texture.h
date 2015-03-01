@@ -28,6 +28,11 @@ namespace DX
 
 		list_node<Texture> mListNode;
 
+		ID3D11ShaderResourceView *Handle() const
+		{
+			return mShaderResourceView.get();
+		}
+
 	protected:
 
 		friend struct Shader;

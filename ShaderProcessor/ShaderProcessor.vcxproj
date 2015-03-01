@@ -155,6 +155,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Args.h" />
+    <ClInclude Include="Error.h" />
     <ClInclude Include="optionparser.h" />
     <ClInclude Include="Binding.h" />
     <ClInclude Include="printer.h" />
@@ -170,6 +171,7 @@
     <ClCompile Include="Args.cpp" />
     <ClCompile Include="Binding.cpp" />
     <ClCompile Include="CBuffer.cpp" />
+    <ClCompile Include="Error.cpp" />
     <ClCompile Include="Printer.cpp" />
     <ClCompile Include="HLSLShader.cpp" />
     <ClCompile Include="ShaderProcessor.cpp" />

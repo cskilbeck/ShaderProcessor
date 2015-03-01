@@ -72,6 +72,11 @@ struct Binding
 		return false;
 	}
 
+	virtual bool IsConstBuffer() const
+	{
+		return false;
+	}
+
 	virtual void ConstructorOutput()
 	{
 	}
@@ -88,9 +93,11 @@ struct Binding
 
 struct ConstantBufferBinding: Binding
 {
-	ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
-		: Binding(s, desc)
+	ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc);
+
+	bool IsConstBuffer() const override
 	{
+		return true;
 	}
 
 	void StaticsOutput() override;

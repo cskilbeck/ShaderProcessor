@@ -90,7 +90,9 @@ static char const *typeNames[] =
 
 //////////////////////////////////////////////////////////////////////
 
-TypeDefinition::TypeDefinition(ID3D11ShaderReflection *reflection, uint index)
+TypeDefinition::TypeDefinition(ID3D11ShaderReflection *reflection, uint index, Binding *binding)
+	: mBinding(binding)
+	, mIndex(index)
 {
 	// get the desc
 	ID3D11ShaderReflectionConstantBuffer *b = reflection->GetConstantBufferByIndex(index);
@@ -235,7 +237,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 
 //////////////////////////////////////////////////////////////////////
 
-void TypeDefinition::MemberOutput(string const &shaderName, int index)
+void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 {
 	uint padID = 0;
 	uint fieldCount = 0;
@@ -260,18 +262,18 @@ void TypeDefinition::MemberOutput(string const &shaderName, int index)
 	UnIndent("};");
 	OutputLine();
 	OutputLine("ConstBuffer<%s_t> %s;", mDesc.Name, mDesc.Name);
-	OutputLine("enum { %s_index = %d };", mDesc.Name, index);
+	OutputLine("enum { %s_index = %d };", mDesc.Name, mIndex);
 	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void TypeDefinition::ConstructorOutput(int index)
+void TypeDefinition::ConstructorOutput(int bindPoint)
 {
 	string defaultStr = "null";
 	if(Defaults != null)
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), index);
+	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d, %d)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
 }

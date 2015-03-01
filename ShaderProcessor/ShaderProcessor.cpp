@@ -72,7 +72,7 @@ uint32 GetFlags()
 //////////////////////////////////////////////////////////////////////
 
 std::map<ShaderType, HLSLShader *> shaders;
-HLSLShader *shader_array[NumShaderTypes];
+HLSLShader *shader_array[NumShaderTypes] = { 0 };
 
 //////////////////////////////////////////////////////////////////////
 
@@ -94,15 +94,7 @@ bool CompileFile(string &file, char const *filename, char const *mainFunction, c
 	if(SUCCEEDED(D3DCompile(file.data(), file.size(), filename, null, null, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors)))
 	{
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
-		if(options[DATA_FOLDER])
-		{
-			s->mDataPath = string(options[DATA_FOLDER].arg);
-		}
-		if(options[DATA_ROOT])
-		{
-			s->mDataRoot = string(options[DATA_ROOT].arg);
-		}
-		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc, options[EMBED_BYTECODE] != null));
+		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
 		shaders[s->mShaderTypeDesc.type] = s;
 		shader_array[s->mShaderTypeDesc.type] = s;
 		return true;
@@ -138,34 +130,6 @@ enum
 	err_malformedpragma,
 	err_unknownkey
 };
-
-//////////////////////////////////////////////////////////////////////
-
-uint current_line;
-uint error_count = 0;
-uint warning_count = 0;
-
-//////////////////////////////////////////////////////////////////////
-
-void emit_error(char const *format, ...)
-{
-	va_list v;
-	va_start(v, format);
-	string e = Format_V(format, v);
-	printf("%s(%d): error S0000: %s\n", options[SOURCE_FILE].arg, current_line, e.c_str());
-	++error_count;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-void emit_warning(char const *format, ...)
-{
-	va_list v;
-	va_start(v, format);
-	string e = Format_V(format, v);
-	printf("%s(%d): warning T0000: %s\n", options[SOURCE_FILE].arg, current_line, e.c_str());
-	++warning_count;
-}
 
 //////////////////////////////////////////////////////////////////////
 
@@ -686,7 +650,7 @@ uint ScanMaterialOptions(Resource &file, string &result)
 	std::istringstream str((char *)file.Data());
 	std::ostringstream out;
 	string line;
-	current_line = 1;
+	Error::current_line = 1;
 	while(std::getline(str, line))
 	{
 		std::cmatch m;
@@ -815,7 +779,7 @@ uint ScanMaterialOptions(Resource &file, string &result)
 		}
 		out.write(line.c_str(), line.size());
 		out.write("\n", 1);
-		++current_line;
+		++Error::current_line;
 	}
 	result = out.str();
 	return success;
@@ -905,7 +869,7 @@ int main(int argc, char *argv[])
 
 	string fileName = GetFilename(options[SOURCE_FILE].arg);
 
-	current_line = 1;
+	Error::current_line = 1;
 
 	FileResource sourceFile(options[SOURCE_FILE].arg);
 	if(!sourceFile.IsValid())
@@ -949,6 +913,67 @@ int main(int argc, char *argv[])
 
 	OutputMaterial(name);
 
+	// work out filename
+	string outpath;
+	string dataFolder;
+	string relativeBinFile;
+	string binFile;
+	if(options[DATA_ROOT])
+	{
+		outpath = options[DATA_ROOT].arg;
+		if(outpath.back() != '\\')
+		{
+			outpath.append("\\");
+		}
+	}
+	if(options[DATA_FOLDER])
+	{
+		dataFolder = options[DATA_FOLDER].arg;
+		if(dataFolder.back() != '\\')
+		{
+			dataFolder.append("\\");
+		}
+		outpath.append(dataFolder);
+		relativeBinFile = Format("%s%s.sob", dataFolder.c_str(), name.c_str());
+		binFile = Format("%s%s.sob", outpath.c_str(), name.c_str());
+	}
+
+	// save the .bin file if embed_bytecode isn't specified
+	if(!options[EMBED_BYTECODE])
+	{
+		uint32 offsets[NumShaderTypes] = { 0 };
+		uint32 sizes[NumShaderTypes] = { 0 };
+
+		// get the sizes
+		for(auto &i : shaders)
+		{
+			auto s = *i.second;
+			sizes[s.mShaderType] = (uint32)s.mSize;
+		}
+
+		// work out the offsets
+		uint currentOffset = sizeof(offsets);
+		for(uint i = 0; i < NumShaderTypes; ++i)
+		{
+			offsets[i] = currentOffset;
+			currentOffset += sizes[i];
+		}
+
+		// create the file
+		File f;
+		f.Create(binFile.c_str());
+
+		// write the offsets
+		f.Write(sizeof(offsets), offsets);
+
+		// write the blobs
+		for(auto &i : shaders)
+		{
+			auto s = *i.second;
+			f.Write((uint32)s.mSize, s.mBlob);
+		}
+	}
+
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{
 		(*i).second->OutputBlob();
@@ -977,6 +1002,7 @@ int main(int argc, char *argv[])
 	OutputIndent("{");
 	OutputLine();
 	Indent();
+
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{
 		(*i).second->OutputHeaderFile();
@@ -1005,6 +1031,33 @@ int main(int argc, char *argv[])
 	OutputLine("%s(): ShaderState(%s)", name.c_str(), shaderCtors.c_str());
 	Indent("{");
 	OutputLine();
+	char const *func;
+	if(!options[EMBED_BYTECODE])
+	{
+		OutputLine("FileResource f(TEXT(\"%s\"));", ReplaceAll(relativeBinFile, string("\\"), string("\\\\")).c_str());
+		func = "Load";
+	}
+	else
+	{
+		func = "Create";
+	}
+
+	for(auto &s : shaders)
+	{
+		auto &shader = *s.second;
+		string params;
+		if(options[EMBED_BYTECODE])
+		{
+			params = Format("%s_%s_Data, %d", name.c_str(), shader.RefName().c_str(), shader.mSize);
+		}
+		else
+		{
+			params = "f";
+		}
+		// ps.Load(f);
+		// vs.Create(Shader_VS_Data, 1152, Shader_InputElements, _countof(Shader_InputElements));
+		OutputLine("%s.%s(%s%s);", ToLower(shader.RefName()).c_str(), func, params.c_str(), shader.VSTag().c_str());
+	}
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{
 		OutputLine("Shaders[%s] = %s;", ShaderTypeDescs[i].name, (shader_array[i] == null) ? "null" : Format("&%s", ToLower(ShaderTypeDescs[i].refName).c_str()).c_str());
@@ -1043,5 +1096,5 @@ int main(int argc, char *argv[])
 
 	HLSLShader::OutputFooter(fileName.c_str(), namespaceIn);
 
-	return (options[ERROR_ON_WARNING] && warning_count > 0) ? err_warnings_issued : success;
+	return (options[ERROR_ON_WARNING] && Error::warning_count > 0) ? err_warnings_issued : success;
 }

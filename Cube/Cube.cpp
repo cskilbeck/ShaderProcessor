@@ -20,18 +20,23 @@
 //		Samplers
 //		etc
 // Start the long and laborious process of making it platform agnostic
-//		ShaderProcessor (harumph, wtf to do about that? Cg?)
+//		ShaderProcessor (harumph, wtf to do about that? Cg? GLSL? PSSL? MeTal?)
+// Spock
+//		Make debug info default to on in Debug builds
 // ShaderProcessor
-//		Use Map/UnMap for const buffers
+//		Honour the input binding slot specified for constant buffers register(b#) (and deal with non-contiguous ones)
+//		Instancing support / multiple vertex streams
+//		Error check everything
 //		Structured Buffers/UAV support
 //		Hull/Domain shader support
-//		Instancing support / multiple vertex streams
 //		Assembly Listing file
 //		deal with multiple render targets
-//		enable mode where bytecode not embedded but loaded from a file
 //		Shader Linking/Interfaces support...?
 //		Nested structs
 //		Sampler/Texture defaults
+//		* Identify matrices in input layout
+//		* Use Map/UnMap for const buffers
+//		* enable mode where bytecode not embedded but loaded from a file
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 //		* Fix MSBuild Spock dependency bug (building everything)

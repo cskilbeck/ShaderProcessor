@@ -17,6 +17,7 @@ enum ShaderType
 
 enum StorageType
 {
+	Invalid_type,
 	Float_type,
 	Half_type,
 	Int_type,
@@ -31,7 +32,7 @@ enum StorageType
 	UNorm8_type,
 	Typeless32_type,
 	Typeless16_type,
-	Typeless8_type
+	Typeless8_type,
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -155,6 +156,8 @@ struct InputField
 	StorageType storageType;	// Float etc
 	uint elementCount;			// eg 4
 	string varName;				// eg Position (everything in the Semantic name after the last _ )
+	uint arraySize;
+	uint inputSlot;
 
 	string GetTypeName() const;	// eg Float4
 
@@ -201,10 +204,6 @@ struct HLSLShader
 	void const *						mBlob;
 	size_t								mSize;
 	string								mName;
-	string								mDataPath;
-	string								mDataRoot;
-
-	bool								mEmbedByteCode;
 
 	vector<Binding *>					mBindings;
 
@@ -233,17 +232,18 @@ struct HLSLShader
 	void OutputConstBufferMembers();
 	void OutputSamplerMembers();
 	void OutputResourceMembers();
-	void OutputConstructor(string const extra);
+	void OutputConstructor();
 	void OutputInputElements();
 	void OutputInputStruct();
 	void OutputBlob();
 	void OutputMemberVariable();
 
-	string FileName();
 	string Name() const;
 	string RefName() const;
 	char const *ShaderTypeName() const;
 	void *GetConstantBuffer(char const *name);
+
+	string VSTag();
 
 	int GetTextureIndex(string const &name) const;
 	int GetSamplerIndex(string const &name) const;
@@ -253,7 +253,7 @@ struct HLSLShader
 	ConstantBufferBinding *GetCB(string const &name);
 	ConstantBufferBinding *GetConstantBuffer(int index);
 
-	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc, bool embedBytecode);
+	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
 	HRESULT CreateInputLayout();
 	HRESULT CreateDefinitions();
 	HRESULT CreateBindings();

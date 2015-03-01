@@ -112,7 +112,8 @@ namespace
 			mShader->Activate_V(context);
 			uint stride = mVertexSize;
 			uint offset = 0;
-			context->IASetVertexBuffers(0, 1, &mVertexBuffer->Handle(), &stride, &offset);
+			ID3D11Buffer *b = mVertexBuffer->Handle();
+			context->IASetVertexBuffers(0, 1, &b, &stride, &offset);
 		}
 	};
 
@@ -193,8 +194,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::SetShader(ShaderState *shader, TypelessBuffer *vb, uint vertSize)
+	void DrawList::SetShader(ID3D11DeviceContext *context, ShaderState *shader, TypelessBuffer *vb, uint vertSize)
 	{
+		UnMapCurrentVertexBuffer();
+
+		mContext = context;
+		mCurrentVertexBuffer = vb;
+		mCurrentDrawCallItem = null;
+
 		ShaderItem *i = Add<ShaderItem>();
 		mCurrentShader = shader;
 		i->mShader = shader;

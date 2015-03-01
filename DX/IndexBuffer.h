@@ -33,7 +33,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct IndexBuffer: Buffer<T>
+	template <typename T> struct IndexBuffer: Buffer<T, TypelessBuffer>
 	{
 		static_assert(IndexBufferFormat<T>::format != DXGI_FORMAT_UNKNOWN, "Only uint16 or uint32 index buffers are supported");
 
@@ -44,7 +44,7 @@ namespace DX
 
 		HRESULT Create(T count, T *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
-			return Buffer<T>::Create(IndexBufferType, count, data, usage, rwOption);
+			return Buffer<T, TypelessBuffer>::Create(IndexBufferType, count, data, usage, rwOption);
 		}
 
 		void Activate(ID3D11DeviceContext *context, uint offset = 0)

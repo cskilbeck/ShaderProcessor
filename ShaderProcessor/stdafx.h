@@ -5,6 +5,7 @@
 
 #include "DXBase\DXBase.h"
 
+#include "Error.h"
 #include "printer.h"
 #include "TypeDefinition.h"
 #include "Binding.h"

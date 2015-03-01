@@ -50,6 +50,7 @@ static ISMap constant_buffer_type_names =
 
 static USMap StorageTypeName =
 {
+	{ Invalid_type	 , "Invalid" },
 	{ Float_type     , "Float" },
 	{ Half_type      , "Half" },
 	{ Int_type       , "Int" },
@@ -105,6 +106,7 @@ static USMap shader_input_dimension_names =
 
 InputType type_suffix[] =
 {
+	"Invalid"	, 0, Invalid_type,
 	"Float"     , 0, Float_type,
 	"Half"      , 0, Half_type,
 	"Int"       , 0, Int_type,
@@ -337,7 +339,12 @@ DXGI_FormatDescriptor DXGI_Lookup[] =
 
 string InputField::GetTypeName() const
 {
-	return Format("%s%d", GetFrom(StorageTypeName, storageType), elementCount);
+	string suffix = "";
+	if(arraySize > 0)
+	{
+		suffix = Format("x%d", arraySize + 1);
+	}
+	return Format("%s%d%s", GetFrom(StorageTypeName, storageType), elementCount, suffix.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -416,18 +423,22 @@ Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 		switch(desc.Type)
 		{
 			case D3D_SIT_CBUFFER:
+				mConstantBufferBindings.push_back(new ConstantBufferBinding(this, desc));
 				++mConstBuffers;
-				return new ConstantBufferBinding(this, desc);
+				return mConstantBufferBindings.back();
+
+			case D3D_SIT_TEXTURE:
+				mResourceBindings.push_back(new ResourceBinding(this, desc));
+				++mResources;
+				return mResourceBindings.back();
+
+			case D3D_SIT_SAMPLER:
+				mSamplerBindings.push_back(new SamplerBinding(this, desc));
+				++mSamplers;
+				return mSamplerBindings.back();
+
 			case D3D_SIT_TBUFFER:
 				break;
-			case D3D_SIT_TEXTURE:
-				++mResources;
-				mResourceBindings.push_back(new ResourceBinding(this, desc));
-				return mResourceBindings.back();
-			case D3D_SIT_SAMPLER:
-				++mSamplers;
-				mSamplerBindings.push_back(new SamplerBinding(this, desc));
-				return mSamplerBindings.back();
 			case D3D_SIT_UAV_RWTYPED:
 				break;
 			case D3D_SIT_STRUCTURED:
@@ -549,40 +560,26 @@ void HLSLShader::OutputFooter(char const *filename, char const *namespace_) // s
 
 void HLSLShader::OutputBlob()
 {
-	if(mEmbedByteCode)
-	{
-		OutputCommentLine("Data for %s", Name().c_str());
-		OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
-		Indent("{");
+	OutputCommentLine("Data for %s", Name().c_str());
+	OutputLine("uint32 WEAKSYM %s_Data[] =", Name().c_str());
+	Indent("{");
 
-		char *sep = "";
-		uint32 *d = (uint32 *)mBlob;
-		for(uint i = 0; i < mSize / 4; ++i)
-		{
-			Output(sep);
-			if((i & 7) == 0)
-			{
-				OutputLine();
-				OutputIndent();
-			}
-			Output("0x%08x", d[i]);
-			sep = ",";
-		}
-		OutputLine();
-		UnIndent("};");
-		OutputLine();
-	}
-	else
+	char *sep = "";
+	uint32 *d = (uint32 *)mBlob;
+	for(uint i = 0; i < mSize / 4; ++i)
 	{
-		OutputComment("Data for %s is in %s", Name().c_str(), FileName().c_str());
-
-		string outpath = mDataRoot;
-		if(outpath.back() != '\\')
+		Output(sep);
+		if((i & 7) == 0)
 		{
-			outpath.append("\\");
+			OutputLine();
+			OutputIndent();
 		}
-		SaveFile((outpath + FileName()).c_str(), (void *)mBlob, (uint32)mSize);
+		Output("0x%08x", d[i]);
+		sep = ",";
 	}
+	OutputLine();
+	UnIndent("};");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -679,9 +676,12 @@ void HLSLShader::OutputConstBufferMembers()
 
 	OutputComment("Const Buffers");
 	int index = 0;
-	for(auto i = mDefinitions.begin(); i != mDefinitions.end(); ++i)
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		(*i)->MemberOutput(this->Name(), index++);
+		if((*i)->IsConstBuffer())
+		{
+			(*i)->MemberOutput();
+		}
 	}
 }
 
@@ -742,62 +742,46 @@ void HLSLShader::OutputResourceMembers()
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputConstructor(string const extra)
+void HLSLShader::OutputConstructor()
 {
-	string constBufferNames = (mConstBuffers > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
-	string textureNames = (mResources > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
-	string samplerNames = (mSamplers > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
-
-	string data;
-	string size;
-	if(mEmbedByteCode)
-	{
-		data = Format("%s_Data", Name().c_str());
-		size = Format(", %d", mSize);
-	}
-	else
-	{
-		string escaped = ReplaceAll(FileName(), string("\\"), string("\\\\"));
-		data = Format("TEXT(\"%s\")", escaped.c_str());
-		size = "";
-	}
+	string constBufferNames = (mConstantBufferBindings.size() > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
+	string textureNames = (mResourceBindings.size() > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
+	string samplerNames = (mSamplerBindings.size() > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
 	OutputComment("Constructor");
 	OutputLine("%s()", RefName().c_str());
 	Indent();
-	OutputLine(": %sShader(%s%s, %d, %s, %d, %s, %d, %s, %s, %s%s)",
+	OutputLine(": %sShader(%d, %s, %d, %s, %d, %s, %s, %s)",
 			   ShaderTypeName(),
-			    data.c_str(),
-			    size.c_str(),
-				mConstBuffers,
-				constBufferNames.c_str(),
-				mSamplers,
-				samplerNames.c_str(),
-				mResources,
-				textureNames.c_str(),
-				mResources > 0 ? "textures" : "null",
-				mSamplers > 0 ? "samplers" : "null",
-				extra.c_str()
-				);
+				mConstantBufferBindings.size(), constBufferNames.c_str(),
+				mSamplerBindings.size(), samplerNames.c_str(),
+				mResourceBindings.size(), textureNames.c_str(),
+				mResourceBindings.size() > 0 ? "textures" : "null",
+				mSamplerBindings.size() > 0 ? "samplers" : "null" );
+
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
 		(*i)->ConstructorOutput();
 	}
 	UnIndent("{");
-	OutputLine("}");
+	Indent();
+	OutputLine("SetupConstBufferRuns();");
+	UnIndent("}");
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputShaderStruct()
+string HLSLShader::VSTag()
 {
-	string vsTag;
-
 	if(mShaderTypeDesc.type == ShaderType::Vertex)
 	{
-		vsTag = Format(", %s_InputElements, _countof(%s_InputElements)", Name().c_str(), Name().c_str());
+		return Format(", %s_InputElements, _countof(%s_InputElements)", Name().c_str(), Name().c_str());
 	}
+	return string();
+}
 
+void HLSLShader::OutputShaderStruct()
+{
 	OutputInputStruct();
 
 	OutputCommentLine("%s Shader", mShaderTypeDesc.name);
@@ -809,7 +793,7 @@ void HLSLShader::OutputShaderStruct()
 	OutputConstBufferMembers();
 	OutputSamplerMembers();
 	OutputResourceMembers();
-	OutputConstructor(vsTag);
+	OutputConstructor();
 
 	UnIndent("};");
 	OutputLine();
@@ -837,7 +821,7 @@ void HLSLShader::OutputInputElements()
 		Output(sep);
 		OutputLine();
 		OutputIndent();
-		Output("{ \"%s\", %u, DXGI_FORMAT_%s, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", d.SemanticName, d.SemanticIndex, formatName);
+		Output("{ \"%s\", %u, DXGI_FORMAT_%s, %d, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", d.SemanticName, d.SemanticIndex, formatName, d.InputSlot);
 		sep = ",";
 	}
 	OutputLine();
@@ -866,7 +850,7 @@ void HLSLShader::OutputInputStruct()
 	OutputLine("struct InputVertex");
 	OutputLine("{");
 	Indent();
-	for(uint i = 0; i < mInputElements.size(); ++i)
+	for(uint i = 0; i < mInputFields.size(); ++i)
 	{
 		InputField &f = mInputFields[i];
 		OutputLine("%s;", f.GetDeclaration().c_str());
@@ -874,6 +858,8 @@ void HLSLShader::OutputInputStruct()
 	UnIndent("};");
 	OutputLine();
 	OutputLine("using VertBuffer = VertexBuffer<InputVertex>;");
+	// and more for instance buffer
+	// what about multiple ones?
 	OutputLine();
 }
 
@@ -902,12 +888,6 @@ void HLSLShader::OutputHeaderFile()
 
 HRESULT HLSLShader::CreateDefinitions()
 {
-	for(uint i = 0; i < mShaderDesc.ConstantBuffers; ++i)
-	{
-		TypeDefinition *def = new TypeDefinition(mReflector, i);
-		mDefinitions.push_back(def);
-		mDefinitionIDs[def->mDesc.Name] = i;
-	}
 	return S_OK;
 }
 
@@ -917,27 +897,29 @@ HRESULT HLSLShader::CreateInputLayout()
 {
 	int n = mShaderDesc.InputParameters;
 	mInputElements.resize(n);
-	mInputFields.resize(n);
+	mInputFields.resize(0);
 	int vertexSize = 0;
 	for(int i = 0; i < n; ++i)
 	{
-		InputField &f = mInputFields[i];
+		InputField f;
+		f.arraySize = 0;
 		D3D11_SIGNATURE_PARAMETER_DESC desc;
 		DXR(mReflector->GetInputParameterDesc(i, &desc));
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
 		d.SemanticName = desc.SemanticName;
 		d.SemanticIndex = desc.SemanticIndex;
-		d.InputSlot = 0;
 		d.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		d.Format = DXGI_FORMAT_UNKNOWN;
+
+		d.InputSlot = 0;	// GET THIS FROM THE SEMANTIC_NAME_SOMEHOW
 		d.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 		d.InstanceDataStepRate = 0;
-		d.Format = DXGI_FORMAT_UNKNOWN;
 
 		int sourceFields = CountBits(desc.Mask);
 
 		// if they ask, try to find the right storage format
 		int fieldCount = 0;
-		StorageType storageType;
+		StorageType storageType = StorageType::Invalid_type;
 		TRACE("Semantic name: %s\n", d.SemanticName);
 
 		// get everything up to the last _
@@ -979,6 +961,11 @@ HRESULT HLSLShader::CreateInputLayout()
 				// yes, try to match it to an actual format
 				d.Format = GetDXGI_Format(fieldCount, storageType);
 			}
+			else
+			{
+				emit_error("Unknown datatype: %s", type_annotation.c_str());
+				return ERROR_UNKNOWN_COMPONENT;
+			}
 		}
 		else
 		{
@@ -992,29 +979,61 @@ HRESULT HLSLShader::CreateInputLayout()
 			d.Format = formats[fieldCount - 1][desc.ComponentType];
 		}
 
+		if(storageType == Invalid_type)
+		{
+			// error, a format was spe
+		}
+
 		if(fieldCount != sourceFields)
 		{
 			// Error, they specified a format which has a different field count from the source input
 		}
+
 		vertexSize += SizeOfFormatElement(d.Format) / 8;
 		f.storageType = storageType;
 		f.elementCount = fieldCount;
 		f.varName = semantic_name;
+
+		// is it identical to the last one but with a +1 semantic index?
+		if(mInputFields.empty())
+		{
+			mInputFields.push_back(f);
+		}
+		else
+		{
+			D3D11_INPUT_ELEMENT_DESC &pe = mInputElements[i - 1];
+			if(
+				strcmp(d.SemanticName, pe.SemanticName) == 0 &&
+				d.Format == pe.Format &&
+				d.SemanticIndex == (pe.SemanticIndex + 1) &&
+				d.InputSlot == pe.InputSlot &&
+				d.InputSlotClass == pe.InputSlotClass
+				)
+			{
+				InputField &p = mInputFields.back();
+				p.arraySize++;
+				// ha! probably part of a matrix of some sort
+				// increment the mArraySize of f and don't create a new one...
+			}
+			else
+			{
+				mInputFields.push_back(f);
+			}
+		}
 	}
 	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc, bool embedBytecode)
+HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
 {
-	mEmbedByteCode = embedBytecode;
+	mShaderType = desc.type;
 	mBlob = blob;
 	mSize = size;
 	mShaderTypeDesc = desc;
 	DXR(D3DReflect(blob, size, IID_ID3D11ShaderReflection, (void **)&mReflector));
 	mReflector->GetDesc(&mShaderDesc);
-	DXR(CreateDefinitions());
 	DXR(CreateBindings());
 	if(mShaderTypeDesc.type == ShaderType::Vertex)
 	{
@@ -1049,14 +1068,3 @@ char const *HLSLShader::ShaderTypeName() const
 	return mShaderTypeDesc.name;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-string HLSLShader::FileName()
-{
-	// Use PathCombine... (except it nobbles relative paths...)
-	if(mDataPath.back() != '\\')
-	{
-		mDataPath.append("\\");
-	}
-	return mDataPath + Format("%s.cso", Name().c_str());
-}

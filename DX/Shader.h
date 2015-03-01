@@ -70,6 +70,18 @@ namespace DX
 
 	struct Shader
 	{
+		struct BindRun
+		{
+			uint16 mBindPoint;
+			uint16 mBindCount;
+		};
+
+		template<typename T> struct BindingInfo
+		{
+			vector<BindRun> mBindRuns;
+			vector<T *>		mPointers;
+		};
+
 		char const **						mConstBufferNames;
 		char const **						mSamplerNames;
 		char const **						mTextureNames;
@@ -78,13 +90,15 @@ namespace DX
 		uint32								mNumSamplers;
 		uint32								mNumTextures;
 
-		vector<TypelessBuffer *>			mConstBuffers;
+		vector<BoundBuffer *>				mConstBuffers;
 		Texture **							mTextures;
 		Sampler **							mSamplers;
 
-		vector<ID3D11Buffer *>				mConstBufferPointers;
 		vector<ID3D11ShaderResourceView *>	mTexturePointers;
 		vector<ID3D11SamplerState *>		mSamplerPointers;
+		vector<ID3D11Buffer *>				mConstBufferPointers;
+
+		BindingInfo<ID3D11Buffer>			mBindingInfo;
 
 		void *GetConstBuffer(char const *name)
 		{
@@ -126,36 +140,62 @@ namespace DX
 		{
 			mTexturePointers.resize(numTextures);
 			mSamplerPointers.resize(numSamplers);
-			mConstBufferPointers.reserve(numConstBuffers);
 		}
 
-		void UpdateConstants(uint index, void *data, uint32 size)
+		uint UpdateTextures(ID3D11ShaderResourceView **ptrs)
 		{
-			TypelessBuffer *b = (TypelessBuffer *)(mConstBuffers[index]);
-		}
-
-		void UpdateTextures()
-		{
+			ID3D11ShaderResourceView **p = ptrs;
 			for(uint i = 0; i < mNumTextures; ++i)
 			{
-				mTexturePointers[i] = (mTextures[i] != null) ? mTextures[i]->mShaderResourceView : null;
+				if(mTextures[i] != null)
+				{
+					*p++ = mTextures[i]->mShaderResourceView;
+				}
 			}
+			return p - ptrs;
 		}
 
-		void UpdateSamplers()
+		uint UpdateSamplers(ID3D11SamplerState **ptrs)
 		{
+			ID3D11SamplerState **p = ptrs;
 			for(uint i = 0; i < mNumSamplers; ++i)
 			{
-				mSamplerPointers[i] = (mSamplers[i] != null) ? mSamplers[i]->mSamplerState : null;
+				if(mSamplers[i] != null)
+				{
+					*p++ = mSamplers[i]->mSamplerState;
+				}
+			}
+			return p - ptrs;
+		}
+
+		void SetupConstBufferRuns()
+		{
+			mBindingInfo.mBindRuns.clear();
+			mBindingInfo.mPointers.clear();
+
+			for(uint i = 0; i < mConstBuffers.size(); ++i)
+			{
+				BindRun b;
+				uint count = i;
+				uint base = mConstBuffers[i]->mBindPoint;
+				b.mBindPoint = (uint16)base;
+				mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
+				for(++i; i < mConstBuffers.size() && mConstBuffers[i]->mBindPoint == ++base; ++i)
+				{
+					mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
+				}
+				b.mBindCount = (uint16)(i - count);
+				mBindingInfo.mBindRuns.push_back(b);
 			}
 		}
 
-		static void GetOffsetInCSOFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
+		static void GetOffsetInSOBFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
 		{
-			byte *bp = (byte *)f.Data();
+			assert(type <= NumShaderTypes);
 			uint32 *off = (uint32 *)f.Data();
-			ptr = bp + off[type];
-			size = (bp + ((type < NumShaderTypes - 1) ? off[type + 1] : f.Size())) - (byte const *)ptr;
+			size_t offset = off[type];
+			ptr = (byte *)f.Data() + offset;
+			size = ((type == NumShaderTypes - 1) ? f.Size() : off[type + 1]) - offset;
 		}
 
 	};

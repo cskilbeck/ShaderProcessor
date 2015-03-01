@@ -26,7 +26,7 @@ namespace DX
 	WinResource::WinResource(DWORD resourceid)
 		: Resource()
 	{
-		LoadResource(resourceid, &data, &size);
+		DXT(LoadResource(resourceid, &data, &size));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -47,10 +47,11 @@ namespace DX
 		: Resource()
 	{
 		uint32 s;
-		if(LoadFile(filename, &data, &s))
+		if(!LoadFile(filename, &data, &s))
 		{
-			size = s;
+			throw("Error loading file");
 		}
+		size = s;
 	}
 
 	//////////////////////////////////////////////////////////////////////
