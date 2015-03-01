@@ -90,7 +90,7 @@ namespace DX
 		uint32								mNumSamplers;
 		uint32								mNumTextures;
 
-		vector<BoundBuffer *>				mConstBuffers;
+		vector<TypelessBuffer *>			mConstBuffers;
 		Texture **							mTextures;
 		Sampler **							mSamplers;
 
@@ -140,6 +140,7 @@ namespace DX
 		{
 			mTexturePointers.resize(numTextures);
 			mSamplerPointers.resize(numSamplers);
+			mBindingInfo.mPointers.reserve(numConstBuffers);
 		}
 
 		uint UpdateTextures(ID3D11ShaderResourceView **ptrs)
@@ -170,17 +171,14 @@ namespace DX
 
 		void SetupConstBufferRuns()
 		{
-			mBindingInfo.mBindRuns.clear();
-			mBindingInfo.mPointers.clear();
-
 			for(uint i = 0; i < mConstBuffers.size(); ++i)
 			{
 				BindRun b;
 				uint count = i;
-				uint base = mConstBuffers[i]->mBindPoint;
+				uint base = mConstBuffers[i]->BindPoint();
 				b.mBindPoint = (uint16)base;
 				mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
-				for(++i; i < mConstBuffers.size() && mConstBuffers[i]->mBindPoint == ++base; ++i)
+				for(++i; i < mConstBuffers.size() && mConstBuffers[i]->BindPoint() == ++base; ++i)
 				{
 					mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
 				}

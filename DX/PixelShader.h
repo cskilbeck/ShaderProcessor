@@ -37,6 +37,12 @@ namespace DX
 			uint c = 0;
 			for(auto b : mBindingInfo.mBindRuns)
 			{
+				TRACE("PS Binding: %d\n", b.mBindCount);
+				for(uint i = 0; i < b.mBindCount; ++i)
+				{
+					TRACE("BindPoint %d: %d = %p\n", b.mBindPoint + i, c + i, mBindingInfo.mPointers[c + i]);
+				}
+
 				context->PSSetConstantBuffers(b.mBindPoint, b.mBindCount, &mBindingInfo.mPointers[c]);
 				c += b.mBindCount;
 			}

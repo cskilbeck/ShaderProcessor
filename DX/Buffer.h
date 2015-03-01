@@ -176,28 +176,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct BoundBuffer : TypelessBuffer
-	{
-		uint mBindPoint;
-
-		BoundBuffer(uint bindPoint)
-			: mBindPoint(bindPoint)
-		{
-		}
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	template <typename T, typename U> struct Buffer: U
+	template <typename T> struct Buffer
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		template <typename T, typename U> struct MappedResource
+		template <typename T> struct MappedResource
 		{
-			Buffer<T, U> *buffer;
+			Buffer<T> *buffer;
 			T * resource;
 
-			MappedResource(Buffer<T, U> *buf)
+			MappedResource(Buffer<T> *buf)
 				: buffer(buf)
 			{
 				DXI(resource = buffer->Map());
@@ -237,16 +225,9 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		Buffer(uint bindPoint)
-			: U(bindPoint)
-		{
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 		Buffer()
-			: U()
 		{
+			TRACE("Default!\n");
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -279,9 +260,9 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		MappedResource<T, U> Get()
+		MappedResource<T> Get()
 		{
-			return MappedResource<T, U>(this);
+			return MappedResource<T>(this);
 		}
 
 		//////////////////////////////////////////////////////////////////////

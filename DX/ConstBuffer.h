@@ -16,28 +16,19 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct ConstantBuffer: Buffer<T, BoundBuffer>
-	{
-		ConstantBuffer(uint bindPoint)
-			: Buffer<T, BoundBuffer>(bindPoint)
-		{
-		}
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
-	template<typename definition> struct ConstBuffer : definition, ConstantBuffer <definition>	// definition MUST be POD
+	template<typename definition> struct ConstBuffer: definition, ConstantBuffer, Buffer<definition>	// definition MUST be POD
 	{
 		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
-			: ConstantBuffer<definition>(bindPoint)
+			: Buffer<definition>()
 			, mOffsetCount(OffsetCount)
 			, mOffsets(Offsets)
 			, mDefaults(Defaults)
 			, mIndex(index)
+			, mBindPoint(bindPoint)
 		{
 			if(mDefaults != null)
 			{
-				memcpy(this, mDefaults, sizeof(definition));
+				memcpy(this, mDefaults, sizeof(definition)); // definition must be most-derived and there can be no virtuals!
 			}
 			else
 			{
@@ -96,6 +87,7 @@ namespace DX
 		uint32 const					mOffsetCount;
 		ConstBufferOffset const * const	mOffsets;
 		uint32 const * const 			mDefaults;
+		uint32							mBindPoint;
 	};
 
 }
