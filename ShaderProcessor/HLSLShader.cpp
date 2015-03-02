@@ -537,6 +537,15 @@ HRESULT HLSLShader::CreateBindings()
 		{
 			mBindings.push_back(r);
 		}
+		if(d.Type == D3D_SIT_SAMPLER)
+		{
+			D3D11_SHADER_VARIABLE_DESC desc;
+			ID3D11ShaderReflectionVariable *v = mReflector->GetVariableByName(d.Name);
+			if(SUCCEEDED(v->GetDesc(&desc)))
+			{
+				TRACE("%s\n", desc.Name);
+			}
+		}
 	}
 
 	delete[] buffers;

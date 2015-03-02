@@ -478,7 +478,7 @@ namespace DX
 	inline string AppendBackslash(string const &s)
 	{
 		string p(s);
-		if(p.back() != '\\')
+		if(p.size() > 0 && p.back() != '\\')
 		{
 			p.append("\\");
 		}

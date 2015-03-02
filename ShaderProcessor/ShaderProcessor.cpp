@@ -188,7 +188,7 @@ struct parameter
 {
 	char const *name;
 	param_type type;
-	void *target;						// the default is what's in here to start with (from D3D11_DEFAULT)
+	void *target;	// the default is what's in here to start with (from D3D11_DEFAULT)
 	MAP enum_list;	// empty if it's not an enum - this is lame...
 };
 
@@ -811,6 +811,71 @@ void OutputMaterial(string const &name)
 
 //////////////////////////////////////////////////////////////////////
 
+uint SaveSOBFile(string const &binFile)
+{
+	uint32 offsets[NumShaderTypes] = { 0 };
+	uint32 sizes[NumShaderTypes] = { 0 };
+
+	// get the sizes & offsets
+	for(auto &i : shaders)
+	{
+		auto s = *i.second;
+		uint32 size = (uint32)s.mSize;
+		uint type = s.mShaderType;
+		sizes[type] = size;
+	}
+
+	uint currentOffset = sizeof(offsets);
+	for(uint i = 0; i < NumShaderTypes; ++i)
+	{
+		offsets[i] = currentOffset;
+		currentOffset += sizes[i];
+	}
+
+	// create the file
+	File f;
+	if(!f.Create(binFile.c_str()))
+	{
+		emit_error("Can't create %s (%08x)", binFile.c_str(), f.error);
+	}
+	else
+	{
+		// write the offsets
+		if(f.Write(sizeof(offsets), offsets) == 0)
+		{
+			emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
+		}
+		else
+		{
+			// write the blobs
+			for(auto &i : shaders)
+			{
+				auto s = *i.second;
+				if(f.Write((uint32)s.mSize, s.mBlob) == 0)
+				{
+					emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
+					break;
+				}
+			}
+		}
+	}
+	return success;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+using ShaderFunc = void(HLSLShader::*)();
+
+template<ShaderFunc f> void Loop(std::map<ShaderType, HLSLShader *> &shaders)
+{
+	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	{
+		((*i).second->*f)();
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 int main(int argc, char *argv[])
 {
 	if(!ParseArgs(argc, argv, options))
@@ -921,67 +986,26 @@ int main(int argc, char *argv[])
 		binFile = Format("%s%s.sob", outpath.c_str(), name.c_str());
 	}
 
-	// save the .bin file if embed_bytecode isn't specified
-	if(!options[EMBED_BYTECODE])
-	{
-		uint32 offsets[NumShaderTypes] = { 0 };
-		uint32 sizes[NumShaderTypes] = { 0 };
-
-		// get the sizes
-		for(auto &i : shaders)
-		{
-			auto s = *i.second;
-			sizes[s.mShaderType] = (uint32)s.mSize;
-		}
-
-		// work out the offsets
-		uint currentOffset = sizeof(offsets);
-		for(uint i = 0; i < NumShaderTypes; ++i)
-		{
-			offsets[i] = currentOffset;
-			currentOffset += sizes[i];
-		}
-
-		// create the file
-		File f;
-		f.Create(binFile.c_str());
-
-		// write the offsets
-		f.Write(sizeof(offsets), offsets);
-
-		// write the blobs
-		for(auto &i : shaders)
-		{
-			auto s = *i.second;
-			f.Write((uint32)s.mSize, s.mBlob);
-		}
-	}
-
 	using namespace Printer;
 
-	if(options[EMBED_BYTECODE])
+	if(!options[EMBED_BYTECODE])
 	{
-		for(auto i = shaders.begin(); i != shaders.end(); ++i)
+		uint err = SaveSOBFile(binFile);
+
+		if(err != success)
 		{
-			(*i).second->OutputBlob();
+			return err;
 		}
 	}
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	else
 	{
-		(*i).second->OutputConstBufferNamesAndOffsets();
+		Loop<&HLSLShader::OutputBlob>(shaders);
 	}
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
-	{
-		(*i).second->OutputSamplerNames();
-	}
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
-	{
-		(*i).second->OutputResourceNames();
-	}
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
-	{
-		(*i).second->OutputInputElements();
-	}
+
+	Loop<&HLSLShader::OutputConstBufferNamesAndOffsets>(shaders);
+	Loop<&HLSLShader::OutputSamplerNames>(shaders);
+	Loop<&HLSLShader::OutputResourceNames>(shaders);
+	Loop<&HLSLShader::OutputInputElements>(shaders);
 
 	// We need to know that the samplers, resources and constbuffers are sorted by their binding #
 	// they seem to be but it's not stated in the docs that it is guaranteed to be so
@@ -1016,28 +1040,17 @@ int main(int argc, char *argv[])
 	OutputLine();
 	Indent();
 
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
-	{
-		(*i).second->OutputHeaderFile();
-	}
+	Loop<&HLSLShader::OutputHeaderFile>(shaders);
 
 	OutputCommentLine("Members");
 
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
-	{
-		(*i).second->OutputMemberVariable();
-	}
+	Loop<&HLSLShader::OutputMemberVariable>(shaders);
 
-	// Material bits
 	OutputLine();
 
-	string shaderCtors;
-
-	shaderCtors = Format("%s_BlendDesc, ", name.c_str());
+	string shaderCtors = Format("%s_BlendDesc, ", name.c_str());
 	shaderCtors += Format("%s_DepthStencilDesc, ", name.c_str());
 	shaderCtors += Format("%s_RasterizerDesc", name.c_str());
-
-	// vs, ps etc else null
 
 	OutputCommentLine("Constructor");
 	OutputLine("%s(): ShaderState(%s)", name.c_str(), shaderCtors.c_str());
@@ -1066,8 +1079,6 @@ int main(int argc, char *argv[])
 		{
 			params = "f";
 		}
-		// ps.Load(f);
-		// vs.Create(Shader_VS_Data, 1152, Shader_InputElements, _countof(Shader_InputElements));
 		OutputLine("%s.%s(%s%s);", ToLower(shader.RefName()).c_str(), func, params.c_str(), shader.VSTag().c_str());
 	}
 	for(uint i = 0; i < NumShaderTypes; ++i)
@@ -1076,15 +1087,15 @@ int main(int argc, char *argv[])
 	}
 	UnIndent();
 	OutputLine("}");
-
 	OutputLine();
+
+	// Activate
 	OutputCommentLine("Activate");
 	OutputLine("void Activate(ID3D11DeviceContext *context)");
 	Indent("{");
 	OutputLine();
 	OutputLine("ShaderState::SetState(context);");
 
-	// Activate
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{
 		auto f = shaders.find((ShaderType)i);

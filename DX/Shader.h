@@ -90,11 +90,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		using SetConstantBuffersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11Buffer * const *);
-		using SetSamplersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11SamplerState * const *);
-		using SetShaderResourcesFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
+	private:
+		using SetCB = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11Buffer * const *);
+		using SetSS = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11SamplerState * const *);
+		using SetSR = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
+	public:
 
-		template <SetConstantBuffersFunction SetConstantBuffers, SetSamplersFunction SetSamplers, SetShaderResourcesFunction SetShaderResources > void Set(ID3D11DeviceContext *context)
+		template <SetCB SetConstantBuffers, SetSS SetSamplers, SetSR SetShaderResources > void Set(ID3D11DeviceContext *context)
 		{
 			ID3D11Buffer **bufferPtr = mConstantBufferPointers.data();
 			for(auto b : mBindingState.mConstantBufferBindings)
@@ -252,6 +254,4 @@ namespace DX
 			context->RSSetState(mRasterizerState);
 		}
 	};
-
-
 }

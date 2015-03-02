@@ -56,11 +56,11 @@ struct ShaderTypeDesc
 
 enum ShaderModel: uint32
 {
-	sm4_0_level_9_1 = 1,
-	sm4_0_level_9_3 = 2,
-	sm4_0 = 3,
-	sm4_1 = 4,
-	sm5_0 = 5
+	sm4_0_level_9_1 = 0,
+	sm4_0_level_9_3 = 1,
+	sm4_0 = 2,
+	sm4_1 = 3,
+	sm5_0 = 4
 };
 
 //////////////////////////////////////////////////////////////////////

@@ -58,8 +58,13 @@ cbuffer Light : register(b1)
 
 //////////////////////////////////////////////////////////////////////
 
-sampler tex1Sampler : register(s4);
 Texture2D picTexture : register(t1);
+
+sampler tex1Sampler : register(s4) = sampler_state 
+{
+	Texture = <picTexture>;
+	MagFilter = POINT;
+};
 
 //////////////////////////////////////////////////////////////////////
 
