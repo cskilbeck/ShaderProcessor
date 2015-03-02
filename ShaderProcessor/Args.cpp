@@ -94,7 +94,7 @@ option::Descriptor const usage[] =
 	{ SOURCE_FILE, 0, "", "source", Arg::NonEmpty, "--source=sourceFile (required). Specify the source HLSL file." },
 	{ SHADER_MODEL_VERSION, 0, "", "sm", Arg::ShaderModel, "--sm=shadermodel (eg 4_0)(required). Specify the Shader Model (4_0, 4_1, 5_0, 4_0_level_9_1, 4_0_level_9_3)." },
 	{ HEADER_FILE, 0, "", "header", Arg::NonEmpty, "--header=headerFile (optional). Where to output the header file to. If not specified, goes to stdout." },
-	{ EMBED_BYTECODE, 0, "", "embedObject", Arg::None, "--embedbytecode (optional). Embed the shader byte code in the header file." },
+	{ EMBED_BYTECODE, 0, "", "embedObject", Arg::None, "--embedObject (optional). Embed the shader object byte code in the header file." },
 	{ DISABLE_OPTIMIZATION, 0, "", "disableOptimization", Arg::None, "--disableOptimization (optional). Turn off the Shader Compiler Optimizer." },
 	{ INCLUDE_DEBUG_INFO, 0, "", "debugInfo", Arg::None, "--includeDebugInfo (optional). Switch this on to enable graphics debugging in Visual Studio." },
 	{ ERROR_ON_WARNING, 0, "", "errorOnWarning", Arg::None, "--errorOnWarning (optional). Return an error code if warnings are generated." },

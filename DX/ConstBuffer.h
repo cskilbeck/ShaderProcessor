@@ -16,7 +16,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename definition> struct ConstBuffer: definition, Buffer<definition>	// definition MUST be POD
+	template<typename definition> struct ConstBuffer: definition, Buffer<definition>, Aligned16	// definition MUST be POD
 	{
 		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
 			: Buffer<definition>()

@@ -855,7 +855,7 @@ void HLSLShader::OutputShaderStruct()
 
 	OutputCommentLine("%s Shader", mShaderTypeDesc.name);
 
-	OutputLine("struct %s : %sShader, Aligned16", RefName().c_str(), mShaderTypeDesc.name);
+	OutputLine("struct %s : %sShader", RefName().c_str(), mShaderTypeDesc.name);
 	OutputLine("{");
 	Indent();
 

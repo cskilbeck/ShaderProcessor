@@ -52,7 +52,6 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		DXPtr<ID3D11PixelShader>			mPixelShader;
+		DXPtr<ID3D11PixelShader> mPixelShader;
 	};
-
 }

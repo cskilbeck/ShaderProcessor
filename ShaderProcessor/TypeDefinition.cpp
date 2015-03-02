@@ -241,7 +241,7 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 {
 	uint padID = 0;
 	uint fieldCount = 0;
-	OutputLine("struct %s_t: Aligned16", mDesc.Name);
+	OutputLine("struct %s_t", mDesc.Name);
 	OutputLine("{");
 	Indent();
 	for(auto i = mFields.begin(); i != mFields.end(); ++i)

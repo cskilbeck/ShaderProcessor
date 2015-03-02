@@ -21,7 +21,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct Shader
+	struct Shader: Aligned16
 	{
 		//////////////////////////////////////////////////////////////////////
 
@@ -88,14 +88,13 @@ namespace DX
 			return -1;
 		}
 
+		//////////////////////////////////////////////////////////////////////
+
 		using SetConstantBuffersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11Buffer * const *);
 		using SetSamplersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11SamplerState * const *);
 		using SetShaderResourcesFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
 
-		template <	SetConstantBuffersFunction SetConstantBuffers,
-					SetSamplersFunction SetSamplers,
-					SetShaderResourcesFunction SetShaderResources >
-		void Set(ID3D11DeviceContext *context)
+		template <SetConstantBuffersFunction SetConstantBuffers, SetSamplersFunction SetSamplers, SetShaderResourcesFunction SetShaderResources > void Set(ID3D11DeviceContext *context)
 		{
 			ID3D11Buffer **bufferPtr = mConstantBufferPointers.data();
 			for(auto b : mBindingState.mConstantBufferBindings)
@@ -217,9 +216,7 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		virtual void Activate_V(ID3D11DeviceContext *context)
-		{
-		}
+		virtual void Activate_V(ID3D11DeviceContext *context) = 0;
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -241,9 +238,9 @@ namespace DX
 					uint32 const *depthStencilDesc,
 					uint32 const *rasterizerDesc)
 		{
-			DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)blendDesc, &mBlendState);
-			DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)depthStencilDesc, &mDepthStencilState);
-			DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)rasterizerDesc, &mRasterizerState);
+			DXT(DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)blendDesc, &mBlendState));
+			DXT(DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)depthStencilDesc, &mDepthStencilState));
+			DXT(DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)rasterizerDesc, &mRasterizerState));
 		}
 
 		//////////////////////////////////////////////////////////////////////

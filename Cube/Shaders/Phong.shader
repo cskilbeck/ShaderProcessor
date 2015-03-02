@@ -41,7 +41,7 @@ PS_INPUT vsMain(VS_INPUT v)
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer Camera : register(b3)
+cbuffer Camera : register(b2)
 {
 	float3 cameraPos;
 }

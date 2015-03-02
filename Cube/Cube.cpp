@@ -222,13 +222,12 @@ bool MyDXWindow::OnCreate()
 
 	lightPos = Vec4(0, -15, 0, 0);
 
-	Shaders::Phong::PS &ps = cubeShader->ps;
-	auto &l = ps.Light;
+	auto &l = cubeShader->ps.Light;
 	l.lightPos = lightPos;
 	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
 	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
 	l.specColor = Float3(5, 5, 5);
-	l.Update();
+	l.Update(Context());
 
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));

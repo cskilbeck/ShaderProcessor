@@ -832,15 +832,6 @@ int main(int argc, char *argv[])
 		return err_nosource;
 	}
 
-	if(options[EMBED_BYTECODE])
-	{
-		// Bytecode for all shaders goes into a file called Phong.shader.bytecode
-		// Header is a set of N dwords which specify length of each shader (0 means no shader in the slot)
-		// DWORD magic = 'SHDR'
-		// DWORD lengths[NumShaderTypes]
-		// Followed by the bytecodes
-	}
-
 	if(!options[SHADER_MODEL_VERSION])
 	{
 		emit_error("Shader model not specified");
@@ -968,9 +959,12 @@ int main(int argc, char *argv[])
 
 	using namespace Printer;
 
-	for(auto i = shaders.begin(); i != shaders.end(); ++i)
+	if(options[EMBED_BYTECODE])
 	{
-		(*i).second->OutputBlob();
+		for(auto i = shaders.begin(); i != shaders.end(); ++i)
+		{
+			(*i).second->OutputBlob();
+		}
 	}
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{

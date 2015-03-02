@@ -18,7 +18,7 @@ namespace DX
 					   Texture **textureArray,
 					   Sampler **samplerArray,
 					   BindingState &bindingState)
-		   : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindingState)
+			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindingState)
 		{
 		}
 
@@ -46,7 +46,8 @@ namespace DX
 
 		HRESULT Load(FileResource &f)
 		{
-			DXT(Shader::Create(FindShaderInSOBFile(f, ShaderType::Geometry)));
+			DXR(Shader::Create(FindShaderInSOBFile(f, ShaderType::Geometry)));
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
