@@ -16,7 +16,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename definition> struct ConstBuffer: definition, ConstantBuffer, Buffer<definition>	// definition MUST be POD
+	template<typename definition> struct ConstBuffer: definition, Buffer<definition>	// definition MUST be POD
 	{
 		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
 			: Buffer<definition>()
@@ -24,7 +24,6 @@ namespace DX
 			, mOffsets(Offsets)
 			, mDefaults(Defaults)
 			, mIndex(index)
-			, mBindPoint(bindPoint)
 		{
 			if(mDefaults != null)
 			{
@@ -35,7 +34,7 @@ namespace DX
 				memset(this, 0, sizeof(definition));
 			}
 			DXI(Create(BufferType::ConstantBufferType, 1, this, DynamicUsage, Writeable));
-			parent->mConstBuffers.push_back(this);
+			parent->AddConstBuffer(this, bindPoint);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
 		}
 
@@ -87,7 +86,6 @@ namespace DX
 		uint32 const					mOffsetCount;
 		ConstBufferOffset const * const	mOffsets;
 		uint32 const * const 			mDefaults;
-		uint32							mBindPoint;
 	};
 
 }

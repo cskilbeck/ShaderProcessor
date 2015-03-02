@@ -254,7 +254,7 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 		Output("%s %s;", typeName.c_str(), v.Name);
 		if(p->padding != 0)
 		{
-			Output("\t\tprivate: byte pad%d[%d]; public:", padID++, p->padding);
+			Output("\t\t\t\tprivate: byte pad%d[%d]; public:", padID++, p->padding);
 		}
 		OutputLine();
 		++fieldCount;

@@ -920,19 +920,11 @@ int main(int argc, char *argv[])
 	string binFile;
 	if(options[DATA_ROOT])
 	{
-		outpath = options[DATA_ROOT].arg;
-		if(outpath.back() != '\\')
-		{
-			outpath.append("\\");
-		}
+		outpath = AppendBackslash(options[DATA_ROOT].arg);
 	}
 	if(options[DATA_FOLDER])
 	{
-		dataFolder = options[DATA_FOLDER].arg;
-		if(dataFolder.back() != '\\')
-		{
-			dataFolder.append("\\");
-		}
+		dataFolder = AppendBackslash(options[DATA_FOLDER].arg);
 		outpath.append(dataFolder);
 		relativeBinFile = Format("%s%s.sob", dataFolder.c_str(), name.c_str());
 		binFile = Format("%s%s.sob", outpath.c_str(), name.c_str());
@@ -974,6 +966,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	using namespace Printer;
+
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{
 		(*i).second->OutputBlob();
@@ -995,7 +989,32 @@ int main(int argc, char *argv[])
 		(*i).second->OutputInputElements();
 	}
 
-	using namespace Printer;
+	// We need to know that the samplers, resources and constbuffers are sorted by their binding #
+	// they seem to be but it's not stated in the docs that it is guaranteed to be so
+	// therefore, we should sort the samplers, resources and constbuffers by their binding #
+	// but I can't be arsed and it's probably not necessary
+
+	OutputCommentLine("Binding runs");
+	OutputIndent("extern Shader::BindingState WEAKSYM %s_Bindings[] = {", name.c_str());
+	Indent();
+	char const *sep = "";
+	for(int i = 0; i < NumShaderTypes; ++i)
+	{
+		Output(sep);
+		OutputLine();
+		OutputIndent();
+		Output("{");
+		if(shader_array[i] != null)
+		{
+			shader_array[i]->OutputBindingRuns();
+		}
+		Output("}");
+		sep = ",";
+	}
+	UnIndent();
+	OutputLine();
+	OutputLine("};");
+	OutputLine();
 
 	OutputCommentLine("Shader struct");
 	OutputLine("struct %s : ShaderState", name.c_str());
@@ -1010,7 +1029,6 @@ int main(int argc, char *argv[])
 
 	OutputCommentLine("Members");
 
-	// now members
 	for(auto i = shaders.begin(); i != shaders.end(); ++i)
 	{
 		(*i).second->OutputMemberVariable();

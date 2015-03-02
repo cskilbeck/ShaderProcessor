@@ -12,7 +12,7 @@ namespace Printer
 	void OutputLine();
 	void OutputCommentLine(char const *format, ...);
 	void OutputComment(char const *format, ...);
-	void OutputIndent(char const *after = nullptr);
+	void OutputIndent(char const *after = nullptr, ...);
 	void OutputBinary(void const *data, int sizeOfData);
 	void SetHeaderFile(HANDLE f);
 	void SetShader(HLSLShader *s);

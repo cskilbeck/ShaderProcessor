@@ -21,7 +21,197 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct Shader;
+	struct Shader
+	{
+		//////////////////////////////////////////////////////////////////////
+
+		struct BindRun
+		{
+			uint16 mBindPoint;
+			uint16 mBindCount;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct BindingState
+		{
+			vector<BindRun> mSamplerBindings;
+			vector<BindRun> mResourceBindings;
+			vector<BindRun> mConstantBufferBindings;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		char const **							mConstBufferNames;
+		char const **							mSamplerNames;
+		char const **							mTextureNames;
+
+		uint32									mNumConstBuffers;
+		uint32									mNumSamplers;
+		uint32									mNumTextures;
+
+		vector<TypelessBuffer *>				mConstBuffers;
+		Texture **								mTextures;
+		Sampler **								mSamplers;
+
+		BindingState &							mBindingState;
+
+		vector<ID3D11ShaderResourceView *>		mResourcePointers;
+		vector<ID3D11SamplerState *>			mSamplerPointers;
+		vector<ID3D11Buffer *>					mConstantBufferPointers;
+
+		//////////////////////////////////////////////////////////////////////
+
+		void *GetConstBuffer(char const *name)
+		{
+			for(uint i = 0; i < mNumConstBuffers; ++i)
+			{
+				if(strcmp(mConstBufferNames[i], name) == 0)
+				{
+					return mConstBuffers[i];
+				}
+			}
+			return null;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		int GetConstBufferIndex(char const *name)
+		{
+			for(uint i = 0; i < mNumConstBuffers; ++i)
+			{
+				if(strcmp(mConstBufferNames[i], name) == 0)
+				{
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		using SetConstantBuffersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11Buffer * const *);
+		using SetSamplersFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11SamplerState * const *);
+		using SetShaderResourcesFunction = void(ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
+
+		template <	SetConstantBuffersFunction SetConstantBuffers,
+					SetSamplersFunction SetSamplers,
+					SetShaderResourcesFunction SetShaderResources >
+		void Set(ID3D11DeviceContext *context)
+		{
+			ID3D11Buffer **bufferPtr = mConstantBufferPointers.data();
+			for(auto b : mBindingState.mConstantBufferBindings)
+			{
+				(context->*SetConstantBuffers)(b.mBindPoint, b.mBindCount, bufferPtr);
+				bufferPtr += b.mBindCount;
+			}
+
+			ID3D11SamplerState **samplerPtr = mSamplerPointers.data();
+			for(auto b : mBindingState.mSamplerBindings)
+			{
+				(context->*SetSamplers)(b.mBindPoint, b.mBindCount, samplerPtr);
+				samplerPtr += b.mBindCount;
+			}
+
+			ID3D11ShaderResourceView **srvPtr = mResourcePointers.data();
+			for(auto b : mBindingState.mResourceBindings)
+			{
+				(context->*SetShaderResources)(b.mBindPoint, b.mBindCount, srvPtr);
+				srvPtr += b.mBindCount;
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		Shader(uint32 numConstBuffers, char const **constBufferNames,
+			   uint32 numSamplers, char const **samplerNames,
+			   uint32 numTextures, char const **textureNames,
+			   Texture **textureArray,
+			   Sampler **samplerArray,
+			   BindingState &bindingState)
+			: mConstBufferNames(constBufferNames)
+			, mSamplerNames(samplerNames)
+			, mTextureNames(textureNames)
+			, mNumConstBuffers(numConstBuffers)
+			, mNumSamplers(numSamplers)
+			, mNumTextures(numTextures)
+			, mTextures(textureArray)
+			, mSamplers(samplerArray)
+			, mBindingState(bindingState)
+		{
+			mResourcePointers.resize(numTextures);
+			mSamplerPointers.resize(numSamplers);
+			mConstantBufferPointers.reserve(numConstBuffers);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void UpdateTextures()
+		{
+			for(uint i = 0; i < mNumTextures; ++i)
+			{
+				if(mTextures[i] != null)
+				{
+					mResourcePointers[i] = mTextures[i]->mShaderResourceView;
+				}
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void UpdateSamplers()
+		{
+			for(uint i = 0; i < mNumTextures; ++i)
+			{
+				if(mSamplers[i] != null)
+				{
+					mSamplerPointers[i] = mSamplers[i]->mSamplerState;
+				}
+			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void AddConstBuffer(TypelessBuffer *buffer, uint bindPoint)
+		{
+			mConstBuffers.push_back(buffer);
+			mConstantBufferPointers.push_back(buffer->Handle());
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		static Resource FindShaderInSOBFile(FileResource &f, ShaderType type)
+		{
+			void const *p;
+			size_t s;
+			GetOffsetInSOBFile(f, type, p, s);
+			return MemoryResource(p, s);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		static void GetOffsetInSOBFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
+		{
+			assert(type <= NumShaderTypes);
+			uint32 *off = (uint32 *)f.Data();
+			size_t offset = off[type];
+			ptr = (byte *)f.Data() + offset;
+			size = ((type == NumShaderTypes - 1) ? f.Size() : off[type + 1]) - offset;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		virtual HRESULT Create(void const *data, size_t size) = 0;
+
+		//////////////////////////////////////////////////////////////////////
+
+		virtual HRESULT Create(Resource &r)
+		{
+			DXR(Create(r.Data(), r.Size()));
+			return S_OK;
+		}
+
+	};
+
+	//////////////////////////////////////////////////////////////////////
 
 	struct ShaderState: Aligned16
 	{
@@ -66,135 +256,5 @@ namespace DX
 		}
 	};
 
-	//////////////////////////////////////////////////////////////////////
 
-	struct Shader
-	{
-		struct BindRun
-		{
-			uint16 mBindPoint;
-			uint16 mBindCount;
-		};
-
-		template<typename T> struct BindingInfo
-		{
-			vector<BindRun> mBindRuns;
-			vector<T *>		mPointers;
-		};
-
-		char const **						mConstBufferNames;
-		char const **						mSamplerNames;
-		char const **						mTextureNames;
-
-		uint32								mNumConstBuffers;
-		uint32								mNumSamplers;
-		uint32								mNumTextures;
-
-		vector<TypelessBuffer *>			mConstBuffers;
-		Texture **							mTextures;
-		Sampler **							mSamplers;
-
-		vector<ID3D11ShaderResourceView *>	mTexturePointers;
-		vector<ID3D11SamplerState *>		mSamplerPointers;
-		vector<ID3D11Buffer *>				mConstBufferPointers;
-
-		BindingInfo<ID3D11Buffer>			mBindingInfo;
-
-		void *GetConstBuffer(char const *name)
-		{
-			for(uint i = 0; i < mNumConstBuffers; ++i)
-			{
-				if(strcmp(mConstBufferNames[i], name) == 0)
-				{
-					return mConstBuffers[i];
-				}
-			}
-			return null;
-		}
-
-		int GetConstBufferIndex(char const *name)
-		{
-			for(uint i = 0; i < mNumConstBuffers; ++i)
-			{
-				if(strcmp(mConstBufferNames[i], name) == 0)
-				{
-					return i;
-				}
-			}
-			return -1;
-		}
-
-		Shader(uint32 numConstBuffers, char const **constBufferNames,
-			   uint32 numSamplers, char const **samplerNames,
-			   uint32 numTextures, char const **textureNames,
-			   Texture **textureArray,
-			   Sampler **samplerArray)
-			   : mConstBufferNames(constBufferNames)
-			   , mSamplerNames(samplerNames)
-			   , mTextureNames(textureNames)
-			   , mNumConstBuffers(numConstBuffers)
-			   , mNumSamplers(numSamplers)
-			   , mNumTextures(numTextures)
-			   , mTextures(textureArray)
-			   , mSamplers(samplerArray)
-		{
-			mTexturePointers.resize(numTextures);
-			mSamplerPointers.resize(numSamplers);
-			mBindingInfo.mPointers.reserve(numConstBuffers);
-		}
-
-		uint UpdateTextures(ID3D11ShaderResourceView **ptrs)
-		{
-			ID3D11ShaderResourceView **p = ptrs;
-			for(uint i = 0; i < mNumTextures; ++i)
-			{
-				if(mTextures[i] != null)
-				{
-					*p++ = mTextures[i]->mShaderResourceView;
-				}
-			}
-			return p - ptrs;
-		}
-
-		uint UpdateSamplers(ID3D11SamplerState **ptrs)
-		{
-			ID3D11SamplerState **p = ptrs;
-			for(uint i = 0; i < mNumSamplers; ++i)
-			{
-				if(mSamplers[i] != null)
-				{
-					*p++ = mSamplers[i]->mSamplerState;
-				}
-			}
-			return p - ptrs;
-		}
-
-		void SetupConstBufferRuns()
-		{
-			for(uint i = 0; i < mConstBuffers.size(); ++i)
-			{
-				BindRun b;
-				uint count = i;
-				uint base = mConstBuffers[i]->BindPoint();
-				b.mBindPoint = (uint16)base;
-				mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
-				for(++i; i < mConstBuffers.size() && mConstBuffers[i]->BindPoint() == ++base; ++i)
-				{
-					mBindingInfo.mPointers.push_back(mConstBuffers[i]->Handle());
-				}
-				b.mBindCount = (uint16)(i - count);
-				mBindingInfo.mBindRuns.push_back(b);
-			}
-		}
-
-		static void GetOffsetInSOBFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
-		{
-			assert(type <= NumShaderTypes);
-			uint32 *off = (uint32 *)f.Data();
-			size_t offset = off[type];
-			ptr = (byte *)f.Data() + offset;
-			size = ((type == NumShaderTypes - 1) ? f.Size() : off[type + 1]) - offset;
-		}
-
-	};
 }

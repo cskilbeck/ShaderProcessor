@@ -29,7 +29,7 @@
     <ItemGroup>
       <SPOCK_tlog Include="%(SPOCK.HeaderFile)"
                   Condition="'%(SPOCK.HeaderFile)' != '' and '%(SPOCK.ExcludedFromBuild)' != 'true'">
-        <Source>@(SPOCK, '|')</Source>
+        <Source>@(SPOCK, '|')KNOB</Source>
       </SPOCK_tlog>
     </ItemGroup>
 

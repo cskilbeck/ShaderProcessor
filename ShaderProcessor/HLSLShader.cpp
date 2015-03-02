@@ -462,6 +462,42 @@ Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 
 //////////////////////////////////////////////////////////////////////
 
+void HLSLShader::AddBinding(Binding *b)
+{
+	BindingInfo *info = GetBindingInfo(b->mDesc.Type);
+	BindingInfo::Type type = info->BindingType;
+	vector<BindingRun> &runs = mBindingRuns[type];
+
+	// do we need to start a new run of bindings?
+	bool startRun = false;
+	if(runs.empty())
+	{
+		// list is empty, so yes
+		startRun = true;
+	}
+	else
+	{
+		BindingRun &currentRun = runs.back();
+		if(b->mDesc.BindPoint != currentRun.mBindPoint + currentRun.mBindCount)
+		{
+			// noncontiguous bindpoint, so yes
+			startRun = true;
+		}
+	}
+	if(startRun)
+	{
+		// start a new run
+		runs.push_back({ b->mDesc.BindPoint, 1 });
+	}
+	else
+	{
+		// or just tag onto the current last one
+		runs.back().mBindCount++;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 HRESULT HLSLShader::CreateBindings()
 {
 	Binding::ClearAllBindings();
@@ -482,6 +518,12 @@ HRESULT HLSLShader::CreateBindings()
 		ID3D11ShaderReflectionConstantBuffer *b = mReflector->GetConstantBufferByIndex(i);
 		b->GetDesc(buffer);
 		TRACE("Constant buffer %d (%s) is %s\n", i, buffer->Name, GetFrom(constant_buffer_type_names, buffer->Type));
+
+		// Create a definition if necessary
+		TypeDefinition *def = new TypeDefinition(mReflector, mConstBuffers, null);
+		mDefinitionIDs[def->mDesc.Name] = (uint)mDefinitions.size();
+		mDefinitions.push_back(def);
+		++mConstBuffers;
 	}
 
 	mBindings.clear();
@@ -499,7 +541,7 @@ HRESULT HLSLShader::CreateBindings()
 
 	delete[] buffers;
 
-	Binding::ShowAllBindings();
+	Binding::ShowAllBindings(this);
 
 	return S_OK;
 }
@@ -742,6 +784,33 @@ void HLSLShader::OutputResourceMembers()
 
 //////////////////////////////////////////////////////////////////////
 
+void HLSLShader::OutputBindingRuns()
+{
+	char const *sep = "";
+	for(uint i = 0; i < BindingInfo::Type::NumBindingTypes; ++i)
+	{
+		vector<HLSLShader::BindingRun> &runs = mBindingRuns[i];
+
+		Output("%s{", sep);
+		if(!runs.empty())
+		{
+			Output("{");
+			char const *sep2 = "";
+			for(auto &run : runs)
+			{
+				Output("%s{%d,%d}", sep2, run.mBindPoint, run.mBindCount);
+				sep2 = ",";
+			}
+			Output("}");
+		}
+		Output("}");
+
+		sep = ", ";
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void HLSLShader::OutputConstructor()
 {
 	string constBufferNames = (mConstantBufferBindings.size() > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
@@ -751,22 +820,22 @@ void HLSLShader::OutputConstructor()
 	OutputComment("Constructor");
 	OutputLine("%s()", RefName().c_str());
 	Indent();
-	OutputLine(": %sShader(%d, %s, %d, %s, %d, %s, %s, %s)",
+	OutputLine(": %sShader(%d, %s, %d, %s, %d, %s, %s, %s, %s)",
 			   ShaderTypeName(),
 				mConstantBufferBindings.size(), constBufferNames.c_str(),
 				mSamplerBindings.size(), samplerNames.c_str(),
 				mResourceBindings.size(), textureNames.c_str(),
 				mResourceBindings.size() > 0 ? "textures" : "null",
-				mSamplerBindings.size() > 0 ? "samplers" : "null" );
+				mSamplerBindings.size() > 0 ? "samplers" : "null",
+				Format("%s_Bindings[ShaderType::%s]", mName.c_str(), mShaderTypeDesc.name).c_str()
+				);
 
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
 		(*i)->ConstructorOutput();
 	}
 	UnIndent("{");
-	Indent();
-	OutputLine("SetupConstBufferRuns();");
-	UnIndent("}");
+	OutputLine("}");
 }
 
 //////////////////////////////////////////////////////////////////////

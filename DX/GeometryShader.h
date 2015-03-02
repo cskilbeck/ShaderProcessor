@@ -16,8 +16,9 @@ namespace DX
 					   uint numSamplers, char const **samplerNames,
 					   uint numTextures, char const **textureNames,
 					   Texture **textureArray,
-					   Sampler **samplerArray)
-		   : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+					   Sampler **samplerArray,
+					   BindingState &bindingState)
+		   : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindingState)
 		{
 		}
 
@@ -25,28 +26,17 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			ID3D11ShaderResourceView *srp[16];
-			ID3D11SamplerState *ssp[16];
-
-			uint resources = UpdateTextures(srp);
-			uint samples = UpdateSamplers(ssp);
-
-			context->GSSetShaderResources(0, resources, srp);
-			context->GSSetSamplers(0, samples, ssp);
-
-			uint c = 0;
-			for(auto b : mBindingInfo.mBindRuns)
-			{
-				context->GSSetConstantBuffers(b.mBindPoint, b.mBindCount, &mBindingInfo.mPointers[c]);
-				c += b.mBindCount;
-			}
-
+			UpdateSamplers();
+			UpdateTextures();
+			Set<&ID3D11DeviceContext::GSSetConstantBuffers,
+				&ID3D11DeviceContext::GSSetSamplers,
+				&ID3D11DeviceContext::GSSetShaderResources>(context);
 			context->GSSetShader(mGeometryShader, null, 0);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *blob, size_t size)
+		HRESULT Create(void const *blob, size_t size) override
 		{
 			DXR(Device->CreateGeometryShader(blob, size, null, &mGeometryShader));
 			return S_OK;
@@ -56,10 +46,7 @@ namespace DX
 
 		HRESULT Load(FileResource &f)
 		{
-			void const *p;
-			size_t s;
-			Shader::GetOffsetInSOBFile(f, ShaderType::Geometry, p, s);
-			DXT(Create(p, s));
+			DXT(Shader::Create(FindShaderInSOBFile(f, ShaderType::Geometry)));
 		}
 
 		//////////////////////////////////////////////////////////////////////

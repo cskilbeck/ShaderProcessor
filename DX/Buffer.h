@@ -176,7 +176,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> struct Buffer
+	template <typename T> struct Buffer: TypelessBuffer
 	{
 		//////////////////////////////////////////////////////////////////////
 
@@ -226,22 +226,22 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		Buffer()
+			: TypelessBuffer()
 		{
-			TRACE("Default!\n");
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		Buffer(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
-			Create(type, count, data, usage, rwOption);
+			TypelessBuffer::Create(type, count, data, usage, rwOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		HRESULT Create(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
-			return U::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
+			return TypelessBuffer::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -269,7 +269,7 @@ namespace DX
 
 		void Set(ID3D11DeviceContext *context, T *data)
 		{
-			U::Set(content, (byte *)data);
+			TypelessBuffer::Set(content, (byte *)data);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -290,7 +290,7 @@ namespace DX
 
 		T *Data() const
 		{
-			return (T *)U::Data();
+			return (T *)TypelessBuffer::Data();
 		}
 	};
 

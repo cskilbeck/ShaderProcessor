@@ -2,7 +2,7 @@
 
 namespace DX
 {
-	template<typename vert> struct VertexBuffer: Buffer<vert, TypelessBuffer>
+	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
 		enum { VertexSize = sizeof(vert) };
 
@@ -13,7 +13,7 @@ namespace DX
 
 		HRESULT Create(uint count, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
-			return Buffer<vert, TypelessBuffer>::Create(VertexBufferType, count, data, usage, rwOption);
+			return Buffer<vert>::Create(VertexBufferType, count, data, usage, rwOption);
 		}
 
 		void Activate(ID3D11DeviceContext *context)

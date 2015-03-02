@@ -55,6 +55,23 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct MemoryResource: Resource
+	{
+		MemoryResource(void const *data, size_t size)
+			: Resource(const_cast<void *>(data), size)	// yuck
+		{
+		}
+
+		~MemoryResource()
+		{
+			// We don't own the data in this case
+			data = null;
+			size = 0;
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct FileResource: Resource
 	{
 		FileResource(tchar const *name);

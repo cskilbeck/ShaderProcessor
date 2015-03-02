@@ -100,20 +100,10 @@ Binding::Binding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 	BindingInfo *info = GetBindingInfo(desc.Type);
 	if(info != null)
 	{
-		if(info->NeedsDefinition)
-		{
-			// find the definition in the shader
-			auto j = s->mDefinitionIDs.find(desc.Name);
-			if(j != s->mDefinitionIDs.end())
-			{
-				definition = s->mDefinitions[j->second];
-			}
-			else
-			{
-				TRACE("ERROR! Where's my TypeDefinition!? I need one...\n");
-			}
-		}
 		ResourceBindingList[info->BindingType].push_back(this);
+
+		// Add to the BindingState for this BindingInfo::Type
+		s->AddBinding(this);
 	}
 	else
 	{
@@ -147,7 +137,7 @@ void Binding::ClearAllBindings()
 
 //////////////////////////////////////////////////////////////////////
 
-void Binding::ShowAllBindings()
+void Binding::ShowAllBindings(HLSLShader *s)
 {
 	for(uint i = 0; i < BindingInfo::Type::NumBindingTypes; ++i)
 	{
@@ -167,6 +157,18 @@ void Binding::ShowAllBindings()
 			}
 			TRACE("\n");
 		}
+
+		TRACE("Binding Runs:\n");
+
+		vector<HLSLShader::BindingRun> &runs = s->mBindingRuns[i];
+
+		char const *sep = "";
+		for(auto &run : runs)
+		{
+			TRACE("%s{%d %d}", sep, run.mBindPoint, run.mBindCount);
+			sep = ",";
+		}
+		TRACE("\n");
 	}
 }
 
@@ -175,8 +177,12 @@ void Binding::ShowAllBindings()
 ConstantBufferBinding::ConstantBufferBinding(HLSLShader *s, D3D11_SHADER_INPUT_BIND_DESC &desc)
 	: Binding(s, desc)
 {
-	TypeDefinition *def = new TypeDefinition(s->mReflector, s->mConstBuffers, this);
-	s->mDefinitions.push_back(def);
-	s->mDefinitionIDs[def->mDesc.Name] = s->mConstBuffers;
-	definition = def;
+	// Find the definition, previously created...
+	auto d = s->mDefinitionIDs.find(this->Name());
+	if(d != s->mDefinitionIDs.end())
+	{
+		TypeDefinition *def = s->mDefinitions[d->second];
+		def->mBinding = this;
+		definition = def;
+	}
 }

@@ -475,6 +475,16 @@ namespace DX
 		}
 	};
 
+	inline string AppendBackslash(string const &s)
+	{
+		string p(s);
+		if(p.back() != '\\')
+		{
+			p.append("\\");
+		}
+		return p;
+	}
+
 	//////////////////////////////////////////////////////////////////////
 
 	inline float Deg2Rad(float rad)

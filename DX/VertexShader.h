@@ -16,8 +16,9 @@ namespace DX
 					 uint numSamplers, char const **samplerNames,
 					 uint numTextures, char const **textureNames,
 					 Texture **textureArray,
-					 Sampler **samplerArray)
-			 : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray)
+					 Sampler **samplerArray,
+					 BindingState &bindState)
+			 : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindState)
 		{
 		}
 
@@ -25,31 +26,37 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			ID3D11ShaderResourceView *srp[16];
-			ID3D11SamplerState *ssp[16];
-
-			uint resources = UpdateTextures(srp);
-			uint samples = UpdateSamplers(ssp);
-
-			uint c = 0;
-			for(auto b : mBindingInfo.mBindRuns)
-			{
-				context->VSSetConstantBuffers(b.mBindPoint, b.mBindCount, &mBindingInfo.mPointers[c]);
-				c += b.mBindCount;
-			}
-
-			context->VSSetShaderResources(0, resources, srp);
-			context->VSSetSamplers(0, samples, ssp);
+			UpdateSamplers();
+			UpdateTextures();
+			Set<&ID3D11DeviceContext::VSSetConstantBuffers,
+				&ID3D11DeviceContext::VSSetSamplers,
+				&ID3D11DeviceContext::VSSetShaderResources>(context);
 			context->IASetInputLayout(mInputLayout);
 			context->VSSetShader(mVertexShader, null, 0);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *blob, size_t size, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+		HRESULT CreateInputLayout(void const *blob, size_t size, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+		{
+			DXR(Device->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		HRESULT Create(void const *blob, size_t size) override
 		{
 			DXR(Device->CreateVertexShader(blob, size, null, &mVertexShader));
-			DXR(Device->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		HRESULT Create(void const *data, size_t size, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+		{
+			DXR(Create(data, size));
+			DXR(CreateInputLayout(data, size, inputElements, inputElementCount));
 			return S_OK;
 		}
 
@@ -57,10 +64,9 @@ namespace DX
 
 		HRESULT Load(FileResource &f, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
 		{
-			void const *p;
-			size_t s;
-			Shader::GetOffsetInSOBFile(f, ShaderType::Vertex, p, s);
-			DXR(Create(p, s, inputElements, inputElementCount));
+			Resource r = FindShaderInSOBFile(f, ShaderType::Vertex);
+			DXR(Shader::Create(r));
+			DXR(CreateInputLayout(r.Data(), r.Size(), inputElements, inputElementCount));
 			return S_OK;
 		}
 

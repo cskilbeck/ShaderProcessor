@@ -24,7 +24,6 @@
 // Spock
 //		Make debug info default to on in Debug builds
 // ShaderProcessor
-//		Honour the input binding slot specified for constant buffers register(b#) (and deal with non-contiguous ones)
 //		Instancing support / multiple vertex streams
 //		Error check everything
 //		Structured Buffers/UAV support
@@ -34,6 +33,7 @@
 //		Shader Linking/Interfaces support...?
 //		Nested structs
 //		Sampler/Texture defaults
+//		* Honour the input binding slots specified (and deal with non-contiguous ones)
 //		* Identify matrices in input layout
 //		* Use Map/UnMap for const buffers
 //		* enable mode where bytecode not embedded but loaded from a file

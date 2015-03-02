@@ -82,7 +82,7 @@ struct Binding
 	}
 
 	static void ClearAllBindings();
-	static void ShowAllBindings();
+	static void ShowAllBindings(HLSLShader *s);
 
 	using ResourceBindingList_t = vector<Binding *>;
 

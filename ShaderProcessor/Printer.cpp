@@ -89,12 +89,15 @@ namespace Printer
 
 	//////////////////////////////////////////////////////////////////////
 
-	void OutputIndent(char const *after)
+	void OutputIndent(char const *after, ...)
 	{
 		WriteString(indent);
 		if(after != null)
 		{
-			WriteString(after);
+			va_list v;
+			va_start(v, after);
+			string s = Format_V(after, v);
+			WriteString(s.c_str());
 		}
 	}
 

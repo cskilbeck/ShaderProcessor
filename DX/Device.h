@@ -235,6 +235,7 @@ namespace DX
 				DXI(mContext->Flush());
 			}
 			mContext.Release();
+			DX::Context = null;
 
 #if defined(_DEBUG)
 			DXPtr<ID3D11Debug> D3DDebug;
@@ -242,9 +243,7 @@ namespace DX
 #endif
 
 			mDevice.Release();
-			mContext.Release();
 			DX::Device = null;
-			DX::Context = null;
 
 #if defined(_DEBUG)
 			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);

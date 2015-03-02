@@ -6,7 +6,6 @@
 
 namespace DX
 {
-
 	Resource::Resource()
 		: data(null)
 		, size(0)
@@ -17,8 +16,6 @@ namespace DX
 
 	Resource::~Resource()
 	{
-		assert(data == null);
-		assert(size == 0);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -61,5 +58,4 @@ namespace DX
 		Delete(data);
 		size = 0;
 	}
-
 }

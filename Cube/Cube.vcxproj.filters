@@ -36,19 +36,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <SPOCK Include="Shaders\Phong.shader">
-      <Filter>Shader Files</Filter>
-    </SPOCK>
     <SPOCK Include="Shaders\UI.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
     <SPOCK Include="Shaders\Blit.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Shaders\Simple.shader">
+    <SPOCK Include="Shaders\Instanced.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Shaders\Instanced.shader">
+    <SPOCK Include="Shaders\Phong.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
+    <SPOCK Include="Shaders\Simple.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

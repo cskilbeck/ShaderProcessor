@@ -175,6 +175,14 @@ struct SamplerBinding;
 
 struct HLSLShader
 {
+	struct BindingRun
+	{
+		uint16 mBindPoint;
+		uint16 mBindCount;
+	};
+
+	vector<BindingRun> mBindingRuns[BindingInfo::Type::NumBindingTypes];
+
 	//////////////////////////////////////////////////////////////////////
 
 	using IntMap = std::unordered_map<string, int32>;
@@ -229,6 +237,7 @@ struct HLSLShader
 	void OutputResourceNames();
 	void OutputSamplerNames();
 	void OutputShaderStruct();
+	void OutputBindingRuns();
 	void OutputConstBufferMembers();
 	void OutputSamplerMembers();
 	void OutputResourceMembers();
@@ -260,6 +269,10 @@ struct HLSLShader
 	virtual HRESULT Destroy();
 
 	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
+
+
+
+	void AddBinding(Binding *b);
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -293,7 +306,7 @@ inline string HLSLShader::RefName() const
 
 inline string HLSLShader::Name() const
 {
-	return mName + "_" + string(mShaderTypeDesc.refName);
+	return mName + "_" + RefName();
 }
 
 //////////////////////////////////////////////////////////////////////
