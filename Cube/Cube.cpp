@@ -3,7 +3,7 @@
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
-// Model hierarchy/Skinning shader
+// Model hierarchy/Skinning shader/Anim player
 // Normal mapping
 // Shadow mapping
 // 2D UI Elements/Scene
@@ -11,7 +11,7 @@
 // Assimp
 //		Default shader
 //		Preprocessor / native loader
-//		Shared vert/index buffers
+//		Shared vert/index buffers across meshes
 //		Named shader support
 //		Skeleton/Weights
 // Bullet
@@ -24,15 +24,16 @@
 // Spock
 //		Make debug info default to on in Debug builds
 // ShaderProcessor
+//		Fix the crappy #pragma renderstate system (run CL /P beforehand - what about #includes though?)
+//		Nested structs (names of the structs!?)
 //		Instancing support / multiple vertex streams
+//		Sampler/Texture defaults
 //		Error check everything
 //		Structured Buffers/UAV support
-//		Hull/Domain shader support
+//		Hull/Domain/Compute shader support (Tesselate the duck to buggery!)
 //		Assembly Listing file
 //		deal with multiple render targets
 //		Shader Linking/Interfaces support...?
-//		Nested structs
-//		Sampler/Texture defaults
 //		* Honour the input binding slots specified (and deal with non-contiguous ones)
 //		* Identify matrices in input layout
 //		* Use Map/UnMap for const buffers

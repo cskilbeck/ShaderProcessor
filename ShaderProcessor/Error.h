@@ -17,3 +17,22 @@ namespace Error
 void emit_error(char const *format, ...);
 void emit_warning(char const *format, ...);
 
+//////////////////////////////////////////////////////////////////////
+
+enum
+{
+	success,
+	err_warnings_issued,
+	err_args,
+	err_nosource,
+	err_noshadermodel,
+	err_cantcreateheaderfile,
+	err_cantwritetoheaderfile,
+	err_compilerproblem,
+	err_noshaderspecified,
+	err_cantloadsourcefile,
+	err_unknownpragma,
+	err_malformedpragma,
+	err_unknownkey
+};
+

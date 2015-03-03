@@ -38,7 +38,9 @@ static bool isMatrix[] =
 
 //////////////////////////////////////////////////////////////////////
 
-static char const *typeNames[] =
+uint Variable::padID;
+
+char const *VariableType::typeNames[] =
 {
 	"Void",
 	"Bool",
@@ -90,9 +92,8 @@ static char const *typeNames[] =
 
 //////////////////////////////////////////////////////////////////////
 
-TypeDefinition::TypeDefinition(ID3D11ShaderReflection *reflection, uint index, Binding *binding)
-	: mBinding(binding)
-	, mIndex(index)
+TypeDefinition::TypeDefinition(ID3D11ShaderReflection *reflection, uint index)
+	: mIndex(index)
 {
 	// get the desc
 	ID3D11ShaderReflectionConstantBuffer *b = reflection->GetConstantBufferByIndex(index);
@@ -106,39 +107,24 @@ TypeDefinition::TypeDefinition(ID3D11ShaderReflection *reflection, uint index, B
 	// 1st pass, get the descs
 	for(uint j = 0; j < FieldCount; ++j)
 	{
-		ID3D11ShaderReflectionVariable *var = b->GetVariableByIndex(j);
-		ID3D11ShaderReflectionType *type = var->GetType();
-		Field *cbVar = new Field();
-		D3D11_SHADER_VARIABLE_DESC &v = cbVar->Variable;
-		D3D11_SHADER_TYPE_DESC &t = cbVar->Type;
-		DXV(var->GetDesc(&v));
-		DXV(type->GetDesc(&t));
-		mFields.push_back(cbVar);
-		mFieldIDs[v.Name] = j;
+		mVariables.push_back(new Variable(reflection, b->GetVariableByIndex(j)));
 	}
 
 	// 2nd pass, work out padding and get defaults
-	for(uint j = 0; j < FieldCount; ++j)
+	for(uint j = 0; j < mVariables.size(); ++j)
 	{
-		Field *cbVar = mFields[j];
-		D3D11_SHADER_VARIABLE_DESC &v = cbVar->Variable;
-		D3D11_SHADER_TYPE_DESC &t = cbVar->Type;
+		Variable *var = mVariables[j];
 
 		// get where the next field starts (or the end of the struct if this is the last one)
-		uint nextStart = (j < FieldCount - 1) ? mFields[j + 1]->Variable.StartOffset : mDesc.Size;
+		uint nextStart = (j < FieldCount - 1) ? mVariables[j + 1]->StartOffset() : mDesc.Size;
 
 		// padding is difference between the end of this one and start of next		
-		cbVar->padding = nextStart - (v.StartOffset + v.Size);
+		var->padding = nextStart - var->EndOffset();
 
 		// copy the default value, if there is one, into the Defaults mDesc
-		if(v.DefaultValue != null)
+		if(var->Defaults() != null)
 		{
-			if(Defaults == null)
-			{
-				Defaults.reset(new byte[mDesc.Size]);
-				memset(Defaults.get(), 0, mDesc.Size);
-			}
-			memcpy(Defaults.get() + v.StartOffset, v.DefaultValue, v.Size);
+			memcpy(DefaultsBuffer() + var->StartOffset(), var->Defaults(), var->Size());
 		}
 	}
 }
@@ -151,25 +137,6 @@ TypeDefinition::~TypeDefinition()
 
 //////////////////////////////////////////////////////////////////////
 
-static void OutputTable(uint32 *table, uint count, char const *name)
-{
-	TRACE("uint32 half::%s[%d] = {", name, count);
-	char const *sep = "";
-	string sname = "// Name";
-	for(uint i = 0; i < count; ++i)
-	{
-		TRACE(sep);
-		if((i % 8) == 0)
-		{
-			TRACE("%s\n\t", sname.c_str());
-			name = "";
-		}
-		TRACE("0x%08x", table[i]);
-		sep = ",";
-	}
-	TRACE("\n};\n");
-}
-
 void TypeDefinition::StaticsOutput(string const &shaderName)
 {
 	OutputCommentLine("%s offsets", mDesc.Name);
@@ -177,20 +144,20 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 	OutputIndent("{");
 	Indent();
 	char const *sep = "";
-	for(uint i = 0; i < FieldCount; ++i)
+	for(uint i = 0; i < mVariables.size(); ++i)
 	{
-		D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
+		Variable &v = *mVariables[i];
 		Output(sep);
 		OutputLine();
 		OutputIndent();
-		Output("{ \"%s\", %d }", v.Name, v.StartOffset);
+		Output("{ \"%s\", %d }", v.Name(), v.StartOffset());
 		sep = ",";
 	}
 	OutputLine();
 	UnIndent("};");
 	OutputLine();
 
-	if(Defaults == null)
+	if(mDefaultBuffer == null)
 	{
 		OutputComment("no defaults for %s", mDesc.Name);
 	}
@@ -203,15 +170,15 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 		sep = "";
 		for(uint i = 0; i < FieldCount; ++i)
 		{
-			D3D11_SHADER_VARIABLE_DESC &v = mFields[i]->Variable;
-			uint32 *data = (uint32 *)(Defaults.get() + v.StartOffset);
+			Variable &v = *mVariables[i];
+			uint32 *data = (uint32 *)(v.Defaults() + v.StartOffset());
 			bool lastOne = i == (FieldCount - 1);
-			uint end = (lastOne) ? mDesc.Size : mFields[i + 1]->Variable.StartOffset;
-			uint pad = (end - (v.StartOffset + v.Size));
-			uint slots = (v.Size + pad) / sizeof(uint32);
-			string eol = Format("// %s", v.Name);
+			uint end = (lastOne) ? mDesc.Size : mVariables[i + 1]->StartOffset();
+			uint pad = (uint)(end - (v.StartOffset() + v.Size()));
+			uint slots = (uint)(v.Size() + pad) / sizeof(uint32);
+			string eol = Format("// %s", v.Name());
 			char const *sol = "\n";
-			char const *sname = v.Name;
+			char const *sname = v.Name();
 			for(uint j = 0; j < slots; ++j)
 			{
 				Output(sep);
@@ -239,25 +206,15 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 
 void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 {
-	uint padID = 0;
-	uint fieldCount = 0;
+	Variable::ResetPaddingID();
+
 	OutputLine("struct %s_t", mDesc.Name);
 	OutputLine("{");
 	Indent();
-	for(auto i = mFields.begin(); i != mFields.end(); ++i)
+	for(auto p : mVariables)
 	{
-		Field *p = (*i);
-		D3D11_SHADER_VARIABLE_DESC &v = p->Variable;
-		D3D11_SHADER_TYPE_DESC &t = p->Type;
-		string typeName = Format("%s%s%d", typeNames[t.Type], isMatrix[t.Class] ? Format("%dx", t.Rows).c_str() : "", t.Columns);
-		OutputIndent();
-		Output("%s %s;", typeName.c_str(), v.Name);
-		if(p->padding != 0)
-		{
-			Output("\t\t\t\tprivate: byte pad%d[%d]; public:", padID++, p->padding);
-		}
+		p->OutputDefinition();
 		OutputLine();
-		++fieldCount;
 	}
 	UnIndent("};");
 	OutputLine();
@@ -271,9 +228,9 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 void TypeDefinition::ConstructorOutput(int bindPoint)
 {
 	string defaultStr = "null";
-	if(Defaults != null)
+	if(mDefaultBuffer != null)
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d, %d)", mDesc.Name, mFields.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
+	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d, %d)", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
 }

@@ -183,6 +183,7 @@
     <ClInclude Include="optionparser.h" />
     <ClInclude Include="Binding.h" />
     <ClInclude Include="printer.h" />
+    <ClInclude Include="RenderState.h" />
     <ClInclude Include="SamplerBinding.h" />
     <ClInclude Include="HLSLShader.h" />
     <ClInclude Include="stdafx.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="Printer.cpp" />
     <ClCompile Include="HLSLShader.cpp" />
+    <ClCompile Include="RenderState.cpp" />
     <ClCompile Include="ShaderProcessor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

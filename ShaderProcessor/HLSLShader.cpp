@@ -520,7 +520,7 @@ HRESULT HLSLShader::CreateBindings()
 		TRACE("Constant buffer %d (%s) is %s\n", i, buffer->Name, GetFrom(constant_buffer_type_names, buffer->Type));
 
 		// Create a definition if necessary
-		TypeDefinition *def = new TypeDefinition(mReflector, mConstBuffers, null);
+		TypeDefinition *def = new TypeDefinition(mReflector, mConstBuffers);
 		mDefinitionIDs[def->mDesc.Name] = (uint)mDefinitions.size();
 		mDefinitions.push_back(def);
 		++mConstBuffers;
@@ -572,10 +572,6 @@ HLSLShader::~HLSLShader()
 {
 	Destroy();
 }
-
-//////////////////////////////////////////////////////////////////////
-
-static char const *comment = "//////////////////////////////////////////////////////////////////////\n";
 
 //////////////////////////////////////////////////////////////////////
 
@@ -696,7 +692,7 @@ void HLSLShader::OutputSamplerNames()
 {
 	if(mSamplers > 0)
 	{
-		OutputCommentLine("Sampler names", comment);
+		OutputCommentLine("Sampler names");
 		OutputLine("extern char const WEAKSYM * %s_SamplerNames[] =", Name().c_str());
 		OutputIndent("{");
 		OutputLine();
@@ -851,12 +847,12 @@ void HLSLShader::OutputConstructor()
 
 string HLSLShader::VSTag()
 {
-	if(mShaderTypeDesc.type == ShaderType::Vertex)
-	{
-		return Format(", %s_InputElements, _countof(%s_InputElements)", Name().c_str(), Name().c_str());
-	}
-	return string();
+	return (mShaderTypeDesc.type == ShaderType::Vertex) ?
+		Format(", %s_InputElements, _countof(%s_InputElements)", Name().c_str(), Name().c_str()) :
+		string();
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void HLSLShader::OutputShaderStruct()
 {
@@ -943,30 +939,10 @@ void HLSLShader::OutputInputStruct()
 
 //////////////////////////////////////////////////////////////////////
 
-void HLSLShader::OutputData()
-{
-}
-
-//////////////////////////////////////////////////////////////////////
-
-void HLSLShader::OutputStruct()
-{
-	OutputShaderStruct();
-}
-
-//////////////////////////////////////////////////////////////////////
-
 void HLSLShader::OutputHeaderFile()
 {
 	Printer::SetShader(this);
-	OutputStruct();
-}
-
-//////////////////////////////////////////////////////////////////////
-
-HRESULT HLSLShader::CreateDefinitions()
-{
-	return S_OK;
+	OutputShaderStruct();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1146,3 +1122,8 @@ char const *HLSLShader::ShaderTypeName() const
 	return mShaderTypeDesc.name;
 }
 
+//////////////////////////////////////////////////////////////////////
+
+void HLSLShader::Dump()
+{
+}

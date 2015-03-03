@@ -36,3 +36,6 @@ enum optionIndex
 
 bool ParseArgs(int argc, char *argv[], vector<option::Option> &options);
 void PrintUsage();
+uint32 GetCompilerOptionFlags();
+
+extern vector<option::Option> options;

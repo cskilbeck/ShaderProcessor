@@ -42,9 +42,11 @@ namespace Shaders
 	//////////////////////////////////////////////////////////////////////
 	// VertConstants offsets
 
-	extern ConstBufferOffset const WEAKSYM Instanced_VS_VertConstants_Offsets[1] =
+	extern ConstBufferOffset const WEAKSYM Instanced_VS_VertConstants_Offsets[3] =
 	{
-		{ "Transform", 0 }
+		{ "Bill", 0 },
+		{ "choose", 16 },
+		{ "Transform", 32 }
 	};
 
 	// no defaults for VertConstants
@@ -108,6 +110,18 @@ namespace Shaders
 
 			struct VertConstants_t
 			{
+				struct
+				{
+					struct
+					{
+						Bool1  def;
+					}  ghi;
+					Float1  ghi;
+				} Bill;				private: byte pad0[8]; public:
+				struct
+				{
+					Float2  Toss;
+				} choose;				private: byte pad1[8]; public:
 				Float4x4 Transform;
 			};
 
@@ -118,7 +132,7 @@ namespace Shaders
 
 			VS()
 				: VertexShader(1, Instanced_VS_ConstBufferNames, 0, null, 0, null, null, null, Instanced_Bindings[ShaderType::Vertex])
-				, VertConstants(1, Instanced_VS_VertConstants_Offsets, null, this, 0, 6)
+				, VertConstants(3, Instanced_VS_VertConstants_Offsets, null, this, 0, 6)
 			{
 			}
 		};

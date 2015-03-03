@@ -229,9 +229,6 @@ struct HLSLShader
 	HLSLShader(tstring const &filename);
 	virtual ~HLSLShader();
 
-	void OutputData();
-	void OutputStruct();
-
 	void OutputHeaderFile();
 	void OutputConstBufferNamesAndOffsets();
 	void OutputResourceNames();
@@ -264,13 +261,12 @@ struct HLSLShader
 
 	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
 	HRESULT CreateInputLayout();
-	HRESULT CreateDefinitions();
 	HRESULT CreateBindings();
 	virtual HRESULT Destroy();
 
 	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);
 
-
+	void Dump();
 
 	void AddBinding(Binding *b);
 };

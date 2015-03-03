@@ -6,6 +6,7 @@
 //////////////////////////////////////////////////////////////////////
 
 using option::Option;
+vector<Option> options;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -141,4 +142,61 @@ bool ParseArgs(int argc, char *argv[], vector<Option> &options)
 void PrintUsage()
 {
 	option::printUsage(std::cerr, usage);
+
+	printf("\nOptions specified:\n\n");
+	for(auto &o : options)
+	{
+		if(o.desc != null)
+		{
+			string s = "";
+			if(o.arg != null)
+			{
+				s = Format("=%s", o.arg);
+			}
+			printf("%s%s\n", o.name, s.c_str());
+		}
+	}
 }
+
+//////////////////////////////////////////////////////////////////////
+
+uint32 optionMap[][2] =
+{
+	{ DISABLE_OPTIMIZATION, D3DCOMPILE_SKIP_OPTIMIZATION },
+	{ INCLUDE_DEBUG_INFO, D3DCOMPILE_DEBUG },
+	{ ERROR_ON_WARNING, D3DCOMPILE_WARNINGS_ARE_ERRORS },
+	{ PACK_MATRIX_ROW_MAJOR, D3DCOMPILE_PACK_MATRIX_ROW_MAJOR },
+	{ PARTIAL_PRECISION, D3DCOMPILE_PARTIAL_PRECISION },
+	{ NO_PRESHADER, D3DCOMPILE_NO_PRESHADER },
+	{ AVOID_FLOW_CONTROL, D3DCOMPILE_AVOID_FLOW_CONTROL },
+	{ PREFER_FLOW_CONTROL, D3DCOMPILE_PREFER_FLOW_CONTROL },
+	{ ENABLE_STRICTNESS, D3DCOMPILE_ENABLE_STRICTNESS },
+	{ IEEE_STRICTNESS, D3DCOMPILE_IEEE_STRICTNESS },
+	{ RESOURCES_MAY_ALIAS, D3DCOMPILE_RESOURCES_MAY_ALIAS }
+};
+
+//////////////////////////////////////////////////////////////////////
+
+uint32 GetCompilerOptionFlags()
+{
+	uint32 flag = 0;
+	for(int i = 0; i < _countof(optionMap); ++i)
+	{
+		if(options[optionMap[i][0]])
+		{
+			flag |= optionMap[i][1];
+		}
+	}
+	if(options[OPTIMIZATION_LEVEL])
+	{
+		switch(atoi(options[OPTIMIZATION_LEVEL].arg))
+		{
+			case 0: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL0; break;
+			case 1: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL1; break;
+			case 2: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL2; break;
+			case 3: flag |= D3DCOMPILE_OPTIMIZATION_LEVEL3; break;
+		}
+	}
+	return flag;
+}
+

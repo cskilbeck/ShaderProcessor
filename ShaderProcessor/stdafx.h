@@ -15,4 +15,5 @@
 #include "HLSLShader.h"
 #include "optionparser.h"
 #include "Args.h"
+#include "RenderState.h"
 
