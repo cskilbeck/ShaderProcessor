@@ -222,9 +222,11 @@ bool MyDXWindow::OnCreate()
 
 	cubeShader.reset(new Shaders::Phong());
 	cubeTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
-	cubeSampler.reset(new Sampler());
+	Sampler::Options o;
+	o.Filter = min_mag_mip_point;
+	cubeSampler.reset(new Sampler(o));
 	cubeShader->ps.picTexture = cubeTexture.get();
-	cubeShader->ps.tex1Sampler = cubeSampler.get();
+//	cubeShader->ps.tex1Sampler = cubeSampler.get();
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 

@@ -200,6 +200,7 @@
     <ClCompile Include="Printer.cpp" />
     <ClCompile Include="HLSLShader.cpp" />
     <ClCompile Include="RenderState.cpp" />
+    <ClCompile Include="SamplerBinding.cpp" />
     <ClCompile Include="ShaderProcessor.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

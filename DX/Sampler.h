@@ -53,13 +53,14 @@ namespace DX
 			D3D11_SAMPLER_DESC desc;
 			desc.Filter = (D3D11_FILTER)options.Filter;
 			desc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)options.U;
-			desc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)options.V;
-			desc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)options.W;
-			options.BorderColor.GetFloatsRGBA(desc.BorderColor);
-			desc.ComparisonFunc = (D3D11_COMPARISON_FUNC)options.comparisonFunc;
+			desc.AddressV = (D3D11_TEXTURE_ADDRESS_MODE)options.V;
+			desc.AddressW = (D3D11_TEXTURE_ADDRESS_MODE)options.W;
+			desc.MipLODBias = options.MipLodBias;
 			desc.MaxAnisotropy = options.MaxAnisotropy;
-			desc.MaxLOD = options.MaxLOD;
+			desc.ComparisonFunc = (D3D11_COMPARISON_FUNC)options.comparisonFunc;
+			options.BorderColor.GetFloatsRGBA(desc.BorderColor);
 			desc.MinLOD = options.MinLOD;
+			desc.MaxLOD = options.MaxLOD;
 			Create(desc);
 		}
 

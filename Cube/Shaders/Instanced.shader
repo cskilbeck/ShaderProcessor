@@ -52,6 +52,14 @@ struct PS_INPUT
 	float4 color: COLOR;
 };
 
+Texture2D picTexture : register(t1);
+
+sampler tex1Sampler : register(s4) = sampler_state
+{
+	Texture = <picTexture>;
+	MagFilter = POINT;
+};
+
 PS_INPUT vsMain(VS_INPUT i)
 {
 	PS_INPUT o;
@@ -62,5 +70,6 @@ PS_INPUT vsMain(VS_INPUT i)
 
 float4 psMain(PS_INPUT i) : SV_Target
 {
-	return i.color;
+	float4 c = picTexture.Sample(tex1Sampler, float2(0,0));
+	return c * i.color;
 }
