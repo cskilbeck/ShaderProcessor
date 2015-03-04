@@ -26,11 +26,11 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			UpdateSamplers();
-			UpdateTextures();
+			uint s = UpdateSamplers();
+			uint t = UpdateTextures();
 			Set<&ID3D11DeviceContext::GSSetConstantBuffers,
 				&ID3D11DeviceContext::GSSetSamplers,
-				&ID3D11DeviceContext::GSSetShaderResources>(context);
+				&ID3D11DeviceContext::GSSetShaderResources>(context, s, t);
 			context->GSSetShader(mGeometryShader, null, 0);
 		}
 

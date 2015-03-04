@@ -60,10 +60,10 @@ cbuffer Light : register(b1)
 
 Texture2D picTexture : register(t1);
 
-sampler tex1Sampler : register(s4) = sampler_state 
+sampler tex1Sampler
 {
 	Texture = <picTexture>;
-	MagFilter = POINT;
+	Filter = MIN_MAG_MIP_POINT;
 };
 
 //////////////////////////////////////////////////////////////////////

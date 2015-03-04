@@ -96,7 +96,7 @@ namespace DX
 		using SetSR = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
 	public:
 
-		template <SetCB SetConstantBuffers, SetSS SetSamplers, SetSR SetShaderResources > void Set(ID3D11DeviceContext *context)
+		template <SetCB SetConstantBuffers, SetSS SetSamplers, SetSR SetShaderResources > void Set(ID3D11DeviceContext *context, uint s, uint t)
 		{
 			ID3D11Buffer **bufferPtr = mConstantBufferPointers.data();
 			for(auto b : mBindingState.mConstantBufferBindings)
@@ -145,28 +145,35 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void UpdateTextures()
+		uint UpdateTextures()
 		{
+			uint t = 0;
 			for(uint i = 0; i < mNumTextures; ++i)
 			{
 				if(mTextures[i] != null)
 				{
-					mResourcePointers[i] = mTextures[i]->mShaderResourceView;
+					mResourcePointers[t++] = mTextures[i]->mShaderResourceView;
 				}
 			}
+			return t;
 		}
 
 		//////////////////////////////////////////////////////////////////////
+		// Need to work out what we need to set
+		// BindRuns are possibly not contiguous
+		// Return a new bindingstate, not a UINT!
 
-		void UpdateSamplers()
+		uint UpdateSamplers()
 		{
+			uint s = 0;
 			for(uint i = 0; i < mNumTextures; ++i)
 			{
 				if(mSamplers[i] != null)
 				{
-					mSamplerPointers[i] = mSamplers[i]->mSamplerState;
+					mSamplerPointers[s++] = mSamplers[i]->mSamplerState;
 				}
 			}
+			return s;
 		}
 
 		//////////////////////////////////////////////////////////////////////

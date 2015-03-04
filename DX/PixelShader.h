@@ -26,11 +26,11 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			UpdateSamplers();
-			UpdateTextures();
+			uint s = UpdateSamplers();
+			uint t = UpdateTextures();
 			Set<&ID3D11DeviceContext::PSSetConstantBuffers,
 				&ID3D11DeviceContext::PSSetSamplers,
-				&ID3D11DeviceContext::PSSetShaderResources>(context);
+				&ID3D11DeviceContext::PSSetShaderResources>(context, s, t);
 			context->PSSetShader(mPixelShader, null, 0);
 		}
 
