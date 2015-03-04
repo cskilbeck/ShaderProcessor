@@ -34,8 +34,7 @@ enum optionIndex
 	PRAGMA_OPTIONS
 };
 
-bool ParseArgs(int argc, char *argv[], vector<option::Option> &options);
-void PrintUsage();
+int CheckArgs(int argc, char *argv[]);
 uint32 GetCompilerOptionFlags();
 
 extern vector<option::Option> options;

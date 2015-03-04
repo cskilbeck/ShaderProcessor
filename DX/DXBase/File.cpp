@@ -21,6 +21,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void File::Acquire(HANDLE handle)
+	{
+		name = TEXT("Unknown");
+		h = handle;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	bool File::Create(tchar const *filename)
 	{
 		name = filename;
@@ -78,34 +86,32 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	uint32 File::Read(uint32 bytes, void *buffer)
+	bool File::Read(uint32 bytes, void *buffer, uint32 &read)
 	{
-		DWORD got;
 		error = ERROR_SUCCESS;
-		if(ReadFile(h, buffer, bytes, &got, null))
+		if(ReadFile(h, buffer, bytes, (DWORD *)&read, null))
 		{
-			TRACE(TEXT("Read %d bytes from %s\n"), got, name.c_str());
-			return got;
+			TRACE(TEXT("Read %d bytes from %s\n"), read, name.c_str());
+			return true;
 		}
 		error = GetLastError();
 		TRACE(TEXT("Error %08x reading %d bytes from %s\n"), error, bytes, name.c_str());
-		return 0;
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	uint32 File::Write(uint32 bytes, void const *buffer)
+	bool File::Write(uint32 bytes, void const *buffer, uint32 &wrote)
 	{
-		DWORD wrote;
 		error = ERROR_SUCCESS;
-		if(WriteFile(h, buffer, bytes, &wrote, null))
+		if(WriteFile(h, buffer, bytes, (DWORD *)&wrote, null))
 		{
 			TRACE(TEXT("Wrote %d bytes to %s\n"), wrote, name.c_str());
-			return wrote;
+			return true;
 		}
 		error = GetLastError();
 		TRACE(TEXT("Error %08x writing %d bytes to %s\n"), error, bytes, name.c_str());
-		return 0;
+		return false;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -135,7 +141,8 @@ namespace DX
 			return false;
 		}
 
-		if(!f.Read((uint32)fileSize, buf.get()))
+		uint32 got;
+		if(!f.Read((uint32)fileSize, buf.get(), got))
 		{
 			return false;
 		}
@@ -158,7 +165,22 @@ namespace DX
 		{
 			return false;
 		}
-		return f.Write((uint32)size, data) > 0;
+		return f.Write((uint32)size, data, size);
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
+	bool FileExists(tchar const *filename)
+	{
+		DWORD dwAttrib = GetFileAttributes(filename);
+		return dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool FolderExists(tchar const *foldername)
+	{
+		DWORD dwAttrib = GetFileAttributes(foldername);
+		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
+	}
 }

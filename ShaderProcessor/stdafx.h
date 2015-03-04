@@ -17,3 +17,6 @@
 #include "Args.h"
 #include "RenderState.h"
 
+#ifndef _MBCS
+#error "UNICODE not supported in this tool!"
+#endif

@@ -34,6 +34,15 @@
 //		Assembly Listing file
 //		deal with multiple render targets
 //		Shader Linking/Interfaces support...?
+//		Sort out Resource types (Texture1D/2D/3D etc)
+//		Support instancing?
+//		Support all shader types
+//		Support compute
+//		support Buffers<>
+//		deal with anonymous cbuffers and tbuffers (index instead of name)
+//		test alignment/padding etc
+//		deal with Buffers of structs (no padding)
+//		Allow row or column major matrices
 //		* Honour the input binding slots specified (and deal with non-contiguous ones)
 //		* Identify matrices in input layout
 //		* Use Map/UnMap for const buffers
@@ -198,8 +207,6 @@ bool MyDXWindow::OnCreate()
 		vs.vConstants.Update(DX::Context);
 	};
 
-	using namespace Assimp;
-	
 	scene.Load(TEXT("data\\duck.dae"));
 
 	FontManager::Open(this);

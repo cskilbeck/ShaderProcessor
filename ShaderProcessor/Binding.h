@@ -28,10 +28,7 @@ struct BindingInfo
 
 using namespace DX;
 
-using BindingInfoMap_t = std::map<uint, BindingInfo>;
-
 BindingInfo *GetBindingInfo(D3D_SHADER_INPUT_TYPE type);
-char const *GetBindingTypeName(BindingInfo::Type bindingType);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -80,13 +77,6 @@ struct Binding
 	virtual void ConstructorOutput()
 	{
 	}
-
-	static void ClearAllBindings();
-	static void ShowAllBindings(HLSLShader *s);
-
-	using ResourceBindingList_t = vector<Binding *>;
-
-	static ResourceBindingList_t ResourceBindingList[BindingInfo::Type::NumBindingTypes];
 };
 
 //////////////////////////////////////////////////////////////////////

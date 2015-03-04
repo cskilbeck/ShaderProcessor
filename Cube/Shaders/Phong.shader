@@ -11,7 +11,7 @@ cbuffer VertConstants
 struct VS_INPUT
 {
 	float3 Position : float_Position;
-	half2 TexCoord : half_TexCoord;
+	float2 TexCoord : half_TexCoord;
 	float4 Color : byte_Color;
 	float3 Normal : float_Normal;
 };

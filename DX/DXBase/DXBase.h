@@ -74,4 +74,6 @@
 #include "Rect.h"
 #include "Random.h"
 #include "D3D.h"
+#include "Registry.h"
+
 

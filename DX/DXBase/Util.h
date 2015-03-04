@@ -381,42 +381,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct RegKeyTraits
+	{
+		static void Close(HKEY key)			{	RegCloseKey(key);				}
+		static HKEY InvalidValue()			{	return (HKEY)null;				}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct HandleTraits
 	{
-		static void Close(HANDLE handle)
-		{
-			CloseHandle(handle);
-		}
-
-		static HANDLE Default()
-		{
-			return INVALID_HANDLE_VALUE;
-		}
-
-		static HANDLE InvalidValue()
-		{
-			return INVALID_HANDLE_VALUE;
-		}
+		static void Close(HANDLE handle)	{	CloseHandle(handle);			}
+		static HANDLE InvalidValue()		{	return INVALID_HANDLE_VALUE;	}
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
 	struct IUnknownTraits
 	{
-		static void Close(IUnknown *comptr)
-		{
-			comptr->Release();
-		}
-
-		static IUnknown *Default()
-		{
-			return DX::null;
-		}
-
-		static IUnknown *InvalidValue()
-		{
-			return DX::null;
-		}
+		static void Close(IUnknown *comptr)	{	comptr->Release();				}
+		static IUnknown *InvalidValue()		{	return DX::null;				}
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -429,9 +413,8 @@ namespace DX
 		{
 		}
 
-		ObjHandle()
+		ObjHandle() : obj(traits::InvalidValue())
 		{
-			obj = traits::Default();
 		}
 
 		operator T()
@@ -461,7 +444,7 @@ namespace DX
 			{
 				traits::Close(obj);
 			}
-			obj = traits::Default();
+			obj = traits::InvalidValue();
 		}
 
 		void Release()
@@ -474,6 +457,14 @@ namespace DX
 			Close();
 		}
 	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	template<typename T> using DXPtr2 = ObjHandle < T, IUnknownTraits > ;
+	using Handle = ObjHandle < HANDLE, HandleTraits > ;
+	using RegKey = ObjHandle < HKEY, RegKeyTraits > ;
+
+	//////////////////////////////////////////////////////////////////////
 
 	inline string AppendBackslash(string const &s)
 	{
@@ -499,9 +490,5 @@ namespace DX
 		return deg * (180.0f / PI);
 	}
 
-	//////////////////////////////////////////////////////////////////////
-
-	template<typename T> using DXPtr2 = ObjHandle < T, IUnknownTraits > ;
-	using Handle = ObjHandle < HANDLE, HandleTraits > ;
 
 }

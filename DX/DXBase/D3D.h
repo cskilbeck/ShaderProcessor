@@ -60,6 +60,26 @@ namespace DX
 		DXTRACE(TEXT(#x) TEXT( " ok\n")); \
 		}					\
 
+#define EXR(x) 					\
+	__hr = (x);					\
+	if(__hr != ERROR_SUCCESS)	\
+	{							\
+		TRACE(TEXT(#x) TEXT(" failed: %08x\n"), __hr); \
+		assert(false);	\
+		return __hr;	\
+	}					\
+	else				\
+	{					\
+		DXTRACE(TEXT(#x) TEXT( " ok\n")); \
+	}					\
+
+#define SXR(x) 					\
+	__hr = (x);					\
+	if(__hr != ERROR_SUCCESS)	\
+	{							\
+		return __hr;			\
+	}
+
 #define DXV(x) 			\
 	__hr = (x);			\
 	if(FAILED(__hr))	\
@@ -117,6 +137,7 @@ namespace DX
 #define DXZ(x) __hr = (x); if(FAILED(__hr)) return 0;
 #define DXB(x) __hr = (x); if(FAILED(__hr)) return false;
 #define DXT(x) __hr = (x); if(FAILED(__hr)) throw HRException(__hr, #x);
+#define SXR(x) __hr = (x); if(__hr != ERROR_SUCCESS) return __hr;
 #define DXI(x) (x);
 #endif
 

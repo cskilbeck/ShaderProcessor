@@ -93,7 +93,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			{
 				emit_warning("Invalid value %s for boolean parameter", value.c_str());
 			}
-			TRACE("\t%s = (BOOL)%d\n", param.name, r);
 			*((BOOL *)((byte *)param.target + offset)) = r;
 		}
 	},
@@ -112,7 +111,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			{
 				emit_warning("Invalid value %s for inverse boolean parameter", value.c_str());
 			}
-			TRACE("\t%s = (INV_BOOL)%d\n", param.name, r);
 			*((BOOL *)((byte *)param.target + offset)) = r;
 		}
 	},
@@ -126,7 +124,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			{
 				if(strcmp(value.c_str(), e.first.c_str()) == 0)
 				{
-					TRACE("\t%s = (ENUM)%s (=%d)\n", param.name, e.first.c_str(), e.second);
 					*((DWORD *)((byte *)param.target + offset)) = e.second;
 					return;
 				}
@@ -143,7 +140,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			char *end;
 			float f = strtof(value.c_str(), &end);
 			*((float *)((byte *)param.target + offset)) = f;
-			TRACE("\t%s = (FLOAT)%f\n", param.name, f);
 		}
 	},
 
@@ -158,7 +154,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			{
 				emit_warning("Value %d out of range (0-255), truncated", f);
 			}
-			TRACE("\t%s = (UINT8)%d\n", param.name, f);
 			*((uint8 *)((byte *)param.target + offset)) = (uint8)f;
 		}
 	},
@@ -171,7 +166,6 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 			char *end;
 			long l = strtol(value.c_str(), &end, 10);
 			*((int *)((byte *)param.target + offset)) = l;
-			TRACE("\t%s = (INT)%d\n", param.name, l);
 		}
 	},
 };
@@ -518,19 +512,139 @@ void OutputPragmaDocs()
 }
 
 //////////////////////////////////////////////////////////////////////
+// Get the path to CL.EXE
 
-uint ScanMaterialOptions(Resource &file, string &result)
+tstring GetCLPath()
 {
-	std::regex rgx(R"(^#pragma\s+(.+)\((.*)\))");
+	static tstring vcPath;
+	static bool got = false;
+	if(!got)
+	{
+		got = true;
+		tstring version = "12.0";
+		if(RegistryKey::GetString(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
+		   RegistryKey::GetString(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
+		   RegistryKey::GetString(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Wow6432Node\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
+		   RegistryKey::GetString(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Wow6432Node\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0)
+		{
+			// Success!
+		}
+	}
+	return vcPath;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Add a folder to the PATH environment variable
+
+tstring AddToPath(tchar const *dir)
+{
+	tstring output;
+	tchar const *env = GetEnvironmentStrings();
+	tchar const *cur = env;
+	while(*cur)
+	{
+		tstring line(cur, cur + _tcslen(cur) + 1);
+		output = output + line;
+		if(_tcsncmp(cur, TEXT("PATH="), 5) == 0)
+		{
+			output.append(cur + 5, cur + _tcslen(cur));
+			output.append(TEXT(";"));
+			output.append(dir);
+		}
+		cur += _tcslen(cur) + 1;
+	}
+	return output;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Run a command (CL.EXE, say...)
+
+bool Run(tchar const *exe, tstring &params, tchar const *env, DWORD &exitCode)
+{
+	vector<tchar> commandBuffer;
+	commandBuffer.resize(params.size());
+	std::copy(params.begin(), params.end(), commandBuffer.begin());
+	commandBuffer.push_back(0);
+	PROCESS_INFORMATION pi = { 0 };
+	STARTUPINFO si = { 0 };
+	si.cb = sizeof(si);
+	if(CreateProcess(exe, commandBuffer.data(), null, null, true, 0, (void *)env, null, &si, &pi) != 0)
+	{
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		GetExitCodeProcess(pi.hProcess, &exitCode);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+		return true;
+	}
+	tstring err = Win32ErrorMessage(GetLastError());
+	emit_error(Format("Error running CL.EXE: %s", err.c_str()).c_str());
+	return false;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Auto-deleting temp file(name)
+
+struct TempFile
+{
+	tstring filename;
+
+	TempFile(tchar const *prefix)
+	{
+		tchar tempPath[MAX_PATH + 1];
+		tchar tempFile[MAX_PATH + 1];
+		GetTempPath(_countof(tempPath), tempPath);
+		GetTempFileName(tempPath, prefix, 0, tempFile);
+		filename = tempFile;
+	}
+
+	~TempFile()
+	{
+		DeleteFile(filename.c_str());
+	}
+
+	operator tchar const *()
+	{
+		return filename.c_str();
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+// Preprocess using VC preprocessor, then scan for renderstate #pragmas
+
+uint ScanMaterialOptions(tchar const *filename)
+{
+	Error::current_line = 1;
+
+	TempFile tempFile(TEXT("SOB"));
+	TempFile errorFile(TEXT("SER"));
+
+	tstring newEnv = AddToPath(GetCLPath().c_str());
+
+	// run CL.EXE /EP /P on it (just preprocess)
+	DWORD exitCode;
+	if(!Run(null, Format(TEXT("\"%sbin\\cl.exe\" /EP /P \"%s\" /Fi\"%s\" /nologo"), GetCLPath().c_str(), filename, (tchar const *)tempFile), newEnv.data(), exitCode))
+	{
+		return err_compilerproblem;
+	}
+	if(exitCode != 0)
+	{
+		return err_compilerproblem;
+	}
+	// load the output
+	FileResource file(tempFile);
+	if(!file.IsValid())
+	{
+		return err_compilerproblem;
+	}
+
+	// scan it for #pragmas
+	std::regex rgx(R"(^#\s*pragma\s+(.+)\((.*)\))");
 
 	using keyvals = std::map < string, string > ;
 	using paramList = std::map < string, keyvals > ;
 
-	paramList parameters;
-
 	vector<string> lines;
 	std::istringstream str((char *)file.Data());
-	std::ostringstream out;
 	string line;
 	Error::current_line = 1;
 	while(std::getline(str, line))
@@ -539,6 +653,9 @@ uint ScanMaterialOptions(Resource &file, string &result)
 		if(regex_search(line.c_str(), m, rgx))
 		{
 			string token = m[1].str();
+
+			// check if token is one we're interested in
+
 			string valstr = m[2].str();
 			vector<string> values;
 			tokenize(valstr, values, ",");
@@ -557,113 +674,88 @@ uint ScanMaterialOptions(Resource &file, string &result)
 				}
 				else
 				{
+					// Harumph
 					emit_error("Malformed Pragma");
 					return err_malformedpragma;
 				}
 			}
-			auto f = parameters.find(token);
-			if(f != parameters.end())
+			string paramName = token;
+			keyvals &keyVals = kvalues;
+
+			auto p = params.find(paramName);
+			if(p == params.end())
 			{
-				// warn if a value already set is being overwritten
-				for(auto p = kvalues.begin(); p != kvalues.end(); ++p)
+				emit_warning("unknown pragma: %s", paramName.c_str());
+				continue;
+			}
+
+			uint max_index = p->second.max_index;
+			uint offset_size = p->second.offset_size;
+			vector<uint> indices;
+
+			// look for an index - an integer (#=true) in keyvals
+			// if we don't find one and max_index > 0, malformed pragma
+			// if we find more than one, warn
+			if(max_index > 0)
+			{
+				bool got_index = false;
+				for(uint idx = 0; idx < max_index; ++idx)
 				{
-					f->second[p->first] = p->second;
+					auto kv = keyVals.find(Format("%d", idx));
+					if(kv != keyVals.end())
+					{
+						indices.push_back(idx);
+						keyVals.erase(kv);
+						got_index = true;
+					}
+				}
+				if(!got_index)
+				{
+					emit_error("Missing index");
+					return err_malformedpragma;
 				}
 			}
 			else
 			{
-				string paramName = token;
-				keyvals &keyVals = kvalues;
+				indices.push_back(0);
+			}
 
-				TRACE("%s\n", paramName.c_str());
+			for(auto &keyval : keyVals)
+			{
+				string keyname = keyval.first;
+				string keyValue = keyval.second;
 
-				auto p = params.find(paramName);
-				if(p == params.end())
+				bool valid = false;
+
+				for(auto &option : p->second.params)
 				{
-					emit_warning("unknown pragma: %s", paramName.c_str());
-					continue;
-				}
-
-				line = string("// ") + line;
-
-				// Now that we have a pragma we know about, we need to nobble it so
-				// the shader compiler doesn't emit a warning about an unknown pragma
-
-				uint max_index = p->second.max_index;
-				uint offset_size = p->second.offset_size;
-				vector<uint> indices;
-
-				// look for an index - an integer (#=true) in keyvals
-				// if we don't find one and max_index > 0, malformed pragma
-				// if we find more than one, warn
-				if(max_index > 0)
-				{
-					bool got_index = false;
-					for(uint idx = 0; idx < max_index; ++idx)
+					if(strcmp(keyname.c_str(), option.name) == 0)
 					{
-						auto kv = keyVals.find(Format("%d", idx));
-						if(kv != keyVals.end())
+						valid = true;
+						auto fnc = paramHandlerMap.find(option.type);
+						if(fnc == paramHandlerMap.end())
 						{
-							indices.push_back(idx);
-							keyVals.erase(kv);
-							got_index = true;
+							emit_error("Unknown parameter type?");
 						}
-					}
-					if(!got_index)
-					{
-						emit_error("Missing index");
-						return err_malformedpragma;
-					}
-				}
-				else
-				{
-					indices.push_back(0);
-				}
-
-				for(auto &keyval : keyVals)
-				{
-					string keyname = keyval.first;
-					string keyValue = keyval.second;
-
-					//TRACE("Key [%s,%s]\n", keyname.c_str(), keyValue.c_str());
-
-					bool valid = false;
-
-					for(auto &option : p->second.params)
-					{
-						if(strcmp(keyname.c_str(), option.name) == 0)
+						else
 						{
-							valid = true;
-							auto fnc = paramHandlerMap.find(option.type);
-							if(fnc == paramHandlerMap.end())
+							for(auto index : indices)
 							{
-								emit_error("Unknown parameter type?");
+								fnc->second(keyValue, option, index * p->second.offset_size);
 							}
-							else
-							{
-								//TRACE("Yep\n");
-								for(auto index : indices)
-								{
-									TRACE("Index %d:", index);
-									fnc->second(keyValue, option, index * p->second.offset_size);
-								}
-							}
-							break;
 						}
+						break;
 					}
-					if(!valid)
-					{
-						emit_error("Unknown key name %s", keyname.c_str());
-						return err_unknownkey;
-					}
+				}
+				if(!valid)
+				{
+					emit_error("Unknown key name %s", keyname.c_str());
+					return err_unknownkey;
 				}
 			}
 		}
-		out.write(line.c_str(), line.size());
-		out.write("\n", 1);
 		++Error::current_line;
 	}
-	result = out.str();
 	return success;
 }
 

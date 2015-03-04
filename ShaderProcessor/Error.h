@@ -33,6 +33,7 @@ enum
 	err_cantloadsourcefile,
 	err_unknownpragma,
 	err_malformedpragma,
+	err_duplicatepragma,
 	err_unknownkey
 };
 

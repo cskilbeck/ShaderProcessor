@@ -1,3 +1,12 @@
+//////////////////////////////////////////////////////////////////////
+
+#if 1
+#	pragma blend(0, enabled, op=add, src=one, dest=one)
+#	pragma blend(0, enabled, op=add, src=one, dest=one)
+#else
+#	pragma blend(0, disabled)
+#endif
+
 
 #if !defined(_DEBUG)
 #define BOB def
@@ -20,9 +29,10 @@ cbuffer VertConstants : register(b6)
 		float Baz;
 	} Bill;
 
-	Cheese choose;
 	matrix Transform;
 };
+
+Cheese choose;
 
 struct Foo
 {
@@ -45,7 +55,7 @@ struct PS_INPUT
 PS_INPUT vsMain(VS_INPUT i)
 {
 	PS_INPUT o;
-	o.position = mul(float4(i.position, 1), Transform) + Bill.Baz;
+	o.position = mul(float4(i.position, 1), Transform) + Bill.Baz + float4(choose.Toss, 0, 1);
 	o.color = i.instanceColor;
 	return o;
 }

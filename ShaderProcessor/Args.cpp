@@ -200,3 +200,44 @@ uint32 GetCompilerOptionFlags()
 	return flag;
 }
 
+
+//////////////////////////////////////////////////////////////////////
+
+int CheckArgs(int argc, char *argv[])
+{
+	// parse the args
+	if(!ParseArgs(argc, argv, options))
+	{
+		emit_error("Usage");
+		return err_args;
+	}
+
+	if(options[PRAGMA_OPTIONS])
+	{
+		OutputPragmaDocs();
+		return success;
+	}
+
+	if(!options[SOURCE_FILE])
+	{
+		emit_error("No source file specified");
+		PrintUsage();
+		return err_nosource;
+	}
+
+	if(!options[SHADER_MODEL_VERSION])
+	{
+		emit_error("Shader model not specified");
+		PrintUsage();
+		return err_noshadermodel;
+	}
+
+	// check input file exists
+	if(!FileExists(options[SOURCE_FILE].arg))
+	{
+		emit_error("Source file doesn't exist");
+		return err_nosource;
+	}
+	return success;
+}
+

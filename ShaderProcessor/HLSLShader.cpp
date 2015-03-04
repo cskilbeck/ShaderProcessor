@@ -1,14 +1,4 @@
 //////////////////////////////////////////////////////////////////////
-// Make it a proper Compile type in VS2013
-// Sort out Resource types (Texture1D/2D/3D etc)
-// Support instancing?
-// Support all shader types
-// Support compute
-// support Buffers<>
-// deal with anonymous cbuffers and tbuffers (index instead of name)
-// test alignment/padding etc
-// deal with Buffers of structs (no padding)
-// Allow row or column major matrices
 
 #include "stdafx.h"
 #include "Shlwapi.h"
@@ -66,22 +56,6 @@ static USMap StorageTypeName =
 	{ Typeless32_type, "UInt" },
 	{ Typeless16_type, "UShort" },
 	{ Typeless8_type , "Byte" }
-};
-
-static USMap shader_input_type_names =
-{
-	{ D3D_SIT_CBUFFER, "ConstantBuffer" },										// has 'Constant Buffer'	// ConstantBuffer
-	{ D3D_SIT_TBUFFER, "TextureBuffer" },										// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_TEXTURE, "Texture" },												//							// Resource
-	{ D3D_SIT_SAMPLER, "SamplerState" },										//							// SamplerState
-	{ D3D_SIT_UAV_RWTYPED, "RW_UAVTyped" },										//							// Resource				// D3D11_BIND_UNORDERED_ACCESS
-	{ D3D_SIT_STRUCTURED, "StructuredInput" },									// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_RWSTRUCTURED, "RW_UAVStructured" },														// Resource				// D3D11_BIND_UNORDERED_ACCESS
-	{ D3D_SIT_BYTEADDRESS, "ByteAddress" },																	// Resource
-	{ D3D_SIT_UAV_RWBYTEADDRESS, "RW_ByteAddress" },														// Resource				// D3D11_BIND_UNORDERED_ACCESS
-	{ D3D_SIT_UAV_APPEND_STRUCTURED, "AppendStructured" },						// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_CONSUME_STRUCTURED, "ConsumeStructured" },					// has 'Constant Buffer'	// Resource
-	{ D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER, "RW_UAVStructuredWithCounter" }	// has 'Constant Buffer'	// Resource				// D3D11_BIND_UNORDERED_ACCESS
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -418,8 +392,6 @@ Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 	BindingInfo *info = GetBindingInfo(desc.Type);
 	if(info != null)
 	{
-		char const *bindingTypeName = GetBindingTypeName(info->BindingType);
-		TRACE("%s binding %d is a %s called %s\n", bindingTypeName, desc.BindPoint, info->Name, desc.Name);
 		switch(desc.Type)
 		{
 			case D3D_SIT_CBUFFER:
@@ -500,8 +472,6 @@ void HLSLShader::AddBinding(Binding *b)
 
 HRESULT HLSLShader::CreateBindings()
 {
-	Binding::ClearAllBindings();
-
 	uint numBindingSlots = mShaderDesc.BoundResources;
 	uint numConstantBuffers = mShaderDesc.ConstantBuffers;
 
@@ -550,8 +520,6 @@ HRESULT HLSLShader::CreateBindings()
 
 	delete[] buffers;
 
-	Binding::ShowAllBindings(this);
-
 	return S_OK;
 }
 
@@ -571,36 +539,6 @@ HLSLShader::HLSLShader(tstring const &filename)
 HLSLShader::~HLSLShader()
 {
 	Destroy();
-}
-
-//////////////////////////////////////////////////////////////////////
-
-void HLSLShader::OutputHeader(char const *filename, char const *namespace_) // static
-{
-	OutputCommentLine("%s.h - auto generated file, do not edit", filename);
-	OutputLine("#pragma once");
-	OutputLine("#pragma pack(push, 4)");
-	OutputLine();
-	if(namespace_ != null)
-	{
-		OutputLine("namespace %s", namespace_);
-		Indent("{");
-		OutputLine();
-	}
-	OutputLine("using namespace DX;");
-	OutputLine();
-}
-
-//////////////////////////////////////////////////////////////////////
-
-void HLSLShader::OutputFooter(char const *filename, char const *namespace_) // static
-{
-	if(namespace_ != null)
-	{
-		UnIndent("}");
-		OutputLine();
-	}
-	OutputLine("#pragma pack(pop)");
 }
 
 //////////////////////////////////////////////////////////////////////
