@@ -26,11 +26,9 @@ namespace DX
 
 		void Activate(ID3D11DeviceContext *context)
 		{
-			uint s = UpdateSamplers();
-			uint t = UpdateTextures();
 			Set<&ID3D11DeviceContext::VSSetConstantBuffers,
 				&ID3D11DeviceContext::VSSetSamplers,
-				&ID3D11DeviceContext::VSSetShaderResources>(context, s, t);
+				&ID3D11DeviceContext::VSSetShaderResources>(context);
 			context->IASetInputLayout(mInputLayout);
 			context->VSSetShader(mVertexShader, null, 0);
 		}
