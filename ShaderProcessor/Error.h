@@ -34,6 +34,7 @@ enum
 	err_unknownpragma,
 	err_malformedpragma,
 	err_duplicatepragma,
+	err_malformedsemanticname,
 	err_unknownkey
 };
 

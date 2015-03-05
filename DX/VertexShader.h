@@ -29,8 +29,9 @@ namespace DX
 			Set<&ID3D11DeviceContext::VSSetConstantBuffers,
 				&ID3D11DeviceContext::VSSetSamplers,
 				&ID3D11DeviceContext::VSSetShaderResources>(context);
-			context->IASetInputLayout(mInputLayout);
 			context->VSSetShader(mVertexShader, null, 0);
+
+			context->IASetInputLayout(mInputLayout);
 		}
 
 		//////////////////////////////////////////////////////////////////////

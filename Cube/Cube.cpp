@@ -24,10 +24,7 @@
 // Spock
 //		Make debug info default to on in Debug builds
 // ShaderProcessor
-//		Fix the crappy #pragma renderstate system (run CL /P beforehand - what about #includes though?)
-//		Nested structs (names of the structs!?)
 //		Instancing support / multiple vertex streams
-//		Sampler/Texture defaults
 //		Error check everything
 //		Structured Buffers/UAV support
 //		Hull/Domain/Compute shader support (Tesselate the duck to buggery!)
@@ -35,14 +32,15 @@
 //		deal with multiple render targets
 //		Shader Linking/Interfaces support...?
 //		Sort out Resource types (Texture1D/2D/3D etc)
-//		Support instancing?
-//		Support all shader types
-//		Support compute
+//		Support all shader types & compute
 //		support Buffers<>
 //		deal with anonymous cbuffers and tbuffers (index instead of name)
 //		test alignment/padding etc
 //		deal with Buffers of structs (no padding)
 //		Allow row or column major matrices
+//		\ Sampler/Texture defaults
+//		* Nested structs (names of the structs!?)
+//		* Fix the crappy #pragma renderstate system (run CL /P beforehand - what about #includes though?)
 //		* Honour the input binding slots specified (and deal with non-contiguous ones)
 //		* Identify matrices in input layout
 //		* Use Map/UnMap for const buffers
@@ -223,10 +221,10 @@ bool MyDXWindow::OnCreate()
 	cubeShader.reset(new Shaders::Phong());
 	cubeTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
 	Sampler::Options o;
-	o.Filter = min_mag_mip_point;
+	o.Filter = anisotropic;
 	cubeSampler.reset(new Sampler(o));
 	cubeShader->ps.picTexture = cubeTexture.get();
-//	cubeShader->ps.tex1Sampler = cubeSampler.get();
+	cubeShader->ps.tex1Sampler = cubeSampler.get();
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 

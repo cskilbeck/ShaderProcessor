@@ -915,34 +915,52 @@ HRESULT HLSLShader::CreateInputLayout()
 		TRACE("Semantic name: %s\n", d.SemanticName);
 
 		// get everything up to the last _
-		char const *u = strrchr(d.SemanticName, '_');
 		string type_annotation;
 		string semantic_name;
-		if(u != null)
-		{
-			type_annotation = string(d.SemanticName, u - d.SemanticName);
-			semantic_name = string(u + 1);
 
-			// check if it's an auto type one
-			for(int j = 0; j < _countof(type_suffix); ++j)
+		if(strchr(d.SemanticName, '_') != null)
+		{
+			vector<string> bits;
+			tokenize(d.SemanticName, bits, "_");
+
+			if(bits.size() > 3)
 			{
-				if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
-				{
-					int fc = type_suffix[j].fieldCount;
-					fieldCount = (fc == 0) ? sourceFields : fc;
-					storageType = type_suffix[j].storageType;
-					break;
-				}
+				emit_error("Bad semantic name format");
+				return ERROR_BAD_ARGUMENTS;
 			}
-			if(fieldCount == 0)
+			else
 			{
-				// else see if they want to specify the format explicitly
-				for(int j = 0; j < _countof(DXGI_Lookup); ++j)
+				string first = bits[0];
+				string last = bits.back();
+				string middle;
+				if(bits.size() == 3)
 				{
-					if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
+					middle = bits[1];
+				}
+				type_annotation = first;
+				semantic_name = last;
+
+				// check if it's an auto type one
+				for(int j = 0; j < _countof(type_suffix); ++j)
+				{
+					if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
 					{
-						fieldCount = DXGI_Lookup[j].fields;
-						storageType = DXGI_Lookup[j].storageType;
+						int fc = type_suffix[j].fieldCount;
+						fieldCount = (fc == 0) ? sourceFields : fc;
+						storageType = type_suffix[j].storageType;
+						break;
+					}
+				}
+				if(fieldCount == 0)
+				{
+					// else see if they want to specify the format explicitly
+					for(int j = 0; j < _countof(DXGI_Lookup); ++j)
+					{
+						if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
+						{
+							fieldCount = DXGI_Lookup[j].fields;
+							storageType = DXGI_Lookup[j].storageType;
+						}
 					}
 				}
 			}

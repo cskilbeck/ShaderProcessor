@@ -56,8 +56,6 @@ namespace DX
 
 		BindingState &							mBindingState;
 
-		vector<ID3D11ShaderResourceView *>		mResourcePointers;
-		vector<ID3D11SamplerState *>			mSamplerPointers;
 		vector<ID3D11Buffer *>					mConstantBufferPointers;
 
 		//////////////////////////////////////////////////////////////////////
@@ -78,8 +76,6 @@ namespace DX
 			, mSamplers(samplerArray)
 			, mBindingState(bindingState)
 		{
-			mResourcePointers.resize(numTextures);
-			mSamplerPointers.resize(numSamplers);
 			mConstantBufferPointers.reserve(numConstBuffers);
 		}
 
@@ -114,51 +110,46 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 	private:
-		using SetCB = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11Buffer * const *);
-		using SetSS = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11SamplerState * const *);
-		using SetSR = void(__stdcall ID3D11DeviceContext::*)(UINT, UINT, ID3D11ShaderResourceView * const *);
+
+		template <typename T> using SetAny = void(_stdcall ID3D11DeviceContext::*)(UINT, UINT, T * const *);
+
+		using SetCB = SetAny<ID3D11Buffer>;
+		using SetSS = SetAny<ID3D11SamplerState>;
+		using SetSR = SetAny<ID3D11ShaderResourceView>;
+
+		template <typename U> void UpdatePointers(U **ptrs, uint numPointers, void **pointers)
+		{
+			for(uint i = 0; i < numPointers; ++i)
+			{
+				pointers[i] = (void *)(*ptrs++)->Handle();
+			}
+		}
+
+		template<typename T> void SetBindRuns(ID3D11DeviceContext *context, SetAny<T> func, vector<BindRun> const &bindings, void **pointers)
+		{
+			T **bp = (T **)pointers;
+			for(auto b : bindings)
+			{
+				(context->*func)(b.mBindPoint, b.mBindCount, bp);
+				bp += b.mBindCount;
+			}
+		}
+
 	public:
+
+		//////////////////////////////////////////////////////////////////////
 
 		template <SetCB SetConstantBuffers, SetSS SetSamplers, SetSR SetShaderResources > void Set(ID3D11DeviceContext *context)
 		{
-			ID3D11Buffer **bufferPtr = mConstantBufferPointers.data();
-			for(auto b : mBindingState.mConstantBufferBindings)
-			{
-				(context->*SetConstantBuffers)(b.mBindPoint, b.mBindCount, bufferPtr);
-				bufferPtr += b.mBindCount;
-			}
+			SetBindRuns<ID3D11Buffer>(context, SetConstantBuffers, mBindingState.mConstantBufferBindings, (void **)mConstantBufferPointers.data());
 
-			uint s = 0;
-			for(uint i = 0; i < mNumTextures; ++i)
-			{
-				if(mSamplers[i] != null)
-				{
-					mSamplerPointers[s++] = mSamplers[i]->mSamplerState;
-				}
-			}
+			void *pointers[128];
 
-			ID3D11SamplerState **samplerPtr = mSamplerPointers.data();
-			for(auto b : mBindingState.mSamplerBindings)
-			{
-				(context->*SetSamplers)(b.mBindPoint, b.mBindCount, samplerPtr);
-				samplerPtr += b.mBindCount;
-			}
+			UpdatePointers(mSamplers, mNumSamplers, pointers);
+			SetBindRuns<ID3D11SamplerState>(context, SetSamplers, mBindingState.mSamplerBindings, pointers);
 
-			uint t = 0;
-			for(uint i = 0; i < mNumTextures; ++i)
-			{
-				if(mTextures[i] != null)
-				{
-					mResourcePointers[t++] = mTextures[i]->mShaderResourceView;
-				}
-			}
-
-			ID3D11ShaderResourceView **srvPtr = mResourcePointers.data();
-			for(auto b : mBindingState.mResourceBindings)
-			{
-				(context->*SetShaderResources)(b.mBindPoint, b.mBindCount, srvPtr);
-				srvPtr += b.mBindCount;
-			}
+			UpdatePointers(mTextures, mNumTextures, pointers);
+			SetBindRuns<ID3D11ShaderResourceView>(context, SetShaderResources, mBindingState.mResourceBindings, pointers);
 		}
 
 		//////////////////////////////////////////////////////////////////////
