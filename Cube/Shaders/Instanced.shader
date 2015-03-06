@@ -5,9 +5,9 @@ cbuffer VertConstants
 
 struct VS_INPUT
 {
-	float3 position:float_A;
-	matrix instanceTransform:float_B;
-	float4 instanceColor:byte_C;
+	float3 position				: semantic(name = mPosition, stream = 0);
+	matrix instanceTransform	: semantic(name = mTransform, stream = 1, instances = 1);
+	float4 instanceColor		: semantic(name = mColor, type = byte, stream = 2, instances = 2);
 };
 
 struct PS_INPUT

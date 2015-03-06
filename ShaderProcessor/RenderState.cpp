@@ -630,6 +630,7 @@ uint ScanMaterialOptions(tchar const *filename)
 	{
 		return err_compilerproblem;
 	}
+
 	// load the output
 	FileResource file(tempFile);
 	if(!file.IsValid())
