@@ -37,7 +37,7 @@ string binFile;
 
 //////////////////////////////////////////////////////////////////////
 
-bool CompileFile(FileResource &file, char const *filename, char const *mainFunction, char const *shaderModel, ShaderType type)
+bool CompileFile(string &file, char const *filename, char const *mainFunction, char const *shaderModel, ShaderType type)
 {
 	ShaderTypeDesc const *desc = ShaderTypeDescFromType(type);
 	if(desc == null)
@@ -52,7 +52,7 @@ bool CompileFile(FileResource &file, char const *filename, char const *mainFunct
 	//string output = SetExtension(filename, TEXT(".cso"));
 	ID3DBlob *compiledShader;
 	ID3DBlob *errors = null;
-	if(SUCCEEDED(D3DCompile(file.Data(), file.Size(), filename, null, null, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors)))
+	if(SUCCEEDED(D3DCompile((void *)file.data(), file.size(), filename, null, null, mainFunction, shader.c_str(), flags, 0, &compiledShader, &errors)))
 	{
 		HLSLShader *s = new HLSLShader(GetFilename(filename));
 		DXB(s->Create(compiledShader->GetBufferPointer(), compiledShader->GetBufferSize(), *desc));
@@ -73,22 +73,15 @@ bool CompileFile(FileResource &file, char const *filename, char const *mainFunct
 
 //////////////////////////////////////////////////////////////////////
 
-int CompileShaders()
+int CompileShaders(string &file)
 {
-	FileResource sourceFile(options[SOURCE_FILE].arg);
-	if(!sourceFile.IsValid())
-	{
-		emit_error("Error loading %s", options[SOURCE_FILE].arg);
-		return err_cantloadsourcefile;
-	}
-
 	int shadersCompiled = 0;
 	for(int i = 0; i < _countof(shaderTypes); ++i)
 	{
 		ShaderArgType &a = shaderTypes[i];
 		if(options[a.arg])
 		{
-			if(!CompileFile(sourceFile, options[SOURCE_FILE].arg, options[a.arg].arg, options[SHADER_MODEL_VERSION].arg, a.type))
+			if(!CompileFile(file, options[SOURCE_FILE].arg, options[a.arg].arg, options[SHADER_MODEL_VERSION].arg, a.type))
 			{
 				return err_compilerproblem;
 			}
@@ -378,15 +371,17 @@ int main(int argc, char *argv[])
 		return e;
 	}
 
+	string file;
+
 	// Scan for render material options
-	e = ScanMaterialOptions(options[SOURCE_FILE].arg);
+	e = ScanMaterialOptions(options[SOURCE_FILE].arg, file);
 	if(e != success)
 	{
 		return e;
 	}
 
 	// compile the shaders
-	e = CompileShaders();
+	e = CompileShaders(file);
 	if(e != success)
 	{
 		return e;

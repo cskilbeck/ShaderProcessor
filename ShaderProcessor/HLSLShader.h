@@ -156,8 +156,9 @@ struct InputField
 	StorageType storageType;	// Float etc
 	uint elementCount;			// eg 4
 	string varName;				// eg Position (everything in the Semantic name after the last _ )
-	uint arraySize;
-	uint inputSlot;
+	uint arraySize;				// for matrices etc
+	uint stream;				// which vertex stream does it want
+	uint instances;				// how many instances per vertex
 
 	string GetTypeName() const;	// eg Float4
 

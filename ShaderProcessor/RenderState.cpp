@@ -609,10 +609,56 @@ struct TempFile
 };
 
 //////////////////////////////////////////////////////////////////////
-// Preprocess using VC preprocessor, then scan for renderstate #pragmas
+// Preprocess using VC preprocessor, then scan for renderstate #pragmas [and semantic declarations?]
 
-uint ScanMaterialOptions(tchar const *filename)
+// pragma:
+// ^#pragma\s*(\w+)\s*\((.*)\)\s*$
+
+// semantic declaration:
+// .*\:\s*semantic\s*:\s*\(\s*\"(.+)\"\s*\)
+
+// name value pairs:
+// (\w+)(\s*=\s*(\w+)|,)?
+
+using regex_iter = std::regex_iterator<tstring::iterator>;
+
+static std::regex nameval_regex(R"((\w+)(\s*=\s*(\w+)|,)?)");
+
+void GetNameValueMap(string &valstr, std::map<string, string> &keyVals)
 {
+	keyVals.clear();
+	regex_iter rend;
+	regex_iter a(valstr.begin(), valstr.end(), nameval_regex);
+	while(a != rend)
+	{
+		auto &matches = *a;
+		if(matches[1].matched)
+		{
+			string value = matches[3].matched ? matches[3].str() : "true";
+			keyVals[matches[1].str()] = value;
+		}
+		++a;
+	}
+}
+
+bool GetFrom(std::map<string, string> keyVals, string const &str, string &result)
+{
+	auto f = keyVals.find(str);
+	if(f != keyVals.end())
+	{
+		result = f->second;
+		return true;
+	}
+	return false;
+}
+
+static std::regex pragma_regex(R"(^#\s*pragma\s+(\w+)\s*\((.*)\))");
+static std::regex semantic_regex(R"(.*\:\s*(semantic)\s*:\s*\(\s*\"(.+)\"\s*\))"); // float3 position: semantic:("type=byte");
+
+uint ScanMaterialOptions(tchar const *filename, string &output)
+{
+	output.clear();
+
 	Error::current_line = 1;
 
 	TempFile tempFile(TEXT("SOB"));
@@ -639,7 +685,6 @@ uint ScanMaterialOptions(tchar const *filename)
 	}
 
 	// scan it for #pragmas
-	std::regex rgx(R"(^#\s*pragma\s+(.+)\((.*)\))");
 
 	using keyvals = std::map < string, string > ;
 	using paramList = std::map < string, keyvals > ;
@@ -650,112 +695,142 @@ uint ScanMaterialOptions(tchar const *filename)
 	Error::current_line = 1;
 	while(std::getline(str, line))
 	{
+		bool consume_line = false;
+
 		std::cmatch m;
-		if(regex_search(line.c_str(), m, rgx))
+		if(regex_search(line.c_str(), m, pragma_regex) && m[1].matched)
 		{
-			string token = m[1].str();
+			string pragma = m[1].str();
 
-			// check if token is one we're interested in
-
-			string valstr = m[2].str();
-			vector<string> values;
-			tokenize(valstr, values, ",");
-			keyvals kvalues;
-			for(auto &i : values)
+			auto p = params.find(pragma);
+			if(p != params.end())
 			{
-				vector<string> nameval;
-				tokenize(i, nameval, "=");
-				if(nameval.size() == 1)
+				consume_line = true;
+
+				string valstr = m[2].str();
+				if(!m[2].matched)
 				{
-					kvalues[Trim(nameval[0])] = "true";
-				}
-				else if(nameval.size() == 2)
-				{
-					kvalues[Trim(nameval[0])] = Trim(nameval[1]);
+					emit_warning("malformed pragma");
+					continue;
 				}
 				else
 				{
-					// Harumph
-					emit_error("Malformed Pragma");
-					return err_malformedpragma;
-				}
-			}
-			string paramName = token;
-			keyvals &keyVals = kvalues;
+					keyvals keyVals;
+					GetNameValueMap(valstr, keyVals);
 
-			auto p = params.find(paramName);
-			if(p == params.end())
-			{
-				emit_warning("unknown pragma: %s", paramName.c_str());
-				continue;
-			}
+					// is it an indexed parameter (eg blend 0-7)
 
-			uint max_index = p->second.max_index;
-			uint offset_size = p->second.offset_size;
-			vector<uint> indices;
+					uint max_index = p->second.max_index;
+					uint offset_size = p->second.offset_size;
+					vector<uint> indices;
 
-			// look for an index - an integer (#=true) in keyvals
-			// if we don't find one and max_index > 0, malformed pragma
-			// if we find more than one, warn
-			if(max_index > 0)
-			{
-				bool got_index = false;
-				for(uint idx = 0; idx < max_index; ++idx)
-				{
-					auto kv = keyVals.find(Format("%d", idx));
-					if(kv != keyVals.end())
+					// look for an index - an integer (#=true) in keyvals
+					// if we don't find one and max_index > 0, malformed pragma
+					// if we find more than one, warn
+					int got_index = 0;
+
+					if(max_index > 0)
 					{
-						indices.push_back(idx);
-						keyVals.erase(kv);
-						got_index = true;
-					}
-				}
-				if(!got_index)
-				{
-					emit_error("Missing index");
-					return err_malformedpragma;
-				}
-			}
-			else
-			{
-				indices.push_back(0);
-			}
-
-			for(auto &keyval : keyVals)
-			{
-				string keyname = keyval.first;
-				string keyValue = keyval.second;
-
-				bool valid = false;
-
-				for(auto &option : p->second.params)
-				{
-					if(strcmp(keyname.c_str(), option.name) == 0)
-					{
-						valid = true;
-						auto fnc = paramHandlerMap.find(option.type);
-						if(fnc == paramHandlerMap.end())
+						for(uint idx = 0; idx < max_index; ++idx)
 						{
-							emit_error("Unknown parameter type?");
-						}
-						else
-						{
-							for(auto index : indices)
+							auto kv = keyVals.find(Format("%d", idx));
+							if(kv != keyVals.end())
 							{
-								fnc->second(keyValue, option, index * p->second.offset_size);
+								indices.push_back(idx);
+								keyVals.erase(kv);
+								++got_index;
 							}
 						}
-						break;
 					}
-				}
-				if(!valid)
-				{
-					emit_error("Unknown key name %s", keyname.c_str());
-					return err_unknownkey;
+
+					if(got_index == 0)
+					{
+						indices.push_back(0);
+					}
+
+					for(auto &keyval : keyVals)
+					{
+						string keyname = keyval.first;
+						string keyValue = keyval.second;
+
+						bool valid = false;
+
+						for(auto &option : p->second.params)
+						{
+							if(strcmp(keyname.c_str(), option.name) == 0)
+							{
+								valid = true;
+								auto fnc = paramHandlerMap.find(option.type);
+								if(fnc == paramHandlerMap.end())
+								{
+									emit_error("Unknown parameter type?");
+								}
+								else
+								{
+									for(auto index : indices)
+									{
+										fnc->second(keyValue, option, index * p->second.offset_size);
+									}
+								}
+								break;
+							}
+						}
+						if(!valid)
+						{
+							emit_error("Unknown key name %s", keyname.c_str());
+							return err_unknownkey;
+						}
+					}
 				}
 			}
 		}
+		else if(regex_search(line.c_str(), m, semantic_regex) && m[1].matched && m[2].matched)
+		{
+			keyvals keyVals;
+			GetNameValueMap(m[2].str(), keyVals);
+
+			// Check for unknown semantic things here...
+
+			// it's a semantic declaration
+			// encode the crap into the semantic name
+			// type_stream_instances_name
+			string type="default", stream = "0", instances, name;
+			GetFrom(keyVals, "type", type);
+			GetFrom(keyVals, "stream", stream);
+			GetFrom(keyVals, "instances", instances);
+			GetFrom(keyVals, "name", name);
+
+			if(name.empty())
+			{
+				// could try and get it from the line but that assumes the whole declaration is on one line, which is usually true but not guaranteed
+				emit_error("Semantic declaration missing name specifier");
+				return err_badsemantic;
+			}
+
+			uint pos = (uint)(m[1].first - m[0].first);
+			uint len = (uint)m.length();
+
+			// check that they are all valid
+			// type: one of the valid types
+			// stream: an integer from 0 ... ?
+			// instances: empty, or an integer from 1 ... ?
+			// name: [A-Za-z]+
+
+			if(instances.empty())
+			{
+				instances = "V";
+			}
+
+			// replace the semantic declaration with the dodgy semantic name
+			string post = line.substr(len);
+			string pre = line.substr(0, pos);
+			line = pre + Format("%s_%s_%s_%s", type.c_str(), stream.c_str(), instances.c_str(), name.c_str()) + post;
+		}
 		++Error::current_line;
+		if(!consume_line)
+		{
+			output.append(line);
+		}
 	}
 	return success;
 }

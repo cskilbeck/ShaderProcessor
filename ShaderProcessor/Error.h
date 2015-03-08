@@ -21,8 +21,8 @@ void emit_warning(char const *format, ...);
 
 enum
 {
-	success,
-	err_warnings_issued,
+	success = 0,
+	err_warnings_issued = MININT,
 	err_args,
 	err_nosource,
 	err_noshadermodel,
@@ -35,6 +35,7 @@ enum
 	err_malformedpragma,
 	err_duplicatepragma,
 	err_malformedsemanticname,
+	err_badsemantic,
 	err_unknownkey
 };
 

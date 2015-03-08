@@ -19,15 +19,15 @@ sampler smplr;
 
 struct VS_INPUT
 {
-	float2 Position : float_Position;
-	float2 Pivot: float_Pivot;
-	float2 Size: float_Size;
-	float2 Scale: float_Scale;
-	float2 UVa: float_UVa;
-	float2 UVb: float_UVb;
-	float Rotation: float_Rotation;
-	float4 Color: byte_Color;
-	float4 UVFlip: norm8_Flip;
+	float2 Position	: semantic : ("type=float, name=Position");
+	float2 Pivot	: semantic : ("type=float, name=Pivot");
+	float2 Size		: semantic : ("type=float, name=Size");
+	float2 Scale	: semantic : ("type=float, name=Scale");
+	float2 UVa		: semantic : ("type=float, name=UVa");
+	float2 UVb		: semantic : ("type=float, name=UVb");
+	float Rotation	: semantic : ("type=float, name=Rotation");
+	float4 Color	: semantic : ("type=byte, name=Color");
+	float4 UVFlip	: semantic : ("type=norm8, name=Flip");
 };
 
 //////////////////////////////////////////////////////////////////////

@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "Shlwapi.h"
+#include <regex>
 
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -338,6 +339,22 @@ DXGI_FormatDescriptor *GetDXGIDescriptor(DXGI_FORMAT format)
 
 //////////////////////////////////////////////////////////////////////
 
+uint GetStorageSize(DXGI_FORMAT format)
+{
+	DXGI_FormatDescriptor *d = GetDXGIDescriptor(format);
+	return (d != null) ? ((d->bitSize * d->fields) / 8) : 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+StorageType GetStorageType(DXGI_FORMAT format)
+{
+	DXGI_FormatDescriptor *d = GetDXGIDescriptor(format);
+	return (d != null) ? d->storageType : Invalid_type;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 uint GetElementCount(DXGI_FORMAT format)
 {
 	DXGI_FormatDescriptor *d = GetDXGIDescriptor(format);
@@ -368,7 +385,7 @@ DXGI_FORMAT GetDXGI_Format(uint fields, StorageType storageType)
 char const *GetFormatName(DXGI_FORMAT format)
 {
 	DXGI_FormatDescriptor *f = GetDXGIDescriptor(format);
-	return (f != null) ? f->name : "DXGI_FORMAT_UNKNOWN";
+	return (f != null) ? f->name : "UNKNOWN";
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -812,6 +829,7 @@ void HLSLShader::OutputShaderStruct()
 }
 
 //////////////////////////////////////////////////////////////////////
+// still need to sort out the offsets
 
 void HLSLShader::OutputInputElements()
 {
@@ -826,14 +844,25 @@ void HLSLShader::OutputInputElements()
 	Output("{");
 	Indent();
 	char const *sep = "";
+	uint offsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT] = { 0 };
 	for(uint i = 0; i < mInputElements.size(); ++i)
 	{
 		D3D11_INPUT_ELEMENT_DESC &d = mInputElements[i];
+		char const *step;
+		if(d.InstanceDataStepRate == 0)
+		{
+			step = "D3D11_INPUT_PER_VERTEX_DATA";
+		}
+		else
+		{
+			step = "D3D11_INPUT_PER_INSTANCE_DATA";
+		}
 		char const *formatName = GetFormatName(d.Format);
 		Output(sep);
 		OutputLine();
 		OutputIndent();
-		Output("{ \"%s\", %u, DXGI_FORMAT_%s, %d, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }", d.SemanticName, d.SemanticIndex, formatName, d.InputSlot);
+		Output("{ \"%s\", %u, DXGI_FORMAT_%s, %d, %d, %s, %d }", d.SemanticName, d.SemanticIndex, formatName, d.InputSlot, offsets[d.InputSlot], step, d.InstanceDataStepRate);
+		offsets[d.InputSlot] += GetStorageSize(d.Format);
 		sep = ",";
 	}
 	OutputLine();
@@ -857,21 +886,44 @@ void HLSLShader::OutputInputStruct()
 		return;
 	}
 
+	// Output an InputVertex# for each stream
+	// Typedef InputVertex to InputVertex0
+
 	OutputCommentLine("InputVertex");
 
-	OutputLine("struct InputVertex");
-	OutputLine("{");
-	Indent();
-	for(uint i = 0; i < mInputFields.size(); ++i)
+	uint maxStream = 0;
+	for(auto &i : mInputFields)
 	{
-		InputField &f = mInputFields[i];
-		OutputLine("%s;", f.GetDeclaration().c_str());
+		maxStream = max(maxStream, i.stream);
 	}
-	UnIndent("};");
-	OutputLine();
+
+	for(uint s = 0; s <= maxStream; ++s)
+	{
+		bool header = false;
+		for(auto &f : mInputFields)
+		{
+			if(f.stream == s)
+			{
+				if(!header)
+				{
+					OutputLine("struct InputVertex%d", s);
+					OutputLine("{");
+					Indent();
+					header = true;
+				}
+				OutputLine("%s;", f.GetDeclaration().c_str());
+			}
+		}
+		if(header)
+		{
+			UnIndent("};");
+			OutputLine();
+			OutputLine("using VertBuffer%d = VertexBuffer<InputVertex%d>;", s, s);
+			OutputLine();
+		}
+	}
+	OutputLine("using InputVertex = InputVertex0;");
 	OutputLine("using VertBuffer = VertexBuffer<InputVertex>;");
-	// and more for instance buffer
-	// what about multiple ones?
 	OutputLine();
 }
 
@@ -884,6 +936,24 @@ void HLSLShader::OutputHeaderFile()
 }
 
 //////////////////////////////////////////////////////////////////////
+
+bool IsAllDigits(string const &str)
+{
+	for(auto c : str)
+	{
+		if(!isdigit(c))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+using std::regex;
+
+static regex underscore_tokenizer("([A-Za-z0-9]+)_?");
 
 HRESULT HLSLShader::CreateInputLayout()
 {
@@ -903,10 +973,6 @@ HRESULT HLSLShader::CreateInputLayout()
 		d.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 		d.Format = DXGI_FORMAT_UNKNOWN;
 
-		d.InputSlot = 0;	// GET THIS FROM THE SEMANTIC_NAME_SOMEHOW
-		d.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		d.InstanceDataStepRate = 0;
-
 		int sourceFields = CountBits(desc.Mask);
 
 		// if they ask, try to find the right storage format
@@ -914,52 +980,86 @@ HRESULT HLSLShader::CreateInputLayout()
 		StorageType storageType = StorageType::Invalid_type;
 		TRACE("Semantic name: %s\n", d.SemanticName);
 
+		// if it has underscores in the semantic name
+		// and there are exactly 3 underscores
+		// and regex returns 4 matches, each with 1 submatch
+		// and the 2nd and 3rd matches[1] are integers
+		// then it's probably a type_stream_instances_name declaration
+		// so treat it as such
+
+		// if there is more than 1 stream
+		// define multiple InputVertex structures
+		// struct InputVertex0-N { ... };
+
+		// if instances == V, then use D3D11_INPUT_PER_VERTEX_DATA
+		// else use D3D11_INPUT_PER_INSTANCE_DATA
+
 		// get everything up to the last _
 		string type_annotation;
-		string semantic_name;
+		string semantic_name = d.SemanticName;
+		string stream;
+		string instances;
+
+		uint streamID = 0;
+		uint instanceDataStepRate = 0;
 
 		if(strchr(d.SemanticName, '_') != null)
 		{
 			vector<string> bits;
 			tokenize(d.SemanticName, bits, "_");
 
-			if(bits.size() > 3)
+			if(bits.size() >= 4)
 			{
-				emit_error("Bad semantic name format");
-				return ERROR_BAD_ARGUMENTS;
-			}
-			else
-			{
-				string first = bits[0];
-				string last = bits.back();
-				string middle;
-				if(bits.size() == 3)
-				{
-					middle = bits[1];
-				}
-				type_annotation = first;
-				semantic_name = last;
+				int b = bits.size() - 1;
 
-				// check if it's an auto type one
-				for(int j = 0; j < _countof(type_suffix); ++j)
+				// concat all the first bits
+				string sep = "";
+				for(uint i = 0; i < (b - 2); ++i)
 				{
-					if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
-					{
-						int fc = type_suffix[j].fieldCount;
-						fieldCount = (fc == 0) ? sourceFields : fc;
-						storageType = type_suffix[j].storageType;
-						break;
-					}
+					type_annotation += sep + bits[i];
+					sep = "_";
 				}
-				if(fieldCount == 0)
+
+				stream = bits[b-2];
+				instances = bits[b-1];
+				semantic_name = bits[b];
+
+				if(IsAllDigits(stream) && (IsAllDigits(instances) || instances[0] == 'V'))
 				{
-					// else see if they want to specify the format explicitly
-					for(int j = 0; j < _countof(DXGI_Lookup); ++j)
+					streamID = atoi(stream.c_str());
+
+					if(streamID >= D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
 					{
-						if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
+						emit_error("Invalid input resource slot");
+						return E_FAIL;
+					}
+
+					instanceDataStepRate = (instances[0] == 'V') ? 0 : atoi(instances.c_str());
+
+					if(type_annotation.compare("default") != 0)
+					{
+						// check if it's an auto type one
+						for(int j = 0; j < _countof(type_suffix); ++j)
 						{
-							fieldCount = DXGI_Lookup[j].fields;
-							storageType = DXGI_Lookup[j].storageType;
+							if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
+							{
+								int fc = type_suffix[j].fieldCount;
+								fieldCount = (fc == 0) ? sourceFields : fc;
+								storageType = type_suffix[j].storageType;
+								break;
+							}
+						}
+						if(fieldCount == 0)
+						{
+							// else see if they want to specify the format explicitly
+							for(int j = 0; j < _countof(DXGI_Lookup); ++j)
+							{
+								if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
+								{
+									fieldCount = DXGI_Lookup[j].fields;
+									storageType = DXGI_Lookup[j].storageType;
+								}
+							}
 						}
 					}
 				}
@@ -970,11 +1070,6 @@ HRESULT HLSLShader::CreateInputLayout()
 			{
 				// yes, try to match it to an actual format
 				d.Format = GetDXGI_Format(fieldCount, storageType);
-			}
-			else
-			{
-				emit_error("Unknown datatype: %s", type_annotation.c_str());
-				return ERROR_UNKNOWN_COMPONENT;
 			}
 		}
 		else
@@ -989,46 +1084,48 @@ HRESULT HLSLShader::CreateInputLayout()
 			d.Format = formats[fieldCount - 1][desc.ComponentType];
 		}
 
-		if(storageType == Invalid_type)
-		{
-			// error, a format was spe
-		}
-
 		if(fieldCount != sourceFields)
 		{
-			// Error, they specified a format which has a different field count from the source input
+			emit_error("Incompatible semantic type specified");
+			return E_INVALIDARG;
+		}
+
+		if(storageType == Invalid_type)
+		{
+			storageType = GetStorageType(d.Format);
 		}
 
 		vertexSize += SizeOfFormatElement(d.Format) / 8;
 		f.storageType = storageType;
 		f.elementCount = fieldCount;
 		f.varName = semantic_name;
+		f.stream = streamID;
+		f.instances = instanceDataStepRate;
+
+		d.InputSlot = f.stream;
+		d.InputSlotClass = (f.instances == 0) ? D3D11_INPUT_PER_VERTEX_DATA : D3D11_INPUT_PER_INSTANCE_DATA;
+		d.InstanceDataStepRate = f.instances;
 
 		// is it identical to the last one but with a +1 semantic index?
-		if(mInputFields.empty())
+		// should do this check at the start...
+		D3D11_INPUT_ELEMENT_DESC *pe = &mInputElements[i];
+		--pe;
+		if(	mInputFields.size() > 0 &&
+			strcmp(d.SemanticName, pe->SemanticName) == 0 &&
+			d.Format == pe->Format &&
+			d.SemanticIndex == (pe->SemanticIndex + 1) &&
+			d.InputSlot == pe->InputSlot &&
+			d.InputSlotClass == pe->InputSlotClass && 
+			d.InstanceDataStepRate == pe->InstanceDataStepRate)
 		{
-			mInputFields.push_back(f);
+			// ha! probably part of a matrix of some sort
+			// increment the mArraySize of f and don't create a new one...
+			InputField &p = mInputFields.back();
+			p.arraySize++;
 		}
 		else
 		{
-			D3D11_INPUT_ELEMENT_DESC &pe = mInputElements[i - 1];
-			if(
-				strcmp(d.SemanticName, pe.SemanticName) == 0 &&
-				d.Format == pe.Format &&
-				d.SemanticIndex == (pe.SemanticIndex + 1) &&
-				d.InputSlot == pe.InputSlot &&
-				d.InputSlotClass == pe.InputSlotClass
-				)
-			{
-				InputField &p = mInputFields.back();
-				p.arraySize++;
-				// ha! probably part of a matrix of some sort
-				// increment the mArraySize of f and don't create a new one...
-			}
-			else
-			{
-				mInputFields.push_back(f);
-			}
+			mInputFields.push_back(f);
 		}
 	}
 	return S_OK;

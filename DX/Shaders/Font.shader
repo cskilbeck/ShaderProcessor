@@ -17,11 +17,11 @@ sampler smplr;
 
 struct VS_INPUT
 {
-	float2 Position : float_Position;
-	float2 Size: half_Size;
-	float2 UVa: half_UVa;
-	float2 UVb: half_UVb;
-	float4 Color: byte_Color;
+	float2 Position	: semantic : ("type=float, name=Position");
+	float2 Size		: semantic : ("type=half, name=Size");
+	float2 UVa		: semantic : ("type=half, name=UVa");
+	float2 UVb		: semantic : ("type=half, name=UVb");
+	float4 Color	: semantic : ("type=byte, name=Color");
 };
 
 //////////////////////////////////////////////////////////////////////
