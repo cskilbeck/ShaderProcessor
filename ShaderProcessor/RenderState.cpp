@@ -653,7 +653,7 @@ bool GetFrom(std::map<string, string> keyVals, string const &str, string &result
 }
 
 static std::regex pragma_regex(R"(^#\s*pragma\s+(\w+)\s*\((.*)\))");
-static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*semantic\s*:\s*\(\"(.*)\"\);)"); // float3 position: semantic:("type=byte");
+static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*(semantic)\s*:\s*\(\s*\"(.*)(\"\s*\));)"); // float3 position: semantic:("type=byte");
 
 uint ScanMaterialOptions(tchar const *filename, string &output)
 {
@@ -802,13 +802,15 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 
 			if(name.empty())
 			{
-				name = m[1].str();
+				name = m[2].str();
 			}
 
-			uint pos = (uint)(m[3].first - m[1].first);
-			uint len = (uint)(m[4].second - m[3].first);
+			auto start = m.position();		// of the whole match
+			auto end = start + m.length();	// of the whole match
 
-			auto pos = m[2].first
+			auto start2 = start + std::distance(m[1].first, m[3].first);
+			auto end2 = start + std::distance(m[1].first, m[5].second);
+
 			// check that they are all valid
 			// type: one of the valid types
 			// stream: an integer from 0 ... ?
@@ -821,8 +823,8 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			}
 
 			// replace the semantic declaration with the dodgy semantic name
-			string post = line.substr(len);
-			string pre = line.substr(0, pos);
+			string post = line.substr(end2);
+			string pre = line.substr(0, start2);
 			line = pre + Format("%s_%s_%s_%s", type.c_str(), stream.c_str(), instances.c_str(), name.c_str()) + post;
 		}
 		++Error::current_line;
