@@ -12,7 +12,7 @@ cbuffer VertConstants
 
 struct VS_INPUT
 {
-	float3 Position : semantic : ("type=float, name = Position");
+	float3 Position : semantic : ("type=float");
 	float2 TexCoord	: semantic : ("type=half, name=TexCoord");
 	float4 Color	: semantic : ("type=byte, name=Color");
 	float3 Normal	: semantic : ("type=float, name=Normal");

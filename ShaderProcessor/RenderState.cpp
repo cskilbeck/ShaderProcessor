@@ -653,7 +653,7 @@ bool GetFrom(std::map<string, string> keyVals, string const &str, string &result
 }
 
 static std::regex pragma_regex(R"(^#\s*pragma\s+(\w+)\s*\((.*)\))");
-static std::regex semantic_regex(R"(.*\:\s*(semantic)\s*:\s*\(\s*\"(.+)\"\s*\))"); // float3 position: semantic:("type=byte");
+static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*semantic\s*:\s*\(\"(.*)\"\);)"); // float3 position: semantic:("type=byte");
 
 uint ScanMaterialOptions(tchar const *filename, string &output)
 {
@@ -784,10 +784,10 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 				}
 			}
 		}
-		else if(regex_search(line.c_str(), m, semantic_regex) && m[1].matched && m[2].matched)
+		else if(regex_search(line.c_str(), m, semantic_regex) && m[1].matched && m[2].matched && m[3].matched && m[4].matched)
 		{
 			keyvals keyVals;
-			GetNameValueMap(m[2].str(), keyVals);
+			GetNameValueMap(m[4].str(), keyVals);
 
 			// Check for unknown semantic things here...
 
@@ -802,14 +802,13 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 
 			if(name.empty())
 			{
-				// could try and get it from the line but that assumes the whole declaration is on one line, which is usually true but not guaranteed
-				emit_error("Semantic declaration missing name specifier");
-				return err_badsemantic;
+				name = m[1].str();
 			}
 
-			uint pos = (uint)(m[1].first - m[0].first);
-			uint len = (uint)m.length();
+			uint pos = (uint)(m[3].first - m[1].first);
+			uint len = (uint)(m[4].second - m[3].first);
 
+			auto pos = m[2].first
 			// check that they are all valid
 			// type: one of the valid types
 			// stream: an integer from 0 ... ?
