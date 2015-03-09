@@ -26,8 +26,8 @@ Texture2D page;
 
 struct VS_INPUT
 {
-	float2 Position : semantic : ("type=float, name=Position");
-	float2 TexCoord : semantic : ("type=half, name=TexCoord");
+	float2 Position : semantic : (type=float, name=Position);
+	float2 TexCoord : semantic : (type=half, name=TexCoord);
 };
 
 //////////////////////////////////////////////////////////////////////

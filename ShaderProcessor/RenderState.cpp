@@ -653,7 +653,7 @@ bool GetFrom(std::map<string, string> keyVals, string const &str, string &result
 }
 
 static std::regex pragma_regex(R"(^#\s*pragma\s+(\w+)\s*\((.*)\))");
-static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*(semantic)\s*:\s*\(\s*\"(.*)(\"\s*\));)"); // float3 position: semantic:("type=byte");
+static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*(semantic)\s*:\s*\(\s*(.*)(\s*\))\s*;)"); // float3 position: semantic:(type=byte);
 
 uint ScanMaterialOptions(tchar const *filename, string &output)
 {
@@ -784,7 +784,7 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 				}
 			}
 		}
-		else if(regex_search(line.c_str(), m, semantic_regex) && m[1].matched && m[2].matched && m[3].matched && m[4].matched)
+		else if(regex_search(line.c_str(), m, semantic_regex) && m[1].matched && m[2].matched && m[3].matched && m[5].matched)
 		{
 			keyvals keyVals;
 			GetNameValueMap(m[4].str(), keyVals);
@@ -794,38 +794,44 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			// it's a semantic declaration
 			// encode the crap into the semantic name
 			// type_stream_instances_name
-			string type="default", stream = "0", instances, name;
+
+			// this means name and type can't have _ in them, which is a problem...
+
+			string type = "";
 			GetFrom(keyVals, "type", type);
+
+			string stream = "0";
 			GetFrom(keyVals, "stream", stream);
+
+			string instances;
 			GetFrom(keyVals, "instances", instances);
+
+			string name;
 			GetFrom(keyVals, "name", name);
 
 			if(name.empty())
 			{
-				name = m[2].str();
+				name = m[2].str();	// just use the name of the member in the struct
 			}
 
-			auto start = m.position();		// of the whole match
-			auto end = start + m.length();	// of the whole match
-
-			auto start2 = start + std::distance(m[1].first, m[3].first);
-			auto end2 = start + std::distance(m[1].first, m[5].second);
-
-			// check that they are all valid
-			// type: one of the valid types
-			// stream: an integer from 0 ... ?
-			// instances: empty, or an integer from 1 ... ?
-			// name: [A-Za-z]+
-
+			// instances 'V' means not instanced (per-vertex-data)
 			if(instances.empty())
 			{
 				instances = "V";
 			}
 
+			// work out what bit to replace
+			auto start = m.position();
+			auto end = start + m.length();
+
+			auto start2 = start + std::distance(m[1].first, m[3].first);
+			auto end2 = start + std::distance(m[1].first, m[5].second);
+
 			// replace the semantic declaration with the dodgy semantic name
 			string post = line.substr(end2);
 			string pre = line.substr(0, start2);
-			line = pre + Format("%s_%s_%s_%s", type.c_str(), stream.c_str(), instances.c_str(), name.c_str()) + post;
+			string semantic = Format("%s_%s_%s_%s", type.c_str(), stream.c_str(), instances.c_str(), name.c_str());
+			line = pre + semantic + post;
 		}
 		++Error::current_line;
 		if(!consume_line)

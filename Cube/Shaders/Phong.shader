@@ -1,5 +1,3 @@
-#pragma depth(enabled, write=enabled, comparison_func=less)
-
 //////////////////////////////////////////////////////////////////////
 
 cbuffer VertConstants
@@ -12,10 +10,10 @@ cbuffer VertConstants
 
 struct VS_INPUT
 {
-	float3 Position : semantic:("type = float");
-	float2 TexCoord	: semantic:("type = half");
-	float4 Color	: semantic:("type = byte");
-	float3 Normal	: semantic:("type = float");
+	float3 Position : semantic:(type = float);
+	float2 TexCoord	: semantic:(type = half);
+	float4 Color	: semantic:(type = byte);
+	float3 Normal	: semantic:(type = float);
 };
 
 //////////////////////////////////////////////////////////////////////

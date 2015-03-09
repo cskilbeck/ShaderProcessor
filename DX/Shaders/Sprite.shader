@@ -19,15 +19,15 @@ sampler smplr;
 
 struct VS_INPUT
 {
-	float2 Position	: semantic : ("type=float, name=Position");
-	float2 Pivot	: semantic : ("type=float, name=Pivot");
-	float2 Size		: semantic : ("type=float, name=Size");
-	float2 Scale	: semantic : ("type=float, name=Scale");
-	float2 UVa		: semantic : ("type=float, name=UVa");
-	float2 UVb		: semantic : ("type=float, name=UVb");
-	float Rotation	: semantic : ("type=float, name=Rotation");
-	float4 Color	: semantic : ("type=byte, name=Color");
-	float4 UVFlip	: semantic : ("type=norm8, name=Flip");
+	float2 Position	: semantic : ();
+	float2 Pivot	: semantic : ();
+	float2 Size		: semantic : ();
+	float2 Scale	: semantic : ();
+	float2 UVa		: semantic : ();
+	float2 UVb		: semantic : ();
+	float Rotation	: semantic : ();
+	float4 Color	: semantic : (type=byte);
+	float4 Flip		: semantic : (type=norm8);
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -65,8 +65,8 @@ void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
 	float2 pivot = i[0].Pivot * size;
 
 	float2 uvs = i[0].UVb - i[0].UVa;
-	float2 uvoff = i[0].UVFlip.xy * uvs;
-	float2 uvscale = i[0].UVFlip.zw * uvs;
+	float2 uvoff = i[0].Flip.xy * uvs;
+	float2 uvscale = i[0].Flip.zw * uvs;
 
 	float2 c[4];
 	float2 uv[4];
