@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include <Shlwapi.h>
 #include <istream>
 #include <sstream>
 #include <regex>
@@ -10,6 +11,10 @@
 CD3D11_DEPTH_STENCIL_DESC depthStencilDesc(D3D11_DEFAULT);
 CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
 CD3D11_BLEND_DESC blendDesc(D3D11_DEFAULT);
+
+//////////////////////////////////////////////////////////////////////
+
+std::map<string, Semantic> semantics;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -620,9 +625,13 @@ struct TempFile
 // name value pairs:
 // (\w+)(\s*=\s*(\w+)|,)?
 
+//////////////////////////////////////////////////////////////////////
+
 using regex_iter = std::regex_iterator<tstring::iterator>;
 
 static std::regex nameval_regex(R"((\w+)(\s*=\s*(\w+)|,)?)");
+
+//////////////////////////////////////////////////////////////////////
 
 void GetNameValueMap(string &valstr, std::map<string, string> &keyVals)
 {
@@ -641,6 +650,8 @@ void GetNameValueMap(string &valstr, std::map<string, string> &keyVals)
 	}
 }
 
+//////////////////////////////////////////////////////////////////////
+
 bool GetFrom(std::map<string, string> keyVals, string const &str, string &result)
 {
 	auto f = keyVals.find(str);
@@ -651,6 +662,41 @@ bool GetFrom(std::map<string, string> keyVals, string const &str, string &result
 	}
 	return false;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+bool Semantic::Set(string const &type_name, string const &instances_str, string const &stream_str)
+{
+	type = Invalid_type;
+	nativeFormat = GetDXGIDescriptorFromName(type_name.c_str());
+	if(nativeFormat == null)
+	{
+		type = StorageTypeFromName(type_name.c_str());
+	}
+
+	if(!StrToIntEx(stream_str.c_str(), 0, &stream) || stream < 0) // TODO: check upper limit
+	{
+		emit_error("Bad stream");
+		return false;
+	}
+
+	if(instances_str.empty())
+	{
+		instanced = false;
+	}
+	else
+	{
+		instanced = true;
+		if(!StrToIntEx(instances_str.c_str(), 0, &instances) || instances < 1) // TODO: check upper limit
+		{
+			emit_error("Bad instance count");
+			return false;
+		}
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
 
 static std::regex pragma_regex(R"(^#\s*pragma\s+(\w+)\s*\((.*)\))");
 static std::regex semantic_regex(R"((.*?)(\w+)\s*\:\s*(semantic)\s*:\s*\(\s*(.*)(\s*\))\s*;)"); // float3 position: semantic:(type=byte);
@@ -806,18 +852,19 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			string instances;
 			GetFrom(keyVals, "instances", instances);
 
+			Semantic s;
+			
+			if(!s.Set(type, instances, stream))
+			{
+				return E_INVALIDARG;
+			}
+
 			string name;
 			GetFrom(keyVals, "name", name);
 
 			if(name.empty())
 			{
 				name = m[2].str();	// just use the name of the member in the struct
-			}
-
-			// instances 'V' means not instanced (per-vertex-data)
-			if(instances.empty())
-			{
-				instances = "V";
 			}
 
 			// work out what bit to replace
@@ -827,11 +874,23 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			auto start2 = start + std::distance(m[1].first, m[3].first);
 			auto end2 = start + std::distance(m[1].first, m[5].second);
 
-			// replace the semantic declaration with the dodgy semantic name
+			// replace the semantic declaration with the semantic name
 			string post = line.substr(end2);
 			string pre = line.substr(0, start2);
-			string semantic = Format("%s_%s_%s_%s", type.c_str(), stream.c_str(), instances.c_str(), name.c_str());
-			line = pre + semantic + post;
+			line = pre + name + post;
+
+			// remember for later after shader compilation
+			auto f = semantics.find(name);
+			if(f == semantics.end())
+			{
+				semantics[name] = s;
+			}
+			else
+			{
+				emit_error("Duplicate semantic name");
+				return E_INVALIDARG;
+			}
+
 		}
 		++Error::current_line;
 		if(!consume_line)

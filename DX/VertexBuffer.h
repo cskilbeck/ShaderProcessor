@@ -4,7 +4,10 @@ namespace DX
 {
 	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
-		enum { VertexSize = sizeof(vert) };
+		static uint VertexSize()
+		{
+			return sizeof(vert);
+		}
 
 		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{

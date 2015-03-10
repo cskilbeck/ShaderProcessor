@@ -205,7 +205,6 @@
     <ClInclude Include="..\..\code\DXFHelper.h" />
     <ClInclude Include="..\..\code\DXFLoader.h" />
     <ClInclude Include="..\..\code\Exceptional.h" />
-    <ClInclude Include="..\..\code\fast_atof.h" />
     <ClInclude Include="..\..\code\FileLogStream.h" />
     <ClInclude Include="..\..\code\FileSystemFilter.h" />
     <ClInclude Include="..\..\code\FindDegenerates.h" />
@@ -265,7 +264,6 @@
     <ClInclude Include="..\..\code\ObjTools.h" />
     <ClInclude Include="..\..\code\OFFLoader.h" />
     <ClInclude Include="..\..\code\OgreImporter.hpp" />
-    <ClInclude Include="..\..\code\OgreXmlHelper.h" />
     <ClInclude Include="..\..\code\OgreXmlHelper.hpp" />
     <ClInclude Include="..\..\code\OptimizeGraph.h" />
     <ClInclude Include="..\..\code\OptimizeMeshes.h" />
@@ -325,7 +323,6 @@
     <ClInclude Include="..\..\contrib\clipper\clipper.hpp" />
     <ClInclude Include="..\..\contrib\ConvertUTF\ConvertUTF.h" />
     <ClInclude Include="..\..\contrib\irrXML\CXMLReaderImpl.h" />
-    <ClInclude Include="..\..\contrib\irrXML\fast_atof.h" />
     <ClInclude Include="..\..\contrib\irrXML\heapsort.h" />
     <ClInclude Include="..\..\contrib\irrXML\irrArray.h" />
     <ClInclude Include="..\..\contrib\irrXML\irrString.h" />

@@ -260,6 +260,11 @@ void OutputBindingRuns()
 	OutputLine();
 	OutputLine("};");
 	OutputLine();
+
+	if(shader_array[ShaderType::Vertex] != null)
+	{
+		shader_array[ShaderType::Vertex]->OutputVertexBufferBindingRuns();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

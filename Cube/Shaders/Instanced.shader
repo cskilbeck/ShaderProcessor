@@ -1,13 +1,13 @@
-cbuffer VertConstants
+cbuffer VertConstantsDXGI_Lookup
 {
 	matrix Transform;
 };
 
 struct VS_INPUT
 {
-	float3 position				:semantic : ();
-	matrix instanceTransform	:semantic : ();
-	float4 instanceColor		:semantic : (type = byte);
+	float3 position				: semantic : ();
+	matrix instancePosition		: semantic : (stream = 1, instances = 1);
+	float4 instanceColor		: semantic : (type = byte, stream = 1, instances = 1);
 };
 
 struct PS_INPUT
@@ -19,7 +19,7 @@ struct PS_INPUT
 PS_INPUT vsMain(VS_INPUT i)
 {
 	PS_INPUT o;
-	o.position = mul(mul(i.position, i.instanceTransform), Transform);
+	o.position = mul(mul(i.position, i.instancePosition), Transform);
 	o.color = i.instanceColor;
 	return o;
 }

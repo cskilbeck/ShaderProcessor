@@ -52,7 +52,7 @@ namespace DX
 
 	template<typename T> inline void DrawList::Reset(ID3D11DeviceContext *context, ShaderState *shader, T *vertbuffer)
 	{
-		SetShader(context, shader, vertbuffer, T::VertexSize);
+		SetShader(context, shader, vertbuffer, T::VertexSize());
 	}
 
 	//////////////////////////////////////////////////////////////////////

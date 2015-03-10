@@ -35,6 +35,8 @@ enum StorageType
 	Typeless8_type,
 };
 
+StorageType StorageTypeFromName(char const *name);
+
 //////////////////////////////////////////////////////////////////////
 
 struct ShaderTypeDesc
@@ -129,7 +131,6 @@ inline ShaderTypeDesc const &ShaderTypeDescFromReferenceName(char const *referen
 struct InputType
 {
 	char const *name;
-	int fieldCount;	// if this is 0, infer from input type
 	StorageType storageType;
 };
 
@@ -148,6 +149,8 @@ struct DXGI_FormatDescriptor
 		return fields * bitSize;
 	}
 };
+
+DXGI_FormatDescriptor *GetDXGIDescriptorFromName(char const *name);
 
 //////////////////////////////////////////////////////////////////////
 
@@ -183,6 +186,7 @@ struct HLSLShader
 	};
 
 	vector<BindingRun> mBindingRuns[BindingInfo::Type::NumBindingTypes];
+	vector<BindingRun> mVertexBufferBindingRuns;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -233,6 +237,7 @@ struct HLSLShader
 	void OutputSamplerNames();
 	void OutputShaderStruct();
 	void OutputBindingRuns();
+	void OutputVertexBufferBindingRuns();
 	void OutputConstBufferMembers();
 	void OutputSamplerMembers();
 	void OutputResourceMembers();
@@ -260,6 +265,7 @@ struct HLSLShader
 	HRESULT Create(void const *blob, size_t size, ShaderTypeDesc const &desc);
 	HRESULT CreateInputLayout();
 	HRESULT CreateBindings();
+	HRESULT CreateVertexBufferBindingRuns();
 	virtual HRESULT Destroy();
 
 	Binding *CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc);

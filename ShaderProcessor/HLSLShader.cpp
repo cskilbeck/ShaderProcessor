@@ -1,8 +1,10 @@
+
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
 #include "Shlwapi.h"
 #include <regex>
+#include <set>
 
 #pragma comment(lib, "Shlwapi.lib")
 
@@ -81,24 +83,24 @@ static USMap shader_input_dimension_names =
 
 InputType type_suffix[] =
 {
-	"Invalid"	, 0, Invalid_type,
-	"Float"     , 0, Float_type,
-	"Half"      , 0, Half_type,
-	"Int"       , 0, Int_type,
-	"UInt"      , 0, UInt_type,
-	"Short"     , 0, Short_type,
-	"UShort"    , 0, UShort_type,
-	"Int8"      , 0, SByte_type,
-	"SByte"     , 0, SByte_type,
-	"Byte"      , 0, UNorm8_type,
-	"UInt8"     , 0, Byte_type,
-	"Norm16"    , 0, Norm16_type,
-	"Norm8"     , 0, Norm8_type,
-	"UNorm16"   , 0, UNorm16_type,
-	"UNorm8"    , 0, UNorm8_type,
-	"Typeless32", 0, Typeless32_type,
-	"Typeless16", 0, Typeless16_type,
-	"Typeless8" , 0, Typeless8_type
+	"Invalid"	, Invalid_type,
+	"Float"     , Float_type,
+	"Half"      , Half_type,
+	"Int"       , Int_type,
+	"UInt"      , UInt_type,
+	"Short"     , Short_type,
+	"UShort"    , UShort_type,
+	"Int8"      , SByte_type,
+	"SByte"     , SByte_type,
+	"Byte"      , UNorm8_type,
+	"UInt8"     , Byte_type,
+	"Norm16"    , Norm16_type,
+	"Norm8"     , Norm8_type,
+	"UNorm16"   , UNorm16_type,
+	"UNorm8"    , UNorm8_type,
+	"Typeless32", Typeless32_type,
+	"Typeless16", Typeless16_type,
+	"Typeless8" , Typeless8_type
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -256,6 +258,74 @@ static DXGI_FORMAT formats[4][4] =
 };
 
 //////////////////////////////////////////////////////////////////////
+// supported formats for the input assembler
+
+DXGI_FORMAT supported[] =
+{
+	DXGI_FORMAT_R32G32B32A32_FLOAT,
+	DXGI_FORMAT_R32G32B32A32_UINT,
+	DXGI_FORMAT_R32G32B32A32_SINT,
+
+	DXGI_FORMAT_R32G32B32_FLOAT,
+	DXGI_FORMAT_R32G32B32_UINT,
+	DXGI_FORMAT_R32G32B32_SINT,
+
+	DXGI_FORMAT_R16G16B16A16_FLOAT,
+	DXGI_FORMAT_R16G16B16A16_UNORM,
+	DXGI_FORMAT_R16G16B16A16_UINT,
+	DXGI_FORMAT_R16G16B16A16_SNORM,
+	DXGI_FORMAT_R16G16B16A16_SINT,
+
+	DXGI_FORMAT_R32G32_FLOAT,
+	DXGI_FORMAT_R32G32_UINT,
+	DXGI_FORMAT_R32G32_SINT,
+
+	DXGI_FORMAT_R10G10B10A2_UNORM,
+	DXGI_FORMAT_R10G10B10A2_UINT,
+
+	DXGI_FORMAT_R11G11B10_FLOAT,
+
+	DXGI_FORMAT_R8G8B8A8_UNORM,
+	DXGI_FORMAT_R8G8B8A8_UINT,
+	DXGI_FORMAT_R8G8B8A8_SNORM,
+	DXGI_FORMAT_R8G8B8A8_SINT,
+
+	DXGI_FORMAT_R16G16_FLOAT,
+	DXGI_FORMAT_R16G16_UNORM,
+	DXGI_FORMAT_R16G16_UINT,
+	DXGI_FORMAT_R16G16_SNORM,
+	DXGI_FORMAT_R16G16_SINT,
+
+	DXGI_FORMAT_R32_FLOAT,
+	DXGI_FORMAT_R32_UINT,
+	DXGI_FORMAT_R32_SINT,
+
+	DXGI_FORMAT_R8G8_UNORM,
+	DXGI_FORMAT_R8G8_UINT,
+	DXGI_FORMAT_R8G8_SNORM,
+	DXGI_FORMAT_R8G8_SINT,
+
+	DXGI_FORMAT_R16_FLOAT,
+	DXGI_FORMAT_R16_UNORM,
+	DXGI_FORMAT_R16_UINT,
+	DXGI_FORMAT_R16_SNORM,
+	DXGI_FORMAT_R16_SINT,
+
+	DXGI_FORMAT_R8_UNORM,
+	DXGI_FORMAT_R8_UINT,
+	DXGI_FORMAT_R8_SNORM,
+	DXGI_FORMAT_R8_SINT,
+
+	DXGI_FORMAT_B8G8R8A8_UNORM,
+	DXGI_FORMAT_B8G8R8X8_UNORM,
+
+	//Direct3D 11 hardware optionally supports these formats for input assembler vertex buffer resources :
+
+	DXGI_FORMAT_B5G6R5_UNORM,	//Requires DXGI 1.2 or later.DXGI 1.2 types are only supported on systems with Direct3D 11.1 or later.
+	DXGI_FORMAT_B5G5R5A1_UNORM,	//Requires DXGI 1.2 or later.DXGI 1.2 types are only supported on systems with Direct3D 11.1 or later.
+	DXGI_FORMAT_B4G4R4A4_UNORM	//Requires DXGI 1.2 or later.DXGI 1.2 types are only supported on systems with Direct3D 11.1 or later.
+};
+
 
 DXGI_FormatDescriptor DXGI_Lookup[] =
 {
@@ -339,6 +409,21 @@ DXGI_FormatDescriptor *GetDXGIDescriptor(DXGI_FORMAT format)
 
 //////////////////////////////////////////////////////////////////////
 
+DXGI_FormatDescriptor *GetDXGIDescriptorFromName(char const *name)
+{
+	for(uint i = 0; i < _countof(DXGI_Lookup); ++i)
+	{
+		DXGI_FormatDescriptor &d = DXGI_Lookup[i];
+		if(_stricmp(d.name, name) == 0)
+		{
+			return &d;
+		}
+	}
+	return null;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 uint GetStorageSize(DXGI_FORMAT format)
 {
 	DXGI_FormatDescriptor *d = GetDXGIDescriptor(format);
@@ -404,6 +489,20 @@ char const *GetNameOfStorageType(StorageType st)
 
 //////////////////////////////////////////////////////////////////////
 
+StorageType StorageTypeFromName(char const *name)
+{
+	for(int i = 0; i < _countof(type_suffix); ++i)
+	{
+		if(_stricmp(name, type_suffix[i].name) == 0)
+		{
+			return type_suffix[i].storageType;
+		}
+	}
+	return Invalid_type;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 {
 	BindingInfo *info = GetBindingInfo(desc.Type);
@@ -450,14 +549,10 @@ Binding *HLSLShader::CreateBinding(D3D11_SHADER_INPUT_BIND_DESC desc)
 }
 
 //////////////////////////////////////////////////////////////////////
+// used for binding to shaders (Samplers, Resources, ConstantBuffers & VertexBuffers)
 
-void HLSLShader::AddBinding(Binding *b)
+void AddToBindingRun(vector<HLSLShader::BindingRun> &runs, uint bindPoint)
 {
-	BindingInfo *info = GetBindingInfo(b->mDesc.Type);
-	BindingInfo::Type type = info->BindingType;
-	vector<BindingRun> &runs = mBindingRuns[type];
-
-	// do we need to start a new run of bindings?
 	bool startRun = false;
 	if(runs.empty())
 	{
@@ -466,8 +561,8 @@ void HLSLShader::AddBinding(Binding *b)
 	}
 	else
 	{
-		BindingRun &currentRun = runs.back();
-		if(b->mDesc.BindPoint != currentRun.mBindPoint + currentRun.mBindCount)
+		HLSLShader::BindingRun &currentRun = runs.back();
+		if(bindPoint != currentRun.mBindPoint + currentRun.mBindCount)
 		{
 			// noncontiguous bindpoint, so yes
 			startRun = true;
@@ -476,13 +571,22 @@ void HLSLShader::AddBinding(Binding *b)
 	if(startRun)
 	{
 		// start a new run
-		runs.push_back({ b->mDesc.BindPoint, 1 });
+		runs.push_back({ bindPoint, 1 });
 	}
 	else
 	{
 		// or just tag onto the current last one
 		runs.back().mBindCount++;
 	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void HLSLShader::AddBinding(Binding *b)
+{
+	BindingInfo *info = GetBindingInfo(b->mDesc.Type);
+	BindingInfo::Type type = info->BindingType;
+	AddToBindingRun(mBindingRuns[type], b->mDesc.BindPoint);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -771,23 +875,54 @@ void HLSLShader::OutputBindingRuns()
 
 //////////////////////////////////////////////////////////////////////
 
+void HLSLShader::OutputVertexBufferBindingRuns()
+{
+	vector<HLSLShader::BindingRun> &runs = mVertexBufferBindingRuns;
+
+	if(!runs.empty())
+	{
+		OutputLine("extern Shader::BindRun WEAKSYM %s_VertexBufferBindings[%d] = {", mName.c_str(), runs.size());
+		Indent();
+		OutputIndent();
+		char const *sep2 = "";
+		for(auto &run : runs)
+		{
+			Output("%s{%d,%d}", sep2, run.mBindPoint, run.mBindCount);
+			sep2 = ",";
+		}
+	}
+	OutputLine();
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void HLSLShader::OutputConstructor()
 {
 	string constBufferNames = (mConstantBufferBindings.size() > 0) ? Format("%s_ConstBufferNames", Name().c_str()) : "null";
 	string textureNames = (mResourceBindings.size() > 0) ? Format("%s_TextureNames", Name().c_str()) : "null";
 	string samplerNames = (mSamplerBindings.size() > 0) ? Format("%s_SamplerNames", Name().c_str()) : "null";
 
+	string vb_bindings;
+	if(mShaderTypeDesc.type == ShaderType::Vertex)
+	{
+		vb_bindings = Format(", %s_VertexBufferBindings, %d", mName.c_str(), mVertexBufferBindingRuns.size());
+	}
+
 	OutputComment("Constructor");
 	OutputLine("%s()", RefName().c_str());
 	Indent();
-	OutputLine(": %sShader(%d, %s, %d, %s, %d, %s, %s, %s, %s)",
+	OutputLine(": %sShader(%d, %s, %d, %s, %d, %s, %s, %s, %s%s)",
 			   ShaderTypeName(),
 				mConstantBufferBindings.size(), constBufferNames.c_str(),
 				mSamplerBindings.size(), samplerNames.c_str(),
 				mResourceBindings.size(), textureNames.c_str(),
 				mResourceBindings.size() > 0 ? "textures" : "null",
 				mSamplerBindings.size() > 0 ? "samplers" : "null",
-				Format("%s_Bindings[ShaderType::%s]", mName.c_str(), mShaderTypeDesc.name).c_str()
+				Format("%s_Bindings[ShaderType::%s]", mName.c_str(), mShaderTypeDesc.name).c_str(),
+				vb_bindings.c_str()
 				);
 
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
@@ -950,6 +1085,7 @@ bool IsAllDigits(string const &str)
 }
 
 //////////////////////////////////////////////////////////////////////
+// Need to create a bindlist for the vertex streams...
 
 using std::regex;
 
@@ -1003,96 +1139,55 @@ HRESULT HLSLShader::CreateInputLayout()
 		uint streamID = 0;
 		uint instanceDataStepRate = 0;
 
-		if(strchr(d.SemanticName, '_') != null)
+		// recognize this semantic (eg was a semantic:() declaration used)?
+		auto &semanticIter = semantics.find(d.SemanticName);
+		if(semanticIter != semantics.end())
 		{
-			vector<string> bits;
-			tokenize(d.SemanticName, bits, "_");
+			// yes
+			Semantic &s = semanticIter->second;
 
-			if(bits.size() >= 4)
+			// get & check the stream
+			streamID = s.stream;
+			if(streamID >= D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
 			{
-				int b = bits.size() - 1;
-
-				// concat all the first bits
-				string sep = "";
-				for(uint i = 0; i < (b - 2); ++i)
-				{
-					type_annotation += sep + bits[i];
-					sep = "_";
-				}
-
-				stream = bits[b-2];
-				instances = bits[b-1];
-				semantic_name = bits[b];
-
-				if(IsAllDigits(stream) && (IsAllDigits(instances) || instances[0] == 'V'))
-				{
-					streamID = atoi(stream.c_str());
-
-					if(streamID >= D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
-					{
-						emit_error("Invalid input resource slot");
-						return E_FAIL;
-					}
-
-					instanceDataStepRate = (instances[0] == 'V') ? 0 : atoi(instances.c_str());
-
-					if(type_annotation.compare("default") != 0)
-					{
-						// check if it's an auto type one
-						for(int j = 0; j < _countof(type_suffix); ++j)
-						{
-							if(_stricmp(type_annotation.c_str(), type_suffix[j].name) == 0)
-							{
-								int fc = type_suffix[j].fieldCount;
-								fieldCount = (fc == 0) ? sourceFields : fc;
-								storageType = type_suffix[j].storageType;
-								break;
-							}
-						}
-						if(fieldCount == 0)
-						{
-							// else see if they want to specify the format explicitly
-							for(int j = 0; j < _countof(DXGI_Lookup); ++j)
-							{
-								if(_stricmp(DXGI_Lookup[j].name, type_annotation.c_str()) == 0)
-								{
-									fieldCount = DXGI_Lookup[j].fields;
-									storageType = DXGI_Lookup[j].storageType;
-								}
-							}
-						}
-					}
-				}
+				emit_error("Invalid input resource slot");
+				return E_FAIL;
 			}
 
-			// got one?
-			if(fieldCount != 0)
+			// and instance rate
+			instanceDataStepRate = s.instanced ? s.instances : 0;
+
+			if(s.nativeFormat != null)
 			{
-				// yes, try to match it to an actual format
-				d.Format = GetDXGI_Format(fieldCount, storageType);
+				d.Format = s.nativeFormat->format;
+				fieldCount = s.nativeFormat->fields;
+				storageType = s.nativeFormat->storageType;
+			}
+			else
+			{
+				storageType = s.type;
+				fieldCount = sourceFields;
+
+				if(s.type != Invalid_type)
+				{
+					d.Format = GetDXGI_Format(sourceFields, s.type);
+				}
 			}
 		}
-		else
-		{
-			semantic_name = d.SemanticName;
-		}
+
 		// got a format yet?
 		if(d.Format == DXGI_FORMAT_UNKNOWN)
 		{
 			// no, use a simple mapping
 			fieldCount = sourceFields;
 			d.Format = formats[fieldCount - 1][desc.ComponentType];
+			storageType = GetStorageType(d.Format);
 		}
 
 		if(fieldCount != sourceFields)
 		{
 			emit_error("Incompatible semantic type specified");
 			return E_INVALIDARG;
-		}
-
-		if(storageType == Invalid_type)
-		{
-			storageType = GetStorageType(d.Format);
 		}
 
 		vertexSize += SizeOfFormatElement(d.Format) / 8;
@@ -1133,6 +1228,36 @@ HRESULT HLSLShader::CreateInputLayout()
 
 //////////////////////////////////////////////////////////////////////
 
+HRESULT HLSLShader::CreateVertexBufferBindingRuns()
+{
+	// reet
+	// scan the InputLayout for streams
+	// build a Set<> of the streams
+	// for each stream
+	//   add to binding run
+
+	std::set<int> streams;
+
+	for(auto &i : mInputFields)
+	{
+		streams.emplace(i.stream);
+	}
+
+	for(auto &s : streams)
+	{
+		AddToBindingRun(mVertexBufferBindingRuns, s);
+	}
+
+	for(auto &r : mVertexBufferBindingRuns)
+	{
+		Trace("Run at %d, length = %d\n", r.mBindPoint, r.mBindCount);
+	}
+
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &desc)
 {
 	mShaderType = desc.type;
@@ -1145,6 +1270,7 @@ HRESULT HLSLShader::Create(void const *blob, size_t size, ShaderTypeDesc const &
 	if(mShaderTypeDesc.type == ShaderType::Vertex)
 	{
 		DXR(CreateInputLayout());
+		DXR(CreateVertexBufferBindingRuns());
 	}
 	return S_OK;
 }

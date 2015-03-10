@@ -348,7 +348,9 @@ void MyDXWindow::OnDraw()
 
 	simpleShader->Activate(Context());
 	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
-	gridVB->Activate(Context());
+
+	simpleShader->vs.SetVertexBuffers(Context(), 1, gridVB.get());
+
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
