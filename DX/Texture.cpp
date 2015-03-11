@@ -154,7 +154,7 @@ static uint BPPFromTextureFormat(DXGI_FORMAT format)
 
 namespace DX
 {
-	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget)
+	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		uint bpp = BPPFromTextureFormat(pixelFormat);
 		D3D11_SUBRESOURCE_DATA *psrd = null;
@@ -169,6 +169,8 @@ namespace DX
 		}
 
 		CD3D11_TEXTURE2D_DESC desc(pixelFormat, width, height, 1, 1);
+		desc.Usage = (D3D11_USAGE)usage;
+		desc.CPUAccessFlags = rwOption;
 		if(renderTarget)
 		{
 			desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -220,18 +222,18 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget)
+	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		sAllTextures.push_back(this);
-		InitFromPixelBuffer(pixels, format, w, h, isRenderTarget);
+		InitFromPixelBuffer(pixels, format, w, h, isRenderTarget, usage, rwOption);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(int width, int height, Color color)
+	Texture::Texture(int width, int height, Color color, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		sAllTextures.push_back(this);
-		InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false);
+		InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false, usage, rwOption);
 	}
 
 	//////////////////////////////////////////////////////////////////////

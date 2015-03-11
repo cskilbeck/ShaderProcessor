@@ -9,8 +9,19 @@ namespace DX
 	struct Texture
 	{
 		Texture(tchar const *name);
-		Texture(int w, int h, Color color);
-		Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget = false);
+
+		Texture(int w, int h,
+				Color color,
+				BufferUsage usage = DynamicUsage,
+				ReadWriteOption rwOption = Writeable);
+
+		Texture(int w, int h,
+				DXGI_FORMAT format,
+				byte *pixels,
+				bool isRenderTarget = false,
+				BufferUsage usage = StaticUsage,
+				ReadWriteOption rwOption = NotCPUAccessible);
+
 		virtual ~Texture();
 
 		static void FlushAll();
@@ -25,6 +36,9 @@ namespace DX
 		Vec2f FSize() const;
 		bool IsValid() const;
 		tstring const &GetName() const;
+		template <typename T> bool Map(ID3D11DeviceContext *context, T **ptr, MapWaitOption = WaitForGPU)
+		{
+		}
 
 		list_node<Texture> mListNode;
 
@@ -37,7 +51,7 @@ namespace DX
 
 		friend struct Shader;
 
-		void InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget);
+		void InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption);
 
 		tstring							mName;
 		DXPtr<ID3D11Texture2D>			mTexture2D;

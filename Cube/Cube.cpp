@@ -200,9 +200,9 @@ bool MyDXWindow::OnCreate()
 		bv[3] = { { r, b }, { 1, 1 } };
 		bv.Release();
 
-		Shaders::Blit::VS::vConstants_CB &vc = blitShader->vs.vConstants;
+		auto &vc = blitShader->vs.vConstants;
 		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vc.Update(DX::Context);
+		vc.Update(Context());
 	};
 
 	scene.Load(TEXT("data\\duck.dae"));
@@ -273,6 +273,20 @@ bool MyDXWindow::OnCreate()
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
+	fpsTexture.reset(new Texture(128, 32, DXGI_FORMAT_B8G8R8A8_UNORM));
+	fpsSampler.reset(new Sampler(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
+	fpsVB.reset(new Shaders::Blit::VertBuffer(4));
+
+	uint32 *pixels = fpsTexture->Map(Context());
+	fpsTexture->UnMap(Context());
+
+	Shaders::Blit::InputVertex *v = fpsVB->Map(Context());
+	v[0] = { { 0, 0 }, { 0, 0 } };
+	v[1] = { { 128, 0 }, { 1, 0 } };
+	v[2] = { { 0, 32 }, { 0, 1 } };
+	v[3] = { { 128, 32 }, { 1, 1 } };
+	fpsVB->UnMap(Context());
+
 	return true;
 }
 
@@ -322,21 +336,31 @@ void MyDXWindow::OnDraw()
 	cubeScale = Vec4(5, 5, 5);
 	cubeRot = Vec4(time * 0.8f, time * 0.9f, time * 0.7f);
 
+	// FPS graph:
+	// Create a texture: 128x32
+	// plot the current frame FPS into the correct column (wrapping round)
+	// set UV mode to wrap
+	// draw a rectangle, using the column as left, and 1-column as right
+
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-		auto &vs = cubeShader->vs;
-		auto &ps = cubeShader->ps;
-		vs.VertConstants.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vs.VertConstants.ModelMatrix = Transpose(modelMatrix);
-		vs.VertConstants.Update(Context());
-		ps.Camera.cameraPos = camera.position;
-		ps.Camera.Update(Context());
+
+		auto &vs = cubeShader->vs.VertConstants;
+		vs.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vs.ModelMatrix = Transpose(modelMatrix);
+		vs.Update(Context());
+
+		auto &ps = cubeShader->ps.Camera;
+		ps.cameraPos = camera.position;
+		ps.Update(Context());
+
 		cubeShader->Activate(Context());
 		cubeShader->vs.SetVertexBuffers(Context(), 1, cubeVerts.get());
 		cubeIndices->Activate(Context());
+
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}

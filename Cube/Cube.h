@@ -46,6 +46,10 @@ struct MyDXWindow: DXWindow
 	Ptr<Texture> spriteTexture;
 	Ptr<Sampler> spriteSampler;
 
+	Ptr<Texture> fpsTexture;
+	Ptr<Sampler> fpsSampler;
+	Ptr<Shaders::Blit::VertBuffer> fpsVB;
+
 	Ptr<SpriteSheet> spriteSheet;
 
 	Ptr<RenderTarget> renderTarget;

@@ -293,5 +293,4 @@ namespace DX
 			return (T *)TypelessBuffer::Data();
 		}
 	};
-
 }
