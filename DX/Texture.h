@@ -36,9 +36,9 @@ namespace DX
 		Vec2f FSize() const;
 		bool IsValid() const;
 		tstring const &GetName() const;
-		template <typename T> bool Map(ID3D11DeviceContext *context, T **ptr, MapWaitOption = WaitForGPU)
-		{
-		}
+
+		template <typename T> bool Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption = WaitForGPU);
+		void UnMap(ID3D11DeviceContext *context);
 
 		list_node<Texture> mListNode;
 
@@ -123,4 +123,16 @@ namespace DX
 	{
 		return mName;
 	}
+
+	template <typename T> inline bool Texture::Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption waitOption)
+	{
+		D3D11_MAPPED_SUBRESOURCE msr;
+		if(SUCCEEDED(context->Map(mTexture2D, 0, mapType, waitOption, &msr)))
+		{
+			*ptr = (T *)msr.pData;
+			return true;
+		}
+		return false;
+	}
+
 }

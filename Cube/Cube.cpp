@@ -177,6 +177,9 @@ void MyDXWindow::CreateOctahedron()
 
 //////////////////////////////////////////////////////////////////////
 
+const int fpsWidth = 256;
+const int fpsHeight = 128;
+
 bool MyDXWindow::OnCreate()
 {
 	if(!DXWindow::OnCreate())
@@ -273,18 +276,16 @@ bool MyDXWindow::OnCreate()
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
-	fpsTexture.reset(new Texture(128, 32, DXGI_FORMAT_B8G8R8A8_UNORM));
+	fpsTexture.reset(new Texture(fpsWidth, fpsHeight, DXGI_FORMAT_B8G8R8A8_UNORM));
 	fpsSampler.reset(new Sampler(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
 	fpsVB.reset(new Shaders::Blit::VertBuffer(4));
 
-	uint32 *pixels = fpsTexture->Map(Context());
-	fpsTexture->UnMap(Context());
 
 	Shaders::Blit::InputVertex *v = fpsVB->Map(Context());
 	v[0] = { { 0, 0 }, { 0, 0 } };
-	v[1] = { { 128, 0 }, { 1, 0 } };
-	v[2] = { { 0, 32 }, { 0, 1 } };
-	v[3] = { { 128, 32 }, { 1, 1 } };
+	v[1] = { { (float)fpsWidth, 0 }, { 1, 0 } };
+	v[2] = { { 0, (float)fpsHeight }, { 0, 1 } };
+	v[3] = { { (float)fpsWidth, (float)fpsHeight }, { 1, 1 } };
 	fpsVB->UnMap(Context());
 
 	return true;
@@ -537,10 +538,30 @@ void MyDXWindow::OnDraw()
 
 	ResetRenderTargetView();
 
+	blitShader->ps.page = renderTarget.get();
+	blitShader->ps.smplr = uiSampler.get();
 	blitShader->Activate(Context());
 	blitShader->vs.SetVertexBuffers(Context(), 1, blitVB.get());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	Context()->Draw(blitVB->Count(), 0);
+
+	uint32 *pixels;
+	if(fpsTexture->Map(Context(), &pixels, D3D11_MAP_WRITE_DISCARD))
+	{
+		Random r;
+		for(uint i = 0; i < fpsWidth * fpsHeight; ++i)
+		{
+			pixels[i] = r.Next();
+		}
+	}
+	fpsTexture->UnMap(Context());
+
+	blitShader->vs.SetVertexBuffers(Context(), 1, fpsVB.get());
+	blitShader->ps.page = fpsTexture.get();
+	blitShader->ps.smplr = fpsSampler.get();
+	blitShader->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	Context()->Draw(fpsVB->Count(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////

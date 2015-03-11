@@ -245,6 +245,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void Texture::UnMap(ID3D11DeviceContext *context)
+	{
+		context->Unmap(mTexture2D, 0);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void Texture::FlushAll()
 	{
 		for(auto t : sAllTextures)
@@ -276,7 +283,7 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	RenderTarget::RenderTarget(int w, int h, RenderTargetDepthOption depthOption)
-		: Texture(w, h, DXGI_FORMAT_B8G8R8A8_UNORM, null, true)
+		: Texture(w, h, DXGI_FORMAT_B8G8R8A8_UNORM, null, true, DefaultUsage)
 	{
 		DXT(CreateRenderTargetView());
 		if(depthOption == WithDepthBuffer)
