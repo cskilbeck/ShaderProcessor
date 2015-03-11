@@ -199,10 +199,10 @@ bool MyDXWindow::OnCreate()
 		bv[2] = { { l, b }, { 0, 1 } };
 		bv[3] = { { r, b }, { 1, 1 } };
 		bv.Release();
-		Shaders::Blit::VS &vs = blitShader->vs;
 
-		vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vs.vConstants.Update(DX::Context);
+		Shaders::Blit::VS::vConstants_CB &vc = blitShader->vs.vConstants;
+		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		vc.Update(DX::Context);
 	};
 
 	scene.Load(TEXT("data\\duck.dae"));
@@ -335,7 +335,7 @@ void MyDXWindow::OnDraw()
 		ps.Camera.cameraPos = camera.position;
 		ps.Camera.Update(Context());
 		cubeShader->Activate(Context());
-		cubeVerts->Activate(Context());
+		cubeShader->vs.SetVertexBuffers(Context(), 1, cubeVerts.get());
 		cubeIndices->Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
@@ -348,15 +348,14 @@ void MyDXWindow::OnDraw()
 
 	simpleShader->Activate(Context());
 	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
-
 	simpleShader->vs.SetVertexBuffers(Context(), 1, gridVB.get());
-
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
+
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(lightPos);
 	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-	octahedronVB->Activate(Context());
+	simpleShader->vs.SetVertexBuffers(Context(), 1, octahedronVB.get());
 	octahedronIB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
@@ -464,7 +463,7 @@ void MyDXWindow::OnDraw()
 	v[1].UVb = { 1.0f, 1.0f };
 
 	spriteVerts->UnMap(Context());
-	spriteVerts->Activate(Context());
+	spriteShader->vs.SetVertexBuffers(Context(), 1, spriteVerts.get());
 	spriteShader->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
@@ -507,15 +506,15 @@ void MyDXWindow::OnDraw()
 	renderTarget->ClearDepth(Context(), DepthOnly);
 	Viewport(0, 0, renderTarget->FWidth(), renderTarget->FHeight(), 0, 1).Activate(Context());
 	cubeShader->Activate(Context());
-	cubeVerts->Activate(Context());
+	cubeShader->vs.SetVertexBuffers(Context(), 1, cubeVerts.get());
 	cubeIndices->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 
 	ResetRenderTargetView();
 
-	blitVB->Activate(Context());
 	blitShader->Activate(Context());
+	blitShader->vs.SetVertexBuffers(Context(), 1, blitVB.get());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	Context()->Draw(blitVB->Count(), 0);
 }

@@ -41,15 +41,16 @@ namespace DX
 
 		void SetVertexBindings(ID3D11Buffer **handles, uint *strides, uint *offsets)
 		{
-			uint bp = 0;
 			for(uint i = 0; i < mVertexBufferBindingCount; ++i)
 			{
 				BindRun &run = mVertexBufferBindings[i];
 
 				// TODO: IN DEBUG, CHECK HERE THAT WE HAVE ENOUGH IN THE ARRAYS
 
-				Context->IASetVertexBuffers(run.mBindPoint, run.mBindCount, handles + bp, strides + bp, offsets + bp);
-				bp += run.mBindCount;
+				Context->IASetVertexBuffers(run.mBindPoint, run.mBindCount, handles, strides, offsets);
+				handles += run.mBindCount;
+				strides += run.mBindCount;
+				offsets += run.mBindCount;
 			}
 		}
 
@@ -85,16 +86,19 @@ namespace DX
 			offsets[0] = 0;
 
 			// any others...
-			va_list v;
-			va_start(v, n);
-			for(int i = 1; i < n; ++i)
+			if(n > 1)
 			{
-				T *b = va_arg(v, T *);
-				handles[i] = b->Handle();
-				strides[i] = T::VertexSize();
-				offsets[i] = 0; // For now...
+				va_list v;
+				va_start(v, n);
+				for(int i = 1; i < n; ++i)
+				{
+					T *b = va_arg(v, T *);
+					handles[i] = b->Handle();
+					strides[i] = T::VertexSize();
+					offsets[i] = 0; // For now...
+				}
+				va_end(v);
 			}
-			va_end(v);
 
 			// stuff them in
 			SetVertexBindings(handles, strides, offsets);

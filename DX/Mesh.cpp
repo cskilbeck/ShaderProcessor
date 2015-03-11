@@ -45,7 +45,7 @@ namespace
 		{
 			// if no meshes, skip the node, but keep its transformation
 			parent = targetParent;
- 			transform = XMLoadFloat4x4((const DirectX::XMFLOAT4X4 *)&node.mTransformation) * accTransform;
+			transform = XMLoadFloat4x4((const DirectX::XMFLOAT4X4 *)&node.mTransformation) * accTransform;
 		}
 		// continue for all child nodes
 		for(uint a = 0; a < node.mNumChildren; ++a)
@@ -263,7 +263,7 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 		mShader->vs.VertConstants.Update(context);
 		for(auto const m : node.mMeshes)
 		{
-			m->mVertexBuffer->Activate(context);
+			mShader->vs.SetVertexBuffers(context, 1, m->mVertexBuffer);
 			m->mIndexBuffer->Activate(context);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			context->DrawIndexed(m->mCount, m->mBase, 0);
