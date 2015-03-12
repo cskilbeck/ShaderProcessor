@@ -36,6 +36,7 @@ enum
 	err_duplicatepragma,
 	err_malformedsemanticname,
 	err_badsemantic,
-	err_unknownkey
+	err_unknownkey,
+	err_okbutquit
 };
 

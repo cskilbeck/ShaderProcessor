@@ -23,6 +23,10 @@ struct MyDXWindow: DXWindow
 	Ptr<Shaders::Simple::VertBuffer> simpleVB;
 	Ptr<IndexBuffer<uint16>> octahedronIB;
 
+	Ptr<Shaders::Instanced> instancedShader;
+	Ptr<Shaders::Instanced::VertBuffer0> instancedVB0;
+	Ptr<Shaders::Instanced::VertBuffer1> instancedVB1;
+
 	Vec4f cubePos;
 	Vec4f cubeScale;
 	Vec4f cubeRot;
@@ -62,7 +66,7 @@ struct MyDXWindow: DXWindow
 
 	void OnKeyDown(int key, uintptr flags) override;
 	bool OnCreate() override;
-	void OnDraw() override;
+	void OnFrame() override;
 	void OnDestroy() override;
 
 	void CreateGrid();

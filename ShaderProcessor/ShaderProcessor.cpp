@@ -371,8 +371,13 @@ int main(int argc, char *argv[])
 {
 	// parse and validate the arguments
 	int e = CheckArgs(argc, argv);
-	if(e != success)
+	switch(e)
 	{
+	case err_okbutquit:
+		return success;
+	case success:
+		break;
+	default:
 		return e;
 	}
 

@@ -215,7 +215,7 @@ int CheckArgs(int argc, char *argv[])
 	if(options[PRAGMA_OPTIONS])
 	{
 		OutputPragmaDocs();
-		return success;
+		return err_okbutquit;
 	}
 
 	if(!options[SOURCE_FILE])

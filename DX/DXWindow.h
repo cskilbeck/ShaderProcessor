@@ -21,7 +21,7 @@ namespace DX
 
 		void ResetRenderTargetView();
 
-		virtual void OnDraw();
+		virtual void OnFrame();
 
 		void OnPaint(PAINTSTRUCT &ps) override;
 		bool OnUpdate() override;

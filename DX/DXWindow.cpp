@@ -46,7 +46,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DXWindow::OnDraw()
+	void DXWindow::OnFrame()
 	{
 		Clear(Color::CornflowerBlue);
 	}
@@ -71,7 +71,7 @@ namespace DX
 	bool DXWindow::OnUpdate()
 	{
 		mTimer.Update();
-		OnDraw();
+		OnFrame();
 		Present();
 		if(!mResizing)
 		{

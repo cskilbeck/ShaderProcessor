@@ -180,10 +180,7 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 MAP depth_write_map =
 {
 	{ "enabled", D3D11_DEPTH_WRITE_MASK_ALL },
-	{ "on", D3D11_DEPTH_WRITE_MASK_ALL },
-
-	{ "disabled", D3D11_DEPTH_WRITE_MASK_ZERO },
-	{ "off", D3D11_DEPTH_WRITE_MASK_ZERO }
+	{ "disabled", D3D11_DEPTH_WRITE_MASK_ZERO }
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -463,11 +460,10 @@ char const *bool_vals[] =
 	"false", "true"
 };
 
+// Make this output a temp HTML file and fire up the default browser to view it
+
 void OutputPragmaDocs()
 {
-	// reet
-	// map<string, vector<parameter>>
-
 	for(auto &token : params)
 	{
 		string index = "";
@@ -478,39 +474,42 @@ void OutputPragmaDocs()
 		printf("#pragma %s(%soptions)\n", token.first.c_str(), index.c_str());
 		for(auto &p : token.second.params)
 		{
-			printf("  %s = ", p.name);
-			switch(p.type)
+			if(p.type != inverse_bool_param)
 			{
-				case enum_param:
+				printf("  %s = ", p.name);
+				switch(p.type)
 				{
-					char sep = '[';
-					for(auto &e : p.enum_list)
+					case enum_param:
 					{
-						printf("%c%s", sep, e.first.c_str());
-						if(e.second == *((uint32 *)p.target))
+						char sep = '[';
+						for(auto &e : p.enum_list)
 						{
-							printf("*");
+							printf("%c%s", sep, e.first.c_str());
+							if(e.second == *((uint32 *)p.target))
+							{
+								printf("*");
+							}
+							sep = '|';
 						}
-						sep = '|';
+						printf("]\n");
 					}
-					printf("]\n");
+					break;
+					case bool_param:
+						printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[(*((BOOL *)p.target)) & 1]);
+						break;
+					//case inverse_bool_param:
+					//	printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[1 - ((*((BOOL *)p.target)) & 1)]);
+					//	break;
+					case uint8_param:
+						printf("%s (default = 0x%s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((uint8 *)p.target)).c_str());
+						break;
+					case float_param:
+						printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((float *)p.target)).c_str());
+						break;
+					case int_param:
+						printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((int32 *)p.target)).c_str());
+						break;
 				}
-				break;
-				case bool_param:
-					printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[(*((BOOL *)p.target)) & 1]);
-					break;
-				case inverse_bool_param:
-					printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[1 - ((*((BOOL *)p.target)) & 1)]);
-					break;
-				case uint8_param:
-					printf("%s (default = 0x%s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((uint8 *)p.target)).c_str());
-					break;
-				case float_param:
-					printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((float *)p.target)).c_str());
-					break;
-				case int_param:
-					printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((int32 *)p.target)).c_str());
-					break;
 			}
 		}
 	}

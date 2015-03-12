@@ -225,14 +225,18 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		uint mSizeOf;
+
 		Buffer()
 			: TypelessBuffer()
+			, mSizeOf(0)
 		{
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		Buffer(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+			: mSizeOf(sizeof(T))
 		{
 			TypelessBuffer::Create(type, count, data, usage, rwOption);
 		}
@@ -241,6 +245,7 @@ namespace DX
 
 		HRESULT Create(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
+			mSizeOf = sizeof(T);
 			return TypelessBuffer::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
 		}
 
@@ -291,6 +296,20 @@ namespace DX
 		T *Data() const
 		{
 			return (T *)TypelessBuffer::Data();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		uint DataSize() const
+		{
+			return mSizeOf;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		static uint SizeOf()
+		{
+			return sizeof(T);
 		}
 	};
 }

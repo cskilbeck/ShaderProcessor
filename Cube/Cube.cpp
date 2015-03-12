@@ -1,4 +1,5 @@
 //////////////////////////////////////////////////////////////////////
+// OnResize lag
 // Proper logging instead of a janky handful of macros
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
@@ -24,10 +25,9 @@
 // Spock
 //		Make debug info default to on in Debug builds
 // ShaderProcessor
-//		Instancing support / multiple vertex streams
 //		Error check everything
 //		Structured Buffers/UAV support
-//		Hull/Domain/Compute shader support (Tesselate the duck to buggery!)
+//		Hull/Domain/Compute shader support (Tesselate the duck to buggery! How do you calc the patches?)
 //		Assembly Listing file
 //		deal with multiple render targets
 //		Shader Linking/Interfaces support...?
@@ -39,6 +39,7 @@
 //		deal with Buffers of structs (no padding)
 //		Allow row or column major matrices
 //		\ Sampler/Texture defaults
+//		* Instancing support / multiple vertex streams
 //		* Nested structs (names of the structs!?)
 //		* Fix the crappy #pragma renderstate system (run CL /P beforehand - what about #includes though?)
 //		* Honour the input binding slots specified (and deal with non-contiguous ones)
@@ -82,6 +83,34 @@ static Shaders::Phong::InputVertex verts[24] =
 	{ { -1, +1, +1 }, { 1, 0 }, 0xffffffff, { -1,  0,  0 } },// 21
 	{ { -1, -1, +1 }, { 1, 1 }, 0xffffffff, { -1,  0,  0 } },// 22
 	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, { -1,  0,  0 } } // 23
+};
+
+static Shaders::Instanced::InputVertex0 iCube[24] =
+{
+	{ { -1, +1, +1 } },// 00
+	{ { +1, +1, +1 } },// 01
+	{ { +1, -1, +1 } },// 02
+	{ { -1, -1, +1 } },// 03
+	{ { -1, -1, +1 } },// 04
+	{ { +1, -1, +1 } },// 05
+	{ { +1, -1, -1 } },// 06
+	{ { -1, -1, -1 } },// 07
+	{ { -1, -1, -1 } },// 08
+	{ { +1, -1, -1 } },// 09
+	{ { +1, +1, -1 } },// 10
+	{ { -1, +1, -1 } },// 11
+	{ { -1, +1, -1 } },// 12
+	{ { +1, +1, -1 } },// 13
+	{ { +1, +1, +1 } },// 14
+	{ { -1, +1, +1 } },// 15
+	{ { +1, +1, +1 } },// 16
+	{ { +1, +1, -1 } },// 17
+	{ { +1, -1, -1 } },// 18
+	{ { +1, -1, +1 } },// 19
+	{ { -1, +1, -1 } },// 20
+	{ { -1, +1, +1 } },// 21
+	{ { -1, -1, +1 } },// 22
+	{ { -1, -1, -1 } } // 23
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -231,6 +260,10 @@ bool MyDXWindow::OnCreate()
 	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
 	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
 
+	instancedShader.reset(new Shaders::Instanced());
+	instancedVB0.reset(new Shaders::Instanced::VertBuffer0(_countof(iCube), iCube, StaticUsage));
+	instancedVB1.reset(new Shaders::Instanced::VertBuffer1(64));
+
 	lightPos = Vec4(0, -15, 0, 0);
 
 	auto &l = cubeShader->ps.Light;
@@ -276,16 +309,18 @@ bool MyDXWindow::OnCreate()
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
-	fpsTexture.reset(new Texture(fpsWidth, fpsHeight, DXGI_FORMAT_B8G8R8A8_UNORM));
+	fpsTexture.reset(new Texture(fpsWidth, fpsHeight, DXGI_FORMAT_B8G8R8A8_UNORM, null, false, DynamicUsage, Writeable));
 	fpsSampler.reset(new Sampler(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
 	fpsVB.reset(new Shaders::Blit::VertBuffer(4));
 
+	float left = 200;
+	float top = 200;
 
 	Shaders::Blit::InputVertex *v = fpsVB->Map(Context());
-	v[0] = { { 0, 0 }, { 0, 0 } };
-	v[1] = { { (float)fpsWidth, 0 }, { 1, 0 } };
-	v[2] = { { 0, (float)fpsHeight }, { 0, 1 } };
-	v[3] = { { (float)fpsWidth, (float)fpsHeight }, { 1, 1 } };
+	v[0] = { { left, top }, { 0, 0 } };
+	v[1] = { { left + fpsWidth, top }, { 1, 0 } };
+	v[2] = { { left, top + fpsHeight }, { 0, 1 } };
+	v[3] = { { left + fpsWidth, top + fpsHeight }, { 1, 1 } };
 	fpsVB->UnMap(Context());
 
 	return true;
@@ -293,7 +328,7 @@ bool MyDXWindow::OnCreate()
 
 //////////////////////////////////////////////////////////////////////
 
-void MyDXWindow::OnDraw()
+void MyDXWindow::OnFrame()
 {
 	float deltaTime = (float)mTimer.Delta();
 	float time = (float)mTimer.WallTime();
@@ -337,14 +372,10 @@ void MyDXWindow::OnDraw()
 	cubeScale = Vec4(5, 5, 5);
 	cubeRot = Vec4(time * 0.8f, time * 0.9f, time * 0.7f);
 
-	// FPS graph:
-	// Create a texture: 128x32
-	// plot the current frame FPS into the correct column (wrapping round)
-	// set UV mode to wrap
-	// draw a rectangle, using the column as left, and 1-column as right
-
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
+
+	// Draw spinning cube
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
@@ -366,16 +397,20 @@ void MyDXWindow::OnDraw()
 		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
 	}
 
-	// set parameters for the Scene default renderer
+	// Draw loaded model
 
 	Matrix bob = ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
 	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
+
+	// Draw grid
 
 	simpleShader->Activate(Context());
 	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
 	simpleShader->vs.SetVertexBuffers(Context(), 1, gridVB.get());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB->Count(), 0);
+
+	// Draw light
 
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(lightPos);
@@ -384,6 +419,28 @@ void MyDXWindow::OnDraw()
 	octahedronIB->Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
+
+	// Instanced cubes
+
+	Random r(0);
+	auto *p = instancedVB1->Map(Context());
+	uint c = instancedVB1->Count();
+	for(uint i = 0; i < c; ++i)
+	{
+		float t = i * PI * 2 / c + time / 2;
+		float x = sinf(t) * 50;
+		float y = cosf(t) * 50;
+		*p++ = { { x, y, 0 }, r.Next() };
+	}
+	instancedVB1->UnMap(Context());
+	instancedShader->vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
+	instancedShader->Activate(Context());
+	instancedShader->vs.SetVertexBuffers(Context(), 2, instancedVB0.get(), instancedVB1.get());
+	cubeIndices->Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexedInstanced(cubeIndices->Count(), c, 0, 0, 0);
+
+	// Drawlist UI elements
 
 	{
 		using vrt = Shaders::UI::InputVertex;
@@ -429,6 +486,8 @@ void MyDXWindow::OnDraw()
 		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
 		drawList.End();
 	}
+
+	// Drawlist simple rectangle
 		
 	{
 		using vrt = Shaders::Simple::InputVertex;
@@ -443,25 +502,29 @@ void MyDXWindow::OnDraw()
 		drawList.AddVertex<vrt>({ { 0, 100, 0.5f }, 0x80000000 });
 		drawList.AddVertex<vrt>({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
 		drawList.End();
-
-		font->SetDrawList(drawList);
-
-		font->Setup(Context(), this);
-		font->Begin();
-		font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
-		font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
-		font->DrawString("Hello World", Vec2f(120, 340));
-		font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
-		font->End();
-
-		bigFont->SetDrawList(drawList);
-		// no need to call Setup() again
-		bigFont->Begin();
-		bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
-		bigFont->End();
-
 	}
+
+	// Drawlist some text
+
+	font->SetDrawList(drawList);
+
+	font->Setup(Context(), this);
+	font->Begin();
+	font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
+	font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
+	font->DrawString("Hello World", Vec2f(120, 340));
+	font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
+	font->End();
+
+	bigFont->SetDrawList(drawList);
+	// no need to call Setup() again
+	bigFont->Begin();
+	bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
+	bigFont->End();
+
 	drawList.Execute();
+
+	// Draw some sprites immediate mode
 
 	spriteShader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 
@@ -493,6 +556,8 @@ void MyDXWindow::OnDraw()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
 
+	// Drawlist some sprites
+
 	Sprite const &s = (*spriteSheet)["temp.png"];
 	Sprite const &t = (*spriteSheet)["temp.jpg"];
 	spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
@@ -504,6 +569,8 @@ void MyDXWindow::OnDraw()
 	q.Rotation = time * PI / 2;
 	drawList.End();
 	drawList.Execute();
+
+	// Draw some SpriteSheet sprites
 
 	bool xflip = ((int)(time * 10) & 1) != 0;
 	bool yflip = ((int)(time * 5) & 1) != 0;
@@ -517,6 +584,8 @@ void MyDXWindow::OnDraw()
 					 Color::White,
 					 xflip, yflip);
 	spriteSheet->ExecuteRun(Context());
+
+	// Draw spinning cube into rendertarget
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
@@ -538,12 +607,16 @@ void MyDXWindow::OnDraw()
 
 	ResetRenderTargetView();
 
+	// Blit the rendertarget onto backbuffer
+
 	blitShader->ps.page = renderTarget.get();
 	blitShader->ps.smplr = uiSampler.get();
 	blitShader->Activate(Context());
 	blitShader->vs.SetVertexBuffers(Context(), 1, blitVB.get());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	Context()->Draw(blitVB->Count(), 0);
+
+	// Draw CPU generated texture
 
 	uint32 *pixels;
 	if(fpsTexture->Map(Context(), &pixels, D3D11_MAP_WRITE_DISCARD))
