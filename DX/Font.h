@@ -6,7 +6,7 @@
 
 namespace DX
 {
-	struct Font : RefCounted
+	struct Font: RefCounted
 	{
 		struct Link
 		{
@@ -78,6 +78,8 @@ namespace DX
 
 		int					mCurrentPageIndex;
 
+		Ptr<TypelessBuffer>	vertexBuffer;
+
 		Map					mGlyphMap;
 		Texture **			mPages;
 		Glyph *				mGlyphs;
@@ -92,6 +94,7 @@ namespace DX
 	struct FontManager
 	{
 		static void Open(Window *window);
+		static bool IsOpen();
 		static void Close();
 		static Font *Load(tchar const *name);
 	};

@@ -35,6 +35,9 @@ struct MyDXWindow: DXWindow
 
 	Scene scene;
 
+	float deltaTime;
+	float oldDeltaTime;
+
 	DrawList drawList;
 
 	Ptr<Shaders::UI> uiShader;
@@ -50,9 +53,11 @@ struct MyDXWindow: DXWindow
 	Ptr<Texture> spriteTexture;
 	Ptr<Sampler> spriteSampler;
 
-	Ptr<Texture> fpsTexture;
+	Ptr<Shaders::Splat> splatShader;
+	Ptr<Shaders::Splat::VertBuffer> splatVB;
+
+	Ptr<RenderTarget> fpsGraph;
 	Ptr<Sampler> fpsSampler;
-	Ptr<Shaders::Blit::VertBuffer> fpsVB;
 
 	Ptr<SpriteSheet> spriteSheet;
 

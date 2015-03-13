@@ -30,6 +30,8 @@ namespace DX
 
 	bool LoadFile(tchar const *filename, void **data, uint32 *size = null);
 	bool SaveFile(tchar const *filename, void const *data, uint32 size);
+
+	bool FileOrFolderExists(tchar const *filename);
 	bool FolderExists(tchar const *foldername);
 	bool FileExists(tchar const *filename);
 }

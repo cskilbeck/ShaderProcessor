@@ -22,6 +22,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ConstBuffer.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="DeferredContext.h" />
     <ClInclude Include="Device.h" />
     <ClInclude Include="DrawList.h" />
@@ -48,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawList.cpp" />
     <ClCompile Include="DX.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

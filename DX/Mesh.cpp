@@ -132,7 +132,7 @@ HRESULT Scene::Load(tchar const *filename)
 	Shaders::Default::PS &ps = mShader->ps;
 
 	auto l = ps.Light.Get();
-	l->lightPos = Float3(0, -15, 0);
+	l->lightPos = Float3(0, -15, 20);
 	l->ambientColor = Float3(0.1f, 0.1f, 0.1f);
 	l->diffuseColor = Float3(0.8f, 0.8f, 0.8f);
 	l->specColor = Float3(10, 10, 10);

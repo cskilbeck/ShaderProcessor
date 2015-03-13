@@ -14,7 +14,6 @@ namespace
 	linked_list<Font, &Font::mListNode> sAllFonts;
 	bool initialised = false;
 	Ptr<DXShaders::Font> shader;
-	Ptr<DXShaders::Font::VertBuffer> vertexBuffer;
 	Ptr<Sampler> sampler;
 
 	Window *fontManagerWindow;
@@ -29,7 +28,6 @@ namespace
 		}
 		shader.reset();
 		sampler.reset();
-		vertexBuffer.reset();
 	};
 }
 
@@ -82,7 +80,6 @@ static void LoadShader()
 	if(!initialised)
 	{
 		shader.reset(new DXShaders::Font());
-		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
 		sampler.reset(new Sampler());
 		shader->ps.smplr = sampler.get();
 		initialised = true;
@@ -104,11 +101,17 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	bool FontManager::IsOpen()
+	{
+		return initialised == true && fontManagerWindow != null;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void FontManager::Close()
 	{
 		fontManagerWindow->Destroyed -= onDestroy;
 		shader.reset();
-		vertexBuffer.reset();
 		sampler.reset();
 	}
 
@@ -141,18 +144,22 @@ namespace DX
 
 	void Font::Setup(ID3D11DeviceContext *context, Window const * const window)
 	{
+		using Font = DXShaders::Font;
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		mDrawList->Reset(context, shader.get(), vertexBuffer.get());
-		mDrawList->SetConstantData(Geometry, v, DXShaders::Font::GS::vConstants_index);
+		DXShaders::Font::VertBuffer *vb = (Font::VertBuffer *)vertexBuffer.get();
+		mDrawList->Reset(context, shader.get(), vb);
+		mDrawList->SetConstantData(Geometry, v, Font::GS::vConstants_index);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
 	{
+		using Font = DXShaders::Font;
 		shader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		vertexBuffer->Activate(context);
+		Font::VertBuffer *vb = (Font::VertBuffer *)vertexBuffer.get();
+		vb->Activate(context);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -179,6 +186,7 @@ namespace DX
 		, mGraphics(null)
 		, mCurrentPageIndex(-1)
 	{
+		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
 		sAllFonts.push_back(this);
 	}
 
@@ -195,6 +203,7 @@ namespace DX
 		Delete(mLayers);
 		Delete(mKerningValues);
 		Delete(mGraphics);
+		vertexBuffer.reset();
 	}
 
 	//////////////////////////////////////////////////////////////////////

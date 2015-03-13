@@ -14,4 +14,5 @@ using namespace DX;
 #include "Shaders\Sprite.shader.h"
 #include "Shaders\Blit.shader.h"
 #include "Shaders\Instanced.shader.h"
+#include "Shaders\Splat.shader.h"
 #include "Cube.h"

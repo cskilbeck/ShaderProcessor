@@ -41,14 +41,14 @@ PS_INPUT vsMain(VS_INPUT v)
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer Camera: register(b3)
+cbuffer Camera : register(b3)
 {
 	float3 cameraPos;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer Light: register(b4)
+cbuffer Light : register(b4)
 {
 	float3 lightPos;
 	float3 ambientColor;

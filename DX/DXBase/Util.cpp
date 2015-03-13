@@ -13,17 +13,17 @@ namespace DX
 	string Format_V(char const *fmt, va_list v)
 	{
 		char buffer[512];
-		int l = _vscprintf(fmt, v);
-		if(l >= _countof(buffer))
+		int l = _vsnprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
+		if(l != -1)
 		{
-			char *buf = new char[l + 1];
-			_vsnprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
-			string s(buf);
-			delete(buf);
-			return s;
+			return string(buffer);
 		}
-		_vsnprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
-		return string(buffer);
+		l = _vscprintf(fmt, v);
+		char *buf = new char[l + 1];
+		l = _vsnprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
+		string s(buf, buf + l);
+		delete(buf);
+		return s;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -31,17 +31,17 @@ namespace DX
 	wstring Format_V(wchar const *fmt, va_list v)
 	{
 		wchar buffer[512];
-		int l = _vscwprintf(fmt, v);
-		if(l >= _countof(buffer))
+		int l = _vsnwprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
+		if(l != -1)
 		{
-			wchar *buf = new wchar[l + 1];
-			_vsnwprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
-			wstring s(buf);
-			delete(buf);
-			return s;
+			return wstring(buffer);
 		}
-		_vsnwprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
-		return wstring(buffer);
+		l = _vscwprintf(fmt, v);
+		wchar *buf = new wchar[l + 1];
+		l = _vsnwprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
+		wstring s(buf, buf + l);
+		delete(buf);
+		return s;
 	}
 
 	//////////////////////////////////////////////////////////////////////

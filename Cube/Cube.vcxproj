@@ -241,6 +241,7 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
+    <SPOCK Include="Shaders\Splat.shader" />
     <SPOCK Include="Shaders\UI.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>

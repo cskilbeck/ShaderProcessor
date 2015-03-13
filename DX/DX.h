@@ -1,4 +1,8 @@
+//////////////////////////////////////////////////////////////////////
+
 #pragma once
+
+//////////////////////////////////////////////////////////////////////
 
 #include "assimp/include/assimp/Importer.hpp"
 #include "assimp/include/assimp/postprocess.h"
@@ -8,7 +12,11 @@
 #include "assimp/code/Win32DebugLogStream.h"
 #include "assimp/include/assimp/cimport.h"
 
+//////////////////////////////////////////////////////////////////////
+
 #include "DXBase\DXBase.h"
+
+//////////////////////////////////////////////////////////////////////
 
 #include "Device.h"
 #include "Event.h"
@@ -31,9 +39,12 @@
 #include "GeometryShader.h"
 #include "DrawList.h"
 #include "Font.h"
+#include "Debug.h"
 #include "Sprite.h"
 #include "Window.h"
 #include "DXWindow.h"
+
+//////////////////////////////////////////////////////////////////////
 
 #include "Shaders/Default.shader.h"
 #include "Mesh.h"

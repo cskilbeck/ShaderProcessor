@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////
-// OnResize lag
 // Proper logging instead of a janky handful of macros
+// Debug text
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
@@ -208,6 +208,9 @@ void MyDXWindow::CreateOctahedron()
 
 const int fpsWidth = 256;
 const int fpsHeight = 128;
+const float fpsLeft = 200;
+const float fpsTop = 200;
+uint fpsScroll = 0;
 
 bool MyDXWindow::OnCreate()
 {
@@ -216,30 +219,11 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	Resized += [this] (WindowSizedEvent const &e)
-	{
-		camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
-		float w = renderTarget->FWidth();
-		float h = renderTarget->FHeight();
-		float r = (float)ClientWidth() - 10;
-		float l = r - w;
-		float t = 10;
-		float b = t + h;
-		auto bv = blitVB->Get();
-		bv[0] = { { l, t }, { 0, 0 } };
-		bv[1] = { { r, t }, { 1, 0 } };
-		bv[2] = { { l, b }, { 0, 1 } };
-		bv[3] = { { r, b }, { 1, 1 } };
-		bv.Release();
-
-		auto &vc = blitShader->vs.vConstants;
-		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		vc.Update(Context());
-	};
-
 	scene.Load(TEXT("data\\duck.dae"));
 
 	FontManager::Open(this);
+
+	debug_open(this);
 
 	font.reset(FontManager::Load(TEXT("Data\\debug")));
 	bigFont.reset(FontManager::Load(TEXT("Data\\Cooper_Black_48")));
@@ -264,7 +248,7 @@ bool MyDXWindow::OnCreate()
 	instancedVB0.reset(new Shaders::Instanced::VertBuffer0(_countof(iCube), iCube, StaticUsage));
 	instancedVB1.reset(new Shaders::Instanced::VertBuffer1(64));
 
-	lightPos = Vec4(0, -15, 0, 0);
+	lightPos = Vec4(0, -15, 20, 0);
 
 	auto &l = cubeShader->ps.Light;
 	l.lightPos = lightPos;
@@ -309,19 +293,11 @@ bool MyDXWindow::OnCreate()
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
-	fpsTexture.reset(new Texture(fpsWidth, fpsHeight, DXGI_FORMAT_B8G8R8A8_UNORM, null, false, DynamicUsage, Writeable));
+	splatShader.reset(new Shaders::Splat());
+	splatVB.reset(new Shaders::Splat::VertBuffer(8));
+
+	fpsGraph.reset(new RenderTarget(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer));
 	fpsSampler.reset(new Sampler(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
-	fpsVB.reset(new Shaders::Blit::VertBuffer(4));
-
-	float left = 200;
-	float top = 200;
-
-	Shaders::Blit::InputVertex *v = fpsVB->Map(Context());
-	v[0] = { { left, top }, { 0, 0 } };
-	v[1] = { { left + fpsWidth, top }, { 1, 0 } };
-	v[2] = { { left, top + fpsHeight }, { 0, 1 } };
-	v[3] = { { left + fpsWidth, top + fpsHeight }, { 1, 1 } };
-	fpsVB->UnMap(Context());
 
 	return true;
 }
@@ -330,8 +306,11 @@ bool MyDXWindow::OnCreate()
 
 void MyDXWindow::OnFrame()
 {
-	float deltaTime = (float)mTimer.Delta();
+	oldDeltaTime = deltaTime;
+	deltaTime = (float)mTimer.Delta();
 	float time = (float)mTimer.WallTime();
+
+	debug_begin();
 
 	float moveSpeed = 50.0f * deltaTime;
 	float strafeSpeed = 50.0f * deltaTime;
@@ -365,6 +344,12 @@ void MyDXWindow::OnFrame()
 		Mouse::SetMode(Mouse::Mode::Free, *this);
 	}
 
+	camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
+
+	auto &vc = blitShader->vs.vConstants;
+	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	vc.Update(Context());
+
 	camera.Move(move);
 	camera.Update();
 
@@ -380,10 +365,10 @@ void MyDXWindow::OnFrame()
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
 
-		auto &vs = cubeShader->vs.VertConstants;
-		vs.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vs.ModelMatrix = Transpose(modelMatrix);
-		vs.Update(Context());
+		auto &vc = cubeShader->vs.VertConstants;
+		vc.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vc.ModelMatrix = Transpose(modelMatrix);
+		vc.Update(Context());
 
 		auto &ps = cubeShader->ps.Camera;
 		ps.cameraPos = camera.position;
@@ -401,6 +386,29 @@ void MyDXWindow::OnFrame()
 
 	Matrix bob = ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
 	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
+
+	// Instanced cubes
+
+	{
+		Random r(0);
+		uint c = instancedVB1->Count();
+		auto *p = instancedVB1->Map(Context());
+		for(uint i = 0; i < c; ++i)
+		{
+			float t = i * PI * 2 / c + time / 10;
+			float x = sinf(t) * 50;
+			float y = cosf(t) * 50;
+			*p++ = { { x, y, 0 }, r.Next() };
+		}
+		instancedVB1->UnMap(Context());
+
+		instancedShader->vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
+		instancedShader->Activate(Context());
+		instancedShader->vs.SetVertexBuffers(Context(), 2, instancedVB0.get(), instancedVB1.get());
+		cubeIndices->Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->DrawIndexedInstanced(cubeIndices->Count(), c, 0, 0, 0);
+	}
 
 	// Draw grid
 
@@ -420,31 +428,13 @@ void MyDXWindow::OnFrame()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
 
-	// Instanced cubes
-
-	Random r(0);
-	auto *p = instancedVB1->Map(Context());
-	uint c = instancedVB1->Count();
-	for(uint i = 0; i < c; ++i)
-	{
-		float t = i * PI * 2 / c + time / 2;
-		float x = sinf(t) * 50;
-		float y = cosf(t) * 50;
-		*p++ = { { x, y, 0 }, r.Next() };
-	}
-	instancedVB1->UnMap(Context());
-	instancedShader->vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
-	instancedShader->Activate(Context());
-	instancedShader->vs.SetVertexBuffers(Context(), 2, instancedVB0.get(), instancedVB1.get());
-	cubeIndices->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexedInstanced(cubeIndices->Count(), c, 0, 0, 0);
-
 	// Drawlist UI elements
 
 	{
 		using vrt = Shaders::UI::InputVertex;
 		drawList.Reset(Context(), uiShader.get(), UIVerts.get());
+		uiShader->ps.page = uiTexture.get();
+		uiShader->ps.smplr = uiSampler.get();
 
 		float w = 100 + sinf(time * 0.9f) * 30;
 		float h = 200 + sinf(time * 0.9f) * 30;
@@ -460,12 +450,12 @@ void MyDXWindow::OnFrame()
 		drawList.SetConstantData(Vertex, v, Shaders::UI::VS::vConstants_index);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
 		drawList.BeginTriangleList();
-		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 } });
-		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 } });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
-		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 } });
-		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 } });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
 		drawList.End();
 
 		w = 100 + sinf(time * 1.1f) * 30;
@@ -478,12 +468,12 @@ void MyDXWindow::OnFrame()
 		c.Color = Float4(1, 1, 1, 1);
 		drawList.SetConstantData(Pixel, c, uiShader->ps.pConstants.Index());
 		drawList.BeginTriangleList();
-		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 } });
-		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 } });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
-		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 } });
-		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 } });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 } });
+		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 }, 0xffffffff });
+		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
 		drawList.End();
 	}
 
@@ -506,18 +496,11 @@ void MyDXWindow::OnFrame()
 
 	// Drawlist some text
 
-	font->SetDrawList(drawList);
-
-	font->Setup(Context(), this);
-	font->Begin();
-	font->DrawString(Format("Yaw: %4d, Pitch: %4d, Roll: %4d", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll)).c_str(), Vec2f(0, 20), Font::HLeft, Font::VTop);
-	font->DrawString("Hello #80FF00FF#World", Vec2f(220, 460));
-	font->DrawString("Hello World", Vec2f(120, 340));
-	font->DrawString(Format("DeltaTime % 8.2fms (% 3dfps)", deltaTime * 1000, (int)(1 / deltaTime)).c_str(), Vec2f(0, 0));
-	font->End();
+	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
+	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll));
 
 	bigFont->SetDrawList(drawList);
-	// no need to call Setup() again
+	bigFont->Setup(Context(), this);
 	bigFont->Begin();
 	bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
 	bigFont->End();
@@ -556,34 +539,36 @@ void MyDXWindow::OnFrame()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts->Count(), 0);
 
-	// Drawlist some sprites
+	{
+		// Drawlist some sprites
 
-	Sprite const &s = (*spriteSheet)["temp.png"];
-	Sprite const &t = (*spriteSheet)["temp.jpg"];
-	spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
+		Sprite const &s = (*spriteSheet)["temp.png"];
+		Sprite const &t = (*spriteSheet)["temp.jpg"];
+		spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
 
-	drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
-	drawList.BeginPointList();
-	Sprite &q = drawList.AddVertex<Sprite>();
-	q.Set(t, { 100, ClientHeight() - 100.0f });
-	q.Rotation = time * PI / 2;
-	drawList.End();
-	drawList.Execute();
+		drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
+		drawList.BeginPointList();
+		Sprite &q = drawList.AddVertex<Sprite>();
+		q.Set(t, { 100, ClientHeight() - 100.0f });
+		q.Rotation = time * PI / 2;
+		drawList.End();
+		drawList.Execute();
 
-	// Draw some SpriteSheet sprites
+		// Draw some SpriteSheet sprites
 
-	bool xflip = ((int)(time * 10) & 1) != 0;
-	bool yflip = ((int)(time * 5) & 1) != 0;
+		bool xflip = ((int)(time * 10) & 1) != 0;
+		bool yflip = ((int)(time * 5) & 1) != 0;
 
-	spriteSheet->BeginRun(Context());
-	spriteSheet->Add(s,
-					 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
-					 { sinf(time * 1.75f) * 0.1f + 0.2f, cosf(time * 1.9f) * 0.1f + 0.2f },
-					 { 0.5f, 0.5f },
-					 0,
-					 Color::White,
-					 xflip, yflip);
-	spriteSheet->ExecuteRun(Context());
+		spriteSheet->BeginRun(Context());
+		spriteSheet->Add(s,
+						 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
+						 { sinf(time * 1.75f) * 0.1f + 0.2f, cosf(time * 1.9f) * 0.1f + 0.2f },
+						 { 0.5f, 0.5f },
+						 0,
+						 Color::White,
+						 xflip, yflip);
+		spriteSheet->ExecuteRun(Context());
+	}
 
 	// Draw spinning cube into rendertarget
 
@@ -609,6 +594,19 @@ void MyDXWindow::OnFrame()
 
 	// Blit the rendertarget onto backbuffer
 
+	float w = renderTarget->FWidth();
+	float h = renderTarget->FHeight();
+	float r = (float)ClientWidth() - 10;
+	float l = r - w;
+	float t = 10;
+	float b = t + h;
+	auto bv = blitVB->Get();
+	bv[0] = { { l, t }, { 0, 0 } };
+	bv[1] = { { r, t }, { 1, 0 } };
+	bv[2] = { { l, b }, { 0, 1 } };
+	bv[3] = { { r, b }, { 1, 1 } };
+	bv.Release();
+
 	blitShader->ps.page = renderTarget.get();
 	blitShader->ps.smplr = uiSampler.get();
 	blitShader->Activate(Context());
@@ -616,31 +614,69 @@ void MyDXWindow::OnFrame()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	Context()->Draw(blitVB->Count(), 0);
 
-	// Draw CPU generated texture
+	// Draw graph
 
-	uint32 *pixels;
-	if(fpsTexture->Map(Context(), &pixels, D3D11_MAP_WRITE_DISCARD))
 	{
-		Random r;
-		for(uint i = 0; i < fpsWidth * fpsHeight; ++i)
-		{
-			pixels[i] = r.Next();
-		}
-	}
-	fpsTexture->UnMap(Context());
+		int speed = 4;
+		float x0 = (float)fpsScroll;
+		float x1 = (float)fpsScroll + speed;
+		fpsScroll = (fpsScroll + speed) % fpsWidth;
+		float h = (float)fpsHeight;
 
-	blitShader->vs.SetVertexBuffers(Context(), 1, fpsVB.get());
-	blitShader->ps.page = fpsTexture.get();
-	blitShader->ps.smplr = fpsSampler.get();
-	blitShader->Activate(Context());
-	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	Context()->Draw(fpsVB->Count(), 0);
+		Viewport(0, 0, fpsGraph->FWidth(), fpsGraph->FHeight(), 0, 1).Activate(Context());
+		fpsGraph->Activate(Context());
+		splatShader->vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph->Width(), fpsGraph->Height()));
+		splatShader->vs.SetVertexBuffers(Context(), 1, splatVB.get());
+		splatShader->Activate(Context());
+
+		auto *p = splatVB->Map(Context());
+		*p++ = { { x0, 0 }, 0xc0000000 };
+		*p++ = { { x1, 0 }, 0xc0000000 };
+		*p++ = { { x0, h }, 0xc0000000 };
+		*p++ = { { x1, h }, 0xc0000000 };
+		splatVB->UnMap(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		Context()->Draw(4, 0);
+
+		float y0 = fpsHeight - oldDeltaTime * 32 * fpsHeight;
+		float y1 = fpsHeight - deltaTime * 32 * fpsHeight;
+
+		p = splatVB->Map(Context());
+		*p++ = { { x0, y0 }, 0xffffffff };
+		*p++ = { { x1, y1 }, 0xffffffff };
+		splatVB->UnMap(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+		Context()->Draw(2, 0);
+
+		ResetRenderTargetView();
+
+		float u0 = fpsScroll / (float)fpsWidth;
+		float u1 = u0 + 1;
+		auto *v = UIVerts->Map(Context());
+		v[0] = { { fpsLeft, fpsTop }, { u0, 0 }, 0xffffffff };
+		v[1] = { { fpsLeft + fpsWidth, fpsTop }, { u1, 0 }, 0xffffffff };
+		v[2] = { { fpsLeft, fpsTop + fpsHeight }, { u0, 1 }, 0xffffffff };
+		v[3] = { { fpsLeft + fpsWidth, fpsTop + fpsHeight }, { u1, 1 }, 0xffffffff };
+		UIVerts->UnMap(Context());
+
+		uiShader->vs.SetVertexBuffers(Context(), 1, UIVerts.get());
+		uiShader->vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		uiShader->ps.pConstants.Get()->Color = Vec4(1, 1, 1, 1);
+		uiShader->ps.page = fpsGraph.get();
+		uiShader->ps.smplr = fpsSampler.get();
+		uiShader->Activate(Context());
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		Context()->Draw(4, 0);
+	}
+
+	debug_end();
 }
 
 //////////////////////////////////////////////////////////////////////
 
 void MyDXWindow::OnDestroy()
 {
+	debug_close();
 	simpleShader.reset();
 	cubeShader.reset();
 	cubeTexture.reset();

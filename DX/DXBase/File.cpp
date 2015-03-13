@@ -170,10 +170,17 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	bool FileOrFolderExists(tchar const *filename)
+	{
+		return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	bool FileExists(tchar const *filename)
 	{
 		DWORD dwAttrib = GetFileAttributes(filename);
-		return dwAttrib != INVALID_FILE_ATTRIBUTES && !(dwAttrib & FILE_ATTRIBUTE_DIRECTORY);
+		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) == 0;
 	}
 
 	//////////////////////////////////////////////////////////////////////

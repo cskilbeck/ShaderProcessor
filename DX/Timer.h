@@ -39,6 +39,8 @@ namespace DX
 		{
 			mPaused = false;
 			mCurrentTicks = 0;
+			mDeltaTicks = 0;
+			mOldDeltaTicks = 0;
 			mOldTicks = Ticks();
 		}
 
@@ -58,7 +60,7 @@ namespace DX
 		void UnPause()
 		{
 			mPaused = false;
-			mDeltaTicks = 0;
+			mDeltaTicks = mOldDeltaTicks;
 			mOldTicks = Ticks();
 		}
 
@@ -76,6 +78,7 @@ namespace DX
 			uint64 ticks = Ticks();
 			if(!mPaused)
 			{
+				mOldDeltaTicks = mDeltaTicks;
 				mDeltaTicks = ticks - mOldTicks;
 				mCurrentTicks += mDeltaTicks;
 				mOldTicks = ticks;
@@ -84,14 +87,14 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		double Delta()
+		double Delta() const
 		{
 			return (double)mDeltaTicks / Frequency();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		double WallTime()
+		double WallTime() const
 		{
 			return (double)mCurrentTicks / Frequency();
 		}
@@ -102,6 +105,7 @@ namespace DX
 
 		uint64 mOldTicks;		// last rdtsc
 		uint64 mDeltaTicks;		// last difference (can't be paused)
+		uint64 mOldDeltaTicks;	// repeat the last delta when unpausing
 		uint64 mCurrentTicks;	// current tick count, might have been paused
 		bool mPaused;
 	};

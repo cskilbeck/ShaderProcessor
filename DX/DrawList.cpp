@@ -113,6 +113,9 @@ namespace
 			uint stride = mVertexSize;
 			uint offset = 0;
 			ID3D11Buffer *b = mVertexBuffer->Handle();
+
+			// have to do this here because we don't have the template info for the shader (vs)
+			// so... drawing things in a drawlist is limited to one vertex stream in stream slot 0
 			context->IASetVertexBuffers(0, 1, &b, &stride, &offset);
 		}
 	};
