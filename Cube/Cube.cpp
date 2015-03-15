@@ -16,6 +16,7 @@
 //		Named shader support
 //		Skeleton/Weights
 // Bullet
+// zLib
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
 //		Samplers

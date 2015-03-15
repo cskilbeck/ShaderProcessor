@@ -7,12 +7,16 @@
 *.sln.docstates
 *.sob
 *.shader.h
+*.tlog
+*.lst
+*.idb
 
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 x64/
+x86/
 build/
 bld/
 [Bb]in/
