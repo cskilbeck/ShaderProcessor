@@ -199,7 +199,7 @@ namespace DX
 	inline int HighBit(uint32 x)
 	{
 		unsigned long index;
-		byte isNonzero = _BitScanReverse(&index, x);
+		Byte isNonzero = _BitScanReverse(&index, x);
 		return isNonzero ? index + 1 : 0;
 	}
 
@@ -209,7 +209,7 @@ namespace DX
 	inline int HighBit64(uint64 x)
 	{
 		unsigned long index;
-		byte isNonzero = _BitScanReverse64(&index, x);
+		Byte isNonzero = _BitScanReverse64(&index, x);
 		return isNonzero ? index + 1 : 0;
 	}
 #endif

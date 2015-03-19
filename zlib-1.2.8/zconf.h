@@ -125,7 +125,7 @@
 #  define zlibVersion           z_zlibVersion
 
 /* all zlib typedefs in zlib.h and zconf.h */
-#  define Byte                  z_Byte
+#  define ZByte                  z_Byte
 #  define Bytef                 z_Bytef
 #  define alloc_func            z_alloc_func
 #  define charf                 z_charf
@@ -365,7 +365,7 @@
 #endif
 
 #if !defined(__MACTYPES__)
-typedef unsigned char  Byte;  /* 8 bits */
+typedef unsigned char  ZByte;  /* 8 bits */
 #endif
 typedef unsigned int   uInt;  /* 16 bits or more */
 typedef unsigned long  uLong; /* 32 bits or more */
@@ -374,7 +374,7 @@ typedef unsigned long  uLong; /* 32 bits or more */
    /* Borland C/C++ and some old MSC versions ignore FAR inside typedef */
 #  define Bytef Byte FAR
 #else
-   typedef Byte  FAR Bytef;
+   typedef ZByte  FAR Bytef;
 #endif
 typedef char  FAR charf;
 typedef int   FAR intf;
@@ -386,9 +386,9 @@ typedef uLong FAR uLongf;
    typedef void FAR   *voidpf;
    typedef void       *voidp;
 #else
-   typedef Byte const *voidpc;
-   typedef Byte FAR   *voidpf;
-   typedef Byte       *voidp;
+   typedef ZByte const *voidpc;
+   typedef ZByte FAR   *voidpf;
+   typedef ZByte       *voidp;
 #endif
 
 #if !defined(Z_U4) && !defined(Z_SOLO) && defined(STDC)

@@ -34,7 +34,7 @@ namespace DX
 		}
 		Ptr<tchar> buffer;
 		buffer.reset(new tchar[size]);
-		SXR(RegQueryValueEx(mKey, name, null, null, (byte *)buffer.get(), &size));
+		SXR(RegQueryValueEx(mKey, name, null, null, (Byte *)buffer.get(), &size));
 		value = buffer.get();
 		return ERROR_SUCCESS;
 	}
@@ -43,7 +43,7 @@ namespace DX
 
 	int RegistryKey::SetStringValue(tchar const *name, tstring &value)
 	{
-		SXR(RegSetValueEx(mKey, name, 0, REG_SZ, (byte *)value.data(), (DWORD)value.size()));
+		SXR(RegSetValueEx(mKey, name, 0, REG_SZ, (Byte *)value.data(), (DWORD)value.size()));
 		return ERROR_SUCCESS;
 	}
 
@@ -57,7 +57,7 @@ namespace DX
 		{
 			return ERROR_BAD_FORMAT;
 		}
-		SXR(RegQueryValueEx(mKey, name, null, null, (byte *)&value, null));
+		SXR(RegQueryValueEx(mKey, name, null, null, (Byte *)&value, null));
 		return ERROR_SUCCESS;
 	}
 
@@ -65,7 +65,7 @@ namespace DX
 
 	int RegistryKey::SetDWORDValue(tchar const *name, uint32 value)
 	{
-		SXR(RegSetValueEx(mKey, name, 0, REG_SZ, (byte *)&value, sizeof(value)));
+		SXR(RegSetValueEx(mKey, name, 0, REG_SZ, (Byte *)&value, sizeof(value)));
 		return ERROR_SUCCESS;
 	}
 

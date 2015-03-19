@@ -134,7 +134,7 @@ namespace DX
 			return false;
 		}
 
-		Ptr<byte> buf(new byte[(size_t)(fileSize + sizeof(tchar))]);
+		Ptr<Byte> buf(new Byte[(size_t)(fileSize + sizeof(tchar))]);
 		if(buf == null)
 		{
 			ErrorMsgBox(Format(TEXT("Can't load %s - allocation failed"), filename).c_str());

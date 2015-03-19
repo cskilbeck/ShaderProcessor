@@ -50,7 +50,7 @@ namespace DX
 		{
 		}
 
-		Color(byte r, byte g, byte b, byte a = 0xff)
+		Color(Byte r, Byte g, Byte b, Byte a = 0xff)
 		{
 			mColor =
 				(uint32)a << kAlphaOffset |
@@ -119,27 +119,27 @@ namespace DX
 			return (mColor >> kBlueOffset) & 0xff;
 		}
 
-		void SetAlpha(byte a)
+		void SetAlpha(Byte a)
 		{
 			mColor = (mColor & kAlphaMask) | ((uint32)a << kAlphaOffset);
 		}
 
-		void SetRed(byte r)
+		void SetRed(Byte r)
 		{
 			mColor = (mColor & kRedMask) | ((uint32)r << kRedOffset);
 		}
 
-		void SetGreen(byte g)
+		void SetGreen(Byte g)
 		{
 			mColor = (mColor & kGreenMask) | ((uint32)g << kGreenOffset);
 		}
 
-		void SetBlue(byte b)
+		void SetBlue(Byte b)
 		{
 			mColor = (mColor & kBlueMask) | ((uint32)b << kBlueOffset);
 		}
 
-		inline Color Lerp(Color const &other, byte lerp) const		// 0 = this, 255 = other, 128 = 50:50
+		inline Color Lerp(Color const &other, Byte lerp) const		// 0 = this, 255 = other, 128 = 50:50
 		{
 			int inv = 255 - lerp;
 			return Color((Alpha()	* inv + other.Alpha()	* lerp) >> 8,
@@ -150,7 +150,7 @@ namespace DX
 
 		inline Color Lerp(Color const &other, float lerp) const
 		{
-			return Lerp(other, (byte)(lerp * 255.0f));
+			return Lerp(other, (Byte)(lerp * 255.0f));
 		}
 
 		Color operator * (Color const &o)

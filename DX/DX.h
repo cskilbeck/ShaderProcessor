@@ -43,6 +43,9 @@
 #include "Sprite.h"
 #include "Window.h"
 #include "DXWindow.h"
+#include "..\zlib-1.2.8\zlib.h"
+#include "unzip.h"
+#include "Archive.h"
 
 //////////////////////////////////////////////////////////////////////
 
