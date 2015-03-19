@@ -6,6 +6,16 @@
 
 namespace DX
 {
+	struct FileBase
+	{
+		FileBase();
+		virtual ~FileBase();
+		virtual int Read(void const *buffer, size_t size);
+		virtual int Write(void const *buffer, size_t size);
+		virtual int Seek(size_t offset, int seekType);
+		virtual void Close();
+	};
+
 	struct File
 	{
 		~File();
