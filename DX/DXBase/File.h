@@ -4,6 +4,21 @@
 
 //////////////////////////////////////////////////////////////////////
 
+namespace
+{
+	bool GetFileNameFromHandle(HANDLE hFile, DX::tstring &name)
+	{
+		using namespace DX;
+		tchar buffer[8192];
+		if(GetFinalPathNameByHandle(hFile, buffer, 8192, VOLUME_NAME_DOS) == 0)
+		{
+			return false;
+		}
+		name = tstring(buffer);
+		return true;
+	}
+}
+
 namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
@@ -71,19 +86,52 @@ namespace DX
 
 	struct FileBase
 	{
-		FileBase();
-		virtual ~FileBase();
+		FileBase()
+		{
+
+		}
+		virtual ~FileBase()
+		{
+
+		}
 		virtual bool Read(void *buffer, uint32 size, uint32 *got = null) = 0;
 		virtual bool Write(void const *buffer, uint32 size, uint32 *wrote = null) = 0;
 		virtual bool Seek(size_t offset, int seekType) = 0;
+		virtual bool Clone(FileBase *other) = 0;
 		virtual intptr Position() const = 0;
 		virtual intptr Size() const = 0;
 		virtual void Close() = 0;
 
 		template<typename T> bool Get(T &b)
 		{
-			size_t got;
-			return Read(&b, sizeof(b), &got) && got == sizeof(b);
+			uint32 got;
+			return Read(&b, (uint32)sizeof(b), &got) && got == sizeof(b);
+		}
+
+		template <typename T, typename U> bool GetAs(U &b)
+		{
+			T temp;
+			if(!Get(temp))
+			{
+				return false;
+			}
+			b = (U)temp;
+			return true;
+		}
+
+		template<typename T> bool GetUInt16(T &b)
+		{
+			return GetAs<uint16>(b);
+		}
+
+		template<typename T> bool GetUInt32(T &b)
+		{
+			return GetAs<uint32>(b);
+		}
+
+		template<typename T> bool GetUInt64(T &b)
+		{
+			return GetAs<uint64>(b);
 		}
 	};
 
@@ -109,6 +157,15 @@ namespace DX
 		intptr Position() const override
 		{
 			return pos - ptr;
+		}
+
+		bool Clone(FileBase *other)
+		{
+			MemoryFile *f = (MemoryFile *)other;
+			ptr = f->ptr;
+			size = f->size;
+			pos = ptr;
+			return true;
 		}
 
 		bool Seek(size_t offset, int seekType) override
@@ -193,10 +250,21 @@ namespace DX
 			Release();
 		}
 
-		void Acquire(Handle handle)
+		void Borrow(Handle handle)
 		{
 			owned = false;
 			h = handle;
+		}
+
+		void Acquire(Handle handle)
+		{
+			owned = true;
+			h = handle;
+		}
+
+		void Relinquish()
+		{
+			owned = false;
 		}
 
 		void Release()
@@ -206,6 +274,11 @@ namespace DX
 				h.Release();
 			}
 			h = Handle();
+		}
+
+		operator Handle()
+		{
+			return h;
 		}
 
 		bool Open(tchar const *name, Mode mode)
@@ -245,6 +318,14 @@ namespace DX
 			h = CreateFile(name, GENERIC_WRITE, FILE_SHARE_WRITE, null, creation, FILE_ATTRIBUTE_NORMAL, null);
 			owned = true;
 			return h.IsValid();
+		}
+
+		// Clone always returns a read only handle...
+		bool Clone(FileBase *other)
+		{
+			DiskFile *f = (DiskFile *)other;
+			tstring filename;
+			return GetFileNameFromHandle(f->h, filename) && Open(filename.c_str(), ForReading);
 		}
 
 		bool Read(void *buffer, uint32 size, uint32 *got = null) override

@@ -220,6 +220,20 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	DiskFile f;
+	if(f.Open(TEXT("Data\\test.zip"), DiskFile::ForReading))
+	{
+		Archive a;
+		if(a.Open(&f) == Archive::ok)
+		{
+			if(a.Locate("spriteSheet.png") == Archive::ok)
+			{
+				Trace("It's %d bytes\n", a.CurrentFileSize());
+			}
+		}
+		f.Close();
+	}
+
 	scene.Load(TEXT("data\\duck.dae"));
 
 	FontManager::Open(this);

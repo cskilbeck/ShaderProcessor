@@ -6,6 +6,150 @@
 
 namespace
 {
+#pragma pack(push, 1)
+
+	// Follows the compressed data IF bit 3 of FileInfo.Flags is set
+	struct DataDescriptor
+	{
+		//optionally
+		//uint32		Signature	// 0x08074b50
+		uint32			CRC;
+		uint32			CompressedSize;
+		uint32			UncompressedSize;
+	};
+
+	struct DataDescriptor64
+	{
+		//optionally
+		//uint32		Signature	// 0x08074b50
+		uint32			CRC;
+		uint64			CompressedSize;
+		uint64			UncompressedSize;
+	};
+
+	struct FileInfo
+	{
+		uint16			Flags;
+		uint16			CompressionMethod;
+		uint16			FileTime;
+		uint16			FileDate;
+		uint32			CRC;
+		uint32			CompressedSize;
+		uint32			UncompressedSize;
+		uint16			FilenameLength;
+		uint16			ExtraFieldLength;
+		// Filename
+		// ExtraField
+	};
+
+	struct LocalFileHeader
+	{
+		uint32			Signature;	// 0x04034b50
+		uint16			VersionRequired;
+		FileInfo		Info;
+	};
+
+	struct FileHeader
+	{
+		uint32			Signature;	// 0x02014b50
+		uint16			VersionCreatedBy;
+		uint16			VersionRequired;
+		FileInfo		Info;
+		uint16			FileCommentLength;
+		uint16			DiskNumberStart;
+		uint16			InternalFileAttributes;
+		uint32			ExternalFileAttributes;
+		uint32			LocalHeaderOffset;
+		// File Comment
+	};
+
+	struct EndOfCentralDirectory
+	{
+		uint32			Signature;
+		uint16			DiskNumber;
+		uint16			DiskWithCD;
+		uint16			EntriesInCDOnThisDisk;
+		uint16			EntriesInCD;
+		uint32			SizeOfCD;
+		uint32			CDOffset;
+		uint16			CommentLength;
+		// Comment
+	};
+
+	struct EndOfCentralDirectory64
+	{
+		uint32			Signature;
+		uint64			SizeOfRecord;	// -12 (sizeof this and previous field)
+		uint16			Version;
+		uint16			VersionRequired;
+		uint32			DiskNumber;
+		uint32			DiskWithCD;
+		uint64			EntriesInCDOnThisDisk;
+		uint64			EntriesInCD;
+		uint64			SizeOfCD;
+		uint64			DirectoryWRTStartingDiskNumber;
+	};
+
+	struct EndOfCentralDirectory64Locator
+	{
+		uint32			Signature;
+		uint32			DiskWhichContainsEOCD64;
+		uint64			CDOffset;
+		uint32			DiskCount;
+	};
+
+	enum CompressionMethods: uint16
+	{
+		None = 0,
+		Shrink = 1,
+		Reduce1 = 2,
+		Reduce2 = 3,
+		Reduce3 = 4,
+		Reduce4 = 5,
+		Implode = 6,
+		Tokenize = 7,
+		Deflate = 8,
+		Deflate64 = 9,
+		Reserved1 = 10,
+		Reserved2 = 11,
+		BZIP2 = 12,
+		Reserved3 = 13,
+		LZMA = 14,
+		Reserved4 = 15,
+		Reserved5 = 16,
+		Reserved6 = 17,
+		IBM_TERSE = 18,
+		IBMLZ77 = 19,
+		WavPack = 97,
+		PPMd1 = 98
+	};
+
+	enum VersionMadeBy : uint16
+	{
+		MSDOS = 0,
+		Amiga = 1,
+		OpenVMS = 2,
+		UNIX = 3,
+		VMCMS = 4,
+		AtariST = 5,
+		OS2 = 6,
+		Macintosh = 7,
+		ZSystem = 8,
+		CPM = 9,
+		WindowsNTFS = 10,
+		MVS = 11,
+		VSE = 12,
+		AcornRisc = 13,
+		VFAT = 14,
+		alternateMVS = 15,
+		BeOS = 16,
+		Tandem = 17,
+		OS400 = 18,
+		OSX = 19
+	};
+
+#pragma pack(pop)
+
 	//////////////////////////////////////////////////////////////////////
 	/* tm_unz contain date/time info */
 	typedef struct tm_unz_s
@@ -24,7 +168,7 @@ namespace
 
 	typedef struct unz_global_info64_s
 	{
-		ZPOS64_T number_entry;      /* total number of entries in the central dir on this disk */
+		uint64 number_entry;      /* total number of entries in the central dir on this disk */
 		uLong number_disk_with_CD;  /* number the the disk with central dir, used for spanning ZIP*/
 		uLong size_comment;         /* size of the global comment of the zipfile */
 	} unz_global_info64;
@@ -49,8 +193,8 @@ namespace
 		uLong compression_method;   /* compression method              2 bytes */
 		uLong dosDate;              /* last mod file date in Dos fmt   4 bytes */
 		uLong crc;                  /* crc-32                          4 bytes */
-		ZPOS64_T compressed_size;   /* compressed size                 8 bytes */
-		ZPOS64_T uncompressed_size; /* uncompressed size               8 bytes */
+		uint64 compressed_size;   /* compressed size                 8 bytes */
+		uint64 uncompressed_size; /* uncompressed size               8 bytes */
 		uLong size_filename;        /* filename length                 2 bytes */
 		uLong size_file_extra;      /* extra field length              2 bytes */
 		uLong size_file_comment;    /* file comment length             2 bytes */
@@ -60,7 +204,7 @@ namespace
 		uLong external_fa;          /* external file attributes        4 bytes */
 
 		tm_unz tmu_date;
-		ZPOS64_T disk_offset;
+		uint64 disk_offset;
 		uLong size_file_extra_internal;
 	} unz_file_info64;
 
@@ -102,24 +246,24 @@ namespace
 		fcrypt_ctx aes_ctx;
 #endif
 
-		ZPOS64_T pos_in_zipfile;            /* position in byte on the zipfile, for fseek */
+		uint64 pos_in_zipfile;            /* position in byte on the zipfile, for fseek */
 		uLong stream_initialised;           /* flag set if stream structure is initialised */
 
-		ZPOS64_T offset_local_extrafield;   /* offset of the local extra field */
+		uint64 offset_local_extrafield;   /* offset of the local extra field */
 		uInt size_local_extrafield;         /* size of the local extra field */
-		ZPOS64_T pos_local_extrafield;      /* position in the local extra field in read */
-		ZPOS64_T total_out_64;
+		uint64 pos_local_extrafield;      /* position in the local extra field in read */
+		uint64 total_out_64;
 
 		uLong crc32;                        /* crc32 of all data uncompressed */
 		uLong crc32_wait;                   /* crc32 we must obtain after decompress all */
-		ZPOS64_T rest_read_compressed;      /* number of byte to be decompressed */
-		ZPOS64_T rest_read_uncompressed;    /* number of byte to be obtained after decomp */
+		uint64 rest_read_compressed;      /* number of byte to be decompressed */
+		uint64 rest_read_uncompressed;    /* number of byte to be obtained after decomp */
 
 		//zlib_filefunc64_32_def z_filefunc;
 
 		voidpf filestream;                  /* io structore of the zipfile */
 		uLong compression_method;           /* compression method (0==store) */
-		ZPOS64_T byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx) */
+		uint64 byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx) */
 		int raw;
 	} file_in_zip64_read_info_s;
 
@@ -128,8 +272,8 @@ namespace
 
 	typedef struct unz_file_info64_internal_s
 	{
-		ZPOS64_T offset_curfile;            /* relative offset of local header 8 bytes */
-		ZPOS64_T byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx) */
+		uint64 offset_curfile;            /* relative offset of local header 8 bytes */
+		uint64 byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx) */
 #ifdef HAVE_AES
 		uLong aes_encryption_mode;
 		uLong aes_compression_method;
@@ -137,20 +281,22 @@ namespace
 #endif
 	} unz_file_info64_internal;
 
+	//////////////////////////////////////////////////////////////////////
+
 	struct unz64_s
 	{
-		Ptr<DiskFile> fileStream;
-		Ptr<DiskFile> fileStreamWithCD;
+		DiskFile fileStream;
+		DiskFile fileStreamWithCD;
 
 		unz_global_info64 gi;               /* public global information */
-		ZPOS64_T byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx)*/
-		ZPOS64_T num_file;                  /* number of the current file in the zipfile*/
-		ZPOS64_T pos_in_central_dir;        /* pos of the current file in the central dir*/
-		ZPOS64_T current_file_ok;           /* flag about the usability of the current file*/
-		ZPOS64_T central_pos;               /* position of the beginning of the central dir*/
+		uint64 byte_before_the_zipfile;   /* byte before the zipfile, (>0 for sfx)*/
+		uint64 num_file;                  /* number of the current file in the zipfile*/
+		uint64 pos_in_central_dir;        /* pos of the current file in the central dir*/
+		uint64 current_file_ok;           /* flag about the usability of the current file*/
+		uint64 central_pos;               /* position of the beginning of the central dir*/
 		uLong number_disk;                  /* number of the current disk, used for spanning ZIP*/
-		ZPOS64_T size_central_dir;          /* size of the central directory  */
-		ZPOS64_T offset_central_dir;        /* offset of start of central directory with
+		uint64 size_central_dir;          /* size of the central directory  */
+		uint64 offset_central_dir;        /* offset of start of central directory with
 											respect to the starting disk number */
 
 		unz_file_info64 cur_file_info;      /* public info about the current file in zip*/
@@ -205,9 +351,13 @@ namespace
 namespace DX
 {
 	Archive::Archive()
-		: mInfo(null)
-		, mFile(null)
-		, mLastError(ok)
+		: mFile(null)
+		, mCDFile(null)
+		, mIsZip64(false)
+		, mCentralDirectoryLocation(0)
+		, mEntriesInCentralDirectory(0)
+		, mSizeOfCentralDirectory(0)
+		, mIsOpen(false)
 	{
 	}
 
@@ -215,23 +365,15 @@ namespace DX
 	{
 	}
 
-	uint64 Archive::GetCD(DiskFile &file)
+	Archive::Error Archive::GetCD(uint64 &offset)
 	{
-		ZPOS64_T file_size;
-		ZPOS64_T back_read = 4;
-		ZPOS64_T max_back = 0xffff; /* maximum size of global comment */
-		ZPOS64_T pos_found = 0;
-		uLong read_size;
-		ZPOS64_T read_pos;
-		int i;
+		uint64 file_size = mFile->Size();
+		uint64 back_read = 4;
+		uint64 max_back = 0xffff; /* maximum size of global comment */
 
-		Ptr<byte> buf((byte *)ALLOC(BUFREADCOMMENT + 4));
-		if(buf == NULL)
-		{
-			return 0;
-		}
+		int const bufreadcomment = 0x400;
 
-		file_size = file.Size();
+		Ptr<byte> buf(new byte[bufreadcomment + 4]);
 
 		if(max_back > file_size)
 		{
@@ -240,274 +382,281 @@ namespace DX
 
 		while(back_read < max_back)
 		{
-			if(back_read + BUFREADCOMMENT > max_back)
+			if(back_read + bufreadcomment > max_back)
 			{
 				back_read = max_back;
 			}
 			else
 			{
-				back_read += BUFREADCOMMENT;
+				back_read += bufreadcomment;
 			}
 
-			read_pos = file_size - back_read;
-			read_size = ((BUFREADCOMMENT + 4) < (file_size - read_pos)) ? (BUFREADCOMMENT + 4) : (uLong)(file_size - read_pos);
+			uint64 read_pos = file_size - back_read;
+			int32 read_size = min(bufreadcomment + 4, (int32)(file_size - read_pos));
 
-			if(!file.Seek(read_pos, SEEK_SET))
+			if(!mFile->Seek(read_pos, SEEK_SET))
 			{
-				break;
+				return fileerror;
 			}
+
 			uint32 got;
-			if(!file.Read(buf.get(), read_size, &got) || got != read_size)
+			if(!mFile->Read(buf.get(), read_size, &got) || got != read_size)
 			{
-				break;
+				return fileerror;
 			}
 
 			byte *p = buf.get();
-			for(i = (int)read_size - 3; (i--) > 0;)
+			for(int32 i = read_size - 4; i > 0; --i)
 			{
-				if(((*(p + i + 0)) == (ENDHEADERMAGIC >>  0 & 0xff)) &&
-				   ((*(p + i + 1)) == (ENDHEADERMAGIC >>  8 & 0xff)) &&
-				   ((*(p + i + 2)) == (ENDHEADERMAGIC >> 16 & 0xff)) &&
-				   ((*(p + i + 3)) == (ENDHEADERMAGIC >> 24 & 0xff)))
+				byte *q = p + i;
+				uint32 c = q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24);
+				if(c == ENDHEADERMAGIC)
 				{
-					pos_found = read_pos + i;
-					break;
+					offset = read_pos + i;
+					return ok;
 				}
 			}
-
-			if(pos_found != 0)
-			{
-				break;
-			}
 		}
-		return pos_found;
+		return badzipfile;
 	}
 
-	uint64 Archive::GetCD64(DiskFile &file, ZPOS64_T const endcentraloffset)
+	Archive::Error Archive::GetCD64(uint64 &offset, uint64 const endcentraloffset)
 	{
-		ZPOS64_T offset;
-		uLong uL;
-
-		/* Zip64 end of central directory locator */
-		if(!file.Seek(endcentraloffset - SIZECENTRALHEADERLOCATOR, SEEK_SET))
+		if(!mFile->Seek(endcentraloffset - sizeof(EndOfCentralDirectory64Locator), SEEK_SET))
 		{
-			return 0;
+			return fileerror;
 		}
 
-		/* read locator signature */
-		if(!file.Get(uL) || uL != ZIP64ENDLOCHEADERMAGIC)
+		EndOfCentralDirectory64Locator eocd;
+		if(!mFile->Get(eocd))
 		{
-			return 0;
+			return fileerror;
+		}
+		if(eocd.Signature != ZIP64ENDLOCHEADERMAGIC)
+		{
+			return badzipfile;
 		}
 
-		/* number of the disk with the start of the zip64 end of  central directory */
-		if(!file.Get(uL))
+		if(!mFile->Seek(eocd.CDOffset, SEEK_SET))
 		{
-			return 0;
+			return fileerror;
 		}
 
-		/* relative offset of the zip64 end of central directory record */
-		if(!file.Get(offset))
+		uint32 uL;
+		if(!mFile->GetUInt32(uL))
 		{
-			return 0;
+			return fileerror;
 		}
-
-		/* total number of disks */
-		if(!file.Get(uL))
+		if(uL != ZIP64ENDHEADERMAGIC)
 		{
-			return 0;
+			return badzipfile;
 		}
-
-		/* Goto end of central directory record */
-		if(!file.Seek(offset, SEEK_SET))
-		{
-			return 0;
-		}
-
-		/* the signature */
-		if(!file.Get(uL) || uL != ZIP64ENDHEADERMAGIC)
-		{
-			return 0;
-		}
-
-		return offset;
+		offset = eocd.CDOffset;
+		return ok;
 	}
 
-	bool Archive::Open(tchar const *name)
+	Archive::Error Archive::Open(FileBase *zipFile)
 	{
-		unz64_s us;
-		unz64_s *s;
-		ZPOS64_T central_pos;
-		uLong uL;
-		uint16 uS;
-		voidpf filestream = NULL;
-		ZPOS64_T number_entry_CD;
-		int err = UNZ_OK;
+		mFile = zipFile;
+		mCDFile = new DiskFile();
+
+		uint64 central_pos;
+
+		int err = ok;
 
 		if(unz_copyright[0] != ' ')
-			return NULL;
-
-		us.fileStreamWithCD.reset();
-		us.fileStream.reset(new DiskFile());
-		us.fileStream->Open(name, DiskFile::ForReading);
-
-		if(!us.fileStream->h.IsValid())
-			return NULL;
-
-		us.fileStreamWithCD.reset(us.fileStream.get());
-		us.isZip64 = 0;
-
-		/* Use unz64local_SearchCentralDir first. Only based on the result
-		is it necessary to locate the unz64local_SearchCentralDir64 */
-		central_pos = GetCD(*us.fileStream.get());
-		if(central_pos)
 		{
-			if(!us.fileStream->Seek(central_pos, SEEK_SET))
-				err = UNZ_ERRNO;
+			return internalerror;
+		}
 
-			/* the signature, already checked */
-			if(!us.fileStream->Get(uL))
-				err = UNZ_ERRNO;
+		mIsZip64 = false;
 
-			/* number of this disk */
-			if(!us.fileStream->Get(uS))
-				err = UNZ_ERRNO;
-			us.number_disk = uS;
+		Error e = GetCD(central_pos);
+		if(e != ok)
+		{
+			return e;
+		}
 
-			/* number of the disk with the start of the central directory */
-			if(!us.fileStream->Get(uS))
-				err = UNZ_ERRNO;
-			us.gi.number_disk_with_CD = uS;
+		if(!mFile->Seek(central_pos, SEEK_SET))
+		{
+			return fileerror;
+		}
 
-			/* total number of entries in the central directory on this disk */
-			if(!us.fileStream->Get(uS))
-				err = UNZ_ERRNO;
-			us.gi.number_entry = uS;
+		EndOfCentralDirectory eocd;
+		if(!mFile->Get(eocd))
+		{
+			return fileerror;
+		}
 
-			/* total number of entries in the central directory */
-			if(!us.fileStream->Get(uS))
-				err = UNZ_ERRNO;
-			number_entry_CD = uS;
+		if(eocd.EntriesInCD != eocd.EntriesInCDOnThisDisk)	// HUH?
+		{
+			return badzipfile;
+		}
 
-			if(number_entry_CD != us.gi.number_entry)
-				err = UNZ_BADZIPFILE;
+		mEntriesInCentralDirectory = eocd.EntriesInCD;
+		mSizeOfCentralDirectory = eocd.SizeOfCD;
+		mCentralDirectoryLocation = eocd.CDOffset;
 
-			/* size of the central directory */
-			if(!us.fileStream->Get(uL))
-				err = UNZ_ERRNO;
-			us.size_central_dir = uL;
-
-			/* offset of start of central directory with respect to the starting disk number */
-			if(!us.fileStream->Get(uL))
-				err = UNZ_ERRNO;
-			us.offset_central_dir = uL;
-
-			/* zipfile comment length */
-			if(!us.fileStream->Get(uS))
-				err = UNZ_ERRNO;
-			us.gi.size_comment = uS;
-
-			if(err == UNZ_OK && (us.gi.number_entry == 0xffff || us.size_central_dir == 0xffff || us.offset_central_dir == 0xffffffff))
+		if(eocd.EntriesInCD == 0xffff || eocd.SizeOfCD == 0xffff || eocd.CDOffset == 0xffffffff)
+		{
+			e = GetCD64(central_pos, central_pos);
+			if(e != ok)
 			{
-				/* Format should be Zip64, as the central directory or file size is too large */
-				central_pos = GetCD64(*us.fileStream.get(), central_pos);
-				if(central_pos != 0)
-				{
-					ZPOS64_T uL64;
+				return e;
+			}
 
-					us.isZip64 = 1;
+			if(!mFile->Seek(central_pos, SEEK_SET))
+			{
+				return fileerror;
+			}
 
-					if(!us.fileStream->Seek(central_pos, SEEK_SET))
-						err = UNZ_ERRNO;
+			EndOfCentralDirectory64 eocd64;
+			if(!mFile->Get(eocd64))
+			{
+				return fileerror;
+			}
 
-					/* the signature, already checked */
-					if(!us.fileStream->Get(uL))
-						err = UNZ_ERRNO;
+			if(eocd64.EntriesInCD != eocd64.EntriesInCDOnThisDisk)
+			{
+				return badzipfile;
+			}
+			mIsZip64 = true;
+			mEntriesInCentralDirectory = eocd64.EntriesInCD;
+			mSizeOfCentralDirectory = eocd64.SizeOfCD;
+			mCentralDirectoryLocation = central_pos;
+		}
 
-					/* size of zip64 end of central directory record */
-					if(!us.fileStream->Get(uL64))
-						err = UNZ_ERRNO;
+		//if(central_pos < us.offset_central_dir + us.size_central_dir)
+		//{
+		//	return badzipfile;
+		//}
 
-					/* version made by */
-					if(!us.fileStream->Get(uS))
-						err = UNZ_ERRNO;
+		if(!mCDFile->Clone(mFile))
+		{
+			return fileerror;
+		}
+		return ok;
+	}
 
-					/* version needed to extract */
-					if(!us.fileStream->Get(uS))
-						err = UNZ_ERRNO;
+	Archive::Error Archive::Locate(char const *name)
+	{
+		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
+		{
+			return fileerror;
+		}
 
-					/* number of this disk */
-					if(!us.fileStream->Get(us.number_disk))
-						err = UNZ_ERRNO;
+		char filename[1024];
 
-					/* number of the disk with the start of the central directory */
-					if(!us.fileStream->Get(us.gi.number_disk_with_CD))
-						err = UNZ_ERRNO;
-
-					/* total number of entries in the central directory on this disk */
-					if(!us.fileStream->Get(us.gi.number_entry))
-						err = UNZ_ERRNO;
-
-					/* total number of entries in the central directory */
-					if(!us.fileStream->Get(number_entry_CD))
-						err = UNZ_ERRNO;
-					if(number_entry_CD != us.gi.number_entry)
-						err = UNZ_BADZIPFILE;
-
-					/* size of the central directory */
-					if(!us.fileStream->Get(us.size_central_dir))
-						err = UNZ_ERRNO;
-
-					/* offset of start of central directory with respect to the starting disk number */
-					if(!us.fileStream->Get(us.offset_central_dir))
-						err = UNZ_ERRNO;
-				}
-				else
-				{
-					err = UNZ_BADZIPFILE;
-				}
+		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
+		{
+			FileHeader f;
+			if(!mFile->Get(f) || f.Signature != CENTRALHEADERMAGIC)
+			{
+				return fileerror;
+			}
+			uint32 got;
+			if(!mFile->Read(filename, f.Info.FilenameLength, &got))
+			{
+				return fileerror;
+			}
+			if(got != f.Info.FilenameLength)
+			{
+				return badzipfile;
+			}
+			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
+			{
+				mCurrentFileIndex = i;
+				mCurrentFileOffset = f.LocalHeaderOffset;
+				mCurrentFileSize = f.Info.UncompressedSize;
+				return ok;
+			}
+			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+			{
+				return fileerror;
 			}
 		}
-		else
+		return filenotfound;
+	}
+
+	Archive::Error Archive::Goto(uint32 index)
+	{
+		if(index >= mEntriesInCentralDirectory)
 		{
-			err = UNZ_ERRNO;
+			return filenotfound;
 		}
-
-		if((err == UNZ_OK) && (central_pos < us.offset_central_dir + us.size_central_dir))
+		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
 		{
-			err = UNZ_BADZIPFILE;
+			return fileerror;
 		}
-
-		if(err != UNZ_OK)
+		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
-			us.fileStream->Close();
-			return NULL;
+			FileHeader f;
+			if(!mFile->Get(f))
+			{
+				return fileerror;
+			}
+			if(f.Signature != CENTRALHEADERMAGIC)
+			{
+				return badzipfile;
+			}
+			if(i == index)
+			{
+				mCurrentFileIndex = i;
+				mCurrentFileOffset = f.LocalHeaderOffset;
+				mCurrentFileSize = f.Info.UncompressedSize;
+				return ok;
+			}
+			if(!mFile->Seek(f.Info.FilenameLength + f.FileCommentLength, SEEK_CUR))
+			{
+				return fileerror;
+			}
 		}
+		return filenotfound;
+	}
 
-		if(us.gi.number_disk_with_CD == 0)
+	Archive::Error Archive::OpenCurrentFile()
+	{
+		if(!mCDFile->Seek(mCurrentFileSize, SEEK_SET))
 		{
-			/* If there is only one disk open another stream so we don't have to seek between the CD
-			and the file headers constantly */
-			filestream =  ZOPEN64(us.z_filefunc, path, ZLIB_FILEFUNC_MODE_READ | ZLIB_FILEFUNC_MODE_EXISTING);
-			if(filestream != NULL)
-				us.filestream = filestream;
+			return fileerror;
 		}
-
-		/* Hack for zip files that have no respect for zip64
-		if ((central_pos > 0xffffffff) && (us.offset_central_dir < 0xffffffff))
-		us.offset_central_dir = central_pos - us.size_central_dir;*/
-
-		us.byte_before_the_zipfile = central_pos - (us.offset_central_dir + us.size_central_dir);
-		us.central_pos = central_pos;
-		us.pfile_in_zip_read = NULL;
-
-		s = (unz64_s*)ALLOC(sizeof(unz64_s));
-		if(s != NULL)
+		LocalFileHeader f;
+		if(!mCDFile->Get(f))
 		{
-			*s = us;
-			unzGoToFirstFile((unzFile)s);
+			return fileerror;
 		}
-		return (unzFile)s;
+		if(f.Signature != LOCALHEADERMAGIC)
+		{
+			return badzipfile;
+		}
+		if(f.Info.CompressionMethod != Deflate)
+		{
+			return notsupported;
+		}
+		memset(&mZStream, 0, sizeof(mZStream));
+		int error = inflateInit2(&mZStream, -MAX_WBITS);
+		if(error != Z_OK)
+		{
+			return badzipfile;
+		}
+		mUncompressedDataRemaining = f.Info.UncompressedSize;
+		mCompressedDataRemaining = f.Info.CompressedSize;
+		mFilePosition = mFile->Position() + f.Info.ExtraFieldLength;
+		mFileBuffer.reset(new byte[FileBufferSize]);
+		mIsOpen = true;
+	}
+
+	Archive::Error Archive::Read(byte *buffer, size_t amount, size_t *got)
+	{
+		if(!mIsOpen)
+		{
+			Error e = OpenCurrentFile();
+			if(e != ok)
+			{
+				return e;
+			}
+		}
+		// decompress in a loop until amount has been reached
 	}
 
 	void Archive::Close()
