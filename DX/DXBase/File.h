@@ -9,12 +9,19 @@ namespace
 	bool GetFileNameFromHandle(HANDLE hFile, DX::tstring &name)
 	{
 		using namespace DX;
-		tchar buffer[8192];
-		if(GetFinalPathNameByHandle(hFile, buffer, 8192, VOLUME_NAME_DOS) == 0)
+		vector<tchar> buffer;
+		DWORD len = GetFinalPathNameByHandle(hFile, null, 0, VOLUME_NAME_DOS);
+		if(len == 0)
 		{
 			return false;
 		}
-		name = tstring(buffer);
+		buffer.resize(len + 1);
+		len =  GetFinalPathNameByHandle(hFile, buffer.data(), (DWORD)buffer.size(), VOLUME_NAME_DOS);
+		if(len == 0)
+		{
+			return false;
+		}
+		name = tstring(buffer.begin(), buffer.begin() + len);
 		return true;
 	}
 }
@@ -97,7 +104,7 @@ namespace DX
 		virtual bool Read(void *buffer, uint32 size, uint32 *got = null) = 0;
 		virtual bool Write(void const *buffer, uint32 size, uint32 *wrote = null) = 0;
 		virtual bool Seek(size_t offset, int seekType) = 0;
-		virtual bool Clone(FileBase *other) = 0;
+		virtual bool Reopen(FileBase **other) = 0;	// make a new one of the same type on the same file
 		virtual intptr Position() const = 0;
 		virtual intptr Size() const = 0;
 		virtual void Close() = 0;
@@ -159,12 +166,13 @@ namespace DX
 			return pos - ptr;
 		}
 
-		bool Clone(FileBase *other)
+		bool Reopen(FileBase **other)
 		{
-			MemoryFile *f = (MemoryFile *)other;
-			ptr = f->ptr;
-			size = f->size;
-			pos = ptr;
+			MemoryFile *n = new MemoryFile();
+			n->ptr = ptr;
+			n->size = size;
+			n->pos = n->ptr;
+			*other = n;
 			return true;
 		}
 
@@ -320,12 +328,13 @@ namespace DX
 			return h.IsValid();
 		}
 
-		// Clone always returns a read only handle...
-		bool Clone(FileBase *other)
+		// Reopen always returns a read only handle for now...
+		bool Reopen(FileBase **other)
 		{
-			DiskFile *f = (DiskFile *)other;
+			DiskFile *f = new DiskFile();
+			*other = f;
 			tstring filename;
-			return GetFileNameFromHandle(f->h, filename) && Open(filename.c_str(), ForReading);
+			return GetFileNameFromHandle(h, filename) && f->Open(filename.c_str(), ForReading);
 		}
 
 		bool Read(void *buffer, uint32 size, uint32 *got = null) override
@@ -356,8 +365,8 @@ namespace DX
 		{
 			HANDLE handle = const_cast<HANDLE>(h.obj);	// yuck
 			LONG hi = 0;
-			LONG lo = SetFilePointer(handle, 0, &lo, SEEK_SET);
-			return (lo != INVALID_SET_FILE_POINTER) ? ((intptr)hi << 32) | lo : -1;
+			LONG lo = SetFilePointer(handle, 0, &hi, SEEK_CUR);
+			return (lo != INVALID_SET_FILE_POINTER) ? (((intptr)hi << 32) | lo) : -1;
 		}
 
 		void Close() override

@@ -220,18 +220,24 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	DiskFile f;
-	if(f.Open(TEXT("Data\\test.zip"), DiskFile::ForReading))
 	{
-		Archive a;
-		if(a.Open(&f) == Archive::ok)
+		DiskFile f;
+		if(f.Open(TEXT("Data\\test.zip"), DiskFile::ForReading))
 		{
-			if(a.Locate("spriteSheet.png") == Archive::ok)
+			Archive a;
+			if(a.Open(&f) == Archive::ok)
 			{
-				Trace("It's %d bytes\n", a.CurrentFileSize());
+				Archive::File f;
+				if(a.Locate("duckCM.png", f) == Archive::ok)
+				{
+					Ptr<byte> buffer(new byte[f.UncompressedSize()]);
+					if(f.Read(buffer.get(), 32, null) == Archive::ok)
+					{
+						// we have the 1st 32 bytes of the file...
+					}
+				}
 			}
 		}
-		f.Close();
 	}
 
 	scene.Load(TEXT("data\\duck.dae"));
