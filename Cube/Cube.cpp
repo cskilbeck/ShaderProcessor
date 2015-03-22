@@ -221,14 +221,14 @@ bool MyDXWindow::OnCreate()
 	}
 
 	{
-		DiskFile f;
-		if(f.Open(TEXT("Data\\test.zip"), DiskFile::ForReading))
+		DiskFile d;
+		if(d.Open(TEXT("Data/test64.zip"), DiskFile::ForReading))
 		{
 			Archive a;
-			if(a.Open(&f) == Archive::ok)
+			if(a.Open(&d) == Archive::ok)
 			{
 				Archive::File f;
-				if(a.Locate("duckCM.png", f) == Archive::ok)
+				if(a.Locate("Readme.txt", f) == Archive::ok)
 				{
 					Ptr<byte> buffer(new byte[f.UncompressedSize()]);
 					if(f.Read(buffer.get(), 32, null) == Archive::ok)
@@ -240,14 +240,14 @@ bool MyDXWindow::OnCreate()
 		}
 	}
 
-	scene.Load(TEXT("data\\duck.dae"));
+	scene.Load(TEXT("data/duck.dae"));
 
 	FontManager::Open(this);
 
 	debug_open(this);
 
-	font.reset(FontManager::Load(TEXT("Data\\debug")));
-	bigFont.reset(FontManager::Load(TEXT("Data\\Cooper_Black_48")));
+	font.reset(FontManager::Load(TEXT("data/debug")));
+	bigFont.reset(FontManager::Load(TEXT("data/Cooper_Black_48")));
 
 	simpleShader.reset(new Shaders::Simple());
 	simpleVB.reset(new Shaders::Simple::VertBuffer(128, null, DynamicUsage, Writeable));
@@ -256,7 +256,7 @@ bool MyDXWindow::OnCreate()
 	CreateOctahedron();
 
 	cubeShader.reset(new Shaders::Phong());
-	cubeTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
+	cubeTexture.reset(new Texture(TEXT("data/temp.jpg")));
 	Sampler::Options o;
 	o.Filter = anisotropic;
 	cubeSampler.reset(new Sampler(o));
@@ -280,7 +280,7 @@ bool MyDXWindow::OnCreate()
 
 	uiShader.reset(new Shaders::UI());
 	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
-	uiTexture.reset(new Texture(TEXT("Data\\temp.png")));
+	uiTexture.reset(new Texture(TEXT("data/temp.png")));
 	uiSampler.reset(new Sampler());
 	uiShader->ps.page = uiTexture.get();
 	uiShader->ps.smplr = uiSampler.get();
@@ -291,12 +291,12 @@ bool MyDXWindow::OnCreate()
 
 	spriteShader.reset(new Shaders::Sprite());
 	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2, null, DynamicUsage, Writeable));
-	spriteTexture.reset(new Texture(TEXT("Data\\temp.jpg")));
+	spriteTexture.reset(new Texture(TEXT("data/temp.jpg")));
 	spriteSampler.reset(new Sampler());
 	spriteShader->ps.smplr = spriteSampler.get();
 	spriteShader->ps.page = spriteTexture.get();
 
-	spriteSheet.reset(new SpriteSheet(TEXT("Data\\spriteSheet.xml")));
+	spriteSheet.reset(new SpriteSheet(TEXT("data/spriteSheet.xml")));
 
 	renderTarget.reset(new RenderTarget(256, 256, RenderTarget::WithDepthBuffer));
 

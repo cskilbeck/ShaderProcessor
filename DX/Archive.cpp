@@ -225,6 +225,7 @@ namespace DX
 
 	Archive::File::File()
 		: mFile(null)
+		, mZLibInitialized(false)
 	{
 	}
 
@@ -236,10 +237,9 @@ namespace DX
 	void Archive::File::Close()
 	{
 		Delete(mFile);
-		if(mFileBuffer != null)
+		if(mZLibInitialized)
 		{
 			inflateEnd(&mZStream);
-			mFileBuffer.reset();
 		}
 	}
 
@@ -286,6 +286,7 @@ namespace DX
 			mFileBuffer.reset(new byte[FileBufferSize]);
 
 			memset(&mZStream, 0, sizeof(mZStream));
+			mZLibInitialized = true;
 			int error = inflateInit2(&mZStream, -MAX_WBITS);
 			if(error != Z_OK)
 			{
@@ -364,27 +365,33 @@ namespace DX
 
 		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
-			FileHeader f;
-			if(!mFile->Get(f) || f.Signature != CENTRALHEADERMAGIC)
+			if(mIsZip64)
 			{
-				return fileerror;
 			}
-			uint32 got;
-			if(!mFile->Read(filename, f.Info.FilenameLength, &got))
+			else
 			{
-				return fileerror;
-			}
-			if(got != f.Info.FilenameLength)
-			{
-				return badzipfile;
-			}
-			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
-			{
-				return file.Init(mFile, f);
-			}
-			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
-			{
-				return fileerror;
+				FileHeader f;
+				if(!mFile->Get(f) || f.Signature != CENTRALHEADERMAGIC)
+				{
+					return fileerror;
+				}
+				uint32 got;
+				if(!mFile->Read(filename, f.Info.FilenameLength, &got))
+				{
+					return fileerror;
+				}
+				if(got != f.Info.FilenameLength)
+				{
+					return badzipfile;
+				}
+				if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
+				{
+					return file.Init(mFile, f);
+				}
+				if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+				{
+					return fileerror;
+				}
 			}
 		}
 		return filenotfound;

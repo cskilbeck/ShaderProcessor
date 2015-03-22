@@ -112,10 +112,10 @@ namespace DX
 			uint16			FilenameLength;
 			uint16			ExtraFieldLength;
 			// Filename
-			// ExtraField
+			// ExtraField (used if it's a Zip64 format file)
 		};
 
-		// This precedes each file
+		// This precedes each file stored in the Zip
 
 		struct LocalFileHeader
 		{
@@ -196,7 +196,7 @@ namespace DX
 			Ptr<byte>		mFileBuffer;
 			FileBase *		mFile;
 			z_stream		mZStream;
-			uint32			mCRCSoFar;
+			bool			mZLibInitialized;
 
 			File();
 			~File();
