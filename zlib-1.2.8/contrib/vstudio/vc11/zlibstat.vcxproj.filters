@@ -47,6 +47,12 @@
     <ClCompile Include="..\..\..\uncompr.c">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\infback9.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\inftree9.c">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="zlib.rc" />
@@ -93,6 +99,19 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\zlib.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\zutil.h" />
+    <ClInclude Include="..\..\..\infback9.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\inffix9.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\inflate9.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\inftree9.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

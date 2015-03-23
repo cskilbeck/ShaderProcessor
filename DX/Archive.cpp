@@ -1,4 +1,14 @@
 //////////////////////////////////////////////////////////////////////
+// Very basic Zip file loader
+// Doesn't support:
+// - Encryption/passwords
+// - Spanned Zip files (multi disc)
+// - Any compression method except Deflate
+// - Data Descriptors after the compressed data
+// - CRC checking
+// Does support:
+// - Zip64 format (version 2 only)
+// 
 
 #include "DX.h"
 
@@ -6,42 +16,22 @@
 
 namespace
 {
-	const char unz_copyright[] = " unzip 1.01 Copyright 1998-2004 Gilles Vollant - http://www.winimage.com/zLibDll";
+	enum
+	{
+		LocalHeaderSignature = 0x04034b50,
+		CentralHeaderSignature = 0x02014b50,
+		EndHeaderSignature = 0x06054b50,
+		EndHeader64Signature = 0x06064b50,
+		EndLocalHeader64Signature = 0x07064b50
+	};
 }
 
 //////////////////////////////////////////////////////////////////////
 
-#define DISKHEADERMAGIC          (0x08074b50)
-#define LOCALHEADERMAGIC         (0x04034b50)
-#define CENTRALHEADERMAGIC       (0x02014b50)
-#define ENDHEADERMAGIC           (0x06054b50)
-#define ZIP64ENDHEADERMAGIC      (0x06064b50)
-#define ZIP64ENDLOCHEADERMAGIC   (0x07064b50)
-
-#define SIZECENTRALDIRITEM       (0x2e)
-#define SIZECENTRALHEADERLOCATOR (0x14) /* 20 */
-#define SIZEZIPLOCALHEADER       (0x1e)
-
-#ifndef BUFREADCOMMENT
-#  define BUFREADCOMMENT (0x400)
-#endif
-
-#ifndef UNZ_BUFSIZE
-#  define UNZ_BUFSIZE (64 * 1024)
-#endif
-#ifndef UNZ_MAXFILENAMEINZIP
-#  define UNZ_MAXFILENAMEINZIP (256)
-#endif
-
-#ifndef ALLOC
-#  define ALLOC(size) (malloc(size))
-#endif
-#ifndef TRYFREE
-#  define TRYFREE(p) {if (p) free(p);}
-#endif
-
 namespace DX
 {
+	//////////////////////////////////////////////////////////////////////
+
 	Archive::Archive()
 		: mFile(null)
 		, mIsZip64(false)
@@ -51,19 +41,24 @@ namespace DX
 	{
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
 	Archive::~Archive()
 	{
 	}
 
-	int Archive::GetCD(uint64 &offset)
+	//////////////////////////////////////////////////////////////////////
+	// Get the Central Directory
+
+	int Archive::GetCDLocation(uint64 &offset)
 	{
 		uint64 file_size = mFile->Size();
 		uint64 back_read = 4;
 		uint64 max_back = 0xffff; /* maximum size of global comment */
 
-		int const bufreadcomment = 0x400;
+		int const CommentBufferSize = 0x400;
 
-		Ptr<byte> buf(new byte[bufreadcomment + 4]);
+		Ptr<byte> buf(new byte[CommentBufferSize + 4]);
 
 		if(max_back > file_size)
 		{
@@ -72,27 +67,27 @@ namespace DX
 
 		while(back_read < max_back)
 		{
-			if(back_read + bufreadcomment > max_back)
+			if(back_read + CommentBufferSize > max_back)
 			{
 				back_read = max_back;
 			}
 			else
 			{
-				back_read += bufreadcomment;
+				back_read += CommentBufferSize;
 			}
 
 			uint64 read_pos = file_size - back_read;
-			int32 read_size = min(bufreadcomment + 4, (int32)(file_size - read_pos));
+			int32 read_size = min(CommentBufferSize + 4, (int32)(file_size - read_pos));
 
 			if(!mFile->Seek(read_pos, SEEK_SET))
 			{
-				return fileerror;
+				return error_fileerror;
 			}
 
 			uint32 got;
 			if(!mFile->Read(buf.get(), read_size, &got) || got != read_size)
 			{
-				return fileerror;
+				return error_fileerror;
 			}
 
 			byte *p = buf.get();
@@ -100,86 +95,82 @@ namespace DX
 			{
 				byte *q = p + i;
 				uint32 c = q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24);
-				if(c == ENDHEADERMAGIC)
+				if(c == EndHeaderSignature)
 				{
 					offset = read_pos + i;
 					return ok;
 				}
 			}
 		}
-		return badzipfile;
+		return error_badzipfile;
 	}
 
-	int Archive::GetCD64(uint64 &offset, uint64 const endcentraloffset)
+	//////////////////////////////////////////////////////////////////////
+	// Get the 64 bit Central Directory
+
+	int Archive::GetCD64Location(uint64 &offset, uint64 const oldCDOffset)
 	{
-		if(!mFile->Seek(endcentraloffset - sizeof(EndOfCentralDirectory64Locator), SEEK_SET))
+		if(!mFile->Seek(oldCDOffset - sizeof(EndOfCentralDirectory64Locator), SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 
 		EndOfCentralDirectory64Locator eocd;
 		if(!mFile->Get(eocd))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-		if(eocd.Signature != ZIP64ENDLOCHEADERMAGIC)
+		if(eocd.Signature != EndLocalHeader64Signature)
 		{
-			return badzipfile;
+			return error_badzipfile;
 		}
-
 		if(!mFile->Seek(eocd.CDOffset, SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 
-		uint32 uL;
-		if(!mFile->GetUInt32(uL))
+		uint32 signature;
+		if(!mFile->GetUInt32(signature))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-		if(uL != ZIP64ENDHEADERMAGIC)
+		if(signature != EndHeader64Signature)
 		{
-			return badzipfile;
+			return error_badzipfile;
 		}
 		offset = eocd.CDOffset;
 		return ok;
 	}
 
+	//////////////////////////////////////////////////////////////////////
+	// Open an Archive
+
 	int Archive::Open(FileBase *zipFile)
 	{
-		mFile = zipFile;
-
-		uint64 central_pos;
-
+		uint64 CDLocation;
 		int err = ok;
 
-		if(unz_copyright[0] != ' ')
-		{
-			return internalerror;
-		}
-
+		mFile = zipFile;
 		mIsZip64 = false;
 
-		int e = GetCD(central_pos);
+		int e = GetCDLocation(CDLocation);
 		if(e != ok)
 		{
 			return e;
 		}
-
-		if(!mFile->Seek(central_pos, SEEK_SET))
+		if(!mFile->Seek(CDLocation, SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 
 		EndOfCentralDirectory eocd;
 		if(!mFile->Get(eocd))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-
-		if(eocd.EntriesInCD != eocd.EntriesInCDOnThisDisk)	// HUH?
+		if(eocd.EntriesInCD != eocd.EntriesInCDOnThisDisk)	// Spanned zips not supported
 		{
-			return badzipfile;
+			return error_notsupported;
 		}
 
 		mEntriesInCentralDirectory = eocd.EntriesInCD;
@@ -188,40 +179,34 @@ namespace DX
 
 		if(eocd.EntriesInCD == 0xffff || eocd.SizeOfCD == 0xffff || eocd.CDOffset == 0xffffffff)
 		{
-			e = GetCD64(central_pos, central_pos);
+			e = GetCD64Location(CDLocation, CDLocation);
 			if(e != ok)
 			{
 				return e;
 			}
-
-			if(!mFile->Seek(central_pos, SEEK_SET))
+			if(!mFile->Seek(CDLocation, SEEK_SET))
 			{
-				return fileerror;
+				return error_fileerror;
 			}
 
 			EndOfCentralDirectory64 eocd64;
 			if(!mFile->Get(eocd64))
 			{
-				return fileerror;
+				return error_fileerror;
 			}
-
 			if(eocd64.EntriesInCD != eocd64.EntriesInCDOnThisDisk)
 			{
-				return badzipfile;
+				return error_notsupported;
 			}
 			mIsZip64 = true;
 			mEntriesInCentralDirectory = eocd64.EntriesInCD;
 			mSizeOfCentralDirectory = eocd64.SizeOfCD;
-			mCentralDirectoryLocation = central_pos;
+			mCentralDirectoryLocation = eocd64.CDOffset;
 		}
-
-		//if(central_pos < us.offset_central_dir + us.size_central_dir)
-		//{
-		//	return badzipfile;
-		//}
-
 		return ok;
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	Archive::File::File()
 		: mFile(null)
@@ -229,10 +214,14 @@ namespace DX
 	{
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
 	Archive::File::~File()
 	{
 		Close();
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void Archive::File::Close()
 	{
@@ -243,42 +232,123 @@ namespace DX
 		}
 	}
 
-	int Archive::File::Init(FileBase *file, FileHeader &f)
+	//////////////////////////////////////////////////////////////////////
+	// Get an Archive::File ready for reading
+
+	int Archive::File::Init(FileBase *file, ExtraInfo64 &e)
 	{
 		// reopen handle for reading the actual data
 		if(!file->Reopen(&mFile))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 		// read the localfileheader
-		if(!mFile->Seek(f.LocalHeaderOffset, SEEK_SET))
+		if(!mFile->Seek(e.LocalHeaderOffset, SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 		if(!mFile->Get(mHeader))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-		if(mHeader.Signature != LOCALHEADERMAGIC)
+		if(mHeader.Signature != LocalHeaderSignature)
 		{
-			return badzipfile;
+			return error_badzipfile;
 		}
 		if(mHeader.Info.CompressionMethod != Deflate && mHeader.Info.CompressionMethod != None)
 		{
-			return notsupported;
+			return error_notsupported;
 		}
 		// tee up the file pointer
-		if(!mFile->Seek(mHeader.Info.FilenameLength + mHeader.Info.ExtraFieldLength, SEEK_CUR))
+		if(!mFile->Seek(mHeader.Info.FilenameLength, SEEK_CUR))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-		mCompressedDataRemaining = mHeader.Info.CompressedSize;
-		mUncompressedDataRemaining = mHeader.Info.UncompressedSize;
+
+		mCompressedSize = mHeader.Info.CompressedSize;
+		mUncompressedSize = mHeader.Info.UncompressedSize;
+
+		Archive::ProcessExtraInfo(mFile, mHeader.Info.ExtraFieldLength, [this] (uint16 tag, uint16 len, void *data)
+		{
+			if(tag == 0x0001)
+			{
+				LocalExtraInfo64 ei;
+				memcpy(&ei, data, len);
+				if(mUncompressedSize == 0xffffffff)
+				{
+					if(len < 8)
+					{
+						return error_badzipfile;
+					}
+					mUncompressedSize = ei.UnCompressedSize;
+				}
+				if(mCompressedSize == 0xffffffff)
+				{
+					if(len < 16)
+					{
+						return error_badzipfile;
+					}
+					mCompressedSize = ei.CompressedSize;
+				}
+			}
+			return ok;
+		});
+		mCompressedDataRemaining = mCompressedSize;
+		mUncompressedDataRemaining = mUncompressedSize;
 		return ok;
 	}
 
-	int Archive::File::Read(byte *buffer, size_t amount, size_t *got /* = null */)
+	//////////////////////////////////////////////////////////////////////
+	// Scan ExtraInfo blocks following a FileHeader or LocalFileHeader
+
+	int Archive::ProcessExtraInfo(FileBase *file, size_t extraSize, std::function<int(uint16, uint16, void *)> callback)
 	{
+		Ptr<byte> buffer(new byte[65536]);			// Harumph, max size...
+		uint64 currentPosition = file->Position();
+		while(extraSize > 0)
+		{
+			uint16 tag;
+			uint16 len;
+			if(!(file->Get(tag) && file->Get(len)))
+			{
+				return error_fileerror;
+			}
+			uint32 got;
+			if(!file->Read(buffer.get(), len, &got) || got != len)
+			{
+				return error_fileerror;
+			}
+			int e = callback(tag, len, buffer.get());
+			if(e != ok)
+			{
+				return e;
+			}
+			len += 4;
+			currentPosition += len;
+			if(!file->Seek(currentPosition, SEEK_SET))
+			{
+				return error_fileerror;
+			}
+			extraSize -= len;
+		}
+		return ok;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Read data from an Archive::File
+
+	int Archive::File::Read2(byte *buffer, size_t amount, size_t *got /* = null */, uint32 bufferSize /* = 65536 */)
+	{
+		// use inflateBack functions (or inflateBack9 to support Deflate64)
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Read data from an Archive::File
+
+	int Archive::File::Read(byte *buffer, size_t amount, size_t *got /* = null */, uint32 bufferSize)
+	{
+		uint32 FileBufferSize = bufferSize;
+
 		size_t totalGot = 0;
 		// setup if necessary
 		if(GetCompressionMethod() == Deflate && mFileBuffer == null)
@@ -302,10 +372,10 @@ namespace DX
 			if(GetCompressionMethod() == None)
 			{
 				uint32 localGot;
-				uint32 remainder = (uint32)min(MAXUINT32, min(amount, mUncompressedDataRemaining));
+				uint32 remainder = (uint32)min(MAXUINT32, min(amount, mCompressedDataRemaining));
 				if(!mFile->Read(currentPtr, remainder, &localGot) || localGot != remainder)
 				{
-					return fileerror;
+					return error_fileerror;
 				}
 				currentPtr += (size_t)localGot;
 				len += (size_t)localGot;
@@ -319,17 +389,17 @@ namespace DX
 				if(mZStream.avail_in == 0)
 				{
 					// yes, refill it
-					uint32 remainder = (uint32)min(FileBufferSize, mUncompressedDataRemaining);
+					uint32 remainder = (uint32)min(FileBufferSize, mCompressedDataRemaining);
 					uint32 localGot;
 					if(!mFile->Read(mFileBuffer.get(), (uint32)remainder, &localGot) || localGot != remainder)
 					{
-						return fileerror;
+						return error_fileerror;
 					}
 					mZStream.next_in = mFileBuffer.get();
 					mZStream.avail_in = localGot;
 					mZStream.next_out = currentPtr;
-					mZStream.avail_out = amount - len;
-					mUncompressedDataRemaining -= localGot;
+					mZStream.avail_out = (uint)(amount - len);
+					mCompressedDataRemaining -= localGot;
 				}
 
 				// decompress some
@@ -344,7 +414,7 @@ namespace DX
 				totalGot += d;
 				currentPtr += d;
 				len += d;
-				mCompressedDataRemaining -= d;
+				mUncompressedDataRemaining -= d;
 			}
 		}
 		if(got != null)
@@ -354,80 +424,121 @@ namespace DX
 		return ok;
 	}
 
+	//////////////////////////////////////////////////////////////////////
+	// Prepare an Archive::File for reading
+
+	int Archive::InitFile(File &file, FileHeader &f)
+	{
+		ExtraInfo64 Extra, *pExtra = null;
+
+		Extra.CompressedSize = MAXUINT64;
+		Extra.UnCompressedSize = MAXUINT64;
+		Extra.LocalHeaderOffset = MAXUINT64;
+
+		ProcessExtraInfo(mFile, f.Info.ExtraFieldLength, [&] (uint16 tag, uint16 len, void *data)
+		{
+			if(tag == 0x0001)
+			{
+				memcpy(&Extra, data, len);
+			}
+			return ok;
+		});
+
+		if(f.Info.UncompressedSize != 0xffffffff)
+		{
+			Extra.UnCompressedSize = f.Info.UncompressedSize;
+		}
+		if(f.Info.CompressedSize != 0xffffffff)
+		{
+			Extra.CompressedSize = f.Info.CompressedSize;
+		}
+		if(f.LocalHeaderOffset != 0xffffffff)
+		{
+			Extra.LocalHeaderOffset = f.LocalHeaderOffset;
+		}
+
+		if(Extra.CompressedSize == MAXUINT64 ||
+		   Extra.UnCompressedSize == MAXUINT64 ||
+		   Extra.LocalHeaderOffset == MAXUINT64)
+		{
+			return error_badzipfile;
+		}
+
+		return file.Init(mFile, Extra);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Find a file by name in an Archive
+
 	int Archive::Locate(char const *name, Archive::File &file)
 	{
 		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
-
-		char filename[1024];
-
 		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
-			if(mIsZip64)
+			FileHeader f;
+			if(!mFile->Get(f) || f.Signature != CentralHeaderSignature)
 			{
+				return error_fileerror;
 			}
-			else
+			uint32 got;
+			char filename[256];
+			if(!mFile->Read(filename, f.Info.FilenameLength, &got) || got != f.Info.FilenameLength)
 			{
-				FileHeader f;
-				if(!mFile->Get(f) || f.Signature != CENTRALHEADERMAGIC)
-				{
-					return fileerror;
-				}
-				uint32 got;
-				if(!mFile->Read(filename, f.Info.FilenameLength, &got))
-				{
-					return fileerror;
-				}
-				if(got != f.Info.FilenameLength)
-				{
-					return badzipfile;
-				}
-				if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
-				{
-					return file.Init(mFile, f);
-				}
-				if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
-				{
-					return fileerror;
-				}
+				return error_fileerror;
+			}
+			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
+			{
+				return InitFile(file, f);
+			}
+			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+			{
+				return error_fileerror;
 			}
 		}
-		return filenotfound;
+		return error_filenotfound;
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Goto a file by index
 
 	int Archive::Goto(uint32 index, Archive::File &file)
 	{
 		if(index >= mEntriesInCentralDirectory)
 		{
-			return filenotfound;
+			return error_filenotfound;
 		}
 		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
 		{
-			return fileerror;
+			return error_fileerror;
 		}
 		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
 			FileHeader f;
 			if(!mFile->Get(f))
 			{
-				return fileerror;
+				return error_fileerror;
 			}
-			if(f.Signature != CENTRALHEADERMAGIC)
+			if(f.Signature != CentralHeaderSignature)
 			{
-				return badzipfile;
+				return error_badzipfile;
+			}
+			if(!mFile->Seek(f.Info.FilenameLength, SEEK_CUR))
+			{
+				return error_fileerror;
 			}
 			if(i == index)
 			{
-				return file.Init(mFile, f);
+				return InitFile(file, f);
 			}
-			if(!mFile->Seek(f.Info.FilenameLength + f.FileCommentLength, SEEK_CUR))
+			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
 			{
-				return fileerror;
+				return error_fileerror;
 			}
 		}
-		return filenotfound;
+		return error_filenotfound;
 	}
 
 	void Archive::Close()

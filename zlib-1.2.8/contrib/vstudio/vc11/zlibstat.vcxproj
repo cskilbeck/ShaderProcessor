@@ -331,6 +331,8 @@ bld_ml64.bat</Command>
     <ClCompile Include="..\..\..\infback.c">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
     </ClCompile>
+    <ClCompile Include="..\..\..\infback9.c" />
+    <ClCompile Include="..\..\..\inftree9.c" />
     <ClCompile Include="..\..\masmx64\inffas8664.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseWithoutAsm|Win32'">true</ExcludedFromBuild>
@@ -364,9 +366,13 @@ bld_ml64.bat</Command>
     <ClInclude Include="..\..\..\crc32.h" />
     <ClInclude Include="..\..\..\deflate.h" />
     <ClInclude Include="..\..\..\gzguts.h" />
+    <ClInclude Include="..\..\..\infback9.h" />
     <ClInclude Include="..\..\..\inffast.h" />
+    <ClInclude Include="..\..\..\inffix9.h" />
     <ClInclude Include="..\..\..\inffixed.h" />
     <ClInclude Include="..\..\..\inflate.h" />
+    <ClInclude Include="..\..\..\inflate9.h" />
+    <ClInclude Include="..\..\..\inftree9.h" />
     <ClInclude Include="..\..\..\inftrees.h" />
     <ClInclude Include="..\..\..\trees.h" />
     <ClInclude Include="..\..\..\zconf.h" />

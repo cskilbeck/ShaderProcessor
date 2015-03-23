@@ -11,67 +11,16 @@ namespace DX
 		enum Status: int
 		{
 			ok = 0,
-			end_of_list_of_file = -100,
-			errnum = Z_ERRNO,
-			eof = 0,
-			cantopenfile = -101,
-			paramerror = -102,
-			badzipfile = -103,
-			internalerror = -104,
-			crcerror = -105,
-			fileerror = -106,
-			notsupported = -107,
-			filenotfound = -108
+			error_badzipfile = -200,	// Zip format parser error
+			error_fileerror,			// File IO error
+			error_notsupported,			// Only unencrypted, single disc, deflate/store supported
+			error_filenotfound			// Can't find a file within the zip
 		};
 
 		enum CompressionMethod: uint16
 		{
 			None = 0,
-			Shrink = 1,
-			Reduce1 = 2,
-			Reduce2 = 3,
-			Reduce3 = 4,
-			Reduce4 = 5,
-			Implode = 6,
-			Tokenize = 7,
-			Deflate = 8,
-			Deflate64 = 9,
-			Reserved1 = 10,
-			Reserved2 = 11,
-			BZIP2 = 12,
-			Reserved3 = 13,
-			LZMA = 14,
-			Reserved4 = 15,
-			Reserved5 = 16,
-			Reserved6 = 17,
-			IBM_TERSE = 18,
-			IBMLZ77 = 19,
-			WavPack = 97,
-			PPMd1 = 98
-		};
-
-		enum VersionMadeBy: uint16
-		{
-			MSDOS = 0,
-			Amiga = 1,
-			OpenVMS = 2,
-			UNIX = 3,
-			VMCMS = 4,
-			AtariST = 5,
-			OS2 = 6,
-			Macintosh = 7,
-			ZSystem = 8,
-			CPM = 9,
-			WindowsNTFS = 10,
-			MVS = 11,
-			VSE = 12,
-			AcornRisc = 13,
-			VFAT = 14,
-			alternateMVS = 15,
-			BeOS = 16,
-			Tandem = 17,
-			OS400 = 18,
-			OSX = 19
+			Deflate = 8
 		};
 
 #		pragma pack(push, 1)
@@ -87,7 +36,7 @@ namespace DX
 			uint32			UncompressedSize;
 		};
 
-		// 64 bit version if Zip64
+		// 64 bit version if file is in Zip64 format
 
 		struct DataDescriptor64
 		{
@@ -122,6 +71,24 @@ namespace DX
 			uint32			Signature;	// 0x04034b50
 			uint16			VersionRequired;
 			FileInfo		Info;
+		};
+
+		// A LocalFileHeader has one of these after it if it's Zip64
+
+		struct LocalExtraInfo64
+		{
+			uint64			UnCompressedSize;
+			uint64			CompressedSize;
+		};
+
+		// A FileHeader has one of these after it if it's Zip64
+
+		struct ExtraInfo64
+		{
+			uint64			UnCompressedSize;
+			uint64			CompressedSize;
+			uint64			LocalHeaderOffset;			// optional, usually missing
+			uint32			DiskOnWhichThisFileStarts;
 		};
 
 		// The Central Directory consists of these:
@@ -168,10 +135,10 @@ namespace DX
 			uint64			EntriesInCDOnThisDisk;
 			uint64			EntriesInCD;
 			uint64			SizeOfCD;
-			uint64			DirectoryWRTStartingDiskNumber;
+			uint64			CDOffset;
 		};
 
-		// Haven't worked out how this fits in yet
+		// This is used to find the Central Directory if it's a Zip64 file
 
 		struct EndOfCentralDirectory64Locator
 		{
@@ -183,59 +150,69 @@ namespace DX
 
 #		pragma pack(pop)
 
+		// A file within a Zip file
+
 		struct File
 		{
-			enum
-			{
-				FileBufferSize = 4096
-			};
+			File();
+			~File();
 
+			// Read compressed file data
+			int Read(byte *buffer, size_t amount, size_t *got = null, uint32 bufferSize = 65536);
+			int Read2(byte *buffer, size_t amount, size_t *got = null, uint32 bufferSize = 65536);
+
+			// Release everything
+			void Close();
+
+			// Size of uncompressed data
+			uint64 Size() const;
+		
+		private:
+
+			friend struct Archive;
+
+			uint64			mUncompressedSize;
 			uint64			mUncompressedDataRemaining;
+			uint64			mCompressedSize;
 			uint64			mCompressedDataRemaining;
+			uint64			mLocationInZipFile;
 			LocalFileHeader	mHeader;
 			Ptr<byte>		mFileBuffer;
 			FileBase *		mFile;
 			z_stream		mZStream;
 			bool			mZLibInitialized;
 
-			File();
-			~File();
-
-			int Init(FileBase *file, FileHeader &f);
-			int Read(byte *buffer, size_t amount, size_t *got = null);
-			void Close();
-
-			uint64 CompressedSize() const
-			{
-				return mHeader.Info.CompressedSize;
-			}
-
-			uint64 UncompressedSize() const
-			{
-				return mHeader.Info.UncompressedSize;
-			}
-
-			CompressionMethod GetCompressionMethod() const
-			{
-				return (CompressionMethod)mHeader.Info.CompressionMethod;
-			}
+			CompressionMethod GetCompressionMethod() const;
+			uint64 CompressedSize() const;
+			int Init(FileBase *file, ExtraInfo64 &e);
 		};
 
 		Archive();
 		~Archive();
 
+		// Open an archive from an existing file
 		int Open(FileBase *zipFile);
+
+		// Release everything
 		void Close();
 
+		// How many files in the archive
 		uint64 FileCount() const;
 
+		// Find a file by name
 		int Locate(tchar const *name, File &file);
+
+		// Got a file by index
 		int Goto(uint32 fileIndex, File &file);
 
 	private:
 
-		int GetCD(uint64 &offset);
-		int GetCD64(uint64 &offset, uint64 const endcentraloffset);
+		static int ProcessExtraInfo(FileBase *file, size_t extraSize, std::function<int(uint16, uint16, void *)> callback);
+
+		int GetCDLocation(uint64 &offset);
+		int GetCD64Location(uint64 &offset, uint64 const endcentraloffset);
+
+		int InitFile(File &file, FileHeader &f);
 
 		uint64		mCentralDirectoryLocation;
 		uint64		mEntriesInCentralDirectory;
@@ -243,6 +220,21 @@ namespace DX
 		FileBase *	mFile;
 		bool		mIsZip64;
 	};
+
+	inline uint64 Archive::File::CompressedSize() const
+	{
+		return mCompressedSize;
+	}
+
+	inline uint64 Archive::File::Size() const
+	{
+		return mUncompressedSize;
+	}
+
+	inline Archive::CompressionMethod Archive::File::GetCompressionMethod() const
+	{
+		return (CompressionMethod)mHeader.Info.CompressionMethod;
+	}
 
 	inline uint64 Archive::FileCount() const
 	{

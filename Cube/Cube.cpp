@@ -16,7 +16,6 @@
 //		Named shader support
 //		Skeleton/Weights
 // Bullet
-// zLib
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
 //		Samplers
@@ -50,6 +49,7 @@
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 //		* Fix MSBuild Spock dependency bug (building everything)
+// * zLib
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // * Move some things into Matrix from Camera
@@ -222,18 +222,19 @@ bool MyDXWindow::OnCreate()
 
 	{
 		DiskFile d;
-		if(d.Open(TEXT("Data/test64.zip"), DiskFile::ForReading))
+		if(d.Open(TEXT("Data/cube.zip"), DiskFile::ForReading))
 		{
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
 				Archive::File f;
-				if(a.Locate("Readme.txt", f) == Archive::ok)
+				if(a.Locate("test.big", f) == Archive::ok)
 				{
-					Ptr<byte> buffer(new byte[f.UncompressedSize()]);
-					if(f.Read(buffer.get(), 32, null) == Archive::ok)
+					size_t got;
+					Ptr<byte> buffer(new byte[32]);
+					if(f.Read(buffer.get(), 32, &got) == Archive::ok && got == 32)
 					{
-						// we have the 1st 32 bytes of the file...
+						TRACE("Unzipped\n");
 					}
 				}
 			}
