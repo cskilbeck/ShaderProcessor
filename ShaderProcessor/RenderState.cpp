@@ -834,14 +834,6 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			keyvals keyVals;
 			GetNameValueMap(m[4].str(), keyVals);
 
-			// Check for unknown semantic things here...
-
-			// it's a semantic declaration
-			// encode the crap into the semantic name
-			// type_stream_instances_name
-
-			// this means name and type can't have _ in them, which is a problem...
-
 			string type = "";
 			GetFrom(keyVals, "type", type);
 
@@ -851,19 +843,19 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 			string instances;
 			GetFrom(keyVals, "instances", instances);
 
-			Semantic s;
-			
-			if(!s.Set(type, instances, stream))
-			{
-				return E_INVALIDARG;
-			}
-
 			string name;
 			GetFrom(keyVals, "name", name);
 
 			if(name.empty())
 			{
 				name = m[2].str();	// just use the name of the member in the struct
+			}
+
+			Semantic s;
+
+			if(!s.Set(type, instances, stream))
+			{
+				return E_INVALIDARG;
 			}
 
 			// work out what bit to replace

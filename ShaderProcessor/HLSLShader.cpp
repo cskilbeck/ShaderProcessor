@@ -1116,21 +1116,6 @@ HRESULT HLSLShader::CreateInputLayout()
 		StorageType storageType = StorageType::Invalid_type;
 		TRACE("Semantic name: %s\n", d.SemanticName);
 
-		// if it has underscores in the semantic name
-		// and there are exactly 3 underscores
-		// and regex returns 4 matches, each with 1 submatch
-		// and the 2nd and 3rd matches[1] are integers
-		// then it's probably a type_stream_instances_name declaration
-		// so treat it as such
-
-		// if there is more than 1 stream
-		// define multiple InputVertex structures
-		// struct InputVertex0-N { ... };
-
-		// if instances == V, then use D3D11_INPUT_PER_VERTEX_DATA
-		// else use D3D11_INPUT_PER_INSTANCE_DATA
-
-		// get everything up to the last _
 		string type_annotation;
 		string semantic_name = d.SemanticName;
 		string stream;

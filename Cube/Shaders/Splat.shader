@@ -2,7 +2,6 @@
 
 #pragma depth(disabled, write=disabled)
 #pragma culling(mode=none)
-#pragma anti_aliased_line(disabled)
 
 //////////////////////////////////////////////////////////////////////
 
