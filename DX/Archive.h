@@ -20,7 +20,8 @@ namespace DX
 		enum CompressionMethod: uint16
 		{
 			None = 0,
-			Deflate = 8
+			Deflate = 8,
+			Deflate64 = 9
 		};
 
 #		pragma pack(push, 1)
@@ -158,8 +159,7 @@ namespace DX
 			~File();
 
 			// Read compressed file data
-			int Read(byte *buffer, size_t amount, size_t *got = null, uint32 bufferSize = 65536);
-			int Read2(byte *buffer, size_t amount, size_t *got = null, uint32 bufferSize = 65536);
+			int Read(byte *buffer, size_t *got = null, uint32 bufferSize = 65536);
 
 			// Release everything
 			void Close();
@@ -170,6 +170,8 @@ namespace DX
 		private:
 
 			friend struct Archive;
+			friend uint32 getData(void *in_desc, byte **buf);
+			friend int32 putData(void *out_desc, byte *buf, uint32 len);
 
 			uint64			mUncompressedSize;
 			uint64			mUncompressedDataRemaining;
@@ -177,7 +179,11 @@ namespace DX
 			uint64			mCompressedDataRemaining;
 			uint64			mLocationInZipFile;
 			LocalFileHeader	mHeader;
+			byte *			mOutputPtr;
+			size_t			mOutputSize;
 			Ptr<byte>		mFileBuffer;
+			uint32			mFileBufferSize;
+			Ptr<byte>		mWindow;
 			FileBase *		mFile;
 			z_stream		mZStream;
 			bool			mZLibInitialized;

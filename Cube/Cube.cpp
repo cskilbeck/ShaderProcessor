@@ -9,6 +9,7 @@
 // Shadow mapping
 // 2D UI Elements/Scene
 // SWF importer/converter/player!?
+// zLib: support Deflate64
 // Assimp
 //		Default shader
 //		Preprocessor / native loader
@@ -49,7 +50,6 @@
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 //		* Fix MSBuild Spock dependency bug (building everything)
-// * zLib
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // * Move some things into Matrix from Camera
@@ -231,8 +231,8 @@ bool MyDXWindow::OnCreate()
 				if(a.Locate("test.big", f) == Archive::ok)
 				{
 					size_t got;
-					Ptr<byte> buffer(new byte[32]);
-					if(f.Read(buffer.get(), 32, &got) == Archive::ok && got == 32)
+					Ptr<byte> buffer(new byte[f.Size()]);
+					if(f.Read(buffer.get(), &got) == Archive::ok && got == f.Size())
 					{
 						TRACE("Unzipped\n");
 					}

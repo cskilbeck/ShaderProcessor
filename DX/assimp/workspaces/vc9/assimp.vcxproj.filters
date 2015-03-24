@@ -462,9 +462,6 @@
     <ClInclude Include="..\..\code\OgreImporter.hpp">
       <Filter>sources\importers\ogre</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\code\OgreXmlHelper.h">
-      <Filter>sources\importers\ogre</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\code\OgreXmlHelper.hpp">
       <Filter>sources\importers\ogre</Filter>
     </ClInclude>
@@ -494,18 +491,6 @@
     </ClInclude>
     <ClInclude Include="..\..\code\BlenderSceneGen.h">
       <Filter>sources\importers\blend</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\code\Q3BSPFileData.h">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\code\Q3BSPFileImporter.h">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\code\Q3BSPFileParser.h">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\code\Q3BSPZipArchive.h">
-      <Filter>sources\importers\q3bsp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\code\MD2FileData.h">
       <Filter>sources\importers\md2</Filter>
@@ -693,9 +678,6 @@
     <ClInclude Include="..\..\code\DefaultProgressHandler.h">
       <Filter>sources\core_import</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\code\fast_atof.h">
-      <Filter>sources\core_import</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\code\IFF.h">
       <Filter>sources\core_import</Filter>
     </ClInclude>
@@ -744,9 +726,6 @@
     <ClInclude Include="..\..\contrib\irrXML\CXMLReaderImpl.h">
       <Filter>sources\extern\irrXML</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\contrib\irrXML\fast_atof.h">
-      <Filter>sources\extern\irrXML</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\contrib\irrXML\heapsort.h">
       <Filter>sources\extern\irrXML</Filter>
     </ClInclude>
@@ -764,42 +743,6 @@
     </ClInclude>
     <ClInclude Include="..\..\code\irrXMLWrapper.h">
       <Filter>sources\extern\irrXML</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\crc32.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\unzip\crypt.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\inffast.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\inffixed.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\inflate.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\inftrees.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\unzip\ioapi.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\unzip\unzip.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\zconf.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\zconf.in.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\zlib.h">
-      <Filter>sources\extern\zLib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\contrib\zlib\zutil.h">
-      <Filter>sources\extern\zLib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\contrib\ConvertUTF\ConvertUTF.h">
       <Filter>sources\extern\ConvertUTF</Filter>
@@ -1069,15 +1012,6 @@
     <ClCompile Include="..\..\code\BlenderScene.cpp">
       <Filter>sources\importers\blend</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\code\Q3BSPFileImporter.cpp">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\code\Q3BSPFileParser.cpp">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\code\Q3BSPZipArchive.cpp">
-      <Filter>sources\importers\q3bsp</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\code\MD2Loader.cpp">
       <Filter>sources\importers\md2</Filter>
     </ClCompile>
@@ -1254,30 +1188,6 @@
     </ClCompile>
     <ClCompile Include="..\..\contrib\irrXML\irrXML.cpp">
       <Filter>sources\extern\irrXML</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\adler32.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\crc32.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inffast.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inflate.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inftrees.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\unzip\ioapi.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\unzip\unzip.c">
-      <Filter>sources\extern\zLib</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\zutil.c">
-      <Filter>sources\extern\zLib</Filter>
     </ClCompile>
     <ClCompile Include="..\..\contrib\ConvertUTF\ConvertUTF.c">
       <Filter>sources\extern\ConvertUTF</Filter>

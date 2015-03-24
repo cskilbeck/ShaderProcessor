@@ -98,9 +98,6 @@
     <ClInclude Include="Archive.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="unzip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp">
@@ -143,9 +140,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Archive.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="unzip.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -89,7 +89,7 @@
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASSIMP_BUILD_NO_Q3BSP_IMPORTER;NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -112,7 +112,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASSIMP_BUILD_NO_Q3BSP_IMPORTER;NDEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -126,7 +126,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASSIMP_BUILD_NO_Q3BSP_IMPORTER;DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -148,7 +148,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\contrib\unzip;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ASSIMP_BUILD_NO_Q3BSP_IMPORTER;DEBUG;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;WIN32;ASSIMP_BUILD_BOOST_WORKAROUND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -275,10 +275,6 @@
     <ClInclude Include="..\..\code\PretransformVertices.h" />
     <ClInclude Include="..\..\code\ProcessHelper.h" />
     <ClInclude Include="..\..\code\Profiler.h" />
-    <ClInclude Include="..\..\code\Q3BSPFileData.h" />
-    <ClInclude Include="..\..\code\Q3BSPFileImporter.h" />
-    <ClInclude Include="..\..\code\Q3BSPFileParser.h" />
-    <ClInclude Include="..\..\code\Q3BSPZipArchive.h" />
     <ClInclude Include="..\..\code\Q3DLoader.h" />
     <ClInclude Include="..\..\code\qnan.h" />
     <ClInclude Include="..\..\code\RawLoader.h" />
@@ -335,18 +331,6 @@
     <ClInclude Include="..\..\contrib\poly2tri\poly2tri\sweep\cdt.h" />
     <ClInclude Include="..\..\contrib\poly2tri\poly2tri\sweep\sweep.h" />
     <ClInclude Include="..\..\contrib\poly2tri\poly2tri\sweep\sweep_context.h" />
-    <ClInclude Include="..\..\contrib\unzip\crypt.h" />
-    <ClInclude Include="..\..\contrib\unzip\ioapi.h" />
-    <ClInclude Include="..\..\contrib\unzip\unzip.h" />
-    <ClInclude Include="..\..\contrib\zlib\crc32.h" />
-    <ClInclude Include="..\..\contrib\zlib\inffast.h" />
-    <ClInclude Include="..\..\contrib\zlib\inffixed.h" />
-    <ClInclude Include="..\..\contrib\zlib\inflate.h" />
-    <ClInclude Include="..\..\contrib\zlib\inftrees.h" />
-    <ClInclude Include="..\..\contrib\zlib\zconf.h" />
-    <ClInclude Include="..\..\contrib\zlib\zconf.in.h" />
-    <ClInclude Include="..\..\contrib\zlib\zlib.h" />
-    <ClInclude Include="..\..\contrib\zlib\zutil.h" />
     <ClInclude Include="..\..\include\assimp\ai_assert.h" />
     <ClInclude Include="..\..\include\assimp\anim.h" />
     <ClInclude Include="..\..\include\assimp\camera.h" />
@@ -494,9 +478,6 @@
     <ClCompile Include="..\..\code\PostStepRegistry.cpp" />
     <ClCompile Include="..\..\code\PretransformVertices.cpp" />
     <ClCompile Include="..\..\code\ProcessHelper.cpp" />
-    <ClCompile Include="..\..\code\Q3BSPFileImporter.cpp" />
-    <ClCompile Include="..\..\code\Q3BSPFileParser.cpp" />
-    <ClCompile Include="..\..\code\Q3BSPZipArchive.cpp" />
     <ClCompile Include="..\..\code\Q3DLoader.cpp" />
     <ClCompile Include="..\..\code\RawLoader.cpp" />
     <ClCompile Include="..\..\code\RemoveComments.cpp" />
@@ -566,49 +547,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\contrib\unzip\ioapi.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\unzip\unzip.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\adler32.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\crc32.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inffast.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inflate.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\inftrees.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\contrib\zlib\zutil.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\code\res\assimp.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\zlib-1.2.8\contrib\vstudio\vc11\zlibstat.vcxproj">
+      <Project>{745dec58-ebb3-47a9-a9b8-4c6627c01bf8}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
