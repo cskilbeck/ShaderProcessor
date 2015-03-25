@@ -17,6 +17,8 @@ namespace DX
 			error_filenotfound			// Can't find a file within the zip
 		};
 
+	private:
+
 		enum CompressionMethod: uint16
 		{
 			None = 0,
@@ -150,6 +152,8 @@ namespace DX
 		};
 
 #		pragma pack(pop)
+
+	public:
 
 		// A file within a Zip file
 
