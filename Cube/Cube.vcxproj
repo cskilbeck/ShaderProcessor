@@ -17,6 +17,14 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ShaderProcessorOnly|Win32">
+      <Configuration>ShaderProcessorOnly</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ShaderProcessorOnly|x64">
+      <Configuration>ShaderProcessorOnly</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{69F7A2E0-9831-4746-830C-039D2B360005}</ProjectGuid>
@@ -30,7 +38,19 @@
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
@@ -57,7 +77,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,7 +98,17 @@
     <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
+    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
+    <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)DX;$(IncludePath)</IncludePath>
     <CustomBuildBeforeTargets>Build</CustomBuildBeforeTargets>
@@ -112,7 +148,51 @@
       </Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <CustomBuildStep>
+      <Command>
+      </Command>
+    </CustomBuildStep>
+    <CustomBuildStep>
+      <Outputs>
+      </Outputs>
+      <Inputs>
+      </Inputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -173,17 +253,23 @@
   <ItemGroup>
     <ClCompile Include="Cube.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="WinMain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
@@ -196,59 +282,83 @@
   <ItemGroup>
     <SPOCK Include="Shaders\Instanced.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Blit.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Simple.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">
+      </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </GeometryShaderFunction>
       <FileType>Document</FileType>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Phong.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>
     <SPOCK Include="Shaders\Splat.shader" />
     <SPOCK Include="Shaders\UI.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">false</EmbedObject>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedObject>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateDebugInformation>
+      <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateDebugInformation>
     </SPOCK>

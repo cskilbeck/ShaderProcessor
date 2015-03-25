@@ -273,6 +273,7 @@ MAP blend_map =
 
 struct param_vec
 {
+	char const *description;
 	uint32 max_index;
 	uint32 offset_size;
 	vector<parameter> params;
@@ -286,6 +287,7 @@ std::map<string, param_vec> params =
 	{
 		"depth",
 		{
+			"Enable/Disable depth buffer reading & writing",
 			0, 0,
 			{
 				{ "enabled", bool_param, &depthStencilDesc.DepthEnable, {} },
@@ -301,6 +303,7 @@ std::map<string, param_vec> params =
 	{
 		"stencil",
 		{
+			"Enable/Disable stencil and set read/write masks",
 			0, 0,
 			{
 				{ "enabled", bool_param, &depthStencilDesc.StencilEnable, {} },
@@ -316,6 +319,7 @@ std::map<string, param_vec> params =
 	{
 		"front_stencil",
 		{
+			"Front Stencil operations and comparison function",
 			0, 0,
 			{
 				{ "fail_op", enum_param, &depthStencilDesc.FrontFace.StencilFailOp, stencil_op_map },
@@ -331,6 +335,7 @@ std::map<string, param_vec> params =
 	{
 		"back_stencil",
 		{
+			"Back Stencil operations and comparison function",
 			0, 0,
 			{
 				{ "fail_op", enum_param, &depthStencilDesc.BackFace.StencilFailOp, stencil_op_map },
@@ -347,6 +352,7 @@ std::map<string, param_vec> params =
 	{
 		"culling",
 		{
+			"Culling mode & winding order (specifies the order of front-facing triangles)",
 			0, 0,
 			{
 				{ "mode", enum_param, &rasterizerDesc.CullMode, culling_mode_map },
@@ -360,6 +366,7 @@ std::map<string, param_vec> params =
 	{
 		"fill",
 		{
+			"Triangle fill mode",
 			0, 0,
 			{
 				{ "mode", enum_param, &rasterizerDesc.FillMode, fill_mode_map }
@@ -372,6 +379,7 @@ std::map<string, param_vec> params =
 	{
 		"depth_bias",
 		{
+			"Depth Bias values",
 			0, 0,
 			{
 				{ "bias", int_param, &rasterizerDesc.DepthBias, {} },
@@ -386,6 +394,7 @@ std::map<string, param_vec> params =
 	{
 		"depth_clip",
 		{
+			"Depth Clipping enable/disable",
 			0, 0,
 			{
 				{ "enabled", bool_param, &rasterizerDesc.DepthClipEnable, {} },
@@ -399,6 +408,7 @@ std::map<string, param_vec> params =
 	{
 		"scissor",
 		{
+			"Scissor enable/disable",
 			0, 0,
 			{
 				{ "enabled", bool_param, &rasterizerDesc.ScissorEnable, {} },
@@ -412,6 +422,7 @@ std::map<string, param_vec> params =
 	{
 		"multisample",
 		{
+			"Multisample enable/disable",
 			0, 0,
 			{
 				{ "enabled", bool_param, &rasterizerDesc.MultisampleEnable, {} },
@@ -425,6 +436,7 @@ std::map<string, param_vec> params =
 	{
 		"anti_aliased_line",
 		{
+			"Anti-aliased line drawing enable/disable",
 			0, 0,
 			{
 				{ "enabled", bool_param, &rasterizerDesc.AntialiasedLineEnable, {} },
@@ -438,6 +450,7 @@ std::map<string, param_vec> params =
 	{
 		"blend",
 		{
+			"Blend mode and operations",
 			8, sizeof(D3D11_RENDER_TARGET_BLEND_DESC),
 			{
 				{ "enabled", bool_param, &blendDesc.RenderTarget[0].BlendEnable, {} },
@@ -460,58 +473,291 @@ char const *bool_vals[] =
 	"false", "true"
 };
 
-// Make this output a temp HTML file and fire up the default browser to view it
+//////////////////////////////////////////////////////////////////////
+// Auto-deleting temp file(name)
+
+struct TempFile
+{
+	tstring filename;
+
+	TempFile(tchar const *prefix)
+	{
+		tchar tempPath[MAX_PATH + 1];
+		tchar tempFile[MAX_PATH + 1];
+		GetTempPath(_countof(tempPath), tempPath);
+		GetTempFileName(tempPath, prefix, 0, tempFile);
+		filename = tempFile;
+	}
+
+	~TempFile()
+	{
+		DeleteFile(filename.c_str());
+	}
+
+	operator tchar const *()
+	{
+		return filename.c_str();
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+// Run a command (CL.EXE, say...)
+
+bool Run(tchar const *exe, tstring &params, tchar const *env = null, bool wait = false, DWORD *exitCode = null)
+{
+	vector<tchar> commandBuffer;
+	commandBuffer.reserve(params.size() + 1);
+	commandBuffer.resize(params.size());
+	std::copy(params.begin(), params.end(), commandBuffer.begin());
+	commandBuffer.push_back(0);
+	PROCESS_INFORMATION pi = { 0 };
+	STARTUPINFO si = { 0 };
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESHOWWINDOW;
+	si.wShowWindow = SW_HIDE;
+	DWORD exitCodeLocal;
+	if(CreateProcess(exe, commandBuffer.data(), null, null, true, CREATE_NO_WINDOW | DETACHED_PROCESS, (void *)env, null, &si, &pi) == 0)
+	{
+		tstring err = Win32ErrorMessage(GetLastError());
+		emit_error(Format("Error running %s %s : %s", exe != null ? exe : "", commandBuffer.data(), err.c_str()).c_str());
+		return false;
+	}
+	if(wait)
+	{
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		GetExitCodeProcess(pi.hProcess, &exitCodeLocal);
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
+	else
+	{
+		WaitForInputIdle(pi.hProcess, 1000);
+	}
+	if(exitCode != null)
+	{
+		*exitCode = exitCodeLocal;
+	}
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Printf to a diskfile
+
+void PutS(DiskFile &d, char const *s, ...)
+{
+	va_list v;
+	va_start(v, s);
+	string st = Format_V(s, v);
+	d.Write(st.data(), (uint32)st.size());
+}
+
+//////////////////////////////////////////////////////////////////////
+// Show the pragma_options
 
 void OutputPragmaDocs()
 {
-	for(auto &token : params)
+	TempFile t("PRD");
+	DiskFile d;
+	if(d.Create(t, DiskFile::Overwrite))
 	{
-		string index = "";
-		if(token.second.max_index > 0)
+		PutS(d, R"(<html>
+<body style="font-family:verdana; font-size:small;">
+    <style>
+        .lightBackground
+        {
+            background-color:#eee;
+        }
+        .banner
+        {
+            background-color:#ccc;
+            line-height:1em;
+            border:1px solid;
+            padding:0 0 0 1em;
+        }
+        .nomargin
+        {
+            margin:0;
+            padding:0;
+        }
+        .leftPadding
+        {
+            padding-left:1em;
+        }
+        .rightPadding
+        {
+            padding-right:1em;            
+        }
+        .rightMargin
+        {
+            margin-right:1em;
+        }
+        .leftMargin
+        {
+            margin-left:1em;
+        }
+        .vPadding
+        {
+            padding-top:1em;
+            padding-bottom:1em;
+        }
+        .tPadding
+        {
+            padding-top:1em;
+        }
+        .bPadding
+        {
+            padding-bottom:1em;
+        }
+        .code
+        {
+            font-family:courier;
+        }
+        .outlined
+        {
+            border:1px solid;
+        }
+        table
+        {
+            border-spacing:0;
+            border-collapse:collapse;
+            font-size:small;
+            vertical-align:top;
+            margin: 0;
+            padding: 0;
+        }
+        tr
+        {
+            border:solid 1px;
+            background-color:#d8d8d8;
+            font-weight:bold
+        }
+        td
+        {
+            padding:2px 10px 2px 2px;
+            border:1px solid;
+            margin:0;
+        }
+        tr.transparent
+        {
+            background-color:transparent;
+        }
+        td.header
+        {
+            font-weight:bold;
+        }
+        td.data
+        {
+            vertical-align: top;
+            font-weight:normal;
+        }
+        emboldened
+        {
+            font-weight:bold;
+            font-style:italic;
+            text-decoration: underline;
+        }
+    </style>
+    <div class="banner">
+        <h2>ShaderProcessor</h2>
+    </div>
+    <div class="leftPadding">
+        <h3>Pragma Options</h3>
+        <p>Pragmas must start on the 1st column of a line and cannot contain line breaks.</p>
+        <p>They're specified like this: </p>
+        <p class="code">#pragma name(options)</p>
+        <p>See below for the list of pragma names.</p>
+        <p>The blend pragma must specify one or more optional indices (all channels specified will be assigned).</p>
+        <p>Options are a series of name = value settings.The default value for enum types is emphasized.</p>
+        <p>bool options can be specified as 'enabled' or 'disabled' or 'enabled = [true | false]' or 'disabled = [true | false].'</p>
+    </div>
+)");
+
+		for(auto &token : params)
 		{
-			index = Format("index %d-%d,", 0, token.second.max_index - 1);
-		}
-		printf("#pragma %s(%soptions)\n", token.first.c_str(), index.c_str());
-		for(auto &p : token.second.params)
-		{
-			if(p.type != inverse_bool_param)
+			string index = (token.second.max_index > 0) ? Format("index %d-%d,", 0, token.second.max_index - 1) : "";
+
+			PutS(d, R"(
+    <div class="outlined">
+        <div class="nomargin lightbackground">
+            <h3 class="tPadding nomargin leftMargin">%s</h3>
+        </div>
+        <div class="lightBackground nomargin vPadding">
+            <div class="leftMargin rightMargin">
+                <h4 class="nomargin bPadding">#pragma %s(%soptions)</h4>
+                <table>
+                    <tr>
+                        <td class="header">Option</td>
+                        <td class="header">Input</td>
+                    </tr>)", token.second.description, token.first.c_str(), index.c_str());
+
+			for(auto &p : token.second.params)
 			{
-				printf("  %s = ", p.name);
-				switch(p.type)
+				if(p.type != inverse_bool_param)
 				{
-					case enum_param:
+					string line;
+					switch(p.type)
 					{
-						char sep = '[';
-						for(auto &e : p.enum_list)
-						{
-							printf("%c%s", sep, e.first.c_str());
-							if(e.second == *((uint32 *)p.target))
+						case enum_param:
 							{
-								printf("*");
+								char const *sep = "";
+								for(auto &e : p.enum_list)
+								{
+									char const *tclass = "normal";
+									if(e.second == *((uint32 *)p.target))
+									{
+										tclass = "emboldened";
+									}
+									line += sep;
+									if(e.second == *((uint32 *)p.target))
+									{
+										line += "<em><strong><u>";
+									}
+									line += e.first;
+									if(e.second == *((uint32 *)p.target))
+									{
+										line += "</u></strong></em>";
+									}
+									sep = " ";
+								}
 							}
-							sep = '|';
-						}
-						printf("]\n");
+							break;
+						case bool_param:
+							line = Format("%s (default = %s)", param_type_name(p.type), bool_vals[(*((BOOL *)p.target)) & 1]);
+							break;
+						case uint8_param:
+							line = Format("%s (default = 0x%s)", param_type_name(p.type), Format(param_printf_string(p.type), *((uint8 *)p.target)).c_str());
+							break;
+						case float_param:
+							line = Format("%s (default = %s)", param_type_name(p.type), Format(param_printf_string(p.type), *((float *)p.target)).c_str());
+							break;
+						case int_param:
+							line = Format("%s (default = %s)", param_type_name(p.type), Format(param_printf_string(p.type), *((int32 *)p.target)).c_str());
+							break;
 					}
-					break;
-					case bool_param:
-						printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[(*((BOOL *)p.target)) & 1]);
-						break;
-					//case inverse_bool_param:
-					//	printf("%s (default = %s)\n", param_type_name(p.type), bool_vals[1 - ((*((BOOL *)p.target)) & 1)]);
-					//	break;
-					case uint8_param:
-						printf("%s (default = 0x%s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((uint8 *)p.target)).c_str());
-						break;
-					case float_param:
-						printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((float *)p.target)).c_str());
-						break;
-					case int_param:
-						printf("%s (default = %s)\n", param_type_name(p.type), Format(param_printf_string(p.type), *((int32 *)p.target)).c_str());
-						break;
+					PutS(d, R"(
+                    <tr class="transparent">
+                        <td class="header">%s</td>
+                        <td class="data">%s</td>
+                    </tr>)", p.name, line.c_str());
 				}
 			}
+			PutS(d, R"(
+                </table>
+                <p></p>
+            </div>
+        </div>
+    </div>
+    <p></p>)");
 		}
+		PutS(d, R"(
+</body>
+</html>
+)");
+
+		d.Close();
+		string n = SetExtension(t.filename.c_str(), ".html");
+		MoveFile(t.filename.c_str(), n.c_str());
+		Run(null, Format("cmd.exe /C \"start %s\"", n.c_str()));
 	}
 }
 
@@ -559,58 +805,6 @@ tstring AddToPath(tchar const *dir)
 	}
 	return output;
 }
-
-//////////////////////////////////////////////////////////////////////
-// Run a command (CL.EXE, say...)
-
-bool Run(tchar const *exe, tstring &params, tchar const *env, DWORD &exitCode)
-{
-	vector<tchar> commandBuffer;
-	commandBuffer.resize(params.size());
-	std::copy(params.begin(), params.end(), commandBuffer.begin());
-	commandBuffer.push_back(0);
-	PROCESS_INFORMATION pi = { 0 };
-	STARTUPINFO si = { 0 };
-	si.cb = sizeof(si);
-	if(CreateProcess(exe, commandBuffer.data(), null, null, true, 0, (void *)env, null, &si, &pi) != 0)
-	{
-		WaitForSingleObject(pi.hProcess, INFINITE);
-		GetExitCodeProcess(pi.hProcess, &exitCode);
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-		return true;
-	}
-	tstring err = Win32ErrorMessage(GetLastError());
-	emit_error(Format("Error running CL.EXE: %s", err.c_str()).c_str());
-	return false;
-}
-
-//////////////////////////////////////////////////////////////////////
-// Auto-deleting temp file(name)
-
-struct TempFile
-{
-	tstring filename;
-
-	TempFile(tchar const *prefix)
-	{
-		tchar tempPath[MAX_PATH + 1];
-		tchar tempFile[MAX_PATH + 1];
-		GetTempPath(_countof(tempPath), tempPath);
-		GetTempFileName(tempPath, prefix, 0, tempFile);
-		filename = tempFile;
-	}
-
-	~TempFile()
-	{
-		DeleteFile(filename.c_str());
-	}
-
-	operator tchar const *()
-	{
-		return filename.c_str();
-	}
-};
 
 //////////////////////////////////////////////////////////////////////
 // Preprocess using VC preprocessor, then scan for renderstate #pragmas [and semantic declarations?]
@@ -713,7 +907,7 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 
 	// run CL.EXE /EP /P on it (just preprocess)
 	DWORD exitCode;
-	if(!Run(null, Format(TEXT("\"%sbin\\cl.exe\" /EP /P \"%s\" /Fi\"%s\" /nologo"), GetCLPath().c_str(), filename, (tchar const *)tempFile), newEnv.data(), exitCode))
+	if(!Run(null, Format(TEXT("\"%sbin\\cl.exe\" /EP /P \"%s\" /Fi\"%s\" /nologo"), GetCLPath().c_str(), filename, (tchar const *)tempFile), newEnv.data(), true, &exitCode))
 	{
 		return err_compilerproblem;
 	}

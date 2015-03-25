@@ -31,15 +31,15 @@
 //		Hull/Domain/Compute shader support (Tesselate the duck to buggery! How do you calc the patches?)
 //		Assembly Listing file
 //		deal with multiple render targets
-//		Shader Linking/Interfaces support...?
 //		Sort out Resource types (Texture1D/2D/3D etc)
 //		Support all shader types & compute
 //		support Buffers<>
 //		deal with anonymous cbuffers and tbuffers (index instead of name)
 //		test alignment/padding etc
 //		deal with Buffers of structs (no padding)
-//		Allow row or column major matrices
+//		\ Shader Linking/Interfaces support...?
 //		\ Sampler/Texture defaults
+//		* Allow row or column major matrices
 //		* Instancing support / multiple vertex streams
 //		* Nested structs (names of the structs!?)
 //		* Fix the crappy #pragma renderstate system (run CL /P beforehand - what about #includes though?)
