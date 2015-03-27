@@ -222,13 +222,13 @@ bool MyDXWindow::OnCreate()
 
 	{
 		DiskFile d;
-		if(d.Open(TEXT("Data/cube.zip"), DiskFile::ForReading))
+		if(d.Open(TEXT("Data/test.zip"), DiskFile::ForReading))
 		{
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
 				Archive::File f;
-				if(a.Locate("test.big", f) == Archive::ok)
+				if(a.Locate("duckCM.png", f) == Archive::ok)
 				{
 					size_t got;
 					Ptr<byte> buffer(new byte[f.Size()]);

@@ -14,6 +14,16 @@
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
+#include "infbackstate.h"
+
+// a superset of what inflateBack and inflateBack9 need
+
+
+// now, when we want to write some data, we use the InflateBackState
+// if we can't write more because readBytesRemaining is exhausted, we return non-zero to indicate that inflateBack should stop
+// at that point, it saves state and returns
+// next time we call inflateBack, we load the state and continue where we left off...
+
 
 /* function prototypes */
 local void fixedtables OF((struct inflate_state FAR *state));
@@ -247,12 +257,46 @@ struct inflate_state FAR *state;
    inflateBack() can also return Z_STREAM_ERROR if the input parameters
    are not correct, i.e. strm is Z_NULL or the state was not initialized.
  */
-int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
+
+#define SaveState(x)		\
+	{						\
+		(x)->next = next;	\
+		(x)->put  = put ;	\
+		(x)->have = have;	\
+		(x)->left = left;	\
+		(x)->hold = hold;	\
+		(x)->bits = bits;	\
+		(x)->copy = copy;	\
+		(x)->from = from;	\
+		(x)->here = here;	\
+		(x)->last = last;	\
+		(x)->len  = len ;	\
+		(x)->ret  = ret ;	\
+	}
+
+#define LoadState(x)		\
+	{						\
+		next = (x)->next;	\
+		put  = (x)->put ;	\
+		have = (x)->have;	\
+		left = (x)->left;	\
+		hold = (x)->hold;	\
+		bits = (x)->bits;	\
+		copy = (x)->copy;	\
+		from = (x)->from;	\
+		here = (x)->here;	\
+		last = (x)->last;	\
+		len  = (x)->len ;	\
+		ret  = (x)->ret ;	\
+	}
+
+int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc, curState)
 z_streamp strm;
 in_func in;
 void FAR *in_desc;
 out_func out;
 void FAR *out_desc;
+struct inflateBackState *curState;
 {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    /* next input */
@@ -269,22 +313,32 @@ void FAR *out_desc;
     static const unsigned short order[19] = /* permutation of code lengths */
         {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
 
+	// restore state
+
     /* Check that the strm exists and that the state was initialized */
     if (strm == Z_NULL || strm->state == Z_NULL)
         return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
 
-    /* Reset the state */
-    strm->msg = Z_NULL;
-    state->mode = TYPE;
-    state->last = 0;
-    state->whave = 0;
-    next = strm->next_in;
-    have = next != Z_NULL ? strm->avail_in : 0;
-    hold = 0;
-    bits = 0;
-    put = state->window;
-    left = state->wsize;
+	if(curState->status == 0)
+	{
+		strm->msg = Z_NULL;
+		state->mode = TYPE;
+		state->last = 0;
+		state->whave = 0;
+		next = strm->next_in;
+		have = next != Z_NULL ? strm->avail_in : 0;
+		hold = 0;
+		bits = 0;
+		put = state->window;
+		left = state->wsize;
+	}
+	else
+	{
+		LoadState(curState);
+	}
+
+    /* Reset or restore the state */
 
     /* Inflate until end of block marked as last */
     for (;;)
@@ -625,7 +679,11 @@ void FAR *out_desc;
   inf_leave:
     strm->next_in = next;
     strm->avail_in = have;
-    return ret;
+
+	SaveState(curState);
+	curState->status = 1;
+
+	return ret;
 }
 
 int ZEXPORT inflateBackEnd(strm)

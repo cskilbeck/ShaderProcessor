@@ -11,6 +11,7 @@
 // 
 
 #include "DX.h"
+#include "../zlib-1.2.8/inflate.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -32,7 +33,205 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	Archive::Archive()
+	int Archive::Assistant::Init(FileBase *inputFile, FileHeader &f)
+	{
+		ExtraInfo64 e;
+		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
+		if(r != ok)
+		{
+			return;
+		}
+		if(!inputFile->Reopen(&file))									// get a new file handle for reading data
+		{
+			return Archive::error_fileerror;
+		}
+
+		if(!file->Seek(e.LocalHeaderOffset, SEEK_SET))					// goto localfileheader
+		{
+			return error_fileerror;
+		}
+		if(!file->Get(mHeader))											// read localfileheader
+		{
+			return error_fileerror;
+		}
+		if(mHeader.Signature != LocalHeaderSignature)					// check signature
+		{
+			return error_badzipfile;
+		}
+		if(mHeader.Info.CompressionMethod != Deflate &&					// check compression method is supported
+		   //mHeader.Info.CompressionMethod != Deflate64 &&
+		   mHeader.Info.CompressionMethod != None)
+		{
+			return error_notsupported;
+		}
+		if(!file->Seek(mHeader.Info.FilenameLength, SEEK_CUR))			// tee up the file pointer to the data (or localextrainfo)
+		{
+			return error_fileerror;
+		}
+		mCompressedSize = mHeader.Info.CompressedSize;					// snarf some details
+		mUncompressedSize = mHeader.Info.UncompressedSize;
+
+		// process any extra info that there is
+
+		Archive::ProcessExtraInfo(file, mHeader.Info.ExtraFieldLength, [this] (uint16 tag, uint16 len, void *data)
+		{
+			if(tag == 0x0001)
+			{
+				LocalExtraInfo64 ei;
+				memcpy(&ei, data, len);
+				if(mUncompressedSize == 0xffffffff)						// get 64bit uncompressed size if necessary
+				{
+					if(len < 8)
+					{
+						return error_badzipfile;
+					}
+					mUncompressedSize = ei.UnCompressedSize;
+				}
+				if(mCompressedSize == 0xffffffff)						// get 64bit compressed size if necessary
+				{
+					if(len < 16)
+					{
+						return error_badzipfile;
+					}
+					mCompressedSize = ei.CompressedSize;
+				}
+			}
+			return ok;
+		});
+		mCompressedDataRemaining = mCompressedSize;						// init remainders
+		mUncompressedDataRemaining = mUncompressedSize;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// the decompressor wants some data
+
+	int Archive::Assistant::InflateBackInput(unsigned char **buffer)
+	{
+		// tell it where the buffer is
+		*buffer = fileBuffer.get();
+
+		// got any left from last time?
+		if(cachedBytesRemaining > 0)
+		{
+			// some compressed data was left over, just pass that back
+			int c = cachedBytesRemaining;
+			*buffer = fileBuffer.get() + fileBufferSize - c;
+			cachedBytesRemaining = 0;
+
+			// _could_ memmove the remainder back to the beginning of the buffer and
+			// fill the rest up from the file, but can't be arsed and it would only
+			// help a tiny bit - during large decompression operations it would make
+			// almost no difference
+			return c;
+		}
+
+		// fill input buffer from file
+		uint32 got;
+		if(!file->Read(fileBuffer.get(), fileBufferSize, &got))
+		{
+			return 0;
+		}
+		return (int)got;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// the decompressor has delivered some uncompressed data
+
+	int Archive::Assistant::InflateBackOutput(unsigned char *data, uint32 length)
+	{
+		uint32 c = (uint32)min(length, bytesRequired);
+		memcpy(currentOutputPointer, data, c);
+		currentDataPointer = data + c;		// in case we need to come back for more in a separate DoInflateBack call
+		bytesRequired -= c;
+		totalGot += c;
+		currentOutputPointer += c;
+		cachedBytesRemaining = bufferSize - c;
+		return bytesRequired == 0; // true means no more output please, inflateBack will return Z_BUF_ERROR, but that's ok
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// read some data from compressed file
+
+	int Archive::Assistant::Read(byte *buffer, uint64 bytesToRead, uint64 *got)
+	{
+		if(fileBuffer == null)
+		{
+			fileBuffer.reset(new byte[fileBufferSize]);
+			IBState.reset(new inflateBackState());
+			memset(IBState.get(), 0, sizeof(inflateBackState));
+			cachedBytesRemaining = 0;
+			bufferSize = 1 << MAX_WBITS;
+			fileBufferSize = 65536;
+			fileBuffer.reset(new byte[fileBufferSize]);
+			memset(&zstream, 0, sizeof(zstream));
+			mWindow.reset(new byte[65536]);
+			int r = inflateBackInit(&zstream, MAX_WBITS, mWindow.get());
+			if(r != ok)
+			{
+				return r;
+			}
+		}
+
+		currentOutputPointer = buffer;
+		bytesRequired = bytesToRead;
+		totalGot = 0;
+
+		// is there any left over in the buffer?
+		if(cachedBytesRemaining > 0)
+		{
+			// yes, copy as much as possible and decrement bytesRequired
+			uint32 c = (uint32)min(cachedBytesRemaining, bytesToRead);
+			memcpy(currentOutputPointer, currentDataPointer, c);
+			cachedBytesRemaining -= c;
+			currentOutputPointer += c;
+			currentDataPointer += c;
+			bytesRequired -= c;
+			totalGot += c;
+		}
+
+		int r = ok;
+		if(bytesRequired > 0)
+		{
+			// get the rest (callbacks might be called)
+			r = inflateBack(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+		}
+
+		if(got != null)
+		{
+			*got = totalGot;
+		}
+
+		// there may be data left to be uncompressed, that's ok
+		// there may be uncompressed data left in the output buffer, that's ok too (we'll flush it next time)
+		switch(r)
+		{
+			case ok:
+			case Z_STREAM_END:		// all uncompressed data was read (but not necessarily streamed out)
+			case Z_BUF_ERROR:		// we got enough data to satisfy this read
+				return Z_OK;
+
+			default:				// anything else is an error (inflateBack never returns Z_OK)
+				return r;
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	int Archive::InflateBackOutputCallback(void *context, unsigned char *data, unsigned length)
+	{
+		return ((Assistant *)context)->InflateBackOutput(data, length);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	uint Archive::InflateBackInputCallback(void *context, unsigned char **buffer)
+	{
+		return ((Assistant *)context)->InflateBackInput(buffer);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+		Archive::Archive()
 		: mFile(null)
 		, mIsZip64(false)
 		, mCentralDirectoryLocation(0)
@@ -422,46 +621,87 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// Prepare an Archive::File for reading
 
-	int Archive::InitFile(File &file, FileHeader &f)
+	int Archive::GetExtraInfo(FileBase *file, ExtraInfo64 &extra, FileHeader &f)
 	{
-		ExtraInfo64 Extra, *pExtra = null;
+		extra.CompressedSize = MAXUINT64;
+		extra.UnCompressedSize = MAXUINT64;
+		extra.LocalHeaderOffset = MAXUINT64;
 
-		Extra.CompressedSize = MAXUINT64;
-		Extra.UnCompressedSize = MAXUINT64;
-		Extra.LocalHeaderOffset = MAXUINT64;
-
-		ProcessExtraInfo(mFile, f.Info.ExtraFieldLength, [&] (uint16 tag, uint16 len, void *data)
+		ProcessExtraInfo(file, f.Info.ExtraFieldLength, [&] (uint16 tag, uint16 len, void *data)
 		{
 			if(tag == 0x0001)
 			{
-				memcpy(&Extra, data, len);
+				memcpy(&extra, data, len);
 			}
 			return ok;
 		});
 
 		if(f.Info.UncompressedSize != 0xffffffff)
 		{
-			Extra.UnCompressedSize = f.Info.UncompressedSize;
+			extra.UnCompressedSize = f.Info.UncompressedSize;
 		}
 		if(f.Info.CompressedSize != 0xffffffff)
 		{
-			Extra.CompressedSize = f.Info.CompressedSize;
+			extra.CompressedSize = f.Info.CompressedSize;
 		}
 		if(f.LocalHeaderOffset != 0xffffffff)
 		{
-			Extra.LocalHeaderOffset = f.LocalHeaderOffset;
+			extra.LocalHeaderOffset = f.LocalHeaderOffset;
 		}
 
-		if(Extra.CompressedSize == MAXUINT64 ||
-		   Extra.UnCompressedSize == MAXUINT64 ||
-		   Extra.LocalHeaderOffset == MAXUINT64)
+		if(extra.CompressedSize == MAXUINT64 ||
+		   extra.UnCompressedSize == MAXUINT64 ||
+		   extra.LocalHeaderOffset == MAXUINT64)
 		{
 			return error_badzipfile;
 		}
 
-		return file.Init(mFile, Extra);
+		return ok;// file.Init(mFile, Extra);
+	}
+
+
+	// Prepare an Archive::File for reading
+
+	int Archive::InitFile(File &file, FileHeader &f)
+	{
+		ExtraInfo64 Extra;
+		int r = GetExtraInfo(mFile, Extra, f);
+		return r == ok ? file.Init(mFile, Extra) : r;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Find a file by name in an Archive
+
+	int Archive::Locate2(char const *name, Archive::Assistant &file)
+	{
+		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
+		{
+			return error_fileerror;
+		}
+		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
+		{
+			FileHeader f;
+			if(!mFile->Get(f) || f.Signature != CentralHeaderSignature)
+			{
+				return error_fileerror;
+			}
+			uint32 got;
+			char filename[256];
+			if(!mFile->Read(filename, f.Info.FilenameLength, &got) || got != f.Info.FilenameLength)
+			{
+				return error_fileerror;
+			}
+			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
+			{
+				return file.Init(mFile, f);
+			}
+			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+			{
+				return error_fileerror;
+			}
+		}
+		return error_filenotfound;
 	}
 
 	//////////////////////////////////////////////////////////////////////

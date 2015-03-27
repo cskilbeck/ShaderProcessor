@@ -4,6 +4,8 @@
 
 //////////////////////////////////////////////////////////////////////
 
+struct inflate_state;
+
 namespace DX
 {
 	struct Archive
@@ -19,6 +21,13 @@ namespace DX
 
 	private:
 
+		static int InflateBackOutputCallback(void *context, unsigned char *data, unsigned length);
+		static uint InflateBackInputCallback(void *context, unsigned char **buffer);
+
+		// Merge this into File!
+
+	private:
+	
 		enum CompressionMethod: uint16
 		{
 			None = 0,
@@ -155,6 +164,44 @@ namespace DX
 
 	public:
 
+	public:
+
+		struct Assistant
+		{
+			int Init(FileBase *inputFile, FileHeader &f);
+			int Read(byte *buffer, uint64 bytesToRead, uint64 *got = null);
+
+		private:
+
+			Ptr<inflateBackState> IBState;			// context
+			Ptr<byte> fileBuffer;					// file read buffer
+			uint32 fileBufferSize;					// size of the file read buffer
+			FileBase *file;							// file we're reading compressed data from
+			byte *outputBuffer;						// base address of where the outputdata is going to be stored
+			byte *currentOutputPointer;				// where the next bit of data is going to be written to
+			byte *currentDataPointer;				// where the next bit of uncompressed data is
+			uint64 outputBufferSize;				// total size of the outputBuffer
+			uint64 bytesRequired;					// uncompressed size of the uncompress request
+			uint64 totalGot;						// uncompressed bytes read so far from this file
+			uint64 cachedBytesRemaining;			// from the last time - flush these out before going into inflateBack
+			uint64 bufferSize;						// size of the decompression window buffer
+			z_stream zstream;
+			inflate_state inflateState;
+			Ptr<byte>		mWindow;
+
+			uint64			mUncompressedSize;
+			uint64			mUncompressedDataRemaining;
+			uint64			mCompressedSize;
+			uint64			mCompressedDataRemaining;
+			uint64			mLocationInZipFile;
+			LocalFileHeader	mHeader;
+
+			int InflateBackOutput(unsigned char *data, unsigned length);
+			int InflateBackInput(unsigned char **buffer);
+
+			friend struct Archive;
+		};
+
 		// A file within a Zip file
 
 		struct File
@@ -209,6 +256,8 @@ namespace DX
 		// How many files in the archive
 		uint64 FileCount() const;
 
+		int Archive::Locate2(char const *name, Archive::Assistant &file);
+		
 		// Find a file by name
 		int Locate(tchar const *name, File &file);
 
@@ -221,6 +270,10 @@ namespace DX
 
 		int GetCDLocation(uint64 &offset);
 		int GetCD64Location(uint64 &offset, uint64 const endcentraloffset);
+
+		friend struct Assistant;
+
+		static int GetExtraInfo(FileBase *file, ExtraInfo64 &extra, FileHeader &f);
 
 		int InitFile(File &file, FileHeader &f);
 

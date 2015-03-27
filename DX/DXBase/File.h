@@ -21,7 +21,7 @@ namespace
 		{
 			return false;
 		}
-		name = tstring(buffer.begin(), buffer.begin() + len);
+		name = (_tcsncmp(buffer.data(), TEXT("\\\\?\\"), 4) == 0) ? buffer.data() + 4 : buffer.data();
 		return true;
 	}
 }
@@ -103,11 +103,12 @@ namespace DX
 		}
 		virtual bool Read(void *buffer, uint32 size, uint32 *got = null) = 0;
 		virtual bool Write(void const *buffer, uint32 size, uint32 *wrote = null) = 0;
-		virtual bool Seek(size_t offset, int seekType) = 0;
+		virtual bool Seek(size_t offset, int seekType, intptr *newPosition = null) = 0;
 		virtual bool Reopen(FileBase **other) = 0;	// make a new one of the same type on the same file
-		virtual intptr Position() const = 0;
-		virtual intptr Size() const = 0;
+		virtual intptr Position() = 0;
+		virtual intptr Size() = 0;
 		virtual void Close() = 0;
+		virtual tstring Name() = 0;
 
 		template<typename T> bool Get(T &b)
 		{
@@ -156,12 +157,17 @@ namespace DX
 		{
 		}
 
+		tstring Name() override
+		{
+			return Format(TEXT("MemoryFile:%p\\%s"), ptr, size);
+		}
+
 		Byte *End() const
 		{
 			return ptr + size;
 		}
 
-		intptr Position() const override
+		intptr Position() override
 		{
 			return pos - ptr;
 		}
@@ -176,7 +182,7 @@ namespace DX
 			return true;
 		}
 
-		bool Seek(size_t offset, int seekType) override
+		bool Seek(size_t offset, int seekType, intptr *newPosition = null) override
 		{
 			switch(seekType)
 			{
@@ -193,10 +199,14 @@ namespace DX
 					break;
 			}
 			pos = max(0, min(End(), pos));
+			if(newPosition != null)
+			{
+				*newPosition = pos - ptr;
+			}
 			return true;
 		}
 
-		intptr Size() const override
+		intptr Size() override
 		{
 			return size;
 		}
@@ -328,45 +338,48 @@ namespace DX
 			return h.IsValid();
 		}
 
+		tstring Name() override
+		{
+			tstring filename;
+			return GetFileNameFromHandle(h, filename) ? filename : TEXT("??");
+		}
+
 		// Reopen always returns a read only handle for now...
 		bool Reopen(FileBase **other)
 		{
 			DiskFile *f = new DiskFile();
 			*other = f;
-			tstring filename;
-			return GetFileNameFromHandle(h, filename) && f->Open(filename.c_str(), ForReading);
+			return f->Open(Name().c_str(), ForReading);
 		}
 
 		bool Read(void *buffer, uint32 size, uint32 *got = null) override
 		{
-			return ReadFile(h, buffer, size, (LPDWORD)got, null) != 0;
+			DWORD g;
+			return ReadFile(h, buffer, size, got != null ? (LPDWORD)got : &g, null) != 0;
 		}
 
 		bool Write(void const *buffer, uint32 size, uint32 *wrote = null) override
 		{
-			return WriteFile(h, buffer, size, (LPDWORD)wrote, null) != 0;
+			DWORD w;
+			return WriteFile(h, buffer, size, wrote != null ? (LPDWORD)wrote : &w, null) != 0;
 		}
 
-		bool Seek(size_t offset, int seekType) override
+		bool Seek(size_t offset, int seekType, intptr *newPosition) override
 		{
-			LONG lo = (LONG)(offset >> 32);
-			return SetFilePointer(h, (uint32)offset, &lo, seekType) != INVALID_SET_FILE_POINTER;
+			LARGE_INTEGER l = { offset & MAXUINT32, offset >> 32 };
+			return SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) != 0;
 		}
 
-		intptr Size() const override
+		intptr Size() override
 		{
-			HANDLE handle = const_cast<HANDLE>(h.obj);	// yuck
-			DWORD hi;
-			DWORD lo = GetFileSize(handle, &hi);
-			return (lo != INVALID_FILE_SIZE) ? ((intptr)hi << 32) | lo : -1;
+			intptr size;
+			return GetFileSizeEx(h, (PLARGE_INTEGER)&size) != 0 ? size : -1;
 		}
 
-		intptr Position() const override
+		intptr Position() override
 		{
-			HANDLE handle = const_cast<HANDLE>(h.obj);	// yuck
-			LONG hi = 0;
-			LONG lo = SetFilePointer(handle, 0, &hi, SEEK_CUR);
-			return (lo != INVALID_SET_FILE_POINTER) ? (((intptr)hi << 32) | lo) : -1;
+			intptr newPos;
+			return Seek(0, SEEK_CUR, &newPos) ? newPos : -1;
 		}
 
 		void Close() override

@@ -1022,13 +1022,15 @@ ZEXTERN int ZEXPORT inflateBackInit OF((z_streamp strm, int windowBits,
    the version of the header file.
 */
 
+#include "infbackstate.h"
+
 typedef unsigned (*in_func) OF((void FAR *,
                                 z_const unsigned char FAR * FAR *));
 typedef int (*out_func) OF((void FAR *, unsigned char FAR *, unsigned));
 
 ZEXTERN int ZEXPORT inflateBack OF((z_streamp strm,
                                     in_func in, void FAR *in_desc,
-                                    out_func out, void FAR *out_desc));
+                                    out_func out, void FAR *out_desc, struct inflateBackState *curState));
 /*
      inflateBack() does a raw inflate with a single call using a call-back
    interface for input and output.  This is potentially more efficient than
