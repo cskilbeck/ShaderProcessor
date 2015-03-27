@@ -481,6 +481,7 @@ bld_ml64.bat</Command>
     <ClInclude Include="..\..\..\deflate.h" />
     <ClInclude Include="..\..\..\gzguts.h" />
     <ClInclude Include="..\..\..\infback9.h" />
+    <ClInclude Include="..\..\..\infbackstate.h" />
     <ClInclude Include="..\..\..\inffast.h" />
     <ClInclude Include="..\..\..\inffix9.h" />
     <ClInclude Include="..\..\..\inffixed.h" />
