@@ -1,6 +1,8 @@
 #ifndef __INFBACKSTATE_H
 #define __INFBACKSTATE_H
 
+#include "code.h"
+
 struct inflateBackState
 {
 	z_const unsigned char FAR *next;    /* next input */
@@ -17,7 +19,7 @@ struct inflateBackState
 	int status;					// 0 = fresh, 1 = used
 };
 
-inline int SizeOfInflateBackState()
+static int SizeOfInflateBackState()
 {
 	return sizeof(struct inflateBackState);
 }

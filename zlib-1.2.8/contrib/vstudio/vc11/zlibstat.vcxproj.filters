@@ -117,5 +117,8 @@
     <ClInclude Include="..\..\..\infbackstate.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\code.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,7 +4,8 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct inflate_state;
+#include "..\zlib-1.2.8\inftrees.h"
+#include "..\zlib-1.2.8\inflate.h"
 
 namespace DX
 {

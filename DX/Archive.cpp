@@ -12,6 +12,7 @@
 
 #include "DX.h"
 #include "../zlib-1.2.8/inflate.h"
+#include "../zlib-1.2.8/inftrees.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -39,7 +40,7 @@ namespace DX
 		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
 		if(r != ok)
 		{
-			return;
+			return r;
 		}
 		if(!inputFile->Reopen(&file))									// get a new file handle for reading data
 		{
@@ -100,6 +101,7 @@ namespace DX
 		});
 		mCompressedDataRemaining = mCompressedSize;						// init remainders
 		mUncompressedDataRemaining = mUncompressedSize;
+		return ok;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -114,7 +116,7 @@ namespace DX
 		if(cachedBytesRemaining > 0)
 		{
 			// some compressed data was left over, just pass that back
-			int c = cachedBytesRemaining;
+			auto c = cachedBytesRemaining;
 			*buffer = fileBuffer.get() + fileBufferSize - c;
 			cachedBytesRemaining = 0;
 
@@ -122,7 +124,7 @@ namespace DX
 			// fill the rest up from the file, but can't be arsed and it would only
 			// help a tiny bit - during large decompression operations it would make
 			// almost no difference
-			return c;
+			return (int)c;
 		}
 
 		// fill input buffer from file

@@ -477,6 +477,7 @@ bld_ml64.bat</Command>
     <None Include="zlibvc.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\code.h" />
     <ClInclude Include="..\..\..\crc32.h" />
     <ClInclude Include="..\..\..\deflate.h" />
     <ClInclude Include="..\..\..\gzguts.h" />
