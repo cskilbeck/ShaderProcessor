@@ -36,6 +36,8 @@ namespace DX
 
 	int Archive::Assistant::Init(FileBase *inputFile, FileHeader &f)
 	{
+		fileBufferSize = 65536;
+
 		ExtraInfo64 e;
 		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
 		if(r != ok)

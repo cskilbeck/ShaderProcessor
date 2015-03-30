@@ -237,6 +237,17 @@ bool MyDXWindow::OnCreate()
 						TRACE("Unzipped\n");
 					}
 				}
+
+				Archive::Assistant s;
+				if(a.Locate2("duckCM.png", s) == Archive::ok)
+				{
+					Ptr<byte> buffer(new byte[s.Size()]);
+					size_t got;
+					if(s.Read(buffer.get(), s.Size(), &got) == Archive::ok && got == s.Size())
+					{
+						TRACE("Unzipped 2\n");
+					}
+				}
 			}
 		}
 	}

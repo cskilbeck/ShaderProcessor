@@ -171,6 +171,10 @@ namespace DX
 		{
 			int Init(FileBase *inputFile, FileHeader &f);
 			int Read(byte *buffer, uint64 bytesToRead, uint64 *got = null);
+			size_t Size() const
+			{
+				return mUncompressedSize;
+			}
 
 		private:
 
