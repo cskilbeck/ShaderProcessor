@@ -7,6 +7,7 @@
 #include "infback9.h"
 #include "inftree9.h"
 #include "inflate9.h"
+#include "infbackstate.h"
 
 #define WSIZE 65536UL
 
@@ -214,12 +215,67 @@ void makefixed9(void)
    inflateBack() can also return Z_STREAM_ERROR if the input parameters
    are not correct, i.e. strm is Z_NULL or the state was not initialized.
  */
-int ZEXPORT inflateBack9(strm, in, in_desc, out, out_desc)
+#define SaveState(x)				\
+{									\
+	(x)->next = next;				\
+	(x)->put = put;					\
+	(x)->have = have;				\
+	(x)->left = left;				\
+	(x)->hold = hold;				\
+	(x)->bits = bits;				\
+	(x)->copy = copy;				\
+	(x)->from = from;				\
+	(x)->here = here;				\
+	(x)->last = last;				\
+	(x)->len = len;					\
+	(x)->ret = ret;					\
+	(x)->mode = mode;				\
+	(x)->lastblock = lastblock;		\
+	(x)->wrap = wrap;				\
+	(x)->window = window;			\
+	(x)->extra = extra;				\
+	(x)->length = length;			\
+	(x)->offset = offset;			\
+	(x)->lencode = lencode;			\
+	(x)->distcode = distcode;		\
+	(x)->lenbits = lenbits;			\
+	(x)->distbits = distbits;		\
+}
+
+#define LoadState(x)				\
+	{								\
+	next = (x)->next;				\
+	put = (x)->put;					\
+	have = (x)->have;				\
+	left = (x)->left;				\
+	hold = (x)->hold;				\
+	bits = (x)->bits;				\
+	copy = (x)->copy;				\
+	from = (x)->from;				\
+	here = (x)->here;				\
+	last = (x)->last;				\
+	len = (x)->len;					\
+	ret = (x)->ret;					\
+	mode = (x)->mode;				\
+	lastblock = (x)->lastblock;		\
+	wrap = (x)->wrap;				\
+	window = (x)->window;			\
+	extra = (x)->extra;				\
+	length = (x)->length;			\
+	offset = (x)->offset;			\
+	lencode = (x)->lencode;			\
+	distcode = (x)->distcode;		\
+	lenbits = (x)->lenbits;			\
+	distbits = (x)->distbits;		\
+}
+
+int ZEXPORT inflateBack9(strm, in, in_desc, out, out_desc, curState)
 z_stream FAR *strm;
 in_func in;
 void FAR *in_desc;
 out_func out;
 void FAR *out_desc;
+struct inflateBackState *curState;
 {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    /* next input */
@@ -254,20 +310,27 @@ void FAR *out_desc;
         return Z_STREAM_ERROR;
     state = (struct inflate_state FAR *)strm->state;
 
-    /* Reset the state */
-    strm->msg = Z_NULL;
-    mode = TYPE;
-    lastblock = 0;
-    wrap = 0;
-    window = state->window;
-    next = strm->next_in;
-    have = next != Z_NULL ? strm->avail_in : 0;
-    hold = 0;
-    bits = 0;
-    put = window;
-    left = WSIZE;
-    lencode = Z_NULL;
-    distcode = Z_NULL;
+	if(curState == 0 || curState->status == 0)
+	{
+		/* Reset the state */
+		strm->msg = Z_NULL;
+		mode = TYPE;
+		lastblock = 0;
+		wrap = 0;
+		window = state->window;
+		next = strm->next_in;
+		have = next != Z_NULL ? strm->avail_in : 0;
+		hold = 0;
+		bits = 0;
+		put = window;
+		left = WSIZE;
+		lencode = Z_NULL;
+		distcode = Z_NULL;
+	}
+	else
+	{
+		LoadState(curState);
+	}
 
     /* Inflate until end of block marked as last */
     for (;;)
@@ -598,7 +661,11 @@ void FAR *out_desc;
 
     /* Return unused input */
   inf_leave:
-    strm->next_in = next;
+
+	SaveState(curState);
+	curState->status = 1;
+		
+	strm->next_in = next;
     strm->avail_in = have;
     return ret;
 }

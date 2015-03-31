@@ -5,6 +5,7 @@
 
 struct inflateBackState
 {
+	// common to infback and infback9
 	z_const unsigned char FAR *next;    /* next input */
 	unsigned char FAR *put;     /* next output */
 	unsigned have, left;        /* available input and output */
@@ -16,7 +17,18 @@ struct inflateBackState
 	code last;                  /* parent table entry */
 	unsigned len;               /* length to copy for repeats, bits to drop */
 	int ret;                    /* return code */
-	int status;					// 0 = fresh, 1 = used
+	int mode;				      /* current inflate mode */
+	int lastblock;              /* true if processing last block */
+	int wrap;                   /* true if the window has wrapped */
+	unsigned char FAR *window;  /* allocated sliding window, if needed */
+	unsigned extra;             /* extra bits needed */
+	unsigned long length;       /* literal or length of data to copy */
+	unsigned long offset;       /* distance back to copy string from */
+	code const FAR *lencode;    /* starting table for length/literal codes */
+	code const FAR *distcode;   /* starting table for distance codes */
+	unsigned lenbits;           /* index bits for lencode */
+	unsigned distbits;          /* index bits for distcode */
+	int status;
 };
 
 static int SizeOfInflateBackState()

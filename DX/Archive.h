@@ -169,14 +169,14 @@ namespace DX
 
 		struct Assistant
 		{
+			~Assistant();
+
 			int Init(FileBase *inputFile, FileHeader &f);
 			int Read(byte *buffer, uint64 bytesToRead, uint64 *got = null);
-			size_t Size() const
-			{
-				return mUncompressedSize;
-			}
+			int Close();
+			size_t Size() const;
 
-//		private:
+		private:
 
 			Ptr<inflateBackState> IBState;			// context
 			Ptr<byte> fileBuffer;					// file read buffer

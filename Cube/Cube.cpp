@@ -220,40 +220,53 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	// decompressor test
 	{
 		DiskFile d;
-		if(d.Open(TEXT("Data/test.zip"), DiskFile::ForReading))
+		if(d.Open(TEXT("Data/big.zip"), DiskFile::ForReading))
 		{
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
-
 				// 1st, decompress it using regular mode
-				Archive::File f;
-				if(a.Locate("duckCM.png", f) == Archive::ok)
+//				Archive::File f;
+//				if(a.Locate("big.bin", f) == Archive::ok)
 				{
-					size_t got;
-					Ptr<byte> buffer(new byte[f.Size()]);
-					if(f.Read(buffer.get(), &got) == Archive::ok && got == f.Size())
+//					Ptr<byte> buffer1(new byte[f.Size()]);
+
+//					size_t got;
+//					if(f.Read(buffer1.get(), &got) == Archive::ok && got == f.Size())
 					{
-						TRACE("Unzipped\n");
+						// then using dodgy new way
+						DiskFile d;
+						if(d.Open("data/big.bin", DiskFile::ForReading))
+						{
+							Ptr<byte> buffer(new byte[4096]);
+							Archive::Assistant s;
+							if(a.Locate2("big.bin", s) == Archive::ok)
+							{
+								Ptr<byte> buffer2(new byte[4096]);
+								byte *p = buffer2.get();
+								size_t len = s.Size();
+								size_t got;
+								while(s.Read(p, 4096, &got) == Archive::ok && len > 0)
+								{
+									len -= got;
+									uint32 dgot;
+									if(d.Read(buffer.get(), 4096, &dgot))
+									{
+										// check the results are the same
+										int s = memcmp(buffer.get(), p, 4096);
+										if(s != 0)
+										{
+											TRACE("Mismatch at %p!\n", p - buffer2.get());
+										}
+									}
+								}
+							}
+						}
 					}
 				}
-
-				// then using dodgy new way
-				Archive::Assistant s;
-				if(a.Locate2("duckCM.png", s) == Archive::ok)
-				{
-					Ptr<byte> buffer(new byte[512]);
-					size_t got;
-
-					while(s.Read(buffer.get(), 512, &got) == Archive::ok && got > 0)
-					{
-						TRACE("Got: %d of %p\n", got, s.mUncompressedDataRemaining);
-					}
-				}
-
-				// compare the results
 			}
 		}
 	}

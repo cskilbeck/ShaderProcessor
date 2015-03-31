@@ -13,6 +13,7 @@
 #include "DX.h"
 #include "../zlib-1.2.8/inflate.h"
 #include "../zlib-1.2.8/inftrees.h"
+#include "../zlib-1.2.8/infback9.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -36,7 +37,7 @@ namespace DX
 
 	int Archive::Assistant::Init(FileBase *inputFile, FileHeader &f)
 	{
-		fileBufferSize = 1024;
+		fileBufferSize = 65336;
 
 		ExtraInfo64 e;
 		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
@@ -62,7 +63,7 @@ namespace DX
 			return error_badzipfile;
 		}
 		if(mHeader.Info.CompressionMethod != Deflate &&					// check compression method is supported
-		   //mHeader.Info.CompressionMethod != Deflate64 &&
+		   mHeader.Info.CompressionMethod != Deflate64 &&
 		   mHeader.Info.CompressionMethod != None)
 		{
 			return error_notsupported;
@@ -131,10 +132,12 @@ namespace DX
 
 		// fill input buffer from file
 		uint32 got;
-		if(!file->Read(fileBuffer.get(), fileBufferSize, &got))
+		uint32 get = (uint32)min(mCompressedDataRemaining, fileBufferSize);
+		if(!file->Read(fileBuffer.get(), get, &got))
 		{
 			return 0;
 		}
+		mCompressedDataRemaining -= got;
 		return (int)got;
 	}
 
@@ -154,6 +157,27 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+
+	Archive::Assistant::~Assistant()
+	{
+		Close();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	int Archive::Assistant::Close()
+	{
+		// Free everything and call inflateBack[9]End
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	size_t Archive::Assistant::Size() const
+	{
+		return mUncompressedSize;
+	}
+
+	//////////////////////////////////////////////////////////////////////
 	// read some data from compressed file
 
 	int Archive::Assistant::Read(byte *buffer, uint64 bytesToRead, uint64 *got)
@@ -168,7 +192,16 @@ namespace DX
 			fileBuffer.reset(new byte[fileBufferSize]);
 			memset(&zstream, 0, sizeof(zstream));
 			mWindow.reset(new byte[65536]);
-			int r = inflateBackInit(&zstream, MAX_WBITS, mWindow.get());
+
+			int r;
+			if(mHeader.Info.CompressionMethod == Deflate)
+			{
+				r = inflateBackInit(&zstream, MAX_WBITS, mWindow.get());
+			}
+			else
+			{
+				r = inflateBack9Init(&zstream, mWindow.get());
+			}
 			if(r != ok)
 			{
 				return r;
@@ -196,7 +229,14 @@ namespace DX
 		if(bytesRequired > 0)
 		{
 			// get the rest (callbacks might be called)
-			r = inflateBack(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+			if(mHeader.Info.CompressionMethod == Deflate)
+			{
+				r = inflateBack(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+			}
+			else
+			{
+				r = inflateBack9(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+			}
 		}
 
 		if(got != null)
@@ -235,7 +275,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-		Archive::Archive()
+	Archive::Archive()
 		: mFile(null)
 		, mIsZip64(false)
 		, mCentralDirectoryLocation(0)
@@ -457,7 +497,7 @@ namespace DX
 			return error_badzipfile;
 		}
 		if(mHeader.Info.CompressionMethod != Deflate &&					// check compression method is supported
-//		   mHeader.Info.CompressionMethod != Deflate64 &&
+		   mHeader.Info.CompressionMethod != Deflate64 &&
 		   mHeader.Info.CompressionMethod != None)
 		{
 			return error_notsupported;
@@ -610,7 +650,7 @@ namespace DX
 			}
 			else
 			{
-				int e = inflateBack9(&mZStream, &getData, this, &putData, this);
+				int e = inflateBack9(&mZStream, &getData, this, &putData, this, null);
 				if(e < 0)
 				{
 					return e;
