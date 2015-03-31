@@ -176,7 +176,7 @@ namespace DX
 				return mUncompressedSize;
 			}
 
-		private:
+//		private:
 
 			Ptr<inflateBackState> IBState;			// context
 			Ptr<byte> fileBuffer;					// file read buffer

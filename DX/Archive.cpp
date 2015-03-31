@@ -36,7 +36,7 @@ namespace DX
 
 	int Archive::Assistant::Init(FileBase *inputFile, FileHeader &f)
 	{
-		fileBufferSize = 65536;
+		fileBufferSize = 1024;
 
 		ExtraInfo64 e;
 		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
@@ -165,7 +165,6 @@ namespace DX
 			memset(IBState.get(), 0, sizeof(inflateBackState));
 			cachedBytesRemaining = 0;
 			bufferSize = 1 << MAX_WBITS;
-			fileBufferSize = 65536;
 			fileBuffer.reset(new byte[fileBufferSize]);
 			memset(&zstream, 0, sizeof(zstream));
 			mWindow.reset(new byte[65536]);
@@ -177,14 +176,14 @@ namespace DX
 		}
 
 		currentOutputPointer = buffer;
-		bytesRequired = bytesToRead;
+		bytesRequired = min(mUncompressedDataRemaining, bytesToRead);
 		totalGot = 0;
 
 		// is there any left over in the buffer?
 		if(cachedBytesRemaining > 0)
 		{
 			// yes, copy as much as possible and decrement bytesRequired
-			uint32 c = (uint32)min(cachedBytesRemaining, bytesToRead);
+			uint32 c = (uint32)min(cachedBytesRemaining, bytesRequired);
 			memcpy(currentOutputPointer, currentDataPointer, c);
 			cachedBytesRemaining -= c;
 			currentOutputPointer += c;
@@ -204,6 +203,7 @@ namespace DX
 		{
 			*got = totalGot;
 		}
+		mUncompressedDataRemaining -= totalGot;
 
 		// there may be data left to be uncompressed, that's ok
 		// there may be uncompressed data left in the output buffer, that's ok too (we'll flush it next time)

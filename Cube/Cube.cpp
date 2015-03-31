@@ -227,6 +227,8 @@ bool MyDXWindow::OnCreate()
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
+
+				// 1st, decompress it using regular mode
 				Archive::File f;
 				if(a.Locate("duckCM.png", f) == Archive::ok)
 				{
@@ -238,16 +240,20 @@ bool MyDXWindow::OnCreate()
 					}
 				}
 
+				// then using dodgy new way
 				Archive::Assistant s;
 				if(a.Locate2("duckCM.png", s) == Archive::ok)
 				{
-					Ptr<byte> buffer(new byte[s.Size()]);
+					Ptr<byte> buffer(new byte[512]);
 					size_t got;
-					if(s.Read(buffer.get(), s.Size(), &got) == Archive::ok && got == s.Size())
+
+					while(s.Read(buffer.get(), 512, &got) == Archive::ok && got > 0)
 					{
-						TRACE("Unzipped 2\n");
+						TRACE("Got: %d of %p\n", got, s.mUncompressedDataRemaining);
 					}
 				}
+
+				// compare the results
 			}
 		}
 	}
