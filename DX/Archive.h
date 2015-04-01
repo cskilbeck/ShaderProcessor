@@ -167,9 +167,10 @@ namespace DX
 
 	public:
 
-		struct Assistant
+		struct File
 		{
-			~Assistant();
+			File();
+			~File();
 
 			int Init(FileBase *inputFile, FileHeader &f);
 			int Read(byte *buffer, uint64 bytesToRead, uint64 *got = null);
@@ -178,75 +179,32 @@ namespace DX
 
 		private:
 
-			Ptr<inflateBackState> IBState;			// context
-			Ptr<byte> fileBuffer;					// file read buffer
-			uint32 fileBufferSize;					// size of the file read buffer
-			FileBase *file;							// file we're reading compressed data from
-			byte *outputBuffer;						// base address of where the outputdata is going to be stored
-			byte *currentOutputPointer;				// where the next bit of data is going to be written to
-			byte *currentDataPointer;				// where the next bit of uncompressed data is
-			uint64 outputBufferSize;				// total size of the outputBuffer
-			uint64 bytesRequired;					// uncompressed size of the uncompress request
-			uint64 totalGot;						// uncompressed bytes read so far from this file
-			uint64 cachedBytesRemaining;			// from the last time - flush these out before going into inflateBack
-			uint64 bufferSize;						// size of the decompression window buffer
-			z_stream zstream;
-			inflate_state inflateState;
-			Ptr<byte>		mWindow;
-
-			uint64			mUncompressedSize;
-			uint64			mUncompressedDataRemaining;
-			uint64			mCompressedSize;
-			uint64			mCompressedDataRemaining;
-			uint64			mLocationInZipFile;
-			LocalFileHeader	mHeader;
+			Ptr<inflateBackState>	mInflateBackState;			// context
+			Ptr<byte>				mFileBuffer;				// file read buffer
+			Ptr<byte>				mWindow;
+			uint32					mFileBufferSize;			// size of the file read buffer
+			FileBase *				mFile;						// file we're reading compressed data from
+			byte *					mOutputBuffer;				// base address of where the outputdata is going to be stored
+			byte *					mCurrentOutputPointer;		// where the next bit of data is going to be written to
+			byte *					mCurrentDataPointer;		// where the next bit of uncompressed data is
+			uint64					mOutputBufferSize;			// total size of the outputBuffer
+			uint64					mBytesRequired;				// uncompressed size of the uncompress request
+			uint64					mTotalGot;					// uncompressed bytes read so far from this file
+			uint64					mCachedBytesRemaining;		// from the last time - flush these out before going into inflateBack
+			uint64					mBufferSize;				// size of the decompression window buffer
+			z_stream				mZStream;					// zstream for inflate/inflate9
+			inflate_state			mInflateState;				// state for inflate
+			uint64					mUncompressedSize;
+			uint64					mUncompressedDataRemaining;
+			uint64					mCompressedSize;
+			uint64					mCompressedDataRemaining;
+			uint64					mLocationInZipFile;
+			LocalFileHeader			mHeader;
 
 			int InflateBackOutput(unsigned char *data, unsigned length);
 			int InflateBackInput(unsigned char **buffer);
 
 			friend struct Archive;
-		};
-
-		// A file within a Zip file
-
-		struct File
-		{
-			File();
-			~File();
-
-			// Read compressed file data
-			int Read(byte *buffer, size_t *got = null, uint32 bufferSize = 65536);
-
-			// Release everything
-			void Close();
-
-			// Size of uncompressed data
-			uint64 Size() const;
-		
-		private:
-
-			friend struct Archive;
-			friend uint32 getData(void *in_desc, byte **buf);
-			friend int32 putData(void *out_desc, byte *buf, uint32 len);
-
-			uint64			mUncompressedSize;
-			uint64			mUncompressedDataRemaining;
-			uint64			mCompressedSize;
-			uint64			mCompressedDataRemaining;
-			uint64			mLocationInZipFile;
-			LocalFileHeader	mHeader;
-			byte *			mOutputPtr;
-			size_t			mOutputSize;
-			Ptr<byte>		mFileBuffer;
-			uint32			mFileBufferSize;
-			Ptr<byte>		mWindow;
-			FileBase *		mFile;
-			z_stream		mZStream;
-			bool			mZLibInitialized;
-
-			CompressionMethod GetCompressionMethod() const;
-			uint64 CompressedSize() const;
-			int Init(FileBase *file, ExtraInfo64 &e);
 		};
 
 		Archive();
@@ -261,11 +219,9 @@ namespace DX
 		// How many files in the archive
 		uint64 FileCount() const;
 
-		int Archive::Locate2(char const *name, Archive::Assistant &file);
-		
 		// Find a file by name
-		int Locate(tchar const *name, File &file);
-
+		int Archive::Locate(char const *name, File &file);
+		
 		// Got a file by index
 		int Goto(uint32 fileIndex, File &file);
 
@@ -276,11 +232,9 @@ namespace DX
 		int GetCDLocation(uint64 &offset);
 		int GetCD64Location(uint64 &offset, uint64 const endcentraloffset);
 
-		friend struct Assistant;
+		friend struct File;
 
 		static int GetExtraInfo(FileBase *file, ExtraInfo64 &extra, FileHeader &f);
-
-		int InitFile(File &file, FileHeader &f);
 
 		uint64		mCentralDirectoryLocation;
 		uint64		mEntriesInCentralDirectory;
@@ -288,21 +242,6 @@ namespace DX
 		FileBase *	mFile;
 		bool		mIsZip64;
 	};
-
-	inline uint64 Archive::File::CompressedSize() const
-	{
-		return mCompressedSize;
-	}
-
-	inline uint64 Archive::File::Size() const
-	{
-		return mUncompressedSize;
-	}
-
-	inline Archive::CompressionMethod Archive::File::GetCompressionMethod() const
-	{
-		return (CompressionMethod)mHeader.Info.CompressionMethod;
-	}
 
 	inline uint64 Archive::FileCount() const
 	{

@@ -3,12 +3,9 @@
 // Doesn't support:
 // - Encryption/passwords
 // - Spanned Zip files (multi disc)
-// - Any compression method except Deflate
+// - Any compression method except Deflate or Deflate64
 // - Data Descriptors after the compressed data
 // - CRC checking
-// Does support:
-// - Zip64 format (version 2 only)
-// 
 
 #include "DX.h"
 #include "../zlib-1.2.8/inflate.h"
@@ -35,9 +32,9 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	int Archive::Assistant::Init(FileBase *inputFile, FileHeader &f)
+	int Archive::File::Init(FileBase *inputFile, FileHeader &f)
 	{
-		fileBufferSize = 65336;
+		mFileBufferSize = 65336;
 
 		ExtraInfo64 e;
 		int r = Archive::GetExtraInfo(inputFile, e, f);					// get the extra info about sizes etc
@@ -45,16 +42,16 @@ namespace DX
 		{
 			return r;
 		}
-		if(!inputFile->Reopen(&file))									// get a new file handle for reading data
+		if(!inputFile->Reopen(&mFile))									// get a new file handle for reading data
 		{
 			return Archive::error_fileerror;
 		}
 
-		if(!file->Seek(e.LocalHeaderOffset, SEEK_SET))					// goto localfileheader
+		if(!mFile->Seek(e.LocalHeaderOffset, SEEK_SET))					// goto localfileheader
 		{
 			return error_fileerror;
 		}
-		if(!file->Get(mHeader))											// read localfileheader
+		if(!mFile->Get(mHeader))											// read localfileheader
 		{
 			return error_fileerror;
 		}
@@ -68,7 +65,7 @@ namespace DX
 		{
 			return error_notsupported;
 		}
-		if(!file->Seek(mHeader.Info.FilenameLength, SEEK_CUR))			// tee up the file pointer to the data (or localextrainfo)
+		if(!mFile->Seek(mHeader.Info.FilenameLength, SEEK_CUR))			// tee up the file pointer to the data (or localextrainfo)
 		{
 			return error_fileerror;
 		}
@@ -77,9 +74,9 @@ namespace DX
 
 		// process any extra info that there is
 
-		Archive::ProcessExtraInfo(file, mHeader.Info.ExtraFieldLength, [this] (uint16 tag, uint16 len, void *data)
+		Archive::ProcessExtraInfo(mFile, mHeader.Info.ExtraFieldLength, [this] (uint16 tag, uint16 len, void *data)
 		{
-			if(tag == 0x0001)
+			if(tag == 0x0001)											// 0x0001 means Zip64 extra info
 			{
 				LocalExtraInfo64 ei;
 				memcpy(&ei, data, len);
@@ -110,18 +107,18 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// the decompressor wants some data
 
-	int Archive::Assistant::InflateBackInput(unsigned char **buffer)
+	int Archive::File::InflateBackInput(unsigned char **buffer)
 	{
 		// tell it where the buffer is
-		*buffer = fileBuffer.get();
+		*buffer = mFileBuffer.get();
 
 		// got any left from last time?
-		if(cachedBytesRemaining > 0)
+		if(mCachedBytesRemaining > 0)
 		{
 			// some compressed data was left over, just pass that back
-			auto c = cachedBytesRemaining;
-			*buffer = fileBuffer.get() + fileBufferSize - c;
-			cachedBytesRemaining = 0;
+			auto c = mCachedBytesRemaining;
+			*buffer = mFileBuffer.get() + mFileBufferSize - c;
+			mCachedBytesRemaining = 0;
 
 			// _could_ memmove the remainder back to the beginning of the buffer and
 			// fill the rest up from the file, but can't be arsed and it would only
@@ -132,8 +129,8 @@ namespace DX
 
 		// fill input buffer from file
 		uint32 got;
-		uint32 get = (uint32)min(mCompressedDataRemaining, fileBufferSize);
-		if(!file->Read(fileBuffer.get(), get, &got))
+		uint32 get = (uint32)min(mCompressedDataRemaining, mFileBufferSize);
+		if(!mFile->Read(mFileBuffer.get(), get, &got))
 		{
 			return 0;
 		}
@@ -144,35 +141,57 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// the decompressor has delivered some uncompressed data
 
-	int Archive::Assistant::InflateBackOutput(unsigned char *data, uint32 length)
+	int Archive::File::InflateBackOutput(unsigned char *data, uint32 length)
 	{
-		uint32 c = (uint32)min(length, bytesRequired);
-		memcpy(currentOutputPointer, data, c);
-		currentDataPointer = data + c;		// in case we need to come back for more in a separate DoInflateBack call
-		bytesRequired -= c;
-		totalGot += c;
-		currentOutputPointer += c;
-		cachedBytesRemaining = bufferSize - c;
-		return bytesRequired == 0; // true means no more output please, inflateBack will return Z_BUF_ERROR, but that's ok
+		uint32 c = (uint32)min(length, mBytesRequired);
+		memcpy(mCurrentOutputPointer, data, c);
+		mCurrentDataPointer = data + c;		// in case we need to come back for more in a separate DoInflateBack call
+		mBytesRequired -= c;
+		mTotalGot += c;
+		mCurrentOutputPointer += c;
+		mCachedBytesRemaining = mBufferSize - c;
+		return mBytesRequired == 0; // true means no more output please, inflateBack will return Z_BUF_ERROR, but that's ok
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	Archive::Assistant::~Assistant()
+	Archive::File::File()
+		: mZStream({ 0 })
+		, mFile(null)
+		, mOutputBuffer(null)
+		, mCurrentOutputPointer(null)
+		, mCurrentDataPointer(null)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	Archive::File::~File()
 	{
 		Close();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	int Archive::Assistant::Close()
+	int Archive::File::Close()
 	{
-		// Free everything and call inflateBack[9]End
+		switch(mHeader.Info.CompressionMethod)
+		{
+			case Deflate64:
+				inflateBack9End(&mZStream);
+				break;
+			case Deflate:
+				inflateBackEnd(&mZStream);
+				break;
+		}
+		mFileBuffer.reset();
+		mInflateBackState.reset();
+		return ok;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	size_t Archive::Assistant::Size() const
+	size_t Archive::File::Size() const
 	{
 		return mUncompressedSize;
 	}
@@ -180,27 +199,27 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// read some data from compressed file
 
-	int Archive::Assistant::Read(byte *buffer, uint64 bytesToRead, uint64 *got)
+	int Archive::File::Read(byte *buffer, uint64 bytesToRead, uint64 *got)
 	{
-		if(fileBuffer == null)
+		if(mFileBuffer == null)
 		{
-			fileBuffer.reset(new byte[fileBufferSize]);
-			IBState.reset(new inflateBackState());
-			memset(IBState.get(), 0, sizeof(inflateBackState));
-			cachedBytesRemaining = 0;
-			bufferSize = 1 << MAX_WBITS;
-			fileBuffer.reset(new byte[fileBufferSize]);
-			memset(&zstream, 0, sizeof(zstream));
+			mFileBuffer.reset(new byte[mFileBufferSize]);
+			mInflateBackState.reset(new inflateBackState());
+			memset(mInflateBackState.get(), 0, sizeof(inflateBackState));
+			mCachedBytesRemaining = 0;
+			mBufferSize = 1 << MAX_WBITS;
+			mFileBuffer.reset(new byte[mFileBufferSize]);
+			memset(&mZStream, 0, sizeof(mZStream));
 			mWindow.reset(new byte[65536]);
 
 			int r;
 			if(mHeader.Info.CompressionMethod == Deflate)
 			{
-				r = inflateBackInit(&zstream, MAX_WBITS, mWindow.get());
+				r = inflateBackInit(&mZStream, MAX_WBITS, mWindow.get());
 			}
 			else
 			{
-				r = inflateBack9Init(&zstream, mWindow.get());
+				r = inflateBack9Init(&mZStream, mWindow.get());
 			}
 			if(r != ok)
 			{
@@ -208,42 +227,42 @@ namespace DX
 			}
 		}
 
-		currentOutputPointer = buffer;
-		bytesRequired = min(mUncompressedDataRemaining, bytesToRead);
-		totalGot = 0;
+		mCurrentOutputPointer = buffer;
+		mBytesRequired = min(mUncompressedDataRemaining, bytesToRead);
+		mTotalGot = 0;
 
 		// is there any left over in the buffer?
-		if(cachedBytesRemaining > 0)
+		if(mCachedBytesRemaining > 0)
 		{
 			// yes, copy as much as possible and decrement bytesRequired
-			uint32 c = (uint32)min(cachedBytesRemaining, bytesRequired);
-			memcpy(currentOutputPointer, currentDataPointer, c);
-			cachedBytesRemaining -= c;
-			currentOutputPointer += c;
-			currentDataPointer += c;
-			bytesRequired -= c;
-			totalGot += c;
+			uint32 c = (uint32)min(mCachedBytesRemaining, mBytesRequired);
+			memcpy(mCurrentOutputPointer, mCurrentDataPointer, c);
+			mCachedBytesRemaining -= c;
+			mCurrentOutputPointer += c;
+			mCurrentDataPointer += c;
+			mBytesRequired -= c;
+			mTotalGot += c;
 		}
 
 		int r = ok;
-		if(bytesRequired > 0)
+		if(mBytesRequired > 0)
 		{
 			// get the rest (callbacks might be called)
 			if(mHeader.Info.CompressionMethod == Deflate)
 			{
-				r = inflateBack(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+				r = inflateBack(&mZStream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, mInflateBackState.get());
 			}
 			else
 			{
-				r = inflateBack9(&zstream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, IBState.get());
+				r = inflateBack9(&mZStream, &Archive::InflateBackInputCallback, this, &Archive::InflateBackOutputCallback, this, mInflateBackState.get());
 			}
 		}
 
 		if(got != null)
 		{
-			*got = totalGot;
+			*got = mTotalGot;
 		}
-		mUncompressedDataRemaining -= totalGot;
+		mUncompressedDataRemaining -= mTotalGot;
 
 		// there may be data left to be uncompressed, that's ok
 		// there may be uncompressed data left in the output buffer, that's ok too (we'll flush it next time)
@@ -263,14 +282,14 @@ namespace DX
 
 	int Archive::InflateBackOutputCallback(void *context, unsigned char *data, unsigned length)
 	{
-		return ((Assistant *)context)->InflateBackOutput(data, length);
+		return ((File *)context)->InflateBackOutput(data, length);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	uint Archive::InflateBackInputCallback(void *context, unsigned char **buffer)
 	{
-		return ((Assistant *)context)->InflateBackInput(buffer);
+		return ((File *)context)->InflateBackInput(buffer);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -450,96 +469,6 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-
-	Archive::File::File()
-		: mFile(null)
-		, mZLibInitialized(false)
-	{
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	Archive::File::~File()
-	{
-		Close();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Archive::File::Close()
-	{
-		Delete(mFile);
-		if(mZLibInitialized)
-		{
-			inflateBack9End(&mZStream);
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////
-	// Get an Archive::File ready for reading
-
-	int Archive::File::Init(FileBase *file, ExtraInfo64 &e)
-	{
-		if(!file->Reopen(&mFile))										// reopen handle for reading the actual data
-		{
-			return error_fileerror;
-		}
-		if(!mFile->Seek(e.LocalHeaderOffset, SEEK_SET))					// goto localfileheader
-		{
-			return error_fileerror;
-		}
-		if(!mFile->Get(mHeader))										// read localfileheader
-		{
-			return error_fileerror;
-		}
-		if(mHeader.Signature != LocalHeaderSignature)					// check signature
-		{
-			return error_badzipfile;
-		}
-		if(mHeader.Info.CompressionMethod != Deflate &&					// check compression method is supported
-		   mHeader.Info.CompressionMethod != Deflate64 &&
-		   mHeader.Info.CompressionMethod != None)
-		{
-			return error_notsupported;
-		}
-		if(!mFile->Seek(mHeader.Info.FilenameLength, SEEK_CUR))			// tee up the file pointer to the data
-		{
-			return error_fileerror;
-		}
-		mCompressedSize = mHeader.Info.CompressedSize;					// snarf some details
-		mUncompressedSize = mHeader.Info.UncompressedSize;
-
-		Archive::ProcessExtraInfo(mFile, mHeader.Info.ExtraFieldLength, [this] (uint16 tag, uint16 len, void *data)
-		{
-			if(tag == 0x0001)
-			{
-				LocalExtraInfo64 ei;
-				memcpy(&ei, data, len);
-				if(mUncompressedSize == 0xffffffff)						// get 64bit uncompressed size if necessary
-				{
-					if(len < 8)
-					{
-						return error_badzipfile;
-					}
-					mUncompressedSize = ei.UnCompressedSize;
-				}
-				if(mCompressedSize == 0xffffffff)						// get 64bit compressed size if necessary
-				{
-					if(len < 16)
-					{
-						return error_badzipfile;
-					}
-					mCompressedSize = ei.CompressedSize;
-				}
-			}
-			return ok;
-		});
-		mCompressedDataRemaining = mCompressedSize;						// init remainders
-		mUncompressedDataRemaining = mUncompressedSize;
-		return ok;
-	}
-
-	//////////////////////////////////////////////////////////////////////
 	// Scan ExtraInfo blocks following a FileHeader or LocalFileHeader
 
 	int Archive::ProcessExtraInfo(FileBase *file, size_t extraSize, std::function<int(uint16, uint16, void *)> callback)
@@ -571,95 +500,6 @@ namespace DX
 				return error_fileerror;
 			}
 			extraSize -= len;
-		}
-		return ok;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-	// Read data from an Archive::File
-
-	// Supply compressed data to the decompressor
-
-	uint32 getData(void *in_desc, byte **buf)
-	{
-		Archive::File *f = (Archive::File *)in_desc;
-		byte *p = f->mFileBuffer.get();
-		*buf = p;
-		uint32 len;
-		uint32 get = (uint32)min(f->mCompressedDataRemaining, f->mFileBufferSize); 
-		if(!f->mFile->Read(p, get, &len))
-		{
-			return 0;
-		}
-		f->mCompressedDataRemaining -= len;
-		return len;
-	}
-
-	// Copy uncompressed data to the output stream
-
-	int32 putData(void *out_desc, byte *buf, uint32 len)
-	{
-		Archive::File *f = (Archive::File *)out_desc;
-		memcpy(f->mOutputPtr, buf, len);
-		f->mOutputPtr += len;
-		f->mOutputSize += len;
-		return 0;
-	}
-
-	// main reader
-
-	int Archive::File::Read(byte *buffer, size_t *got /* = null */, uint32 bufferSize)
-	{
-		mFileBufferSize = bufferSize;
-
-		size_t totalGot = 0;
-		// setup if necessary
-		if(mFileBuffer == null && GetCompressionMethod() != None)
-		{
-			mFileBuffer.reset(new byte[mFileBufferSize]);
-			mWindow.reset(new byte[1 << MAX_WBITS]);
-
-			memset(&mZStream, 0, sizeof(mZStream));
-			mZLibInitialized = true;
-			int error = inflateBack9Init(&mZStream, mWindow.get());
-			if(error != Z_OK)
-			{
-				return error;
-			}
-		}
-
-		mOutputSize = 0;
-		mOutputPtr = buffer;
-
-		// decompress or just copy some data
-		while(mOutputSize < mUncompressedSize && mCompressedDataRemaining > 0)
-		{
-			if(GetCompressionMethod() == None)
-			{
-				uint32 localGot;
-				uint32 remainder = (uint32)min(MAXUINT32, mCompressedDataRemaining);
-				if(!mFile->Read(mOutputPtr, remainder, &localGot) || localGot != remainder)
-				{
-					return error_fileerror;
-				}
-				mOutputPtr += (size_t)localGot;
-				mOutputSize += (size_t)localGot;
-				totalGot += localGot;
-				mUncompressedDataRemaining -= localGot;
-				mCompressedDataRemaining -= localGot;
-			}
-			else
-			{
-				int e = inflateBack9(&mZStream, &getData, this, &putData, this, null);
-				if(e < 0)
-				{
-					return e;
-				}
-			}
-		}
-		if(got != null)
-		{
-			*got = mOutputSize;
 		}
 		return ok;
 	}
@@ -704,20 +544,10 @@ namespace DX
 		return ok;// file.Init(mFile, Extra);
 	}
 
-
-	// Prepare an Archive::File for reading
-
-	int Archive::InitFile(File &file, FileHeader &f)
-	{
-		ExtraInfo64 Extra;
-		int r = GetExtraInfo(mFile, Extra, f);
-		return r == ok ? file.Init(mFile, Extra) : r;
-	}
-
 	//////////////////////////////////////////////////////////////////////
 	// Find a file by name in an Archive
 
-	int Archive::Locate2(char const *name, Archive::Assistant &file)
+	int Archive::Locate(char const *name, Archive::File &file)
 	{
 		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
 		{
@@ -749,43 +579,9 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// Find a file by name in an Archive
-
-	int Archive::Locate(char const *name, Archive::File &file)
-	{
-		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
-		{
-			return error_fileerror;
-		}
-		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
-		{
-			FileHeader f;
-			if(!mFile->Get(f) || f.Signature != CentralHeaderSignature)
-			{
-				return error_fileerror;
-			}
-			uint32 got;
-			char filename[256];
-			if(!mFile->Read(filename, f.Info.FilenameLength, &got) || got != f.Info.FilenameLength)
-			{
-				return error_fileerror;
-			}
-			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
-			{
-				return InitFile(file, f);
-			}
-			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
-			{
-				return error_fileerror;
-			}
-		}
-		return error_filenotfound;
-	}
-
-	//////////////////////////////////////////////////////////////////////
 	// Goto a file by index
 
-	int Archive::Goto(uint32 index, Archive::File &file)
+	int Archive::Goto(uint32 index, File &file)
 	{
 		if(index >= mEntriesInCentralDirectory)
 		{
@@ -812,7 +608,7 @@ namespace DX
 			}
 			if(i == index)
 			{
-				return InitFile(file, f);
+				return file.Init(mFile, f);
 			}
 			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
 			{

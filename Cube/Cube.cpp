@@ -221,6 +221,7 @@ bool MyDXWindow::OnCreate()
 	}
 
 	// decompressor test
+	if(false)
 	{
 		DiskFile d;
 		if(d.Open(TEXT("Data/big.zip"), DiskFile::ForReading))
@@ -228,40 +229,30 @@ bool MyDXWindow::OnCreate()
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
-				// 1st, decompress it using regular mode
-//				Archive::File f;
-//				if(a.Locate("big.bin", f) == Archive::ok)
+				DiskFile d;
+				if(d.Open("data/big.bin", DiskFile::ForReading))
 				{
-//					Ptr<byte> buffer1(new byte[f.Size()]);
-
-//					size_t got;
-//					if(f.Read(buffer1.get(), &got) == Archive::ok && got == f.Size())
+					Archive::File s;
+					if(a.Locate("big.bin", s) == Archive::ok)
 					{
-						// then using dodgy new way
-						DiskFile d;
-						if(d.Open("data/big.bin", DiskFile::ForReading))
+						Ptr<byte> buffer(new byte[4096]);
+						Ptr<byte> buffer2(new byte[4096]);
+						size_t len = s.Size();
+						size_t got;
+						size_t total;
+						while(s.Read(buffer2.get(), 4096, &got) == Archive::ok && len > 0)
 						{
-							Ptr<byte> buffer(new byte[4096]);
-							Archive::Assistant s;
-							if(a.Locate2("big.bin", s) == Archive::ok)
+							len -= got;
+							uint32 dgot;
+							if(d.Read(buffer.get(), 4096, &dgot))
 							{
-								Ptr<byte> buffer2(new byte[4096]);
-								byte *p = buffer2.get();
-								size_t len = s.Size();
-								size_t got;
-								while(s.Read(p, 4096, &got) == Archive::ok && len > 0)
+								total += dgot;
+
+								// check the results are the same
+								int s = memcmp(buffer.get(), buffer2.get(), 4096);
+								if(s != 0)
 								{
-									len -= got;
-									uint32 dgot;
-									if(d.Read(buffer.get(), 4096, &dgot))
-									{
-										// check the results are the same
-										int s = memcmp(buffer.get(), p, 4096);
-										if(s != 0)
-										{
-											TRACE("Mismatch at %p!\n", p - buffer2.get());
-										}
-									}
+									TRACE("Mismatch at %p!\n", total);
 								}
 							}
 						}
