@@ -917,8 +917,8 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 	}
 
 	// load the output
-	FileResource file(tempFile);
-	if(!file.IsValid())
+	MemoryFile file;
+	if(!LoadFile(tempFile, file))
 	{
 		return err_compilerproblem;
 	}
@@ -929,7 +929,7 @@ uint ScanMaterialOptions(tchar const *filename, string &output)
 	using paramList = std::map < string, keyvals > ;
 
 	vector<string> lines;
-	std::istringstream str((char *)file.Data());
+	std::istringstream str((char *)file.ptr);
 	string line;
 	Error::current_line = 1;
 	while(std::getline(str, line))

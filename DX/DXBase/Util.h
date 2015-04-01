@@ -29,7 +29,7 @@ namespace DX
 
 	void ErrorMessageBox(tchar const *msg, ...);
 
-	HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
+//	HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
 
 	wstring WideStringFromTString(tstring const &str);
 	wstring WideStringFromString(string const &str);

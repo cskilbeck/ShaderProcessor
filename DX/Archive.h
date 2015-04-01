@@ -167,17 +167,45 @@ namespace DX
 
 	public:
 
-		struct File
+		struct File : FileBase
 		{
 			File();
 			~File();
 
-			int Init(FileBase *inputFile, FileHeader &f);
-			int Read(byte *buffer, uint64 bytesToRead, uint64 *got = null);
-			int Close();
-			size_t Size() const;
+			bool Read(void *buffer, uint64 bytesToRead, uint64 *got = null) override;
+			void Close() override;
+			intptr Size();
+
+			bool Write(void const *buffer, uint64 size, uint64 *wrote = null) override
+			{
+				return false;
+			}
+
+			bool Seek(size_t offset, int seekType, intptr *newPosition = null) override
+			{
+				return false;
+			}
+
+			bool Reopen(FileBase **other)
+			{
+				return false;
+			}
+
+			virtual intptr Position()
+			{
+				return -1;
+			}
+
+			virtual tstring Name()
+			{
+				return "";
+			}
 
 		private:
+
+			friend struct Archive;
+
+			int Init(FileBase *inputFile, FileHeader &f);
 
 			Ptr<inflateBackState>	mInflateBackState;			// context
 			Ptr<byte>				mFileBuffer;				// file read buffer

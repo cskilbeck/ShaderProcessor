@@ -128,8 +128,8 @@ namespace DX
 		}
 
 		// fill input buffer from file
-		uint32 got;
-		uint32 get = (uint32)min(mCompressedDataRemaining, mFileBufferSize);
+		uint64 got;
+		uint64 get = (uint32)min(mCompressedDataRemaining, mFileBufferSize);
 		if(!mFile->Read(mFileBuffer.get(), get, &got))
 		{
 			return 0;
@@ -173,7 +173,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	int Archive::File::Close()
+	void Archive::File::Close()
 	{
 		switch(mHeader.Info.CompressionMethod)
 		{
@@ -186,12 +186,11 @@ namespace DX
 		}
 		mFileBuffer.reset();
 		mInflateBackState.reset();
-		return ok;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	size_t Archive::File::Size() const
+	intptr Archive::File::Size()
 	{
 		return mUncompressedSize;
 	}
@@ -199,7 +198,7 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// read some data from compressed file
 
-	int Archive::File::Read(byte *buffer, uint64 bytesToRead, uint64 *got)
+	bool Archive::File::Read(void *buffer, uint64 bytesToRead, uint64 *got)
 	{
 		if(mFileBuffer == null)
 		{
@@ -223,11 +222,11 @@ namespace DX
 			}
 			if(r != ok)
 			{
-				return r;
+				return false;
 			}
 		}
 
-		mCurrentOutputPointer = buffer;
+		mCurrentOutputPointer = (byte *)buffer;
 		mBytesRequired = min(mUncompressedDataRemaining, bytesToRead);
 		mTotalGot = 0;
 
@@ -271,10 +270,10 @@ namespace DX
 			case ok:
 			case Z_STREAM_END:		// all uncompressed data was read (but not necessarily streamed out)
 			case Z_BUF_ERROR:		// we got enough data to satisfy this read
-				return Z_OK;
+				return true;
 
 			default:				// anything else is an error (inflateBack never returns Z_OK)
-				return r;
+				return false;
 		}
 	}
 
@@ -346,7 +345,7 @@ namespace DX
 				return error_fileerror;
 			}
 
-			uint32 got;
+			uint64 got;
 			if(!mFile->Read(buf.get(), read_size, &got) || got != read_size)
 			{
 				return error_fileerror;
@@ -483,7 +482,7 @@ namespace DX
 			{
 				return error_fileerror;
 			}
-			uint32 got;
+			uint64 got;
 			if(!file->Read(buffer.get(), len, &got) || got != len)		// read the extrainfo block itself
 			{
 				return error_fileerror;
@@ -560,7 +559,7 @@ namespace DX
 			{
 				return error_fileerror;
 			}
-			uint32 got;
+			uint64 got;
 			char filename[256];
 			if(!mFile->Read(filename, f.Info.FilenameLength, &got) || got != f.Info.FilenameLength)
 			{

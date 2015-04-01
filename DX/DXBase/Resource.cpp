@@ -43,12 +43,14 @@ namespace DX
 	FileResource::FileResource(tchar const *filename)
 		: Resource()
 	{
-		uint32 s;
-		if(!LoadFile(filename, &data, &s))
+		MemoryFile f;
+		if(!LoadFile(filename, f))
 		{
 			throw("Error loading file");
 		}
-		size = s;
+		size = f.Size();
+		data = f.ptr;
+		f.own = false;
 	}
 
 	//////////////////////////////////////////////////////////////////////

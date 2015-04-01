@@ -1,6 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // Proper logging instead of a janky handful of macros
 // Debug text
+// Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource mess
+// Pick a base aspect ratio and do the right thing when the window is resized
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
@@ -243,7 +245,7 @@ bool MyDXWindow::OnCreate()
 						while(s.Read(buffer2.get(), 4096, &got) == Archive::ok && len > 0)
 						{
 							len -= got;
-							uint32 dgot;
+							uint64 dgot;
 							if(d.Read(buffer.get(), 4096, &dgot))
 							{
 								total += dgot;

@@ -99,10 +99,10 @@ namespace DX
 		}
 		virtual ~FileBase()
 		{
-
 		}
-		virtual bool Read(void *buffer, uint32 size, uint32 *got = null) = 0;
-		virtual bool Write(void const *buffer, uint32 size, uint32 *wrote = null) = 0;
+
+		virtual bool Read(void *buffer, uint64 size, uint64 *got = null) = 0;
+		virtual bool Write(void const *buffer, uint64 size, uint64 *wrote = null) = 0;
 		virtual bool Seek(size_t offset, int seekType, intptr *newPosition = null) = 0;
 		virtual bool Reopen(FileBase **other) = 0;	// make a new one of the same type on the same file
 		virtual intptr Position() = 0;
@@ -112,7 +112,7 @@ namespace DX
 
 		template<typename T> bool Get(T &b)
 		{
-			uint32 got;
+			uint64 got;
 			return Read(&b, (uint32)sizeof(b), &got) && got == sizeof(b);
 		}
 
@@ -144,17 +144,30 @@ namespace DX
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// NemoryFile doesn't take ownership of the data - it's up the client
+	// to free it
 
 	struct MemoryFile: FileBase
 	{
+		MemoryFile(size_t s)
+			: ptr(new byte[s])
+			, size(s)
+			, pos(ptr)
+			, own(true)
+		{
+		}
+
 		MemoryFile(void *p = null, size_t s = 0)
 			: ptr(reinterpret_cast<Byte *>(p))
 			, size(s)
+			, pos(ptr)
+			, own(false)
 		{
 		}
 
 		~MemoryFile()
 		{
+			Close();
 		}
 
 		tstring Name() override
@@ -174,12 +187,14 @@ namespace DX
 
 		bool Reopen(FileBase **other)
 		{
-			MemoryFile *n = new MemoryFile();
-			n->ptr = ptr;
-			n->size = size;
-			n->pos = n->ptr;
-			*other = n;
-			return true;
+			*other = null;
+			return false;
+			//MemoryFile *n = new MemoryFile();
+			//n->ptr = ptr;
+			//n->size = size;
+			//n->pos = n->ptr;
+			//*other = n;
+			//return true;
 		}
 
 		bool Seek(size_t offset, int seekType, intptr *newPosition = null) override
@@ -213,29 +228,42 @@ namespace DX
 
 		void Close() override
 		{
+			if(own)
+			{
+				Delete(ptr);
+				pos = null;
+				size = 0;
+			}
 		}
 
-		bool Read(void *buffer, uint32 size, uint32 *got = null) override
+		bool Read(void *buffer, uint64 size, uint64 *got = null) override
 		{
-			intptr remain = size - Position();
-			intptr get = min(remain, size);
-			memcpy(buffer, pos, (uint32)get);
+			uint64 remain = size - Position();
+			uint64 get = min(remain, size);
+			memcpy(buffer, pos, get);
 			pos += get;
 			if(got != null)
 			{
-				*got = (uint32)get;
+				*got = get;
 			}
 			return get == size;
 		}
 
-		bool Write(void const *buffer, uint32 size, uint32 *wrote = null) override
+		bool Write(void const *buffer, uint64 amount, uint64 *wrote = null) override
 		{
-			return false;
+			size_t remain = min(amount, size - Position());
+			memcpy(pos, buffer, remain);
+			if(wrote != null)
+			{
+				*wrote = remain;
+			}
+			return true;
 		}
 
 		Byte *ptr;
-		Byte *pos;
 		size_t size;
+		Byte *pos;
+		bool own;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -316,6 +344,10 @@ namespace DX
 					break;
 			}
 			h = CreateFile(name, access, share, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
+			if(!h.IsValid())
+			{
+				error = GetLastError();
+			}
 			owned = true;
 			return h.IsValid();
 		}
@@ -334,6 +366,10 @@ namespace DX
 
 			}
 			h = CreateFile(name, GENERIC_WRITE, FILE_SHARE_WRITE, null, creation, FILE_ATTRIBUTE_NORMAL, null);
+			if(!h.IsValid())
+			{
+				error = GetLastError();
+			}
 			owned = true;
 			return h.IsValid();
 		}
@@ -352,34 +388,81 @@ namespace DX
 			return f->Open(Name().c_str(), ForReading);
 		}
 
-		bool Read(void *buffer, uint32 size, uint32 *got = null) override
+		bool Read(void *buffer, uint64 size, uint64 *got = null) override
 		{
-			DWORD g;
-			return ReadFile(h, buffer, size, got != null ? (LPDWORD)got : &g, null) != 0;
+			uint64 total = 0;
+			while(total < size)
+			{
+				DWORD localGot;
+				uint32 get = (uint32)min(size, MAXUINT32);
+				if(ReadFile(h, buffer, get, &localGot, null) == 0)
+				{
+					error = GetLastError();
+					return false;
+				}
+				total += localGot;
+			}
+			if(got != null)
+			{
+				*got = total;
+			}
+			return true;
 		}
 
-		bool Write(void const *buffer, uint32 size, uint32 *wrote = null) override
+		bool Write(void const *buffer, uint64 size, uint64 *wrote = null) override
 		{
-			DWORD w;
-			return WriteFile(h, buffer, size, wrote != null ? (LPDWORD)wrote : &w, null) != 0;
+			uint64 total = 0;
+			uint64 remain = size;
+			while(remain > 0)
+			{
+				DWORD localWrote;
+				DWORD w = (DWORD)min(MAXUINT32, remain);
+				if(WriteFile(h, buffer, w, &localWrote, null) == 0)
+				{
+					error = GetLastError();
+					return false;
+				}
+				total += localWrote;
+				remain -= localWrote;
+			}
+			if(wrote != null)
+			{
+				*wrote = total;
+			}
+			return true;
 		}
 
 		bool Seek(size_t offset, int seekType, intptr *newPosition) override
 		{
 			LARGE_INTEGER l = { offset & MAXUINT32, offset >> 32 };
-			return SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) != 0;
+			if(SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) == 0)
+			{
+				error = GetLastError();
+				return false;
+			}
+			return true;
 		}
 
 		intptr Size() override
 		{
 			intptr size;
-			return GetFileSizeEx(h, (PLARGE_INTEGER)&size) != 0 ? size : -1;
+			if(GetFileSizeEx(h, (PLARGE_INTEGER)&size) == 0)
+			{
+				error = GetLastError();
+				return -1;
+			}
+			return size;
 		}
 
 		intptr Position() override
 		{
 			intptr newPos;
-			return Seek(0, SEEK_CUR, &newPos) ? newPos : -1;
+			if(Seek(0, SEEK_CUR, &newPos) == 0)
+			{
+				error = GetLastError();
+				return -1;
+			}
+			return newPos;
 		}
 
 		void Close() override
@@ -389,33 +472,12 @@ namespace DX
 
 		Handle h;
 		bool owned;
+		DWORD error;
 	};
 
-	//////////////////////////////////////////////////////////////////////
+	HRESULT LoadResource(uint32 resourceid, void **data, size_t *size);
 
-	struct File
-	{
-		~File();
-		bool Open(tchar const *filename);
-		bool Create(tchar const *filename);
-		void Acquire(HANDLE handle);
-		void Close();
-		bool IsOpen() const;
-		int64 Size();
-		bool Read(uint32 bytes, void *buffer, uint32 &read);
-		bool Write(uint32 bytes, void const *buffer, uint32 &wrote);
-
-		operator HANDLE() const
-		{
-			return h.obj;
-		}
-
-		tstring name;
-		Handle h;
-		long error;
-	};
-
-	bool LoadFile(tchar const *filename, void **data, uint32 *size = null);
+	bool LoadFile(tchar const *filename, MemoryFile &data);
 	bool SaveFile(tchar const *filename, void const *data, uint32 size);
 
 	bool FileOrFolderExists(tchar const *filename);

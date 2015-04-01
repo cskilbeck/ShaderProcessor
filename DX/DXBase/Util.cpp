@@ -66,84 +66,75 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	HRESULT LoadResource(uint32 resourceid, void **data, size_t *size)
-	{
-		HRSRC myResource = ::FindResource(NULL, MAKEINTRESOURCE(resourceid), RT_RCDATA);
-		if(myResource == null)
-		{
-			return ERROR_RESOURCE_DATA_NOT_FOUND;
-		}
+	//HRESULT LoadResource(uint32 resourceid, void **data, size_t *size)
+	//{
+	//	HRSRC myResource = ::FindResource(NULL, MAKEINTRESOURCE(resourceid), RT_RCDATA);
+	//	if(myResource == null)
+	//	{
+	//		return ERROR_RESOURCE_DATA_NOT_FOUND;
+	//	}
 
-		HGLOBAL myResourceData = ::LoadResource(NULL, myResource);
-		if(myResourceData == null)
-		{
-			return ERROR_RESOURCE_FAILED;
-		}
+	//	HGLOBAL myResourceData = ::LoadResource(NULL, myResource);
+	//	if(myResourceData == null)
+	//	{
+	//		return ERROR_RESOURCE_FAILED;
+	//	}
 
-		void *pMyBinaryData = ::LockResource(myResourceData);
-		if(pMyBinaryData == null)
-		{
-			return ERROR_RESOURCE_NOT_AVAILABLE;
-		}
+	//	void *pMyBinaryData = ::LockResource(myResourceData);
+	//	if(pMyBinaryData == null)
+	//	{
+	//		return ERROR_RESOURCE_NOT_AVAILABLE;
+	//	}
 
-		size_t s = (size_t)SizeofResource(GetModuleHandle(null), myResource);
-		if(s == 0)
-		{
-			return ERROR_RESOURCE_FAILED;
-		}
+	//	size_t s = (size_t)SizeofResource(GetModuleHandle(null), myResource);
+	//	if(s == 0)
+	//	{
+	//		return ERROR_RESOURCE_FAILED;
+	//	}
 
-		if(size != null)
-		{
-			*size = s;
-		}
-		if(data != null)
-		{
-			*data = pMyBinaryData;
-		}
-		return S_OK;
-	}
+	//	if(size != null)
+	//	{
+	//		*size = s;
+	//	}
+	//	if(data != null)
+	//	{
+	//		*data = pMyBinaryData;
+	//	}
+	//	return S_OK;
+	//}
 
 	//////////////////////////////////////////////////////////////////////
 
-	uint8 *LoadFile(tchar const *filename, size_t *size)
+	uint8 *LoadFile(tchar const *filename, size_t *size = null)
 	{
-		uint8 *buf = null;
-		FILE *f = null;
-
-		if(_tfopen_s(&f, filename, TEXT("rb")) == 0)
-		{
-			fseek(f, 0, SEEK_END);
-			uint32 len = ftell(f);
-			fseek(f, 0, SEEK_SET);
-
-			buf = new uint8[len + sizeof(tchar)];
-
-			if(buf != null)
-			{
-				size_t s = fread_s(buf, len, 1, len, f);
-
-				if(s != len)
-				{
-					delete[] buf;
-					buf = null;
-				}
-				else
-				{
-					*((tchar *)(((uint8 *)buf) + len)) = (tchar)'\0';
-					if(size != null)
-					{
-						*size = len;
-					}
-				}
-			}
-
-			fclose(f);
-		}
-		else
+		Ptr<uint8> buf;
+		DiskFile f;
+		if(!f.Open(filename, DiskFile::ForReading))
 		{
 			MessageBox(null, Format(TEXT("File not found: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+			return null;
 		}
-		return buf;
+
+		intptr fileSize = f.Size();
+		if(fileSize == -1)
+		{
+			MessageBox(null, Format(TEXT("Couldn't get file size of: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+			return null;
+		}
+
+		buf.reset(new byte[fileSize]);
+
+		size_t got;
+		if(!f.Read(buf.get(), fileSize, &got) || got != fileSize)
+		{
+			MessageBox(null, Format(TEXT("Error reading from: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+			return null;
+		}
+		if(size != null)
+		{
+			*size = fileSize;
+		}
+		return buf.release();
 	}
 
 	//////////////////////////////////////////////////////////////////////

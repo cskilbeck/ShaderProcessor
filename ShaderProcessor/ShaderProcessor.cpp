@@ -145,16 +145,16 @@ uint SaveSOBFile(string const &binFile)
 	}
 
 	// create the file
-	File f;
-	if(!f.Create(binFile.c_str()))
+	DiskFile f;
+	if(!f.Create(binFile.c_str(), DiskFile::Overwrite))
 	{
 		emit_error("Can't create %s (%08x)", binFile.c_str(), f.error);
 	}
 	else
 	{
 		// write the offsets
-		uint32 wrote;
-		if(!f.Write(sizeof(offsets), offsets, wrote))
+		uint64 wrote;
+		if(!f.Write(offsets, sizeof(offsets), &wrote))
 		{
 			emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
 		}
@@ -164,7 +164,7 @@ uint SaveSOBFile(string const &binFile)
 			for(auto &i : shaders)
 			{
 				auto s = *i.second;
-				if(!f.Write((uint32)s.mSize, s.mBlob, wrote))
+				if(!f.Write(s.mBlob, s.mSize, &wrote))
 				{
 					emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
 					break;
@@ -209,22 +209,19 @@ void OutputFooter(char const *filename, char const *namespace_) // static
 
 //////////////////////////////////////////////////////////////////////
 
-int OpenHeaderFile(File &headerFile)
+int OpenHeaderFile(DiskFile &headerFile)
 {
 	if(options[HEADER_FILE])
 	{
 		char const *name = options[HEADER_FILE].arg;
-		headerFile.Create(name);
+		if(!headerFile.Create(name, DiskFile::Overwrite))
+		{
+			return err_cantcreateheaderfile;
+		}
 	}
 	else
 	{
 		headerFile.Acquire(GetStdHandle(STD_OUTPUT_HANDLE));
-	}
-
-	if(!headerFile.IsOpen())
-	{
-		emit_error("Error opening header file");
-		return err_cantcreateheaderfile;
 	}
 	return success;
 }
@@ -398,7 +395,7 @@ int main(int argc, char *argv[])
 	}
 
 	// work out where the output is going to go
-	File headerFile;
+	DiskFile headerFile;
 	e = OpenHeaderFile(headerFile);
 	if(e != success)
 	{
@@ -424,7 +421,7 @@ int main(int argc, char *argv[])
 	char const *namespaceIn = options[NAMESPACE] ? options[NAMESPACE].arg : null;
 	
 	using namespace Printer;
-	SetHeaderFile(headerFile);
+	SetHeaderFile(headerFile.h);
 	OutputHeader(shaderName.c_str(), namespaceIn);
 	OutputMaterial();
 

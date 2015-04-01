@@ -67,16 +67,15 @@ namespace
 
 	bool LoadUTF8File(TCHAR const *filename, wstring &str)
 	{
-		uint32 size;
 		bool rc = false;
-		uint8 *bytes;
-		if(DX::LoadFile(filename, (void **)&bytes, &size))
+		MemoryFile f;
+		if(DX::LoadFile(filename, f))
 		{
 			size_t len;
-			if(UTF8ToWide(bytes, size, &len, null) && len > 0)
+			if(UTF8ToWide(f.ptr, f.Size(), &len, null) && len > 0)
 			{
 				str.resize(len + 1);
-				UTF8ToWide(bytes, size, &len, &str[0]);
+				UTF8ToWide(f.ptr, f.Size(), &len, &str[0]);
 				str[len] = '\0';
 				rc = true;
 			}
@@ -84,7 +83,6 @@ namespace
 			{
 				assert(false);
 			}
-			DX::Delete(bytes);
 		}
 		return rc;
 	}
