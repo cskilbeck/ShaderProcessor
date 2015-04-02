@@ -47,6 +47,7 @@
 #include "..\zlib-1.2.8\infback9.h"
 //#include "unzip.h"
 #include "Archive.h"
+#include "AssetManager.h"
 
 //////////////////////////////////////////////////////////////////////
 

@@ -28,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Archive.h" />
+    <ClInclude Include="AssetManager.h" />
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ConstBuffer.h" />
@@ -58,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Archive.cpp" />
+    <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawList.cpp" />

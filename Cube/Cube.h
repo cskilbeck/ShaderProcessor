@@ -8,6 +8,8 @@ struct MyDXWindow: DXWindow
 {
 	//////////////////////////////////////////////////////////////////////
 
+	AssetManager mAssetManager;
+
 	FPSCamera camera;
 	FPSCamera dashCam;
 

@@ -222,6 +222,15 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	mAssetManager.AddFolder("data");
+	mAssetManager.AddArchive("data.zip");
+
+	FileBase *f;
+	if(mAssetManager.Open("cube.dae", &f))
+	{
+		f->Close();
+	}
+
 	// decompressor test
 	if(false)
 	{

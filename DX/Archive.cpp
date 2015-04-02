@@ -5,7 +5,6 @@
 // - Spanned Zip files (multi disc)
 // - Any compression method except Deflate or Deflate64
 // - Data Descriptors after the compressed data
-// - CRC checking
 
 #include "DX.h"
 #include "../zlib-1.2.8/inflate.h"
@@ -30,6 +29,31 @@ namespace
 
 namespace DX
 {
+	bool Archive::File::Write(void const *buffer, uint64 size, uint64 *wrote)
+	{
+		return false;
+	}
+
+	bool Archive::File::Seek(size_t offset, int seekType, intptr *newPosition)
+	{
+		return false;
+	}
+
+	bool Archive::File::Reopen(FileBase **other)
+	{
+		return false;
+	}
+
+	intptr Archive::File::Position()
+	{
+		return -1;
+	}
+
+	tstring Archive::File::Name()
+	{
+		return "";
+	}
+
 	//////////////////////////////////////////////////////////////////////
 
 	int Archive::File::Init(FileBase *inputFile, FileHeader &f)
@@ -539,8 +563,7 @@ namespace DX
 		{
 			return error_badzipfile;
 		}
-
-		return ok;// file.Init(mFile, Extra);
+		return ok;
 	}
 
 	//////////////////////////////////////////////////////////////////////

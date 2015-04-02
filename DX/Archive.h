@@ -25,10 +25,6 @@ namespace DX
 		static int InflateBackOutputCallback(void *context, unsigned char *data, unsigned length);
 		static uint InflateBackInputCallback(void *context, unsigned char **buffer);
 
-		// Merge this into File!
-
-	private:
-	
 		enum CompressionMethod: uint16
 		{
 			None = 0,
@@ -165,8 +161,6 @@ namespace DX
 
 	public:
 
-	public:
-
 		struct File : FileBase
 		{
 			File();
@@ -176,30 +170,12 @@ namespace DX
 			void Close() override;
 			intptr Size();
 
-			bool Write(void const *buffer, uint64 size, uint64 *wrote = null) override
-			{
-				return false;
-			}
-
-			bool Seek(size_t offset, int seekType, intptr *newPosition = null) override
-			{
-				return false;
-			}
-
-			bool Reopen(FileBase **other)
-			{
-				return false;
-			}
-
-			virtual intptr Position()
-			{
-				return -1;
-			}
-
-			virtual tstring Name()
-			{
-				return "";
-			}
+			// stubs
+			bool Write(void const *buffer, uint64 size, uint64 *wrote = null) override;
+			bool Seek(size_t offset, int seekType, intptr *newPosition = null) override;
+			bool Reopen(FileBase **other) override;
+			intptr Position() override;
+			tstring Name() override;
 
 		private:
 
