@@ -12,6 +12,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{eed7577e-530d-4846-a529-29e8be09a1b7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\RapidXML">
+      <UniqueIdentifier>{f0b341cd-5094-4a4b-b44e-ab46e8a51ed9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConstBuffer.h">
@@ -101,6 +104,12 @@
     <ClInclude Include="AssetManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RapidXML\rapidxml.hpp">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
+    <ClInclude Include="RapidXML\xml_util.h">
+      <Filter>Header Files\RapidXML</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp">
@@ -147,6 +156,9 @@
     </ClCompile>
     <ClCompile Include="AssetManager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RapidXML\xml_util.cpp">
+      <Filter>Header Files\RapidXML</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

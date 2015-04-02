@@ -55,6 +55,36 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct Blob
+	{
+		Blob()
+			: mSize(0)
+		{
+		}
+
+		Blob(size_t size)
+			: mSize(size)
+			, mData(new byte[size])
+		{
+		}
+
+		void Reset(byte *data, size_t size)
+		{
+			mData.reset(data);
+			mSize = size;
+		}
+
+		operator byte *()
+		{
+			return mData.get();
+		}
+
+		size_t mSize;
+		Ptr<byte> mData;
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct MemoryResource: Resource
 	{
 		MemoryResource(void const *data, size_t size)

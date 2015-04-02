@@ -95,8 +95,8 @@ namespace DX
 	{
 		FileBase()
 		{
-
 		}
+
 		virtual ~FileBase()
 		{
 		}
@@ -109,6 +109,18 @@ namespace DX
 		virtual intptr Size() = 0;
 		virtual void Close() = 0;
 		virtual tstring Name() = 0;
+
+		bool Load(Blob &result)
+		{
+			Ptr<byte> buffer(new byte[Size()]);
+			uint64 got;
+			if(!Read(buffer.get(), Size(), &got))
+			{
+				return false;
+			}
+			result.Reset(buffer.release(), Size());
+			return true;
+		}
 
 		template<typename T> bool Get(T &b)
 		{
