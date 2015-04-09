@@ -4,14 +4,15 @@ namespace DX
 {
 	template<typename vert> struct VertexBuffer: Buffer<vert>
 	{
-		VertexBuffer(uint vertCount, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
+		VertexBuffer()
+			: Buffer<vert>()
 		{
-			DXT(Create(vertCount, data, usage, rwOption));
 		}
 
 		HRESULT Create(uint count, vert *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
-			return Buffer<vert>::Create(VertexBufferType, count, data, usage, rwOption);
+			DXR(Buffer<vert>::CreateBuffer(VertexBufferType, count, data, usage, rwOption));
+			return S_OK;
 		}
 
 		void Activate(ID3D11DeviceContext *context)

@@ -112,8 +112,8 @@ namespace DX
 					&mContext));
 			}
 
-			DX::Device = mDevice.get();
-			DX::Context = mContext.get();
+			Device = mDevice.get();
+			Context = mContext.get();
 
 			auto i = DX::D3DLevelNames.find(mFeatureLevel);
 			if(i != DX::D3DLevelNames.end())
@@ -148,6 +148,7 @@ namespace DX
 				depth.CPUAccessFlags = 0;
 				depth.MiscFlags = 0;
 				DXR(mDevice->CreateTexture2D(&depth, null, &mDepthBuffer));
+				DXR(mDevice->CreateDepthStencilView(mDepthBuffer, null, &mDepthStencilView));
 			}
 			return S_OK;
 		}
@@ -173,11 +174,6 @@ namespace DX
 		{
 			DXR(mSwapChain->GetBuffer(0, __uuidof(mBackBuffer), (void **)&mBackBuffer));
 			DXR(mDevice->CreateRenderTargetView(mBackBuffer, null, &mRenderTargetView));
-			if(mDepthBuffer != null)
-			{
-				CreateDepthBuffer();
-				DXR(mDevice->CreateDepthStencilView(mDepthBuffer, null, &mDepthStencilView));
-			}
 			ResetRenderTargetView();
 			return S_OK;
 		}
@@ -205,9 +201,11 @@ namespace DX
 				DXI(mContext->Flush());
 				DXI(mContext->OMSetRenderTargets(0, null, null));
 				mBackBuffer.Release();
+				mDepthBuffer.Release();
 				mRenderTargetView.Release();
 				mDepthStencilView.Release();
 				DXR(mSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
+				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
 			}
 			return S_OK;
@@ -249,7 +247,6 @@ namespace DX
 			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
 			D3DDebug.Release();
 #endif
-
 			mFeatureLevel = (D3D_FEATURE_LEVEL)0;
 		}
 

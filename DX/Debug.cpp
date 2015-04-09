@@ -22,7 +22,7 @@ namespace DX
 	void debug_open(DXWindow *w)
 	{
 		assert(FontManager::IsOpen());
-		debugFont.reset(FontManager::Load("data\\debug"));
+		debugFont.reset(FontManager::Load("debug"));
 		mainWindow = w;
 	}
 

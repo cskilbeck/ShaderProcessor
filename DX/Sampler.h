@@ -45,10 +45,14 @@ namespace DX
 
 		Sampler()
 		{
-			DXT(Create(CD3D11_SAMPLER_DESC(D3D11_DEFAULT)));
 		}
 
-		Sampler(Options &options)
+		~Sampler()
+		{
+			Release();
+		}
+
+		HRESULT Create(Options &options)
 		{
 			D3D11_SAMPLER_DESC desc;
 			desc.Filter = (D3D11_FILTER)options.Filter;
@@ -61,7 +65,15 @@ namespace DX
 			options.BorderColor.GetFloatsRGBA(desc.BorderColor);
 			desc.MinLOD = options.MinLOD;
 			desc.MaxLOD = options.MaxLOD;
-			Create(desc);
+			DXR(Create(desc));
+			return S_OK;
+		}
+
+		HRESULT Create()
+		{
+			Options o;
+			DXR(Create(o));
+			return S_OK;
 		}
 
 		HRESULT Create(D3D11_SAMPLER_DESC &desc)
@@ -73,6 +85,11 @@ namespace DX
 		ID3D11SamplerState *Handle() const
 		{
 			return mSamplerState.get();
+		}
+
+		void Release()
+		{
+			mSamplerState.Release();
 		}
 		
 		DXPtr<ID3D11SamplerState> mSamplerState;

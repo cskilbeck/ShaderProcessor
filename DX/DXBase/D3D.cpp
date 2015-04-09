@@ -160,7 +160,7 @@ template<typename t, typename u> static char const *GetFrom(t &map, u n)
 
 namespace DX
 {
-	HRESULT						__hr;
+	int32 __hr;
 
 	//////////////////////////////////////////////////////////////////////
 

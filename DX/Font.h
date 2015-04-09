@@ -78,7 +78,7 @@ namespace DX
 
 		int					mCurrentPageIndex;
 
-		Ptr<TypelessBuffer>	vertexBuffer;
+		TypelessBuffer		vertexBuffer;
 
 		Map					mGlyphMap;
 		Texture **			mPages;

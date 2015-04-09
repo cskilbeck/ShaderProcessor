@@ -10,15 +10,18 @@ namespace DX
 
 	struct GeometryShader: Shader
 	{
-		//////////////////////////////////////////////////////////////////////
-
-		GeometryShader(uint numConstBuffers, char const **constBufferNames,
-					   uint numSamplers, char const **samplerNames,
-					   uint numTextures, char const **textureNames,
-					   Texture **textureArray,
-					   Sampler **samplerArray,
-					   BindingState &bindingState)
-			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindingState)
+		GeometryShader(uint32 numConstBuffers, char const **constBufferNames,
+					uint32 numSamplers, char const **samplerNames,
+					uint32 numTextures, char const **textureNames,
+					Texture **textureArray,
+					Sampler **samplerArray,
+					BindingState &bindingState)
+			: Shader(numConstBuffers, constBufferNames,
+						numSamplers, samplerNames,
+						numTextures, textureNames,
+						textureArray,
+						samplerArray,
+						bindingState)
 		{
 		}
 
@@ -34,7 +37,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *blob, size_t size) override
+		HRESULT D3DCreate(void const *blob, size_t size) override
 		{
 			DXR(Device->CreateGeometryShader(blob, size, null, &mGeometryShader));
 			return S_OK;
@@ -42,7 +45,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Load(FileResource &f)
+		HRESULT Create(Resource &f) override
 		{
 			DXR(Shader::Create(FindShaderInSOBFile(f, ShaderType::Geometry)));
 			return S_OK;

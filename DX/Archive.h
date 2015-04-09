@@ -166,15 +166,15 @@ namespace DX
 			File();
 			~File();
 
-			bool Read(void *buffer, uint64 bytesToRead, uint64 *got = null) override;
+			int Read(void *buffer, uint64 bytesToRead, uint64 *got = null) override;
 			void Close() override;
-			intptr Size();
+			int GetSize(uint64 &size) override;
 
 			// stubs
-			bool Write(void const *buffer, uint64 size, uint64 *wrote = null) override;
-			bool Seek(size_t offset, int seekType, intptr *newPosition = null) override;
-			bool Reopen(FileBase **other) override;
-			intptr Position() override;
+			int Write(void const *buffer, uint64 size, uint64 *wrote = null) override;
+			int Seek(size_t offset, int seekType, intptr *newPosition = null) override;
+			int Reopen(FileBase **other) override;
+			int GetPosition(uint64 &position) override;
 			tstring Name() override;
 
 		private:

@@ -83,6 +83,12 @@
     <ClInclude Include="Registry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Flags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D3D.cpp">

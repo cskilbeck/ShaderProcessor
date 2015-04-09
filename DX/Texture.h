@@ -8,24 +8,29 @@ namespace DX
 {
 	struct Texture
 	{
-		Texture(tchar const *name);
+		Texture();
 
-		Texture(int w, int h,
+		HRESULT Load(tchar const *name);
+		HRESULT Load(DiskFile *file);
+
+		HRESULT Create(int w, int h,
 				Color color,
 				BufferUsage usage = DynamicUsage,
 				ReadWriteOption rwOption = Writeable);
 
-		Texture(int w, int h,
+		HRESULT Create(int w, int h,
 				DXGI_FORMAT format,
 				byte *pixels,
 				bool isRenderTarget = false,
 				BufferUsage usage = StaticUsage,
 				ReadWriteOption rwOption = NotCPUAccessible);
 
+		void Release();
+
 		virtual ~Texture();
 
 		static void FlushAll();
-		static Texture *Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2);
+		static HRESULT CreateGrid(Texture &t, int w, int h, int gridWidth, int gridHeight, Color color1, Color color2);
 
 		void Update(ID3D11DeviceContext *sContext, byte *pixels);
 		int Width() const;
@@ -37,7 +42,7 @@ namespace DX
 		bool IsValid() const;
 		tstring const &GetName() const;
 
-		template <typename T> bool Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption = WaitForGPU);
+		template <typename T> HRESULT Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption = WaitForGPU);
 		void UnMap(ID3D11DeviceContext *context);
 
 		list_node<Texture> mListNode;
@@ -51,7 +56,7 @@ namespace DX
 
 		friend struct Shader;
 
-		void InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption);
+		HRESULT InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption);
 
 		tstring							mName;
 		DXPtr<ID3D11Texture2D>			mTexture2D;
@@ -69,7 +74,11 @@ namespace DX
 			WithoutDepthBuffer = 1
 		};
 
-		RenderTarget(int w, int h, RenderTargetDepthOption depthOption);
+		RenderTarget();
+
+		HRESULT Create(int w, int h, RenderTargetDepthOption depthOption);
+
+		void Release();
 		virtual ~RenderTarget();
 
 		void Activate(ID3D11DeviceContext *context);
@@ -124,15 +133,15 @@ namespace DX
 		return mName;
 	}
 
-	template <typename T> inline bool Texture::Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption waitOption)
+	template <typename T> inline HRESULT Texture::Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption waitOption)
 	{
 		D3D11_MAPPED_SUBRESOURCE msr;
-		if(SUCCEEDED(context->Map(mTexture2D, 0, mapType, waitOption, &msr)))
+		HRESULT r = context->Map(mTexture2D, 0, mapType, waitOption, &msr);
+		if(SUCCEEDED(r))
 		{
 			*ptr = (T *)msr.pData;
-			return true;
 		}
-		return false;
+		return r;
 	}
 
 }

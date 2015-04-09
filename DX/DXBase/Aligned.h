@@ -202,3 +202,9 @@ struct Aligned16 : Align16
 	}
 };
 
+//////////////////////////////////////////////////////////////////////
+
+struct Aligned_byte: Aligned16
+{
+	byte b;
+};

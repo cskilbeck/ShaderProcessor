@@ -29,24 +29,24 @@ namespace
 
 namespace DX
 {
-	bool Archive::File::Write(void const *buffer, uint64 size, uint64 *wrote)
+	int Archive::File::Write(void const *buffer, uint64 size, uint64 *wrote)
 	{
-		return false;
+		return ERROR_NOT_SUPPORTED;
 	}
 
-	bool Archive::File::Seek(size_t offset, int seekType, intptr *newPosition)
+	int Archive::File::Seek(size_t offset, int seekType, intptr *newPosition)
 	{
-		return false;
+		return ERROR_NOT_SUPPORTED;
 	}
 
-	bool Archive::File::Reopen(FileBase **other)
+	int Archive::File::Reopen(FileBase **other)
 	{
-		return false;
+		return ERROR_NOT_SUPPORTED;
 	}
 
-	intptr Archive::File::Position()
+	int Archive::File::GetPosition(uint64 &position)
 	{
-		return -1;
+		return ERROR_NOT_SUPPORTED;
 	}
 
 	tstring Archive::File::Name()
@@ -154,7 +154,7 @@ namespace DX
 		// fill input buffer from file
 		uint64 got;
 		uint64 get = (uint32)min(mCompressedDataRemaining, mFileBufferSize);
-		if(!mFile->Read(mFileBuffer.get(), get, &got))
+		if(mFile->Read(mFileBuffer.get(), get, &got) != S_OK)
 		{
 			return 0;
 		}
@@ -214,15 +214,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	intptr Archive::File::Size()
+	int Archive::File::GetSize(uint64 &size)
 	{
-		return mUncompressedSize;
+		size = mUncompressedSize;
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 	// read some data from compressed file
 
-	bool Archive::File::Read(void *buffer, uint64 bytesToRead, uint64 *got)
+	int Archive::File::Read(void *buffer, uint64 bytesToRead, uint64 *got)
 	{
 		if(mFileBuffer == null)
 		{
@@ -294,10 +295,10 @@ namespace DX
 			case ok:
 			case Z_STREAM_END:		// all uncompressed data was read (but not necessarily streamed out)
 			case Z_BUF_ERROR:		// we got enough data to satisfy this read
-				return true;
+				return S_OK;
 
 			default:				// anything else is an error (inflateBack never returns Z_OK)
-				return false;
+				return r;
 		}
 	}
 
@@ -337,7 +338,8 @@ namespace DX
 
 	int Archive::GetCDLocation(uint64 &offset)
 	{
-		uint64 file_size = mFile->Size();
+		uint64 file_size;
+		DXR(mFile->GetSize(file_size));
 		uint64 back_read = 4;
 		uint64 max_back = 0xffff; /* maximum size of global comment */
 
@@ -370,7 +372,7 @@ namespace DX
 			}
 
 			uint64 got;
-			if(!mFile->Read(buf.get(), read_size, &got) || got != read_size)
+			if(mFile->Read(buf.get(), read_size, &got) != S_OK || got != read_size)
 			{
 				return error_fileerror;
 			}
@@ -497,7 +499,8 @@ namespace DX
 	int Archive::ProcessExtraInfo(FileBase *file, size_t extraSize, std::function<int(uint16, uint16, void *)> callback)
 	{
 		Ptr<byte> buffer(new byte[65536]);								// Harumph, max size...
-		uint64 currentPosition = file->Position();
+		uint64 currentPosition;
+		DXR(file->GetPosition(currentPosition));
 		while(extraSize > 0)
 		{
 			uint16 tag;
@@ -584,7 +587,7 @@ namespace DX
 			}
 			uint64 got;
 			char filename[256];
-			if(!mFile->Read(filename, f.Info.FilenameLength, &got) || got != f.Info.FilenameLength)
+			if(mFile->Read(filename, f.Info.FilenameLength, &got) != S_OK || got != f.Info.FilenameLength)
 			{
 				return error_fileerror;
 			}

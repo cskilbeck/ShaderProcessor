@@ -8,26 +8,24 @@ struct MyDXWindow: DXWindow
 {
 	//////////////////////////////////////////////////////////////////////
 
-	AssetManager mAssetManager;
-
 	FPSCamera camera;
 	FPSCamera dashCam;
 
-	Ptr<Shaders::Phong> cubeShader;
-	Ptr<Shaders::Phong::VertBuffer> cubeVerts;
-	Ptr<IndexBuffer<uint16>> cubeIndices;
-	Ptr<Texture> cubeTexture;
-	Ptr<Sampler> cubeSampler;
+	Shaders::Phong cubeShader;
+	Shaders::Phong::VertBuffer cubeVerts;
+	IndexBuffer<uint16> cubeIndices;
+	Texture cubeTexture;
+	Sampler cubeSampler;
 
-	Ptr<Shaders::Simple> simpleShader;
-	Ptr<Shaders::Simple::VertBuffer> gridVB;
-	Ptr<Shaders::Simple::VertBuffer> octahedronVB;
-	Ptr<Shaders::Simple::VertBuffer> simpleVB;
-	Ptr<IndexBuffer<uint16>> octahedronIB;
+	Shaders::Simple simpleShader;
+	Shaders::Simple::VertBuffer gridVB;
+	Shaders::Simple::VertBuffer octahedronVB;
+	Shaders::Simple::VertBuffer simpleVB;
+	IndexBuffer<uint16> octahedronIB;
 
-	Ptr<Shaders::Instanced> instancedShader;
-	Ptr<Shaders::Instanced::VertBuffer0> instancedVB0;
-	Ptr<Shaders::Instanced::VertBuffer1> instancedVB1;
+	Shaders::Instanced instancedShader;
+	Shaders::Instanced::VertBuffer0 instancedVB0;
+	Shaders::Instanced::VertBuffer1 instancedVB1;
 
 	Vec4f cubePos;
 	Vec4f cubeScale;
@@ -42,30 +40,30 @@ struct MyDXWindow: DXWindow
 
 	DrawList drawList;
 
-	Ptr<Shaders::UI> uiShader;
-	Ptr<Shaders::UI::VertBuffer> UIVerts;
-	Ptr<Texture> uiTexture;
-	Ptr<Sampler> uiSampler;
+	Shaders::UI uiShader;
+	Shaders::UI::VertBuffer UIVerts;
+	Texture uiTexture;
+	Sampler uiSampler;
 
 	Ptr<Font> font;
 	Ptr<Font> bigFont;
 
-	Ptr<Shaders::Sprite> spriteShader;
-	Ptr<Shaders::Sprite::VertBuffer> spriteVerts;
-	Ptr<Texture> spriteTexture;
-	Ptr<Sampler> spriteSampler;
+	Shaders::Sprite spriteShader;
+	Shaders::Sprite::VertBuffer spriteVerts;
+	Texture spriteTexture;
+	Sampler spriteSampler;
 
-	Ptr<Shaders::Splat> splatShader;
-	Ptr<Shaders::Splat::VertBuffer> splatVB;
+	Shaders::Splat splatShader;
+	Shaders::Splat::VertBuffer splatVB;
 
-	Ptr<RenderTarget> fpsGraph;
-	Ptr<Sampler> fpsSampler;
+	RenderTarget fpsGraph;
+	Sampler fpsSampler;
 
 	Ptr<SpriteSheet> spriteSheet;
 
-	Ptr<RenderTarget> renderTarget;
-	Ptr<Shaders::Blit> blitShader;
-	Ptr<Shaders::Blit::VertBuffer> blitVB;
+	RenderTarget renderTarget;
+	Shaders::Blit blitShader;
+	Shaders::Blit::VertBuffer blitVB;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -76,7 +74,7 @@ struct MyDXWindow: DXWindow
 	void OnFrame() override;
 	void OnDestroy() override;
 
-	void CreateGrid();
-	void CreateOctahedron();
+	int CreateGrid();
+	int CreateOctahedron();
 };
 

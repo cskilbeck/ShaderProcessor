@@ -27,6 +27,7 @@
 #include "DeferredContext.h"
 #include "Viewport.h"
 #include "LoadImage.h"
+#include "AssetManager.h"
 #include "Texture.h"
 #include "Sampler.h"
 #include "Buffer.h"
@@ -47,7 +48,6 @@
 #include "..\zlib-1.2.8\infback9.h"
 //#include "unzip.h"
 #include "Archive.h"
-#include "AssetManager.h"
 
 //////////////////////////////////////////////////////////////////////
 

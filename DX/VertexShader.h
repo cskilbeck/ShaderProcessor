@@ -12,18 +12,33 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		VertexShader(uint numConstBuffers, char const **constBufferNames,
-					 uint numSamplers, char const **samplerNames,
-					 uint numTextures, char const **textureNames,
-					 Texture **textureArray,
-					 Sampler **samplerArray,
-					 BindingState &bindState,
-					 BindRun *vertexBufferBindings,
-					 uint vertexBufferBindingCount)
-			 : Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindState)
-			 , mVertexBufferBindings(vertexBufferBindings)
-			 , mVertexBufferBindingCount(vertexBufferBindingCount)
+		VertexShader(uint32 numConstBuffers, char const **constBufferNames,
+						uint32 numSamplers, char const **samplerNames,
+						uint32 numTextures, char const **textureNames,
+						Texture **textureArray,
+						Sampler **samplerArray,
+						BindingState &bindingState,
+						BindRun *vertexBufferBindings,
+						uint vertexBufferBindingCount)
+				: Shader(numConstBuffers, constBufferNames,
+					numSamplers, samplerNames,
+					numTextures, textureNames,
+					textureArray,
+					samplerArray,
+					bindingState)
 		{
+			mVertexBufferBindings = vertexBufferBindings;
+			mVertexBufferBindingCount = vertexBufferBindingCount;
+		}
+		
+		//////////////////////////////////////////////////////////////////////
+
+		void Release() override
+		{
+			Shader::Release();
+			mVertexShader.Release();
+			mInputLayout.Release();
+
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -114,7 +129,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *blob, size_t size) override
+		HRESULT D3DCreate(void const *blob, size_t size) override
 		{
 			DXR(Device->CreateVertexShader(blob, size, null, &mVertexShader));
 			return S_OK;
@@ -122,19 +137,10 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *data, size_t size, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
-		{
-			DXR(Create(data, size));
-			DXR(CreateInputLayout(data, size, inputElements, inputElementCount));
-			return S_OK;
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		HRESULT Load(FileResource &f, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
+		HRESULT Create(Resource &f, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
 		{
 			Resource r = FindShaderInSOBFile(f, ShaderType::Vertex);
-			DXR(Shader::Create(r));
+			DXR(D3DCreate(r.Data(), r.Size()));
 			DXR(CreateInputLayout(r.Data(), r.Size(), inputElements, inputElementCount));
 			return S_OK;
 		}

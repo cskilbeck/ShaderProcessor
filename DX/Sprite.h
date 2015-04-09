@@ -72,10 +72,10 @@ namespace DX
 
 		vector<Sprite>						mSprites;
 		std::map<string, int>				mSheet;
-		Ptr<Shaders::Sprite>				mShader;
-		Ptr<Texture>						mPage;
-		Ptr<Sampler>						mSampler;
-		Ptr<VertexBuffer<Vert>>				mVertexBuffer;
+		Shaders::Sprite						mShader;
+		Texture								mPage;
+		Sampler								mSampler;
+		VertexBuffer<Vert>					mVertexBuffer;
 		Vert *								mCurrentVert;
 		tstring								mName;
 		uint32								mScreenWidth;
@@ -100,10 +100,11 @@ namespace DX
 			return s;
 		}
 
-		void BeginRun(ID3D11DeviceContext *context)
+		HRESULT BeginRun(ID3D11DeviceContext *context)
 		{
-			mVertBase = mVertexBuffer->Map(context);
+			DXR(mVertexBuffer.Map(context, mVertBase));
 			mVertPointer = mVertBase;
+			return S_OK;
 		}
 
 		void Add(Sprite *sprite)
@@ -135,25 +136,27 @@ namespace DX
 		void ExecuteRun(ID3D11DeviceContext *context)
 		{
 			uint count = (uint)(mVertPointer - mVertBase);
-			mShader->Activate(context);
-			mVertexBuffer->UnMap(context);
-			mVertexBuffer->Activate(context);
+			mShader.Activate(context);
+			mVertexBuffer.UnMap(context);
+			mVertexBuffer.Activate(context);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			context->Draw(count, 0);
 		}
 
-		void SetupTransform(ID3D11DeviceContext *context, int width, int height)
+		HRESULT SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
-			auto v = mShader->gs.vConstants.Map(context);
+			Shaders::Sprite::GS::vConstants_t *v;
+			DXR(mShader.gs.vConstants.Map(context, v));
 			v->TransformMatrix = Transpose(OrthoProjection2D(width, height));
-			mShader->gs.vConstants.UnMap(context);
+			mShader.gs.vConstants.UnMap(context);
+			return S_OK;
 		}
 
 		void SetupDrawlist(ID3D11DeviceContext *context, DrawList &d, int width, int height)
 		{
+			DXV(SetupTransform(context, width, height));
 			mDrawList = &d;
-			SetupTransform(context, width, height);
-			d.Reset(context, mShader.get(), mVertexBuffer.get());
+			d.Reset(context, &mShader, &mVertexBuffer);
 			d.BeginPointList();
 		}
 
@@ -182,24 +185,29 @@ namespace DX
 		SpriteSheet(tchar const *filename)
 		{
 			DXT(Load(filename));
-			mSampler.reset(new Sampler());
-			mShader.reset(new Shaders::Sprite());
-			mShader->ps.page = mPage.get();
-			mShader->ps.smplr = mSampler.get();
-			mVertexBuffer.reset(new Shaders::Sprite::VertBuffer(500, null, DynamicUsage, Writeable));
+			mSampler.Create();
+			mShader.Create();
+			mShader.ps.page = &mPage;
+			mShader.ps.smplr = &mSampler;
+			mVertexBuffer.Create(500, null, DynamicUsage, Writeable);
 		}
 
 		virtual ~SpriteSheet()
 		{
-			mSampler.reset();
+			Release();
+		}
+
+		void Release()
+		{
+			mSampler.Release();
+			mShader.Release();
+			mSprites.clear();
+			mPage.Release();
 		}
 
 		HRESULT Load(tchar const *filename)
 		{
-			mSheet.clear();
-			mSprites.clear();
-			mPage.reset();
-			mSampler.reset();
+			Release();
 
 			wstring buffer;
 			xml_doc *doc = LoadUTF8XMLFile(filename, buffer);
@@ -218,16 +226,26 @@ namespace DX
 
 			tstring textureName = TStringFromWideString(GetValue(root, L"imagePath"));
 
-			textureName = GetPath(filename) + textureName;
+			//textureName = GetPath(filename) + textureName;
 
 			Vec2f tsize(GetFloat(root, L"width"), GetFloat(root, L"height"));
 
-			mPage.reset(new Texture(textureName.c_str()));
-			if(!mPage->IsValid())
+			DiskFile *page;
+			if(!AssetManager::Open(textureName.c_str(), (FileBase **)&page))
 			{
 				return ERROR_FILE_NOT_FOUND;
 			}
-			if(mPage->FSize() != tsize)
+
+			HRESULT r = mPage.Load(page);
+			page->Close();
+
+			DXR(r);
+
+			if(!mPage.IsValid())
+			{
+				return ERROR_FILE_NOT_FOUND;
+			}
+			if(mPage.FSize() != tsize)
 			{
 				return ERROR_BAD_FORMAT;
 			}

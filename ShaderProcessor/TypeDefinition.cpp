@@ -227,10 +227,17 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 
 void TypeDefinition::ConstructorOutput(int bindPoint)
 {
+	//OutputLine(", %s()", mDesc.Name);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TypeDefinition::CreateOutput(int bindPoint)
+{
 	string defaultStr = "null";
 	if(mDefaultBuffer != null)
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	OutputLine(", %s(%u, %s_%s_Offsets, %s, this, %d, %d)", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
+	OutputLine("%s.Create(%u, %s_%s_Offsets, %s, this, %d, %d);", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
 }

@@ -48,21 +48,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 	// Simple file loader
+	// TODO (charlie): get rid of this, use AssetManager::LoadFile
 
-	bool LoadFile(tchar const *filename, MemoryFile &data)
+	int LoadFile(tchar const *filename, MemoryFile &data)
 	{
 		DiskFile f;
-		if(!f.Open(filename, DiskFile::ForReading))
-		{
-			return false;
-		}
-
-		intptr fileSize = f.Size();
-		if(fileSize == -1)
-		{
-			ErrorMsgBox(Format(TEXT("Can't load %s (~2GB limit, sorry)"), filename).c_str());
-			return false;
-		}
+		uint64 fileSize;
+		DXR(f.Open(filename, DiskFile::ForReading));
+		DXR(f.GetSize(fileSize));
 
 		MemoryFile mf(fileSize + sizeof(tchar));
 		if(mf.ptr == null)
@@ -72,13 +65,8 @@ namespace DX
 		}
 
 		uint64 got;
-		if(!f.Read(mf.ptr, fileSize, &got))
-		{
-			return false;
-		}
-
+		DXR(f.Read(mf.ptr, fileSize, &got));
 		*(tchar *)(mf.ptr + fileSize) = tchar(0);
-
 		data = mf;	// transfer ownership to the client MemoryFile
 		mf.own = false;
 		return true;
@@ -87,15 +75,12 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// Simple file saver
 
-	bool SaveFile(tchar const *filename, void const *data, uint32 size)
+	int SaveFile(tchar const *filename, void const *data, uint32 size)
 	{
-		assert(filename != null && data != null && size != 0);
 		DiskFile f;
-		if(!f.Create(filename, DiskFile::Overwrite))
-		{
-			return false;
-		}
-		return f.Write(data, size);
+		DXR(f.Create(filename, DiskFile::Overwrite));
+		DXR(f.Write(data, size));
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////

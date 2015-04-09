@@ -13,8 +13,8 @@ namespace
 
 	linked_list<Font, &Font::mListNode> sAllFonts;
 	bool initialised = false;
-	Ptr<DXShaders::Font> shader;
-	Ptr<Sampler> sampler;
+	DXShaders::Font shader;
+	Sampler sampler;
 
 	Window *fontManagerWindow;
 
@@ -26,8 +26,8 @@ namespace
 			TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
 			f->~Font();
 		}
-		shader.reset();
-		sampler.reset();
+		shader.Release();
+		sampler.Release();
 	};
 }
 
@@ -79,9 +79,9 @@ static void LoadShader()
 {
 	if(!initialised)
 	{
-		shader.reset(new DXShaders::Font());
-		sampler.reset(new Sampler());
-		shader->ps.smplr = sampler.get();
+		shader.Create();
+		sampler.Create();
+		shader.ps.smplr = &sampler;
 		initialised = true;
 	}
 }
@@ -111,8 +111,8 @@ namespace DX
 	void FontManager::Close()
 	{
 		fontManagerWindow->Destroyed -= onDestroy;
-		shader.reset();
-		sampler.reset();
+		shader.Release();
+		sampler.Release();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -147,8 +147,8 @@ namespace DX
 		using Font = DXShaders::Font;
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		DXShaders::Font::VertBuffer *vb = (Font::VertBuffer *)vertexBuffer.get();
-		mDrawList->Reset(context, shader.get(), vb);
+		DXShaders::Font::VertBuffer *vb = (Font::VertBuffer *)&vertexBuffer;
+		mDrawList->Reset(context, &shader, vb);
 		mDrawList->SetConstantData(Geometry, v, Font::GS::vConstants_index);
 	}
 
@@ -157,8 +157,8 @@ namespace DX
 	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
 	{
 		using Font = DXShaders::Font;
-		shader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		Font::VertBuffer *vb = (Font::VertBuffer *)vertexBuffer.get();
+		shader.gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		Font::VertBuffer *vb = (Font::VertBuffer *)&vertexBuffer;
 		vb->Activate(context);
 	}
 
@@ -186,7 +186,7 @@ namespace DX
 		, mGraphics(null)
 		, mCurrentPageIndex(-1)
 	{
-		vertexBuffer.reset(new DXShaders::Font::VertBuffer(4096, null, DynamicUsage, Writeable));
+		vertexBuffer.CreateBuffer(VertexBufferType, 4096, null, DynamicUsage, Writeable);
 		sAllFonts.push_back(this);
 	}
 
@@ -203,7 +203,7 @@ namespace DX
 		Delete(mLayers);
 		Delete(mKerningValues);
 		Delete(mGraphics);
-		vertexBuffer.reset();
+		vertexBuffer.CleanUp();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -243,7 +243,8 @@ namespace DX
 					string path = GetPath(filename) + GetFilename(filename);
 					for(int i = 0; i<mPageCount; ++i)
 					{
-						mPages[i] = new Texture(Format(TEXT("%s%d.png"), path.c_str(), i).c_str());
+						mPages[i] = new Texture();
+						mPages[i]->Load(Format(TEXT("%s%d.png"), path.c_str(), i).c_str());
 					}
 
 					mLayers = new Layer[mLayerCount];

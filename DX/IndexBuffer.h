@@ -37,14 +37,15 @@ namespace DX
 	{
 		static_assert(IndexBufferFormat<T>::format != DXGI_FORMAT_UNKNOWN, "Only uint16 or uint32 index buffers are supported");
 
-		IndexBuffer(T count, T *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
+		IndexBuffer()
+			: Buffer<T>()
 		{
-			DXT(Create(count, data, usage, rwOption));
 		}
 
 		HRESULT Create(T count, T *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
-			return Buffer<T>::Create(IndexBufferType, count, data, usage, rwOption);
+			DXR(Buffer<T>::CreateBuffer(IndexBufferType, count, data, usage, rwOption));
+			return S_OK;
 		}
 
 		void Activate(ID3D11DeviceContext *context, uint offset = 0)

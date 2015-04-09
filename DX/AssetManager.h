@@ -4,18 +4,15 @@ namespace DX
 {
 	struct AssetSource;
 
-	struct AssetManager
+	// Only one AssetManager for now
+
+	namespace AssetManager
 	{
-		AssetManager();
-		~AssetManager();
+		int AddFolder(tchar const *folderName);
+		int AddArchive(tchar const *archiveName);
 
-		bool AddFolder(tchar const *folderName);
-		bool AddArchive(tchar const *archiveName);
+		int Open(tchar const *filename, FileBase **file);
 
-		bool Open(tchar const *filename, FileBase **file);
-
-	private:
-
-		std::list<AssetSource *> sources;
+		int LoadFile(tchar const *filename, FileResource &data);
 	};
 }

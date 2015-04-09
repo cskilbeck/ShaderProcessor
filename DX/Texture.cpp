@@ -154,7 +154,7 @@ static uint BPPFromTextureFormat(DXGI_FORMAT format)
 
 namespace DX
 {
-	void Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption)
+	HRESULT Texture::InitFromPixelBuffer(byte *buffer, DXGI_FORMAT pixelFormat, int width, int height, bool renderTarget, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		uint bpp = BPPFromTextureFormat(pixelFormat);
 		D3D11_SUBRESOURCE_DATA *psrd = null;
@@ -175,22 +175,23 @@ namespace DX
 		{
 			desc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 		}
-		if(!FAILED(DX::Device->CreateTexture2D(&desc, psrd, &mTexture2D)))
+		DXR(DX::Device->CreateTexture2D(&desc, psrd, &mTexture2D));
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+		srvDesc.Format = pixelFormat;
+		srvDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.Texture2D.MipLevels = desc.MipLevels;
+		srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
+		HRESULT hr = DX::Device->CreateShaderResourceView(mTexture2D, &srvDesc, &mShaderResourceView);
+		if(FAILED(hr))
 		{
-			D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-			srvDesc.Format = pixelFormat;
-			srvDesc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-			srvDesc.Texture2D.MipLevels = desc.MipLevels;
-			srvDesc.Texture2D.MostDetailedMip = desc.MipLevels - 1;
-			if(FAILED(DX::Device->CreateShaderResourceView(mTexture2D, &srvDesc, &mShaderResourceView)))
-			{
-				mTexture2D.Release();
-			}
-			else
-			{
-				mTexture2D->GetDesc(&mTextureDesc);
-			}
+			mTexture2D.Release();
+			return hr;
 		}
+		else
+		{
+			mTexture2D->GetDesc(&mTextureDesc);
+		}
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -210,36 +211,69 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(tchar const *name)
-		: mName(name)
+	Texture::Texture()
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT Texture::Load(DiskFile *file)
 	{
 		sAllTextures.push_back(this);
-		if(!FAILED(CreateWICTextureFromFile(WideStringFromTString(mName).c_str(), (ID3D11Resource **)&mTexture2D, &mShaderResourceView)))
+		mName = file->Name();
+		DXR(CreateWICTextureFromDiskFile(file, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
+		mTexture2D->GetDesc(&mTextureDesc);
+		return S_OK;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT Texture::Load(tchar const *name)
+	{
+		mName = name;
+		sAllTextures.push_back(this);
+		DiskFile *d;
+		if(!AssetManager::Open(name, (FileBase **)&d))
 		{
-			mTexture2D->GetDesc(&mTextureDesc);
+			return ERROR_FILE_NOT_FOUND;
 		}
+		Ptr<FileBase> filep;
+		DXR(CreateWICTextureFromDiskFile(d, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
+		mTexture2D->GetDesc(&mTextureDesc);
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget, BufferUsage usage, ReadWriteOption rwOption)
+	HRESULT Texture::Create(int w, int h, DXGI_FORMAT format, byte *pixels, bool isRenderTarget, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		sAllTextures.push_back(this);
-		InitFromPixelBuffer(pixels, format, w, h, isRenderTarget, usage, rwOption);
+		DXR(InitFromPixelBuffer(pixels, format, w, h, isRenderTarget, usage, rwOption));
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture::Texture(int width, int height, Color color, BufferUsage usage, ReadWriteOption rwOption)
+	HRESULT Texture::Create(int width, int height, Color color, BufferUsage usage, ReadWriteOption rwOption)
 	{
 		sAllTextures.push_back(this);
-		InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false, usage, rwOption);
+		DXR(InitFromPixelBuffer(ColorArray(width, height, color).get(), DXGI_FORMAT_B8G8R8A8_UNORM, width, height, false, usage, rwOption));
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	Texture::~Texture()
 	{
+		Release();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Texture::Release()
+	{
+		mTexture2D.Release();
+		mShaderResourceView.Release();
 		sAllTextures.remove(this);
 	}
 
@@ -262,7 +296,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Texture *Texture::Grid(int w, int h, int gridWidth, int gridHeight, Color color1, Color color2)
+	HRESULT Texture::CreateGrid(Texture &t, int w, int h, int gridWidth, int gridHeight, Color color1, Color color2)
 	{
 		Ptr<Color> buffer(new Color[w * h]);
 		Color cols[2] = { color1, color2 };
@@ -277,26 +311,45 @@ namespace DX
 				*c++ = cols[q];
 			}
 		}
-		return new Texture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, (byte *)buffer.get());
+		DXR(t.Create(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, (byte *)buffer.get()));
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	RenderTarget::RenderTarget(int w, int h, RenderTargetDepthOption depthOption)
-		: Texture(w, h, DXGI_FORMAT_B8G8R8A8_UNORM, null, true, DefaultUsage)
+	RenderTarget::RenderTarget()
 	{
-		DXT(CreateRenderTargetView());
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	HRESULT RenderTarget::Create(int w, int h, RenderTargetDepthOption depthOption)
+	{
+		DXR(Texture::Create(w, h, DXGI_FORMAT_B8G8R8A8_UNORM, null, true, DefaultUsage));
+		DXR(CreateRenderTargetView());
 		if(depthOption == WithDepthBuffer)
 		{
-			DXT(CreateDepthBuffer());
-			DXT(CreateDepthStencilView());
+			DXR(CreateDepthBuffer());
+			DXR(CreateDepthStencilView());
 		}
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	RenderTarget::~RenderTarget()
 	{
+		Release();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void RenderTarget::Release()
+	{
+		Texture::Release();
+		mDepthBuffer.Release();
+		mDepthStencilView.Release();
+		mRenderTargetView.Release();
 	}
 
 	//////////////////////////////////////////////////////////////////////

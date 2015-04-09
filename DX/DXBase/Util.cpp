@@ -104,38 +104,39 @@ namespace DX
 	//}
 
 	//////////////////////////////////////////////////////////////////////
+	// TODO (charlie): get rid of this crap
 
-	uint8 *LoadFile(tchar const *filename, size_t *size = null)
-	{
-		Ptr<uint8> buf;
-		DiskFile f;
-		if(!f.Open(filename, DiskFile::ForReading))
-		{
-			MessageBox(null, Format(TEXT("File not found: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
-			return null;
-		}
+	//uint8 *LoadFile(tchar const *filename, uint64 *size = null)
+	//{
+	//	Ptr<uint8> buf;
+	//	DiskFile f;
+	//	if(!f.Open(filename, DiskFile::ForReading))
+	//	{
+	//		MessageBox(null, Format(TEXT("File not found: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+	//		return null;
+	//	}
 
-		intptr fileSize = f.Size();
-		if(fileSize == -1)
-		{
-			MessageBox(null, Format(TEXT("Couldn't get file size of: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
-			return null;
-		}
+	//	uint64 fileSize;
+	//	if(f.GetSize(fileSize) != S_OK)
+	//	{
+	//		MessageBox(null, Format(TEXT("Couldn't get file size of: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+	//		return null;
+	//	}
 
-		buf.reset(new byte[fileSize]);
+	//	buf.reset(new byte[fileSize]);
 
-		size_t got;
-		if(!f.Read(buf.get(), fileSize, &got) || got != fileSize)
-		{
-			MessageBox(null, Format(TEXT("Error reading from: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
-			return null;
-		}
-		if(size != null)
-		{
-			*size = fileSize;
-		}
-		return buf.release();
-	}
+	//	uint64 got;
+	//	if(f.Read(buf.get(), fileSize, &got) != S_OK || got != fileSize)
+	//	{
+	//		MessageBox(null, Format(TEXT("Error reading from: %s"), filename).c_str(), TEXT("LoadFile"), MB_ICONERROR);
+	//		return null;
+	//	}
+	//	if(size != null)
+	//	{
+	//		*size = fileSize;
+	//	}
+	//	return buf.release();
+	//}
 
 	//////////////////////////////////////////////////////////////////////
 

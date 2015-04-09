@@ -931,6 +931,20 @@ void HLSLShader::OutputConstructor()
 	}
 	UnIndent("{");
 	OutputLine("}");
+	OutputLine();
+
+	// Now output the create function
+	OutputLine("HRESULT Create(Resource &f) override");
+	OutputLine("{");
+	Indent();
+	OutputLine("DXR(%sShader::Create(f%s));", mShaderTypeDesc.name, VSTag().c_str());
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	{
+		(*i)->CreateOutput();
+	}
+	OutputLine("return S_OK;");
+	UnIndent("}");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////

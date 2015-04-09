@@ -50,3 +50,9 @@ HRESULT CreateWICTextureFromFile(_In_z_ const wchar_t* szFileName,
 								 _In_ size_t maxsize = 0,
 								 _In_ bool createMipMaps = false
 								 );
+
+HRESULT CreateWICTextureFromDiskFile(_In_z_		DX::DiskFile *file,
+								 _Out_opt_	ID3D11Resource **texture,
+								 _Out_opt_	ID3D11ShaderResourceView **textureView,
+								 _In_		size_t maxsize = 0,
+								 _In_		bool createMipMaps = false);

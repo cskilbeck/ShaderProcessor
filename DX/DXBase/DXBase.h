@@ -47,12 +47,15 @@
 #include <memory>
 #include <unordered_map>
 #include <map>
+#include <exception>
 
 //////////////////////////////////////////////////////////////////////
 // DX
 
 #include "Aligned.h"
 #include "Types.h"
+#include "Macros.h"
+#include "Flags.h"
 #include "Win32.h"
 #include "linked_list.h"
 #include "Pool.h"

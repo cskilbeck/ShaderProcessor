@@ -9,7 +9,8 @@ namespace DX
 	struct Resource
 	{
 		Resource();
-		Resource(void *data, size_t size)
+
+		Resource(void *data, uint64 size)
 		{
 			Data() = data;
 			Size() = size;
@@ -40,7 +41,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		size_t &Size()
+		uint64 &Size()
 		{
 			return size;
 		}
@@ -50,7 +51,7 @@ namespace DX
 	protected:
 
 		void *		data;
-		size_t		size;
+		uint64		size;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -62,32 +63,49 @@ namespace DX
 		{
 		}
 
-		Blob(size_t size)
+		Blob(uint64 size)
 			: mSize(size)
-			, mData(new byte[size])
+			, mData(new Aligned_byte[size])
 		{
 		}
 
-		void Reset(byte *data, size_t size)
+		void Fill(void *data, uint64 size)
 		{
-			mData.reset(data);
+			memcpy(mData.get(), data, min(size, mSize));
+		}
+
+		void Reset(uint64 size)
+		{
+			mData.reset(new Aligned_byte[size]);
+			mSize = size;
+		}
+
+		void Reset(byte *data, uint64 size)
+		{
+			assert(((intptr)data & 0xf) == 0);
+			mData.reset((Aligned_byte *)data);
 			mSize = size;
 		}
 
 		operator byte *()
 		{
-			return mData.get();
+			return (byte *)mData.get();
 		}
 
-		size_t mSize;
-		Ptr<byte> mData;
+		uint64 Size() const
+		{
+			return mSize;
+		}
+
+		uint64 mSize;
+		Ptr<Aligned_byte> mData;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
 	struct MemoryResource: Resource
 	{
-		MemoryResource(void const *data, size_t size)
+		MemoryResource(void const *data, uint64 size)
 			: Resource(const_cast<void *>(data), size)	// yuck
 		{
 		}
@@ -104,6 +122,8 @@ namespace DX
 
 	struct FileResource: Resource
 	{
+		FileResource();
+		FileResource(void *data, uint64 size);
 		FileResource(tchar const *name);
 		~FileResource();
 	};

@@ -18,13 +18,21 @@ namespace DX
 
 	template<typename definition> struct ConstBuffer: definition, Buffer<definition>, Aligned16	// definition MUST be POD
 	{
-		ConstBuffer(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
+		ConstBuffer()
 			: Buffer<definition>()
-			, mOffsetCount(OffsetCount)
-			, mOffsets(Offsets)
-			, mDefaults(Defaults)
-			, mIndex(index)
+			, mIndex(0)
+			, mOffsetCount(0)
+			, mOffsets(null)
+			, mDefaults(null)
 		{
+		}
+
+		HRESULT Create(uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
+		{
+			mOffsetCount = OffsetCount;
+			mOffsets = Offsets;
+			mDefaults = Defaults;
+			mIndex = index;
 			if(mDefaults != null)
 			{
 				memcpy(this, mDefaults, sizeof(definition)); // definition must be most-derived and there can be no virtuals!
@@ -33,9 +41,10 @@ namespace DX
 			{
 				memset(this, 0, sizeof(definition));
 			}
-			DXI(Create(BufferType::ConstantBufferType, 1, this, DynamicUsage, Writeable));
+			DXR(CreateBuffer(BufferType::ConstantBufferType, 1, this, DynamicUsage, Writeable));
 			parent->AddConstBuffer(this, bindPoint);
 			assert(parent->mConstBuffers.size() <= parent->mNumConstBuffers);
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -55,20 +64,24 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Update(ID3D11DeviceContext *context)
+		HRESULT Update(ID3D11DeviceContext *context)
 		{
-			definition *d = Map(context);
+			definition *d;
+			DXR(Map(context, d));
 			memcpy(d, (definition *)this, sizeof(definition));
 			UnMap(context);
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Update()
+		HRESULT Update()
 		{
-			definition *d = Map(DX::Context);
+			definition *d;
+			DXR(Map(DX::Context, d));
 			memcpy(d, (definition *)this, sizeof(definition));
 			UnMap(DX::Context);
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -82,10 +95,10 @@ namespace DX
 
 	private:
 
-		uint32 const					mIndex;
-		uint32 const					mOffsetCount;
-		ConstBufferOffset const * const	mOffsets;
-		uint32 const * const 			mDefaults;
+		uint32							mIndex;
+		uint32							mOffsetCount;
+		ConstBufferOffset const *		mOffsets;
+		uint32 *			 			mDefaults;
 	};
 
 }

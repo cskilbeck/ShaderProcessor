@@ -594,3 +594,41 @@ HRESULT CreateWICTextureFromFile(_In_z_	const wchar *fileName,
 
 	return S_OK;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+HRESULT CreateWICTextureFromDiskFile(_In_z_		DX::DiskFile *file,
+								_Out_opt_	ID3D11Resource **texture,
+								_Out_opt_	ID3D11ShaderResourceView **textureView,
+								_In_		size_t maxsize,
+								_In_		bool createMipMaps)
+{
+	assert(DX::Device != null);
+
+	if((HANDLE)file == INVALID_HANDLE_VALUE || (texture == null && textureView == null))
+	{
+		return E_INVALIDARG;
+	}
+
+	DXPtr<ID3D11DeviceContext> context;
+	if(createMipMaps)
+	{
+		DX::Device->GetImmediateContext(&context);
+	}
+
+	IWICImagingFactory *pWIC;
+	DXR(GetWIC(&pWIC));
+
+	DXPtr<IWICBitmapDecoder> decoder;
+	ULONG_PTR p = (ULONG_PTR)(HANDLE)file->h;
+	DXR(pWIC->CreateDecoderFromFileHandle(p, 0, WICDecodeMetadataCacheOnLoad, &decoder));
+
+	DXPtr<IWICBitmapFrameDecode> frame;
+	DXR(decoder->GetFrame(0, &frame));
+
+	DXR(CreateTextureFromWIC(context.get(), frame.get(), texture, textureView, maxsize, createMipMaps));
+
+	SetDebugInfo(texture, textureView, DX::WideStringFromTString(file->Name()).c_str());
+
+	return S_OK;
+}

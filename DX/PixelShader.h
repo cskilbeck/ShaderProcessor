@@ -12,13 +12,18 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		PixelShader(uint numConstBuffers, char const **constBufferNames,
-					uint numSamplers, char const **samplerNames,
-					uint numTextures, char const **textureNames,
+		PixelShader(uint32 numConstBuffers, char const **constBufferNames,
+					uint32 numSamplers, char const **samplerNames,
+					uint32 numTextures, char const **textureNames,
 					Texture **textureArray,
 					Sampler **samplerArray,
 					BindingState &bindingState)
-			: Shader(numConstBuffers, constBufferNames, numSamplers, samplerNames, numTextures, textureNames, textureArray, samplerArray, bindingState)
+			: Shader(numConstBuffers, constBufferNames,
+						numSamplers, samplerNames,
+						numTextures, textureNames,
+						textureArray,
+						samplerArray,
+						bindingState)
 		{
 		}
 
@@ -34,7 +39,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Create(void const *blob, size_t size) override
+		HRESULT D3DCreate(void const *blob, size_t size) override
 		{
 			DXT(Device->CreatePixelShader(blob, size, null, &mPixelShader));
 			return S_OK;
@@ -42,7 +47,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Load(FileResource &f)
+		HRESULT Create(Resource &f)
 		{
 			DXR(Shader::Create(FindShaderInSOBFile(f, ShaderType::Pixel)));
 			return S_OK;

@@ -32,9 +32,11 @@
     <ClInclude Include="D3D.h" />
     <ClInclude Include="DXBase.h" />
     <ClInclude Include="File.h" />
+    <ClInclude Include="Flags.h" />
     <ClInclude Include="Half.h" />
     <ClInclude Include="HLSLTypes.h" />
     <ClInclude Include="linked_list.h" />
+    <ClInclude Include="Macros.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Options.h" />
     <ClInclude Include="Point.h" />

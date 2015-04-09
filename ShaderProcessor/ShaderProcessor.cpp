@@ -123,10 +123,12 @@ void OutputMaterial()
 
 //////////////////////////////////////////////////////////////////////
 
-uint SaveSOBFile(string const &binFile)
+int CreateSOB(MemoryFile &memFile)
 {
 	uint32 offsets[NumShaderTypes] = { 0 };
 	uint32 sizes[NumShaderTypes] = { 0 };
+
+	uint64 totalSize = sizeof(offsets);
 
 	// get the sizes & offsets
 	for(auto &i : shaders)
@@ -135,6 +137,7 @@ uint SaveSOBFile(string const &binFile)
 		uint32 size = (uint32)s.mSize;
 		uint type = s.mShaderType;
 		sizes[type] = size;
+		totalSize += size;
 	}
 
 	uint currentOffset = sizeof(offsets);
@@ -144,35 +147,59 @@ uint SaveSOBFile(string const &binFile)
 		currentOffset += sizes[i];
 	}
 
-	// create the file
-	DiskFile f;
-	if(!f.Create(binFile.c_str(), DiskFile::Overwrite))
+	memFile.Reset(totalSize);
+
+	// write the offsets
+	uint64 wrote;
+	int e = memFile.Write(offsets, sizeof(offsets), &wrote);
+	if(e != S_OK)
 	{
-		emit_error("Can't create %s (%08x)", binFile.c_str(), f.error);
+		emit_error("Can't write to SOB blob (%08x)", e);
+		return e;
 	}
-	else
+	if(wrote != sizeof(offsets))
 	{
-		// write the offsets
-		uint64 wrote;
-		if(!f.Write(offsets, sizeof(offsets), &wrote))
+		emit_error("Error writing to SOB blob");
+		return E_FAIL;
+	}
+	// write the blobs
+	for(auto &i : shaders)
+	{
+		auto s = *i.second;
+		int e = memFile.Write(s.mBlob, s.mSize, &wrote);
+		if(e != S_OK)
 		{
-			emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
-		}
-		else
-		{
-			// write the blobs
-			for(auto &i : shaders)
-			{
-				auto s = *i.second;
-				if(!f.Write(s.mBlob, s.mSize, &wrote))
-				{
-					emit_error("Can't write to %s (%08x)", binFile.c_str(), f.error);
-					break;
-				}
-			}
+			emit_error("Can't write to %s (%08x)", binFile.c_str(), e);
+			return e;
 		}
 	}
-	return success;
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+int SaveSOBFile(string const &binFile, MemoryFile &memFile)
+{
+	uint64 size;
+	DXR(memFile.GetSize(size));
+	DXR(SaveFile(binFile.c_str(), memFile.ptr, (uint32)size));
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+int EmitSOBFile(MemoryFile &memFile)
+{
+	using namespace Printer;
+	OutputCommentLine("SOB");
+	OutputLine("extern uint32 const WEAKSYM %s_SOB[] = ", shaderName.c_str());
+	OutputIndent("{");
+	Indent();
+	OutputBinary(memFile.ptr, (uint32)memFile.size);
+	UnIndent();
+	OutputLine("};");
+	OutputLine();
+	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -214,7 +241,7 @@ int OpenHeaderFile(DiskFile &headerFile)
 	if(options[HEADER_FILE])
 	{
 		char const *name = options[HEADER_FILE].arg;
-		if(!headerFile.Create(name, DiskFile::Overwrite))
+		if(headerFile.Create(name, DiskFile::Overwrite) != S_OK)
 		{
 			return err_cantcreateheaderfile;
 		}
@@ -296,41 +323,60 @@ void OutputShaderStruct()
 	shaderCtors += Format("%s_DepthStencilDesc, ", shaderName.c_str());
 	shaderCtors += Format("%s_RasterizerDesc", shaderName.c_str());
 
-	OutputCommentLine("Constructor");
-	OutputLine("%s(): ShaderState(%s)", shaderName.c_str(), shaderCtors.c_str());
+	OutputCommentLine("Constructor/Destructor/Load/Release");
+	OutputLine("%s(): ShaderState()", shaderName.c_str());
 	Indent("{");
 	OutputLine();
-	char const *func;
+	UnIndent("}");
+	OutputLine();
+
+	OutputLine("~%s()", shaderName.c_str());
+	Indent("{");
+	OutputLine();
+	OutputLine("Release();");
+	UnIndent("}");
+	OutputLine();
+
+	OutputLine("HRESULT Create()");
+	Indent("{");
+	OutputLine();
+	OutputLine("DXR(ShaderState::Create(%s));", shaderCtors.c_str());
 	if(!options[EMBED_BYTECODE])
 	{
-		OutputLine("FileResource f(TEXT(\"%s\"));", relativeBinFile.c_str());
-		func = "Load";
+		OutputLine("FileResource sob;");
+		OutputLine("DXR(AssetManager::LoadFile(TEXT(\"%s\"), sob));", relativeBinFile.c_str());
 	}
 	else
 	{
-		func = "Create";
+		OutputLine("MemoryResource sob(%s_SOB, sizeof(%s_SOB));", shaderName.c_str(), shaderName.c_str());
 	}
 
 	for(auto &s : shaders)
 	{
 		auto &shader = *s.second;
-		string params;
-		if(options[EMBED_BYTECODE])
-		{
-			params = Format("%s_%s_Data, %d", shaderName.c_str(), shader.RefName().c_str(), shader.mSize);
-		}
-		else
-		{
-			params = "f";
-		}
-		OutputLine("%s.%s(%s%s);", ToLower(shader.RefName()).c_str(), func, params.c_str(), shader.VSTag().c_str());
+		OutputLine("%s.Create(sob);", ToLower(shader.RefName()).c_str());
 	}
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{
 		OutputLine("Shaders[%s] = %s;", ShaderTypeDescs[i].name, (shader_array[i] == null) ? "null" : Format("&%s", ToLower(ShaderTypeDescs[i].refName).c_str()).c_str());
 	}
+	OutputLine("return S_OK;");
 	UnIndent();
 	OutputLine("}");
+	OutputLine();
+
+	OutputLine("void Release()");
+	Indent("{");
+	OutputLine();
+	OutputLine("ShaderState::Release();");
+	for(uint i = 0; i < NumShaderTypes; ++i)
+	{
+		if(shader_array[i] != null)
+		{
+			OutputLine("%s.Release();", ToLower(ShaderTypeDescs[i].refName).c_str());
+		}
+	}
+	UnIndent("}");
 	OutputLine();
 
 	// Activate
@@ -415,6 +461,10 @@ int main(int argc, char *argv[])
 		relativeBinFile = ReplaceAll(Format(TEXT("%s%s.sob"), dataFolder.c_str(), shaderName.c_str()), tstring("\\"), tstring("\\\\"));
 		binFile = Format("%s%s.sob", outpath.c_str(), shaderName.c_str());
 	}
+	else
+	{
+		relativeBinFile = Format("%s.sob", shaderName.c_str());
+	}
 
 	// Right, the output
 
@@ -425,9 +475,15 @@ int main(int argc, char *argv[])
 	OutputHeader(shaderName.c_str(), namespaceIn);
 	OutputMaterial();
 
+	// Create a SOB file in memory
+	// Output it to the disk or the header file
+	// Use it as-is (either loaded or from the header) the same way
+	MemoryFile memFile;
+	CreateSOB(memFile);
+
 	if(!options[EMBED_BYTECODE])
 	{
-		uint err = SaveSOBFile(binFile);
+		uint err = SaveSOBFile(binFile, memFile);
 		if(err != success)
 		{
 			return err;
@@ -435,7 +491,8 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		Loop<&HLSLShader::OutputBlob>(shaders);
+		EmitSOBFile(memFile);
+//		Loop<&HLSLShader::OutputBlob>(shaders);
 	}
 
 	Loop<&HLSLShader::OutputConstBufferNamesAndOffsets>(shaders);

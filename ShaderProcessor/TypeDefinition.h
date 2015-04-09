@@ -202,6 +202,7 @@ struct TypeDefinition
 	void StaticsOutput(DX::string const &shaderName);
 	void MemberOutput(DX::string const &shaderName, DX::uint bindPoint);
 	void ConstructorOutput(int index);
+	void CreateOutput(int bindPoint);
 
 	Binding *								mBinding;		// only set for top level ones (const buffers, basically)
 	D3D11_SHADER_BUFFER_DESC				mDesc;

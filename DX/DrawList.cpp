@@ -102,7 +102,8 @@ namespace
 		{
 			Shader *s = mShader->Shaders[item->mShaderType];
 			TypelessBuffer *b = s->mConstBuffers[item->mIndex];
-			void *p = b->Map(context);
+			byte *p;
+			DXV(b->Map(context, p));
 			memcpy(p, (byte *)item + sizeof(ConstBufferItem), item->mSize);
 			b->UnMap(context);
 		}
@@ -211,7 +212,8 @@ namespace DX
 		i->mVertexBuffer = vb;
 		i->mVertexSize = vertSize;
 		mCurrentVertexBuffer = vb;
-		mVertZero = mVertBase = mVertPointer = vb->Map(mContext);
+		DXV(vb->Map(mContext, mVertZero));
+		mVertBase = mVertPointer = mVertZero;
 		mVertexSize = vertSize;
 	}
 

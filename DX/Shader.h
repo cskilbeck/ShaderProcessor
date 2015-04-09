@@ -54,7 +54,7 @@ namespace DX
 		Texture **								mTextures;
 		Sampler **								mSamplers;
 
-		BindingState &							mBindingState;
+		BindingState *							mBindingState;
 
 		vector<ID3D11Buffer *>					mConstantBufferPointers;
 
@@ -66,17 +66,28 @@ namespace DX
 			   Texture **textureArray,
 			   Sampler **samplerArray,
 			   BindingState &bindingState)
-			: mConstBufferNames(constBufferNames)
-			, mSamplerNames(samplerNames)
-			, mTextureNames(textureNames)
-			, mNumConstBuffers(numConstBuffers)
-			, mNumSamplers(numSamplers)
-			, mNumTextures(numTextures)
-			, mTextures(textureArray)
-			, mSamplers(samplerArray)
-			, mBindingState(bindingState)
 		{
+			mConstBufferNames = constBufferNames;
+			mSamplerNames = samplerNames;
+			mTextureNames = textureNames;
+			mNumConstBuffers = numConstBuffers;
+			mNumSamplers = numSamplers;
+			mNumTextures = numTextures;
+			mTextures = textureArray;
+			mSamplers = samplerArray;
+			mBindingState = &bindingState;
 			mConstantBufferPointers.reserve(numConstBuffers);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		virtual void Release()
+		{
+			mConstBuffers.clear();
+			// Textures and Samplers are owned by the client
+			mBindingState->mSamplerBindings.clear();
+			mBindingState->mResourceBindings.clear();
+			mBindingState->mConstantBufferBindings.clear();
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -141,15 +152,15 @@ namespace DX
 
 		template <SetCB SetConstantBuffers, SetSS SetSamplers, SetSR SetShaderResources > void Set(ID3D11DeviceContext *context)
 		{
-			SetBindRuns<ID3D11Buffer>(context, SetConstantBuffers, mBindingState.mConstantBufferBindings, (void **)mConstantBufferPointers.data());
+			SetBindRuns<ID3D11Buffer>(context, SetConstantBuffers, mBindingState->mConstantBufferBindings, (void **)mConstantBufferPointers.data());
 
 			void *pointers[128];
 
 			UpdatePointers(mSamplers, mNumSamplers, pointers);
-			SetBindRuns<ID3D11SamplerState>(context, SetSamplers, mBindingState.mSamplerBindings, pointers);
+			SetBindRuns<ID3D11SamplerState>(context, SetSamplers, mBindingState->mSamplerBindings, pointers);
 
 			UpdatePointers(mTextures, mNumTextures, pointers);
-			SetBindRuns<ID3D11ShaderResourceView>(context, SetShaderResources, mBindingState.mResourceBindings, pointers);
+			SetBindRuns<ID3D11ShaderResourceView>(context, SetShaderResources, mBindingState->mResourceBindings, pointers);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -162,7 +173,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		static Resource FindShaderInSOBFile(FileResource &f, ShaderType type)
+		static Resource FindShaderInSOBFile(Resource &f, ShaderType type)
 		{
 			void const *p;
 			size_t s;
@@ -172,7 +183,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		static void GetOffsetInSOBFile(FileResource &f, ShaderType type, void const * &ptr, size_t &size)
+		static void GetOffsetInSOBFile(Resource &f, ShaderType type, void const * &ptr, size_t &size)
 		{
 			assert(type <= NumShaderTypes);
 			uint32 *off = (uint32 *)f.Data();
@@ -183,16 +194,15 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		virtual HRESULT Create(void const *data, size_t size) = 0;
+		virtual HRESULT D3DCreate(void const *data, size_t size) = 0;
 
 		//////////////////////////////////////////////////////////////////////
 
 		virtual HRESULT Create(Resource &r)
 		{
-			DXR(Create(r.Data(), r.Size()));
+			DXR(D3DCreate(r.Data(), r.Size()));
 			return S_OK;
 		}
-
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -219,13 +229,29 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		ShaderState(uint32 const *blendDesc,
-					uint32 const *depthStencilDesc,
-					uint32 const *rasterizerDesc)
+		HRESULT Create(uint32 const *blendDesc,
+					 uint32 const *depthStencilDesc,
+					 uint32 const *rasterizerDesc)
 		{
-			DXT(DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)blendDesc, &mBlendState));
-			DXT(DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)depthStencilDesc, &mDepthStencilState));
-			DXT(DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)rasterizerDesc, &mRasterizerState));
+			DXR(DX::Device->CreateBlendState((D3D11_BLEND_DESC const *)blendDesc, &mBlendState));
+			DXR(DX::Device->CreateDepthStencilState((D3D11_DEPTH_STENCIL_DESC const *)depthStencilDesc, &mDepthStencilState));
+			DXR(DX::Device->CreateRasterizerState((D3D11_RASTERIZER_DESC const *)rasterizerDesc, &mRasterizerState));
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		virtual void Release()
+		{
+			mBlendState.Release();
+			mDepthStencilState.Release();
+			mRasterizerState.Release();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		ShaderState()
+		{
 		}
 
 		//////////////////////////////////////////////////////////////////////

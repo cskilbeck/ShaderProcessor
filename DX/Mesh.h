@@ -14,8 +14,8 @@ namespace DX
 		{
 			uint16								mBase;
 			uint16								mCount;
-			Shaders::Default::VertBuffer *		mVertexBuffer;
-			IndexBuffer<uint16> *				mIndexBuffer;
+			Shaders::Default::VertBuffer		mVertexBuffer;
+			IndexBuffer<uint16>					mIndexBuffer;
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -39,12 +39,12 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		Node								mRootNode;
-		Ptr<Shaders::Default>				mShader;
+		Shaders::Default					mShader;
 		vector<Mesh>						mMeshes;
 
 		static void CleanUp();
 
-		static Ptr<Texture>					mDefaultTexture;
-		static Ptr<Sampler>					mDefaultSampler;
+		static Texture						mDefaultTexture;
+		static Sampler						mDefaultSampler;
 	};
 }

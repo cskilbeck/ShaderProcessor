@@ -36,14 +36,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		TypelessBuffer(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
-		{
-			Create(type, size, data, usage, rwOption);
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		HRESULT Create(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
+		HRESULT CreateBuffer(BufferType type, uint32 size, byte *data = null, BufferUsage usage = DynamicUsage, ReadWriteOption rwOption = Writeable)
 		{
 			mSize = size;
 			mData = data;
@@ -87,14 +80,12 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		byte * const Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
+		HRESULT Map(ID3D11DeviceContext *context, byte * &p, MapWaitOption waitOption = WaitForGPU)
 		{
 			D3D11_MAPPED_SUBRESOURCE msr;
-			if(SUCCEEDED(context->Map(mBuffer, 0, mMapType, waitOption, &msr)))
-			{
-				return (byte * const)msr.pData;
-			}
-			return null;
+			DXR(context->Map(mBuffer, 0, mMapType, waitOption, &msr));
+			p = (byte *)msr.pData;
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -113,21 +104,24 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Set(ID3D11DeviceContext *context, byte *data)
+		HRESULT Set(ID3D11DeviceContext *context, byte *data)
 		{
 			CleanUp();
 			mData = data;
 			mOwnData = false;
-			Commit(context);
+			DXR(Commit(context));
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Update(ID3D11DeviceContext *context, byte *data)
+		HRESULT Update(ID3D11DeviceContext *context, byte *data)
 		{
-			void *p = Map(context);
+			byte *p;
+			DXR(Map(context, p));
 			memcpy(p, data, mSize);
 			UnMap(context);
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -153,12 +147,14 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Commit(ID3D11DeviceContext *context)
+		HRESULT Commit(ID3D11DeviceContext *context)
 		{
-			void *p = Map(context);
+			byte *p;
+			DXR(Map(context, p));
 			assert(p != null);
 			memcpy(p, mData, mSize);
 			UnMap(context);
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -188,7 +184,7 @@ namespace DX
 			MappedResource(Buffer<T> *buf)
 				: buffer(buf)
 			{
-				DXI(resource = buffer->Map());
+				DXI(buffer->Map(resource));
 			}
 
 			MappedResource(MappedResource &other)
@@ -235,35 +231,30 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		Buffer(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
-			: mSizeOf(sizeof(T))
-		{
-			TypelessBuffer::Create(type, count, data, usage, rwOption);
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		HRESULT Create(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
+		HRESULT CreateBuffer(BufferType type, uint count, T *data = null, BufferUsage usage = DefaultUsage, ReadWriteOption rwOption = NotCPUAccessible)
 		{
 			mSizeOf = sizeof(T);
-			return TypelessBuffer::Create(type, count * sizeof(T), (byte *)data, usage, rwOption);
+			return TypelessBuffer::CreateBuffer(type, count * sizeof(T), (byte *)data, usage, rwOption);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		T * const Map(ID3D11DeviceContext *context, MapWaitOption waitOption = WaitForGPU)
+		HRESULT Map(ID3D11DeviceContext *context, T * &ptr, MapWaitOption waitOption = WaitForGPU)
 		{
-			return (T * const)TypelessBuffer::Map(context, waitOption);
+			DXR(TypelessBuffer::Map(context, (byte * &)ptr, waitOption));
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		T * const Map(MapWaitOption waitOption = WaitForGPU)
+		HRESULT Map(T * &ptr, MapWaitOption waitOption = WaitForGPU)
 		{
-			return (T * const)TypelessBuffer::Map(DX::Context, waitOption);
+			DXR(Map(DX::Context, ptr, waitOption));
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
+		// TODO (charlie): make this return an HRESULT
 
 		MappedResource<T> Get()
 		{
@@ -272,9 +263,10 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Set(ID3D11DeviceContext *context, T *data)
+		HRESULT Set(ID3D11DeviceContext *context, T *data)
 		{
-			TypelessBuffer::Set(content, (byte *)data);
+			DXR(TypelessBuffer::Set(context, (byte *)data));
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////

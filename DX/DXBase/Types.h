@@ -29,7 +29,6 @@ namespace DX
 	using tstring = std::basic_string < tchar > ;
 
 	template <typename T> using Ptr = std::unique_ptr < T > ;
-
 }
 
 #define WEAKSYM __declspec(selectany)

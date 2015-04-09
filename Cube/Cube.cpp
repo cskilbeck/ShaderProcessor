@@ -1,7 +1,13 @@
 //////////////////////////////////////////////////////////////////////
+// RTCB001: DON'T RETURN A BOOL TO INDICATE SUCCESS/FAILURE (return a signed integer, where a negative value indicates failure)
+// RTCB002: DON'T DO ANYTHING THAT CAN FAIL IN A CONSTRUCTOR (unless you dig exceptions, in which case throw up all you like)
+// RTCB003: MAKE THE MEANING OF YOUR PARAMETERS CLEAR (by using enums or classes with explicit constructors)
+// RTCB004: 
+
+// Fix Shader/ShaderBase constructor
 // Proper logging instead of a janky handful of macros
 // Debug text
-// Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource mess
+// Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource/Blob mess
 // Pick a base aspect ratio and do the right thing when the window is resized
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
 // Monitor resolution list/handle Alt-Enter
@@ -13,6 +19,7 @@
 // SWF importer/converter/player!?
 // zLib: support Deflate64
 // Assimp
+//		Override IOSystem/IOStream with AssetManager
 //		Default shader
 //		Preprocessor / native loader
 //		Shared vert/index buffers across meshes
@@ -149,7 +156,7 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 //////////////////////////////////////////////////////////////////////
 
-void MyDXWindow::CreateGrid()
+int MyDXWindow::CreateGrid()
 {
 	vector<Shaders::Simple::InputVertex> v;
 	v.reserve(201 * 4 + 2);
@@ -176,12 +183,13 @@ void MyDXWindow::CreateGrid()
 	}
 	v.push_back({ { 0, 0, 0 }, Color::Cyan });
 	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
-	gridVB.reset(new Shaders::Simple::VertBuffer(806, v.data(), StaticUsage));
+	DXR(gridVB.Create(806, v.data(), StaticUsage));
+	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void MyDXWindow::CreateOctahedron()
+int MyDXWindow::CreateOctahedron()
 {
 	using namespace Shaders;
 
@@ -195,7 +203,7 @@ void MyDXWindow::CreateOctahedron()
 		{ { -f, -f, 0 }, 0xffffffff },
 		{ { 0, 0, -1 }, 0xffffffff }
 	};
-	octahedronVB.reset(new Simple::VertBuffer(6, v, StaticUsage));
+	DXR(octahedronVB.Create(6, v, StaticUsage));
 
 	uint16 o[24] =
 	{
@@ -204,7 +212,8 @@ void MyDXWindow::CreateOctahedron()
 		5, 2, 1, 5, 3, 2,
 		5, 4, 3, 5, 1, 4
 	};
-	octahedronIB.reset(new IndexBuffer<uint16>(3 * 8, o, StaticUsage));
+	DXR(octahedronIB.Create(3 * 8, o, StaticUsage));
+	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -222,11 +231,11 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	mAssetManager.AddFolder("data");
-	mAssetManager.AddArchive("data.zip");
+	AssetManager::AddFolder("data");
+	AssetManager::AddArchive("data.zip");
 
 	FileBase *f;
-	if(mAssetManager.Open("cube.dae", &f))
+	if(AssetManager::Open("cube.dae", &f))
 	{
 		f->Close();
 	}
@@ -235,27 +244,28 @@ bool MyDXWindow::OnCreate()
 	if(false)
 	{
 		DiskFile d;
-		if(d.Open(TEXT("Data/big.zip"), DiskFile::ForReading))
+		if(d.Open(TEXT("Data/big.zip"), DiskFile::ForReading) == S_OK)
 		{
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
 				DiskFile d;
-				if(d.Open("data/big.bin", DiskFile::ForReading))
+				if(d.Open("data/big.bin", DiskFile::ForReading) == S_OK)
 				{
 					Archive::File s;
 					if(a.Locate("big.bin", s) == Archive::ok)
 					{
 						Ptr<byte> buffer(new byte[4096]);
 						Ptr<byte> buffer2(new byte[4096]);
-						size_t len = s.Size();
+						size_t len;
+						s.GetSize(len);
 						size_t got;
 						size_t total;
 						while(s.Read(buffer2.get(), 4096, &got) == Archive::ok && len > 0)
 						{
 							len -= got;
 							uint64 dgot;
-							if(d.Read(buffer.get(), 4096, &dgot))
+							if(d.Read(buffer.get(), 4096, &dgot) == S_OK)
 							{
 								total += dgot;
 
@@ -273,85 +283,85 @@ bool MyDXWindow::OnCreate()
 		}
 	}
 
-	scene.Load(TEXT("data/duck.dae"));
+	//scene.Load(TEXT("duck.dae"));
 
 	FontManager::Open(this);
 
 	debug_open(this);
 
-	font.reset(FontManager::Load(TEXT("data/debug")));
-	bigFont.reset(FontManager::Load(TEXT("data/Cooper_Black_48")));
+	font.reset(FontManager::Load(TEXT("debug")));
+	bigFont.reset(FontManager::Load(TEXT("Cooper_Black_48")));
 
-	simpleShader.reset(new Shaders::Simple());
-	simpleVB.reset(new Shaders::Simple::VertBuffer(128, null, DynamicUsage, Writeable));
+	simpleShader.Create();
+	DXB(simpleVB.Create(128, null, DynamicUsage, Writeable));
 
 	CreateGrid();
 	CreateOctahedron();
 
-	cubeShader.reset(new Shaders::Phong());
-	cubeTexture.reset(new Texture(TEXT("data/temp.jpg")));
+	DXB(cubeShader.Create());
+	DXB(cubeTexture.Load(TEXT("temp.jpg")));
 	Sampler::Options o;
 	o.Filter = anisotropic;
-	cubeSampler.reset(new Sampler(o));
-	cubeShader->ps.picTexture = cubeTexture.get();
-	cubeShader->ps.tex1Sampler = cubeSampler.get();
-	cubeIndices.reset(new IndexBuffer<uint16>(_countof(indices), indices, StaticUsage));
-	cubeVerts.reset(new Shaders::Phong::VertBuffer(_countof(verts), verts, StaticUsage));
+	cubeSampler.Create(o);
+	cubeShader.ps.picTexture = &cubeTexture;
+	cubeShader.ps.tex1Sampler = &cubeSampler;
+	DXB(cubeIndices.Create(_countof(indices), indices, StaticUsage));
+	DXB(cubeVerts.Create(_countof(verts), verts, StaticUsage));
 
-	instancedShader.reset(new Shaders::Instanced());
-	instancedVB0.reset(new Shaders::Instanced::VertBuffer0(_countof(iCube), iCube, StaticUsage));
-	instancedVB1.reset(new Shaders::Instanced::VertBuffer1(64));
+	DXB(instancedShader.Create());
+	DXB(instancedVB0.Create(_countof(iCube), iCube, StaticUsage));
+	DXB(instancedVB1.Create(64));
 
 	lightPos = Vec4(0, -15, 20, 0);
 
-	auto &l = cubeShader->ps.Light;
+	auto &l = cubeShader.ps.Light;
 	l.lightPos = lightPos;
 	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
 	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
 	l.specColor = Float3(5, 5, 5);
 	l.Update(Context());
 
-	uiShader.reset(new Shaders::UI());
-	UIVerts.reset(new Shaders::UI::VertBuffer(12, null, DynamicUsage, Writeable));
-	uiTexture.reset(new Texture(TEXT("data/temp.png")));
-	uiSampler.reset(new Sampler());
-	uiShader->ps.page = uiTexture.get();
-	uiShader->ps.smplr = uiSampler.get();
-	uiShader->vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	uiShader->vs.vConstants.Update();
-	uiShader->ps.pConstants.Color = Float4(1, 1, 1, 1);
-	uiShader->ps.pConstants.Update();
+	uiShader.Create();
+	UIVerts.Create(12, null, DynamicUsage, Writeable);
+	uiTexture.Load(TEXT("data/temp.png"));
+	uiSampler.Create();
+	uiShader.ps.page = &uiTexture;
+	uiShader.ps.smplr = &uiSampler;
+	uiShader.vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	uiShader.vs.vConstants.Update();
+	uiShader.ps.pConstants.Color = Float4(1, 1, 1, 1);
+	uiShader.ps.pConstants.Update();
 
-	spriteShader.reset(new Shaders::Sprite());
-	spriteVerts.reset(new Shaders::Sprite::VertBuffer(2, null, DynamicUsage, Writeable));
-	spriteTexture.reset(new Texture(TEXT("data/temp.jpg")));
-	spriteSampler.reset(new Sampler());
-	spriteShader->ps.smplr = spriteSampler.get();
-	spriteShader->ps.page = spriteTexture.get();
+	spriteShader.Create();
+	spriteVerts.Create(2, null, DynamicUsage, Writeable);
+	spriteTexture.Load(TEXT("data/temp.jpg"));
+	spriteSampler.Create();
+	spriteShader.ps.smplr = &spriteSampler;
+	spriteShader.ps.page = &spriteTexture;
 
-	spriteSheet.reset(new SpriteSheet(TEXT("data/spriteSheet.xml")));
+	spriteSheet.reset(new SpriteSheet(TEXT("spriteSheet.xml")));
 
-	renderTarget.reset(new RenderTarget(256, 256, RenderTarget::WithDepthBuffer));
+	renderTarget.Create(256, 256, RenderTarget::WithDepthBuffer);
 
-	blitShader.reset(new Shaders::Blit());
-	blitVB.reset(new Shaders::Blit::VertBuffer(4, null, DynamicUsage, Writeable));
+	blitShader.Create();
+	blitVB.Create(4, null, DynamicUsage, Writeable);
 
-	blitShader->ps.smplr = uiSampler.get();
-	blitShader->ps.page = renderTarget.get();
+	blitShader.ps.smplr = &uiSampler;
+	blitShader.ps.page = &renderTarget;
 
-	cubeShader->ps.Camera.cameraPos = dashCam.position;
-	cubeShader->ps.Camera.Update();
+	cubeShader.ps.Camera.cameraPos = dashCam.position;
+	cubeShader.ps.Camera.Update();
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
 	dashCam.position = Vec4(0, 0, 0);
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
-	splatShader.reset(new Shaders::Splat());
-	splatVB.reset(new Shaders::Splat::VertBuffer(8));
+	splatShader.Create();
+	splatVB.Create(8);
 
-	fpsGraph.reset(new RenderTarget(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer));
-	fpsSampler.reset(new Sampler(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
+	fpsGraph.Create(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer);
+	fpsSampler.Create(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap));
 
 	return true;
 }
@@ -400,7 +410,7 @@ void MyDXWindow::OnFrame()
 
 	camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
 
-	auto &vc = blitShader->vs.vConstants;
+	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	vc.Update(Context());
 
@@ -419,21 +429,21 @@ void MyDXWindow::OnFrame()
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
 
-		auto &vc = cubeShader->vs.VertConstants;
+		auto &vc = cubeShader.vs.VertConstants;
 		vc.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
 		vc.ModelMatrix = Transpose(modelMatrix);
 		vc.Update(Context());
 
-		auto &ps = cubeShader->ps.Camera;
+		auto &ps = cubeShader.ps.Camera;
 		ps.cameraPos = camera.position;
 		ps.Update(Context());
 
-		cubeShader->Activate(Context());
-		cubeShader->vs.SetVertexBuffers(Context(), 1, cubeVerts.get());
-		cubeIndices->Activate(Context());
+		cubeShader.Activate(Context());
+		cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+		cubeIndices.Activate(Context());
 
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
+		Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
 	}
 
 	// Draw loaded model
@@ -445,8 +455,9 @@ void MyDXWindow::OnFrame()
 
 	{
 		Random r(0);
-		uint c = instancedVB1->Count();
-		auto *p = instancedVB1->Map(Context());
+		uint c = instancedVB1.Count();
+		Shaders::Instanced::InputVertex1 *p;
+		instancedVB1.Map(Context(), p);
 		for(uint i = 0; i < c; ++i)
 		{
 			float t = i * PI * 2 / c + time / 10;
@@ -454,41 +465,41 @@ void MyDXWindow::OnFrame()
 			float y = cosf(t) * 50;
 			*p++ = { { x, y, 0 }, r.Next() };
 		}
-		instancedVB1->UnMap(Context());
+		instancedVB1.UnMap(Context());
 
-		instancedShader->vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
-		instancedShader->Activate(Context());
-		instancedShader->vs.SetVertexBuffers(Context(), 2, instancedVB0.get(), instancedVB1.get());
-		cubeIndices->Activate(Context());
+		instancedShader.vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
+		instancedShader.Activate(Context());
+		instancedShader.vs.SetVertexBuffers(Context(), 2, &instancedVB0, &instancedVB1);
+		cubeIndices.Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexedInstanced(cubeIndices->Count(), c, 0, 0, 0);
+		Context()->DrawIndexedInstanced(cubeIndices.Count(), c, 0, 0, 0);
 	}
 
 	// Draw grid
 
-	simpleShader->Activate(Context());
-	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
-	simpleShader->vs.SetVertexBuffers(Context(), 1, gridVB.get());
+	simpleShader.Activate(Context());
+	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
+	simpleShader.vs.SetVertexBuffers(Context(), 1, &gridVB);
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	Context()->Draw(gridVB->Count(), 0);
+	Context()->Draw(gridVB.Count(), 0);
 
 	// Draw light
 
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(lightPos);
-	simpleShader->vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-	simpleShader->vs.SetVertexBuffers(Context(), 1, octahedronVB.get());
-	octahedronIB->Activate(Context());
+	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+	simpleShader.vs.SetVertexBuffers(Context(), 1, &octahedronVB);
+	octahedronIB.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(octahedronIB->Count(), 0, 0);
+	Context()->DrawIndexed(octahedronIB.Count(), 0, 0);
 
 	// Drawlist UI elements
 
 	{
 		using vrt = Shaders::UI::InputVertex;
-		drawList.Reset(Context(), uiShader.get(), UIVerts.get());
-		uiShader->ps.page = uiTexture.get();
-		uiShader->ps.smplr = uiSampler.get();
+		drawList.Reset(Context(), &uiShader, &UIVerts);
+		uiShader.ps.page = &uiTexture;
+		uiShader.ps.smplr = &uiSampler;
 
 		float w = 100 + sinf(time * 0.9f) * 30;
 		float h = 200 + sinf(time * 0.9f) * 30;
@@ -520,7 +531,7 @@ void MyDXWindow::OnFrame()
 		y1 = y0 + h;
 
 		c.Color = Float4(1, 1, 1, 1);
-		drawList.SetConstantData(Pixel, c, uiShader->ps.pConstants.Index());
+		drawList.SetConstantData(Pixel, c, uiShader.ps.pConstants.Index());
 		drawList.BeginTriangleList();
 		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
 		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
@@ -535,7 +546,7 @@ void MyDXWindow::OnFrame()
 		
 	{
 		using vrt = Shaders::Simple::InputVertex;
-		drawList.Reset(Context(), simpleShader.get(), simpleVB.get());
+		drawList.Reset(Context(), &simpleShader, &simpleVB);
 
 		Shaders::Simple::VS::VertConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -563,9 +574,10 @@ void MyDXWindow::OnFrame()
 
 	// Draw some sprites immediate mode
 
-	spriteShader->gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	spriteShader.gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 
-	Sprite *v = (Sprite *)spriteVerts->Map(Context());
+	Sprite *v;
+	spriteVerts.Map(Context(), (Shaders::Sprite::InputVertex * &)v);
 
 	v[0].Position = { ClientWidth() - 100.0f, ClientHeight() - 100.0f };
 	v[0].Size = { 100, 100 };
@@ -587,11 +599,11 @@ void MyDXWindow::OnFrame()
 	v[1].UVa = { 0.0f, 0.0f };
 	v[1].UVb = { 1.0f, 1.0f };
 
-	spriteVerts->UnMap(Context());
-	spriteShader->vs.SetVertexBuffers(Context(), 1, spriteVerts.get());
-	spriteShader->Activate(Context());
+	spriteVerts.UnMap(Context());
+	spriteShader.vs.SetVertexBuffers(Context(), 1, &spriteVerts);
+	spriteShader.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-	Context()->Draw(spriteVerts->Count(), 0);
+	Context()->Draw(spriteVerts.Count(), 0);
 
 	{
 		// Drawlist some sprites
@@ -600,7 +612,7 @@ void MyDXWindow::OnFrame()
 		Sprite const &t = (*spriteSheet)["temp.jpg"];
 		spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
 
-		drawList.Reset(Context(), spriteSheet->mShader.get(), spriteSheet->mVertexBuffer.get());
+		drawList.Reset(Context(), &spriteSheet->mShader, &spriteSheet->mVertexBuffer);
 		drawList.BeginPointList();
 		Sprite &q = drawList.AddVertex<Sprite>();
 		q.Set(t, { 100, ClientHeight() - 100.0f });
@@ -628,45 +640,45 @@ void MyDXWindow::OnFrame()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
-		auto &vc = cubeShader->vs.VertConstants;
+		auto &vc = cubeShader.vs.VertConstants;
 		vc.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
 		vc.ModelMatrix = Transpose(modelMatrix);
 		vc.Update();
 	}
 
-	renderTarget->Activate(Context());
-	renderTarget->Clear(Context(), 0x208040);
-	renderTarget->ClearDepth(Context(), DepthOnly);
-	Viewport(0, 0, renderTarget->FWidth(), renderTarget->FHeight(), 0, 1).Activate(Context());
-	cubeShader->Activate(Context());
-	cubeShader->vs.SetVertexBuffers(Context(), 1, cubeVerts.get());
-	cubeIndices->Activate(Context());
+	renderTarget.Activate(Context());
+	renderTarget.Clear(Context(), 0x208040);
+	renderTarget.ClearDepth(Context(), DepthOnly);
+	Viewport(0, 0, renderTarget.FWidth(), renderTarget.FHeight(), 0, 1).Activate(Context());
+	cubeShader.Activate(Context());
+	cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+	cubeIndices.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	Context()->DrawIndexed(cubeIndices->Count(), 0, 0);
+	Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
 
 	ResetRenderTargetView();
 
 	// Blit the rendertarget onto backbuffer
 
-	float w = renderTarget->FWidth();
-	float h = renderTarget->FHeight();
+	float w = renderTarget.FWidth();
+	float h = renderTarget.FHeight();
 	float r = (float)ClientWidth() - 10;
 	float l = r - w;
 	float t = 10;
 	float b = t + h;
-	auto bv = blitVB->Get();
+	auto bv = blitVB.Get();
 	bv[0] = { { l, t }, { 0, 0 } };
 	bv[1] = { { r, t }, { 1, 0 } };
 	bv[2] = { { l, b }, { 0, 1 } };
 	bv[3] = { { r, b }, { 1, 1 } };
 	bv.Release();
 
-	blitShader->ps.page = renderTarget.get();
-	blitShader->ps.smplr = uiSampler.get();
-	blitShader->Activate(Context());
-	blitShader->vs.SetVertexBuffers(Context(), 1, blitVB.get());
+	blitShader.ps.page = &renderTarget;
+	blitShader.ps.smplr = &uiSampler;
+	blitShader.Activate(Context());
+	blitShader.vs.SetVertexBuffers(Context(), 1, &blitVB);
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-	Context()->Draw(blitVB->Count(), 0);
+	Context()->Draw(blitVB.Count(), 0);
 
 	// Draw graph
 
@@ -677,28 +689,30 @@ void MyDXWindow::OnFrame()
 		fpsScroll = (fpsScroll + speed) % fpsWidth;
 		float h = (float)fpsHeight;
 
-		Viewport(0, 0, fpsGraph->FWidth(), fpsGraph->FHeight(), 0, 1).Activate(Context());
-		fpsGraph->Activate(Context());
-		splatShader->vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph->Width(), fpsGraph->Height()));
-		splatShader->vs.SetVertexBuffers(Context(), 1, splatVB.get());
-		splatShader->Activate(Context());
+		Viewport(0, 0, fpsGraph.FWidth(), fpsGraph.FHeight(), 0, 1).Activate(Context());
+		fpsGraph.Activate(Context());
+		splatShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph.Width(), fpsGraph.Height()));
+		splatShader.vs.SetVertexBuffers(Context(), 1, &splatVB);
+		splatShader.Activate(Context());
 
-		auto *p = splatVB->Map(Context());
+		
+		Shaders::Splat::InputVertex *p;
+		splatVB.Map(Context(), p);
 		*p++ = { { x0, 0 }, 0xc0000000 };
 		*p++ = { { x1, 0 }, 0xc0000000 };
 		*p++ = { { x0, h }, 0xc0000000 };
 		*p++ = { { x1, h }, 0xc0000000 };
-		splatVB->UnMap(Context());
+		splatVB.UnMap(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		Context()->Draw(4, 0);
 
 		float y0 = fpsHeight - oldDeltaTime * 32 * fpsHeight;
 		float y1 = fpsHeight - deltaTime * 32 * fpsHeight;
 
-		p = splatVB->Map(Context());
+		splatVB.Map(Context(), p);
 		*p++ = { { x0, y0 }, 0xffffffff };
 		*p++ = { { x1, y1 }, 0xffffffff };
-		splatVB->UnMap(Context());
+		splatVB.UnMap(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(2, 0);
 
@@ -706,19 +720,20 @@ void MyDXWindow::OnFrame()
 
 		float u0 = fpsScroll / (float)fpsWidth;
 		float u1 = u0 + 1;
-		auto *v = UIVerts->Map(Context());
+		Shaders::UI::InputVertex *v;
+		UIVerts.Map(Context(), v);
 		v[0] = { { fpsLeft, fpsTop }, { u0, 0 }, 0xffffffff };
 		v[1] = { { fpsLeft + fpsWidth, fpsTop }, { u1, 0 }, 0xffffffff };
 		v[2] = { { fpsLeft, fpsTop + fpsHeight }, { u0, 1 }, 0xffffffff };
 		v[3] = { { fpsLeft + fpsWidth, fpsTop + fpsHeight }, { u1, 1 }, 0xffffffff };
-		UIVerts->UnMap(Context());
+		UIVerts.UnMap(Context());
 
-		uiShader->vs.SetVertexBuffers(Context(), 1, UIVerts.get());
-		uiShader->vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		uiShader->ps.pConstants.Get()->Color = Vec4(1, 1, 1, 1);
-		uiShader->ps.page = fpsGraph.get();
-		uiShader->ps.smplr = fpsSampler.get();
-		uiShader->Activate(Context());
+		uiShader.vs.SetVertexBuffers(Context(), 1, &UIVerts);
+		uiShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		uiShader.ps.pConstants.Get()->Color = Vec4(1, 1, 1, 1);
+		uiShader.ps.page = &fpsGraph;
+		uiShader.ps.smplr = &fpsSampler;
+		uiShader.Activate(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		Context()->Draw(4, 0);
 	}
@@ -731,23 +746,23 @@ void MyDXWindow::OnFrame()
 void MyDXWindow::OnDestroy()
 {
 	debug_close();
-	simpleShader.reset();
-	cubeShader.reset();
-	cubeTexture.reset();
-	cubeSampler.reset();
-	cubeVerts.reset();
-	uiShader.reset();
-	UIVerts.reset();
-	uiTexture.reset();
-	uiSampler.reset();
+	simpleShader.Release();
+	cubeShader.Release();
+	cubeTexture.Release();
+	cubeSampler.Release();
+	cubeVerts.CleanUp();
+	uiShader.Release();
+	UIVerts.CleanUp();
+	uiTexture.Release();
+	uiSampler.Release();
 	font.reset();
 	bigFont.reset();
-	spriteShader.reset();
-	spriteVerts.reset();
-	spriteSampler.reset();
-	spriteTexture.reset();
+	spriteShader.Release();
+	spriteVerts.CleanUp();
+	spriteSampler.Release();
+	spriteTexture.Release();
 	spriteSheet.reset();
-	renderTarget.reset();
+	renderTarget.Release();
 	scene.Unload();
 	Scene::CleanUp();
 	Texture::FlushAll();
