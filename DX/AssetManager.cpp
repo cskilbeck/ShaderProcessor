@@ -24,10 +24,7 @@ namespace DX
 		int Open(tchar const *name, FileBase **file) override
 		{
 			Ptr<DiskFile> diskFile(new DiskFile());
-			if(!diskFile->Open((folder + TEXT("/") + name).c_str(), DiskFile::ForReading))
-			{
-				return ERROR_FILE_NOT_FOUND;
-			}
+			DXR(diskFile->Open((folder + TEXT("/") + name).c_str(), DiskFile::ForReading));
 			*file = diskFile.release();
 			return S_OK;
 		}
@@ -78,11 +75,25 @@ namespace DX
 			return S_OK;
 		}
 
+		bool FileExists(tchar const *filename)
+		{
+			for(auto p : sources)
+			{
+				FileBase *f;
+				if(p->Open(filename, &f) == S_OK)
+				{
+					f->Close();
+					return true;
+				}
+			}
+			return false;
+		}
+
 		int AssetManager::Open(tchar const *filename, FileBase **file)
 		{
 			for(auto p : sources)
 			{
-				if(SUCCEEDED(p->Open(filename, file)))
+				if(p->Open(filename, file) == S_OK)
 				{
 					return S_OK;
 				}
@@ -95,10 +106,10 @@ namespace DX
 			FileBase *file;
 			DXR(Open(filename, &file));
 			Ptr<FileBase> filep(file);
-			filep->GetSize(data.Size());
+			file->GetSize(data.Size());
 			data.Data() = new byte[data.Size()];
 			size_t got;
-			if(!file->Read(data.Data(), data.Size(), &got) || got != data.Size())
+			if(file->Read(data.Data(), data.Size(), &got) != S_OK || got != data.Size())
 			{
 				data.Data() = null;
 				data.Size() = 0;

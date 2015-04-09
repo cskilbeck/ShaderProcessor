@@ -203,7 +203,7 @@ namespace DX
 		Delete(mLayers);
 		Delete(mKerningValues);
 		Delete(mGraphics);
-		vertexBuffer.CleanUp();
+		vertexBuffer.Release();
 	}
 
 	//////////////////////////////////////////////////////////////////////

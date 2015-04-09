@@ -233,11 +233,8 @@ namespace DX
 		mName = name;
 		sAllTextures.push_back(this);
 		DiskFile *d;
-		if(!AssetManager::Open(name, (FileBase **)&d))
-		{
-			return ERROR_FILE_NOT_FOUND;
-		}
-		Ptr<FileBase> filep;
+		DXR(AssetManager::Open(name, (FileBase **)&d));
+		Ptr<FileBase> filep(d);
 		DXR(CreateWICTextureFromDiskFile(d, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
 		mTexture2D->GetDesc(&mTextureDesc);
 		return S_OK;
@@ -272,9 +269,12 @@ namespace DX
 
 	void Texture::Release()
 	{
-		mTexture2D.Release();
-		mShaderResourceView.Release();
-		sAllTextures.remove(this);
+		if(mTexture2D != null)
+		{
+			mTexture2D.Release();
+			mShaderResourceView.Release();
+			sAllTextures.remove(this);
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -97,6 +97,8 @@
     <SPOCK Include="Shaders\Default.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DataFolder>
     </SPOCK>
     <SPOCK Include="Shaders\Font.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
@@ -113,6 +115,8 @@
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DataFolder>
     </SPOCK>
     <SPOCK Include="Shaders\Sprite.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
@@ -123,6 +127,8 @@
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Release|x64'">gsMain</GeometryShaderFunction>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </DataFolder>
     </SPOCK>
   </ItemGroup>
   <ItemGroup>

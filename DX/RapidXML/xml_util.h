@@ -69,7 +69,7 @@ namespace
 	{
 		bool rc = false;
 		FileResource f;
-		if(AssetManager::LoadFile(filename, f))
+		if(AssetManager::LoadFile(filename, f) == S_OK)
 		{
 			size_t len;
 			if(UTF8ToWide((byte *)f.Data(), f.Size(), &len, null) && len > 0)

@@ -21,12 +21,12 @@ namespace DX
 
 		virtual ~TypelessBuffer()
 		{
-			CleanUp();
+			Release();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		void CleanUp()
+		void Release()
 		{
 			if(mOwnData)
 			{
@@ -106,7 +106,7 @@ namespace DX
 
 		HRESULT Set(ID3D11DeviceContext *context, byte *data)
 		{
-			CleanUp();
+			Release();
 			mData = data;
 			mOwnData = false;
 			DXR(Commit(context));

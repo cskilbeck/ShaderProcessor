@@ -85,9 +85,9 @@ namespace DX
 		{
 			mConstBuffers.clear();
 			// Textures and Samplers are owned by the client
-			mBindingState->mSamplerBindings.clear();
-			mBindingState->mResourceBindings.clear();
-			mBindingState->mConstantBufferBindings.clear();
+			//mBindingState->mSamplerBindings.clear();
+			//mBindingState->mResourceBindings.clear();
+			//mBindingState->mConstantBufferBindings.clear();
 		}
 
 		//////////////////////////////////////////////////////////////////////

@@ -9,7 +9,7 @@ using namespace DX;
 
 namespace
 {
-	Ptr<Font> debugFont;
+	DXPtr<Font> debugFont;
 	DrawList debugDrawList;
 	DXWindow *mainWindow;
 	Vec2f cursorPos;
@@ -22,13 +22,13 @@ namespace DX
 	void debug_open(DXWindow *w)
 	{
 		assert(FontManager::IsOpen());
-		debugFont.reset(FontManager::Load("debug"));
+		debugFont = FontManager::Load("debug");
 		mainWindow = w;
 	}
 
 	void debug_close()
 	{
-		debugFont.reset();
+		debugFont.Release();
 		mainWindow = null;
 	}
 

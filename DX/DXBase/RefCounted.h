@@ -22,12 +22,14 @@ namespace DX
 			++mRefCount;
 		}
 
-		void Release()
+		int Release()
 		{
-			if(--mRefCount == 0)
+			int r = --mRefCount;
+			if(r <= 0)
 			{
 				delete this;
 			}
+			return r;
 		}
 
 		int mRefCount;

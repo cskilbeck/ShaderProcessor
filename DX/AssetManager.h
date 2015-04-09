@@ -12,7 +12,7 @@ namespace DX
 		int AddArchive(tchar const *archiveName);
 
 		int Open(tchar const *filename, FileBase **file);
-
+		bool FileExists(tchar const *filename);
 		int LoadFile(tchar const *filename, FileResource &data);
 	};
 }

@@ -45,8 +45,8 @@ struct MyDXWindow: DXWindow
 	Texture uiTexture;
 	Sampler uiSampler;
 
-	Ptr<Font> font;
-	Ptr<Font> bigFont;
+	DXPtr<Font> font;
+	DXPtr<Font> bigFont;
 
 	Shaders::Sprite spriteShader;
 	Shaders::Sprite::VertBuffer spriteVerts;

@@ -235,7 +235,7 @@ bool MyDXWindow::OnCreate()
 	AssetManager::AddArchive("data.zip");
 
 	FileBase *f;
-	if(AssetManager::Open("cube.dae", &f))
+	if(AssetManager::Open("cube.dae", &f) == S_OK)
 	{
 		f->Close();
 	}
@@ -283,14 +283,14 @@ bool MyDXWindow::OnCreate()
 		}
 	}
 
-	//scene.Load(TEXT("duck.dae"));
+	scene.Load(TEXT("duck.dae"));
 
 	FontManager::Open(this);
 
 	debug_open(this);
 
-	font.reset(FontManager::Load(TEXT("debug")));
-	bigFont.reset(FontManager::Load(TEXT("Cooper_Black_48")));
+	font = FontManager::Load(TEXT("debug"));
+	bigFont = FontManager::Load(TEXT("Cooper_Black_48"));
 
 	simpleShader.Create();
 	DXB(simpleVB.Create(128, null, DynamicUsage, Writeable));
@@ -323,7 +323,7 @@ bool MyDXWindow::OnCreate()
 
 	uiShader.Create();
 	UIVerts.Create(12, null, DynamicUsage, Writeable);
-	uiTexture.Load(TEXT("data/temp.png"));
+	uiTexture.Load(TEXT("temp.png"));
 	uiSampler.Create();
 	uiShader.ps.page = &uiTexture;
 	uiShader.ps.smplr = &uiSampler;
@@ -334,7 +334,7 @@ bool MyDXWindow::OnCreate()
 
 	spriteShader.Create();
 	spriteVerts.Create(2, null, DynamicUsage, Writeable);
-	spriteTexture.Load(TEXT("data/temp.jpg"));
+	spriteTexture.Load(TEXT("temp.jpg"));
 	spriteSampler.Create();
 	spriteShader.ps.smplr = &spriteSampler;
 	spriteShader.ps.page = &spriteTexture;
@@ -694,7 +694,6 @@ void MyDXWindow::OnFrame()
 		splatShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph.Width(), fpsGraph.Height()));
 		splatShader.vs.SetVertexBuffers(Context(), 1, &splatVB);
 		splatShader.Activate(Context());
-
 		
 		Shaders::Splat::InputVertex *p;
 		splatVB.Map(Context(), p);
@@ -750,15 +749,15 @@ void MyDXWindow::OnDestroy()
 	cubeShader.Release();
 	cubeTexture.Release();
 	cubeSampler.Release();
-	cubeVerts.CleanUp();
+	cubeVerts.Release();
 	uiShader.Release();
-	UIVerts.CleanUp();
+	UIVerts.Release();
 	uiTexture.Release();
 	uiSampler.Release();
-	font.reset();
-	bigFont.reset();
+	font.Release();
+	bigFont.Release();
 	spriteShader.Release();
-	spriteVerts.CleanUp();
+	spriteVerts.Release();
 	spriteSampler.Release();
 	spriteTexture.Release();
 	spriteSheet.reset();
