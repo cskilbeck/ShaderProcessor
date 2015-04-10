@@ -241,3 +241,8 @@ void TypeDefinition::CreateOutput(int bindPoint)
 	}
 	OutputLine("%s.Create(%u, %s_%s_Offsets, %s, this, %d, %d);", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
 }
+
+void TypeDefinition::ReleaseOutput()
+{
+	OutputLine("%s.Release();", mDesc.Name);
+}

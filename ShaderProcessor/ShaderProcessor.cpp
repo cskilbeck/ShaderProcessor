@@ -333,13 +333,14 @@ void OutputShaderStruct()
 	OutputLine("~%s()", shaderName.c_str());
 	Indent("{");
 	OutputLine();
-	OutputLine("Release();");
+//	OutputLine("Release();");
 	UnIndent("}");
 	OutputLine();
 
 	OutputLine("HRESULT Create()");
 	Indent("{");
 	OutputLine();
+	OutputLine("TRACE(\"%s::Create()\\n\");", shaderName.c_str());
 	OutputLine("DXR(ShaderState::Create(%s));", shaderCtors.c_str());
 	if(!options[EMBED_BYTECODE])
 	{
@@ -355,6 +356,7 @@ void OutputShaderStruct()
 	{
 		auto &shader = *s.second;
 		OutputLine("%s.Create(sob);", ToLower(shader.RefName()).c_str());
+		OutputLine("%s.SetName(\"%s\");", ToLower(shader.RefName()).c_str(), shaderName.c_str());
 	}
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{
@@ -368,6 +370,7 @@ void OutputShaderStruct()
 	OutputLine("void Release()");
 	Indent("{");
 	OutputLine();
+	OutputLine("TRACE(\"%s::Release();\\n\");", shaderName.c_str());
 	OutputLine("ShaderState::Release();");
 	for(uint i = 0; i < NumShaderTypes; ++i)
 	{

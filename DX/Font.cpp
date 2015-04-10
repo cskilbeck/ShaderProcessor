@@ -83,6 +83,7 @@ static HRESULT LoadShader()
 		DXR(sampler.Create());
 		shader.ps.smplr = &sampler;
 		initialised = true;
+		TRACE("Initialized font shader!\n");
 	}
 	return S_OK;
 }
@@ -119,6 +120,7 @@ namespace DX
 		fontManagerWindow->Destroyed -= onDestroy;
 		shader.Release();
 		sampler.Release();
+		TRACE("FontManager::Close() completed\n");
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -154,7 +156,7 @@ namespace DX
 		using Font = DXShaders::Font;
 		DXShaders::Font::GS::vConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-		DXShaders::Font::VertBuffer *vb = (Font::VertBuffer *)&vertexBuffer;
+		auto *vb = (Font::VertBuffer *)&vertexBuffer;
 		mDrawList->Reset(context, &shader, vb);
 		mDrawList->SetConstantData(Geometry, v, Font::GS::vConstants_index);
 	}
@@ -193,6 +195,7 @@ namespace DX
 		, mGraphics(null)
 		, mCurrentPageIndex(-1)
 	{
+		TRACE("Font::Font()\n");
 		vertexBuffer.CreateBuffer(VertexBufferType, 4096, null, DynamicUsage, Writeable);
 		sAllFonts.push_back(this);
 	}
@@ -219,6 +222,7 @@ namespace DX
 
 	HRESULT Font::LoadFromFile(tchar const *filename)
 	{
+		TRACE("Loading font %s\n", filename);
 		mName = ToLower(tstring(filename));
 
 		wstring buffer;

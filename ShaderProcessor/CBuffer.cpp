@@ -27,3 +27,8 @@ void ConstantBufferBinding::CreateOutput()
 {
 	definition->CreateOutput(mDesc.BindPoint);
 }
+
+void ConstantBufferBinding::ReleaseOutput()
+{
+	definition->ReleaseOutput();
+}

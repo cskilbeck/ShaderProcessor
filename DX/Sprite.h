@@ -184,22 +184,20 @@ namespace DX
 
 		virtual ~SpriteSheet()
 		{
-			Release();
 		}
 
 		void Release()
 		{
+			TRACE("SpriteSheet::Release();\n");
 			mSampler.Release();
 			mShader.Release();
 			mPage.Release();
-
+			mVertexBuffer.Release();
 			mSprites.clear();
 		}
 
 		HRESULT Load(tchar const *filename)
 		{
-			Release();
-
 			DXR(mSampler.Create());
 			DXR(mShader.Create());
 			DXR(mVertexBuffer.Create(500, null, DynamicUsage, Writeable));

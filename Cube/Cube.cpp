@@ -4,6 +4,7 @@
 // RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
 // RTCB004: 
 
+// ?? Shader de-duplication?
 // Proper logging instead of a janky handful of macros
 // Debug text
 // Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource/Blob mess
@@ -226,6 +227,8 @@ uint fpsScroll = 0;
 
 bool MyDXWindow::OnCreate()
 {
+	TRACE("=== OnCreate() ===\n");
+
 	if(!DXWindow::OnCreate())
 	{
 		return false;
@@ -362,6 +365,8 @@ bool MyDXWindow::OnCreate()
 
 	DXB(fpsGraph.Create(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer));
 	DXB(fpsSampler.Create(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
+
+	TRACE("=== End of OnCreate() ===\n");
 
 	return true;
 }
@@ -744,24 +749,24 @@ void MyDXWindow::OnFrame()
 
 void MyDXWindow::OnDestroy()
 {
+	TRACE("=== BEGINNING OF OnDestroy() ===\n");
+
 	debug_close();
+
 	cubeShader.Release();
 	cubeVerts.Release();
 	cubeIndices.Release();
 	cubeTexture.Release();
 	cubeSampler.Release();
-
 	simpleShader.Release();
 	gridVB.Release();
 	octahedronVB.Release();
 	simpleVB.Release();
 	octahedronIB.Release();
-
 	instancedShader.Release();
 	instancedVB0.Release();
 	instancedVB1.Release();
 	scene.Unload();
-
 	uiShader.Release();
 	UIVerts.Release();
 	uiTexture.Release();
@@ -784,10 +789,13 @@ void MyDXWindow::OnDestroy()
 	spriteSheet.Release();
 
 	renderTarget.Release();
+
 	blitShader.Release();
 	blitVB.Release();
 
 	Scene::CleanUp();
 	Texture::FlushAll();
 	FontManager::Close();
+
+	TRACE("=== END OF OnDestroy() ===\n");
 }

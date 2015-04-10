@@ -945,6 +945,17 @@ void HLSLShader::OutputConstructor()
 	OutputLine("return S_OK;");
 	UnIndent("}");
 	OutputLine();
+
+	OutputLine("void Release() override");
+	OutputLine("{");
+	Indent();
+	OutputLine("%sShader::Release();", mShaderTypeDesc.name);
+	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+	{
+		(*i)->ReleaseOutput();
+	}
+	UnIndent("}");
+	OutputLine();
 }
 
 //////////////////////////////////////////////////////////////////////

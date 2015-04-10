@@ -203,6 +203,7 @@ struct TypeDefinition
 	void MemberOutput(DX::string const &shaderName, DX::uint bindPoint);
 	void ConstructorOutput(int index);
 	void CreateOutput(int bindPoint);
+	void ReleaseOutput();
 
 	Binding *								mBinding;		// only set for top level ones (const buffers, basically)
 	D3D11_SHADER_BUFFER_DESC				mDesc;

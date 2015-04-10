@@ -81,6 +81,10 @@ struct Binding
 	virtual void CreateOutput()
 	{
 	}
+
+	virtual void ReleaseOutput()
+	{
+	}
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -98,5 +102,6 @@ struct ConstantBufferBinding: Binding
 	void MemberOutput() override;
 	void ConstructorOutput() override;
 	void CreateOutput() override;
+	void ReleaseOutput() override;
 };
 

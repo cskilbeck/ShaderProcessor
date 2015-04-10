@@ -30,7 +30,7 @@ namespace DX
 			mVertexBufferBindings = vertexBufferBindings;
 			mVertexBufferBindingCount = vertexBufferBindingCount;
 		}
-		
+
 		//////////////////////////////////////////////////////////////////////
 
 		void Release() override
@@ -38,7 +38,6 @@ namespace DX
 			Shader::Release();
 			mVertexShader.Release();
 			mInputLayout.Release();
-
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -143,6 +142,14 @@ namespace DX
 			DXR(D3DCreate(r.Data(), r.Size()));
 			DXR(CreateInputLayout(r.Data(), r.Size(), inputElements, inputElementCount));
 			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void SetName(tchar const *name) override
+		{
+			SetDebugName(mVertexShader, name);
+			SetDebugName(mInputLayout, name);
 		}
 
 		//////////////////////////////////////////////////////////////////////
