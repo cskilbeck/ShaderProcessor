@@ -182,16 +182,6 @@ namespace DX
 			q.Flip = Sprite::Flips(xflip, yflip);
 		}
 
-		SpriteSheet(tchar const *filename)
-		{
-			DXT(Load(filename));
-			mSampler.Create();
-			mShader.Create();
-			mShader.ps.page = &mPage;
-			mShader.ps.smplr = &mSampler;
-			mVertexBuffer.Create(500, null, DynamicUsage, Writeable);
-		}
-
 		virtual ~SpriteSheet()
 		{
 			Release();
@@ -201,13 +191,18 @@ namespace DX
 		{
 			mSampler.Release();
 			mShader.Release();
-			mSprites.clear();
 			mPage.Release();
+
+			mSprites.clear();
 		}
 
 		HRESULT Load(tchar const *filename)
 		{
 			Release();
+
+			DXR(mSampler.Create());
+			DXR(mShader.Create());
+			DXR(mVertexBuffer.Create(500, null, DynamicUsage, Writeable));
 
 			wstring buffer;
 			xml_doc *doc = LoadUTF8XMLFile(filename, buffer);
@@ -266,6 +261,8 @@ namespace DX
 				mSprites.push_back(s);
 				mSheet[name] = index++;
 			}
+			mShader.ps.page = &mPage;
+			mShader.ps.smplr = &mSampler;
 			return S_OK;
 		}
 	};

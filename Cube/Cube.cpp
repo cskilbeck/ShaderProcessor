@@ -1,10 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // RTCB001: DON'T RETURN A BOOL TO INDICATE SUCCESS/FAILURE (return a signed integer, where a negative value indicates failure)
 // RTCB002: DON'T DO ANYTHING THAT CAN FAIL IN A CONSTRUCTOR (unless you dig exceptions, in which case throw up all you like)
-// RTCB003: MAKE THE MEANING OF YOUR PARAMETERS CLEAR (by using enums or classes with explicit constructors)
+// RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
 // RTCB004: 
 
-// Fix Shader/ShaderBase constructor
 // Proper logging instead of a janky handful of macros
 // Debug text
 // Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource/Blob mess
@@ -15,16 +14,16 @@
 // Model hierarchy/Skinning shader/Anim player
 // Normal mapping
 // Shadow mapping
-// 2D UI Elements/Scene
+// 2D UI Elements/SceneGraph
 // SWF importer/converter/player!?
 // zLib: support Deflate64
 // Assimp
-//		Override IOSystem/IOStream with AssetManager
 //		Default shader
 //		Preprocessor / native loader
 //		Shared vert/index buffers across meshes
 //		Named shader support
 //		Skeleton/Weights
+//		* Override IOSystem/IOStream with AssetManager
 // Bullet
 // Track resources and clean them up automatically (with warnings, like Font does)
 //		Textures
@@ -62,6 +61,7 @@
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // * Move some things into Matrix from Camera
+// * Fix Shader/ShaderBase constructor
 
 #include "stdafx.h"
 
@@ -283,26 +283,26 @@ bool MyDXWindow::OnCreate()
 		}
 	}
 
-	scene.Load(TEXT("duck.dae"));
+	DXB(scene.Load(TEXT("duck.dae")));
 
-	FontManager::Open(this);
+	DXB(FontManager::Open(this));
 
-	debug_open(this);
+	DXB(debug_open(this));
 
-	font = FontManager::Load(TEXT("debug"));
-	bigFont = FontManager::Load(TEXT("Cooper_Black_48"));
+	DXB(FontManager::Load(TEXT("debug"), &font));
+	DXB(FontManager::Load(TEXT("Cooper_Black_48"), &bigFont));
 
-	simpleShader.Create();
+	DXB(simpleShader.Create());
 	DXB(simpleVB.Create(128, null, DynamicUsage, Writeable));
 
-	CreateGrid();
-	CreateOctahedron();
+	DXB(CreateGrid());
+	DXB(CreateOctahedron());
 
 	DXB(cubeShader.Create());
 	DXB(cubeTexture.Load(TEXT("temp.jpg")));
 	Sampler::Options o;
 	o.Filter = anisotropic;
-	cubeSampler.Create(o);
+	DXB(cubeSampler.Create(o));
 	cubeShader.ps.picTexture = &cubeTexture;
 	cubeShader.ps.tex1Sampler = &cubeSampler;
 	DXB(cubeIndices.Create(_countof(indices), indices, StaticUsage));
@@ -319,32 +319,32 @@ bool MyDXWindow::OnCreate()
 	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
 	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
 	l.specColor = Float3(5, 5, 5);
-	l.Update(Context());
+	DXB(l.Update(Context()));
 
-	uiShader.Create();
-	UIVerts.Create(12, null, DynamicUsage, Writeable);
-	uiTexture.Load(TEXT("temp.png"));
-	uiSampler.Create();
+	DXB(uiShader.Create());
+	DXB(UIVerts.Create(12, null, DynamicUsage, Writeable));
+	DXB(uiTexture.Load(TEXT("temp.png")));
+	DXB(uiSampler.Create());
 	uiShader.ps.page = &uiTexture;
 	uiShader.ps.smplr = &uiSampler;
 	uiShader.vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	uiShader.vs.vConstants.Update();
+	DXB(uiShader.vs.vConstants.Update());
 	uiShader.ps.pConstants.Color = Float4(1, 1, 1, 1);
-	uiShader.ps.pConstants.Update();
+	DXB(uiShader.ps.pConstants.Update());
 
-	spriteShader.Create();
-	spriteVerts.Create(2, null, DynamicUsage, Writeable);
-	spriteTexture.Load(TEXT("temp.jpg"));
-	spriteSampler.Create();
+	DXB(spriteShader.Create());
+	DXB(spriteVerts.Create(2, null, DynamicUsage, Writeable));
+	DXB(spriteTexture.Load(TEXT("temp.jpg")));
+	DXB(spriteSampler.Create());
 	spriteShader.ps.smplr = &spriteSampler;
 	spriteShader.ps.page = &spriteTexture;
 
-	spriteSheet.reset(new SpriteSheet(TEXT("spriteSheet.xml")));
+	DXB(spriteSheet.Load(TEXT("spriteSheet.xml")));
 
-	renderTarget.Create(256, 256, RenderTarget::WithDepthBuffer);
+	DXB(renderTarget.Create(256, 256, RenderTarget::WithDepthBuffer));
 
-	blitShader.Create();
-	blitVB.Create(4, null, DynamicUsage, Writeable);
+	DXB(blitShader.Create());
+	DXB(blitVB.Create(4, null, DynamicUsage, Writeable));
 
 	blitShader.ps.smplr = &uiSampler;
 	blitShader.ps.page = &renderTarget;
@@ -357,11 +357,11 @@ bool MyDXWindow::OnCreate()
 	dashCam.LookAt(Vec4(0, 1, 0));
 	dashCam.Update();
 
-	splatShader.Create();
-	splatVB.Create(8);
+	DXB(splatShader.Create());
+	DXB(splatVB.Create(8));
 
-	fpsGraph.Create(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer);
-	fpsSampler.Create(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap));
+	DXB(fpsGraph.Create(fpsWidth, fpsHeight, RenderTarget::WithoutDepthBuffer));
+	DXB(fpsSampler.Create(Sampler::Options(TextureFilter::min_mag_mip_point, TextureAddressWrap, TextureAddressWrap)));
 
 	return true;
 }
@@ -608,11 +608,11 @@ void MyDXWindow::OnFrame()
 	{
 		// Drawlist some sprites
 
-		Sprite const &s = (*spriteSheet)["temp.png"];
-		Sprite const &t = (*spriteSheet)["temp.jpg"];
-		spriteSheet->SetupTransform(Context(), ClientWidth(), ClientHeight());
+		Sprite const &s = spriteSheet["temp.png"];
+		Sprite const &t = spriteSheet["temp.jpg"];
+		spriteSheet.SetupTransform(Context(), ClientWidth(), ClientHeight());
 
-		drawList.Reset(Context(), &spriteSheet->mShader, &spriteSheet->mVertexBuffer);
+		drawList.Reset(Context(), &spriteSheet.mShader, &spriteSheet.mVertexBuffer);
 		drawList.BeginPointList();
 		Sprite &q = drawList.AddVertex<Sprite>();
 		q.Set(t, { 100, ClientHeight() - 100.0f });
@@ -625,15 +625,15 @@ void MyDXWindow::OnFrame()
 		bool xflip = ((int)(time * 10) & 1) != 0;
 		bool yflip = ((int)(time * 5) & 1) != 0;
 
-		spriteSheet->BeginRun(Context());
-		spriteSheet->Add(s,
+		spriteSheet.BeginRun(Context());
+		spriteSheet.Add(s,
 						 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
 						 { sinf(time * 1.75f) * 0.1f + 0.2f, cosf(time * 1.9f) * 0.1f + 0.2f },
 						 { 0.5f, 0.5f },
 						 0,
 						 Color::White,
 						 xflip, yflip);
-		spriteSheet->ExecuteRun(Context());
+		spriteSheet.ExecuteRun(Context());
 	}
 
 	// Draw spinning cube into rendertarget
@@ -745,24 +745,48 @@ void MyDXWindow::OnFrame()
 void MyDXWindow::OnDestroy()
 {
 	debug_close();
-	simpleShader.Release();
 	cubeShader.Release();
+	cubeVerts.Release();
+	cubeIndices.Release();
 	cubeTexture.Release();
 	cubeSampler.Release();
-	cubeVerts.Release();
+
+	simpleShader.Release();
+	gridVB.Release();
+	octahedronVB.Release();
+	simpleVB.Release();
+	octahedronIB.Release();
+
+	instancedShader.Release();
+	instancedVB0.Release();
+	instancedVB1.Release();
+	scene.Unload();
+
 	uiShader.Release();
 	UIVerts.Release();
 	uiTexture.Release();
 	uiSampler.Release();
+
 	font.Release();
 	bigFont.Release();
+
 	spriteShader.Release();
 	spriteVerts.Release();
-	spriteSampler.Release();
 	spriteTexture.Release();
-	spriteSheet.reset();
+	spriteSampler.Release();
+
+	splatShader.Release();
+	splatVB.Release();
+
+	fpsGraph.Release();
+	fpsSampler.Release();
+
+	spriteSheet.Release();
+
 	renderTarget.Release();
-	scene.Unload();
+	blitShader.Release();
+	blitVB.Release();
+
 	Scene::CleanUp();
 	Texture::FlushAll();
 	FontManager::Close();

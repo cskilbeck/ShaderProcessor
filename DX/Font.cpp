@@ -75,15 +75,16 @@ struct Font::Layer
 
 //////////////////////////////////////////////////////////////////////
 
-static void LoadShader()
+static HRESULT LoadShader()
 {
 	if(!initialised)
 	{
-		shader.Create();
-		sampler.Create();
+		DXR(shader.Create());
+		DXR(sampler.Create());
 		shader.ps.smplr = &sampler;
 		initialised = true;
 	}
+	return S_OK;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -92,11 +93,12 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	void FontManager::Open(Window *window)
+	HRESULT FontManager::Open(Window *window)
 	{
-		LoadShader();
+		DXR(LoadShader());
 		fontManagerWindow = window;
 		window->Destroyed += onDestroy;
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -110,6 +112,10 @@ namespace DX
 
 	void FontManager::Close()
 	{
+		for(auto &f : sAllFonts)
+		{
+			TRACE("Dangling font: %s\n", f.mName.c_str());
+		}
 		fontManagerWindow->Destroyed -= onDestroy;
 		shader.Release();
 		sampler.Release();
@@ -117,7 +123,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Font *FontManager::Load(tchar const *name)
+	HRESULT FontManager::Load(tchar const *name, Font **font)
 	{
 		tstring l = ToLower(name);
 		for(auto &f : sAllFonts)
@@ -125,12 +131,13 @@ namespace DX
 			if(f.mName == name)
 			{
 				f.AddRef();
-				return &f;
+				*font = &f;
+				return S_OK;
 			}
 		}
-		Font *f = new Font();
-		f->LoadFromFile(name);
-		return f;
+		*font = new Font();
+		DXR((*font)->LoadFromFile(name));
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -194,6 +201,8 @@ namespace DX
 
 	Font::~Font()
 	{
+		TRACE("Deleting font %s\n", mName.c_str());
+
 		sAllFonts.remove(this);
 		for(int i = 0; i<mPageCount; ++i)
 		{
@@ -208,7 +217,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::LoadFromFile(tchar const *filename)
+	HRESULT Font::LoadFromFile(tchar const *filename)
 	{
 		mName = ToLower(tstring(filename));
 
@@ -216,7 +225,7 @@ namespace DX
 		xml_doc *doc = LoadUTF8XMLFile(Format(TEXT("%s.bitmapfont"), filename).c_str(), buffer);
 		if(doc == null)
 		{
-			return;
+			return E_FAIL;
 		}
 		node *root = doc->first_node(L"BitmapFont");
 
@@ -244,6 +253,8 @@ namespace DX
 					for(int i = 0; i<mPageCount; ++i)
 					{
 						mPages[i] = new Texture();
+
+						// TODO (charlie): error check this
 						mPages[i]->Load(Format(TEXT("%s%d.png"), path.c_str(), i).c_str());
 					}
 
@@ -334,6 +345,7 @@ namespace DX
 			}
 		}
 		delete doc;
+		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////

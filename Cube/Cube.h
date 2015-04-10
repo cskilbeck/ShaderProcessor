@@ -59,7 +59,7 @@ struct MyDXWindow: DXWindow
 	RenderTarget fpsGraph;
 	Sampler fpsSampler;
 
-	Ptr<SpriteSheet> spriteSheet;
+	SpriteSheet spriteSheet;
 
 	RenderTarget renderTarget;
 	Shaders::Blit blitShader;

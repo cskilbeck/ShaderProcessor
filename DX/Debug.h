@@ -8,7 +8,7 @@ namespace DX
 {
 	struct DXWindow;
 
-	void debug_open(DXWindow *w);
+	HRESULT debug_open(DXWindow *w);
 	void debug_close();
 
 	void debug_begin();

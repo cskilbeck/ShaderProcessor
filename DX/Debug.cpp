@@ -19,11 +19,12 @@ namespace
 
 namespace DX
 {
-	void debug_open(DXWindow *w)
+	HRESULT debug_open(DXWindow *w)
 	{
 		assert(FontManager::IsOpen());
-		debugFont = FontManager::Load("debug");
+		DXR(FontManager::Load("debug", &debugFont));
 		mainWindow = w;
+		return S_OK;
 	}
 
 	void debug_close()

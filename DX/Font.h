@@ -59,7 +59,7 @@ namespace DX
 
 		friend struct FontManager;
 
-		void LoadFromFile(tchar const *filename);
+		HRESULT LoadFromFile(tchar const *filename);
 
 		typedef std::unordered_map<wchar, int> Map;	// map into Glyph array per char
 
@@ -93,9 +93,9 @@ namespace DX
 
 	struct FontManager
 	{
-		static void Open(Window *window);
+		static HRESULT Open(Window *window);
 		static bool IsOpen();
 		static void Close();
-		static Font *Load(tchar const *name);
+		static HRESULT Load(tchar const *name, Font **fontPtr);
 	};
 }
