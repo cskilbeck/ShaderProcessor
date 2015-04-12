@@ -235,6 +235,9 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	btVector3 bob;
+	float x = bob.getX();
+
 	AssetManager::AddFolder("data");
 	AssetManager::AddArchive("data.zip");
 

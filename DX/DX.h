@@ -3,6 +3,7 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
+// Assimp
 
 #include "assimp/include/assimp/Importer.hpp"
 #include "assimp/include/assimp/postprocess.h"
@@ -13,10 +14,18 @@
 #include "assimp/include/assimp/cimport.h"
 
 //////////////////////////////////////////////////////////////////////
+// DXBase
 
 #include "DXBase\DXBase.h"
 
 //////////////////////////////////////////////////////////////////////
+// Bullet
+
+#include "Bullet\src\btBulletCollisionCommon.h"
+#include "Bullet\src\btBulletDynamicsCommon.h"
+
+//////////////////////////////////////////////////////////////////////
+// DX
 
 #include "Device.h"
 #include "Event.h"
@@ -46,10 +55,6 @@
 #include "DXWindow.h"
 #include "..\zlib-1.2.8\zlib.h"
 #include "..\zlib-1.2.8\infback9.h"
-//#include "unzip.h"
 #include "Archive.h"
-
-//////////////////////////////////////////////////////////////////////
-
 #include "Shaders/Default.shader.h"
 #include "Mesh.h"

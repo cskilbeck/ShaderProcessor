@@ -171,6 +171,15 @@
     <ProjectReference Include="assimp\workspaces\vc9\assimp.vcxproj">
       <Project>{5691e159-2d9b-407f-971f-ea5c592dc524}</Project>
     </ProjectReference>
+    <ProjectReference Include="Bullet\build\vs2010\BulletCollision.vcxproj">
+      <Project>{47142322-8005-884f-8559-911a3abd7e36}</Project>
+    </ProjectReference>
+    <ProjectReference Include="Bullet\build\vs2010\BulletDynamics.vcxproj">
+      <Project>{bf5354b6-10fe-a847-89a8-e30e191ec491}</Project>
+    </ProjectReference>
+    <ProjectReference Include="Bullet\build\vs2010\LinearMath.vcxproj">
+      <Project>{bb7718c7-cb3e-0042-801f-a552352e8f01}</Project>
+    </ProjectReference>
     <ProjectReference Include="DXBase\DXBase.vcxproj">
       <Project>{8a5d13cd-5be9-43c1-977c-0bce4cf6ca10}</Project>
     </ProjectReference>
