@@ -6,31 +6,31 @@
 
 namespace DX
 {
-	struct Size2D: SIZE
+	template <typename T> struct Size2: T
 	{
-		Size2D()
+		Size2()
 		{
 		}
 
-		Size2D(int w, int h)
+		Size2(int w, int h)
 		{
 			cx = w;
 			cy = h;
 		}
 
-		Size2D(Size2D const &o)
+		Size2(Size2 const &o)
 		{
 			cx = o.cx;
 			cy = o.cy;
 		}
 
-		explicit Size2D(Vec2f const &o)
+		explicit Size2(Vec2f const &o)
 		{
 			cx = (int)o.x;
 			cy = (int)o.y;
 		}
 
-		explicit Size2D(Point2D const &o)
+		explicit Size2(Point2D const &o)
 		{
 			cx = o.x;
 			cy = o.y;
@@ -55,56 +55,58 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Point2D operator + (Point2D a, Size2D b)
+	template <typename T> inline Point2D operator + (Point2D a, Size2<T> b)
 	{
 		return Point2D(a.x + b.cx, a.y + b.cy);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Size2D operator + (Size2D a, Size2D b)
+	template <typename T> inline Size2<T> operator + (Size2<T> a, Size2<T> b)
 	{
-		return Size2D(a.cx + b.cx, a.cy + b.cy);
+		return Size2<T>(a.cx + b.cx, a.cy + b.cy);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Size2D operator + (Size2D a, Point2D b)
+	template <typename T> inline Size2<T> operator + (Size2<T> a, Point2D b)
 	{
-		return Size2D(a.cx + b.x, a.cy + b.y);
+		return Size2<T>(a.cx + b.x, a.cy + b.y);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Point2D operator - (Point2D a, Size2D b)
+	template <typename T> inline Point2D operator - (Point2D a, Size2<T> b)
 	{
 		return Point2D(a.x - b.cx, a.y - b.cy);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Size2D operator - (Size2D a, Size2D b)
+	template <typename T> inline Size2<T> operator - (Size2<T> a, Size2<T> b)
 	{
-		return Size2D(a.cx - b.cx, a.cy - b.cy);
+		return Size2<T>(a.cx - b.cx, a.cy - b.cy);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Size2D operator - (Size2D a, Point2D b)
+	template <typename T> inline Size2<T> operator - (Size2<T> a, Point2D b)
 	{
-		return Size2D(a.cx - b.x, a.cy - b.y);
+		return Size2<T>(a.cx - b.x, a.cy - b.y);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Size2D operator - (Size2D const &s, Vec2f const &v)
+	template <typename T> inline Size2<T> operator - (Size2<T> const &s, Vec2f const &v)
 	{
-		return Size2D((long)(s.cx - v.x), (long)(s.cy - v.y));
+		return Size2<T>((long)(s.cx - v.x), (long)(s.cy - v.y));
 	}
 
-	inline bool operator == (Size2D const &a, Size2D const &b)
+	template <typename T> inline bool operator == (Size2<T> const &a, Size2<T> const &b)
 	{
 		return a.cx == b.cx && a.cy == b.cy;
 	}
+
+	using Size2D = Size2<SIZE>;
 
 }

@@ -208,7 +208,7 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 {
 	Variable::ResetPaddingID();
 
-	OutputLine("struct %s_t", mDesc.Name);
+	OutputLine("struct %s_t : Aligned16", mDesc.Name);
 	OutputLine("{");
 	Indent();
 	for(auto p : mVariables)

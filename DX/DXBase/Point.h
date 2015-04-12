@@ -30,6 +30,12 @@ namespace DX
 			y = (int)o.y;
 		}
 
+		Point2(Size2D const &s)
+		{
+			x = s.cx;
+			y = s.cy;
+		}
+
 		void Clear()
 		{
 			x = y = 0;

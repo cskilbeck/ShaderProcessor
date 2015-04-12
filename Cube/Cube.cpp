@@ -353,7 +353,7 @@ bool MyDXWindow::OnCreate()
 	blitShader.ps.page = &renderTarget;
 
 	cubeShader.ps.Camera.cameraPos = dashCam.position;
-	cubeShader.ps.Camera.Update();
+	DXB(cubeShader.ps.Camera.Update());
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
 	dashCam.position = Vec4(0, 0, 0);
@@ -572,7 +572,7 @@ void MyDXWindow::OnFrame()
 	bigFont->SetDrawList(drawList);
 	bigFont->Setup(Context(), this);
 	bigFont->Begin();
-	bigFont->DrawString("HELLOWORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
+	bigFont->DrawString("HELLO WORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
 	bigFont->End();
 
 	drawList.Execute();
@@ -671,12 +671,13 @@ void MyDXWindow::OnFrame()
 	float l = r - w;
 	float t = 10;
 	float b = t + h;
-	auto bv = blitVB.Get();
+	Shaders::Blit::InputVertex *bv;
+	blitVB.Map(Context(), bv);
 	bv[0] = { { l, t }, { 0, 0 } };
 	bv[1] = { { r, t }, { 1, 0 } };
 	bv[2] = { { l, b }, { 0, 1 } };
 	bv[3] = { { r, b }, { 1, 1 } };
-	bv.Release();
+	blitVB.UnMap(Context());
 
 	blitShader.ps.page = &renderTarget;
 	blitShader.ps.smplr = &uiSampler;
@@ -796,6 +797,8 @@ void MyDXWindow::OnDestroy()
 	Scene::CleanUp();
 	Texture::FlushAll();
 	FontManager::Close();
+
+	AssetManager::Close();
 
 	TRACE("=== END OF OnDestroy() ===\n");
 }

@@ -324,13 +324,15 @@ namespace DX
 					share = FILE_SHARE_WRITE;
 					break;
 			}
+			Trace(TEXT("Open(%s)\n"), name);
 			h = CreateFile(name, access, share, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
 			if(!h.IsValid())
 			{
 				error = GetLastError();
+				Trace(TEXT("Failed to open %s (%08x)\n"), name, error);
 			}
 			owned = true;
-			return h.IsValid() ? S_OK : error;
+			return h.IsValid() ? S_OK : HRESULT_FROM_WIN32(error);
 		}
 
 		int Create(char const *name, OverwriteOption overwrite)
@@ -352,7 +354,7 @@ namespace DX
 				error = GetLastError();
 			}
 			owned = true;
-			return h.IsValid() ? S_OK : error;
+			return h.IsValid() ? S_OK : HRESULT_FROM_WIN32(error);
 		}
 
 		tstring Name() override
@@ -379,7 +381,7 @@ namespace DX
 				if(ReadFile(h, buffer, get, &localGot, null) == 0)
 				{
 					error = GetLastError();
-					return ERROR_READ_FAULT;
+					return HRESULT_FROM_WIN32(error);
 				}
 				total += localGot;
 			}
@@ -401,7 +403,7 @@ namespace DX
 				if(WriteFile(h, buffer, w, &localWrote, null) == 0)
 				{
 					error = GetLastError();
-					return ERROR_WRITE_FAULT;
+					return HRESULT_FROM_WIN32(error);
 				}
 				total += localWrote;
 				remain -= localWrote;
@@ -419,7 +421,7 @@ namespace DX
 			if(SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) == 0)
 			{
 				error = GetLastError();
-				return error;
+				return HRESULT_FROM_WIN32(error);
 			}
 			return S_OK;
 		}
@@ -430,7 +432,7 @@ namespace DX
 			if(GetFileSizeEx(h, &s) == 0)
 			{
 				error = GetLastError();
-				return error;
+				return HRESULT_FROM_WIN32(error);
 			}
 			size = (uint64)s.QuadPart;
 			return S_OK;
@@ -442,7 +444,7 @@ namespace DX
 			if(Seek(0, SEEK_CUR, &newPos) == 0)
 			{
 				error = GetLastError();
-				return error;
+				return HRESULT_FROM_WIN32(error);
 			}
 			position = (uint64)newPos;
 			return S_OK;

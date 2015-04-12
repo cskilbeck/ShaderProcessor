@@ -231,6 +231,8 @@ struct HLSLShader
 	HLSLShader(tstring const &filename);
 	virtual ~HLSLShader();
 
+	bool HasReleaseBindings();
+
 	void OutputHeaderFile();
 	void OutputConstBufferNamesAndOffsets();
 	void OutputResourceNames();

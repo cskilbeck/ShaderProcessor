@@ -11,6 +11,9 @@ namespace DX
 	{
 		virtual int Create(tchar const *name) = 0;
 		virtual int Open(tchar const *name, FileBase **file) = 0;
+		virtual ~AssetSource()
+		{
+		}
 	};
 
 	struct FolderSource: AssetSource
@@ -28,6 +31,7 @@ namespace DX
 			*file = diskFile.release();
 			return S_OK;
 		}
+
 		tstring folder;
 	};
 
@@ -35,11 +39,18 @@ namespace DX
 	{
 		int Create(tchar const *name) override
 		{
-			if(!file.Open(name, DiskFile::ForReading))
+			if(file.Open(name, DiskFile::ForReading) != S_OK)
 			{
-				return ERROR_FILE_NOT_FOUND;
+				return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 			}
-			return (archive.Open(&file) == Archive::ok) ? S_OK : ERROR_FILE_NOT_FOUND;
+			DXR(archive.Open(&file));
+			return S_OK;
+		}
+
+		~ArchiveSource()
+		{
+			archive.Close();
+			file.Close();
 		}
 
 		int Open(tchar const *name, FileBase **file) override
@@ -47,7 +58,7 @@ namespace DX
 			Ptr<Archive::File> f(new Archive::File());
 			if(archive.Locate(name, *f) != Archive::ok)
 			{
-				return ERROR_FILE_NOT_FOUND;
+				return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 			}
 			*file = f.release();
 			return S_OK;
@@ -59,6 +70,16 @@ namespace DX
 
 	namespace AssetManager
 	{
+		void Close()
+		{
+			while(!sources.empty())
+			{
+				AssetSource *s = sources.back();
+				sources.pop_back();
+				delete s;
+			}
+		}
+
 		int AddFolder(tchar const *folderName)
 		{
 			Ptr<FolderSource> f(new FolderSource());
@@ -69,9 +90,16 @@ namespace DX
 
 		int AssetManager::AddArchive(tchar const *archiveName)
 		{
-			Ptr<ArchiveSource> a(new ArchiveSource());
-			DXR(a->Create(archiveName));
-			sources.push_back(a.release());
+			ArchiveSource *a = new ArchiveSource();
+			int r = a->Create(archiveName);
+			if(r == S_OK)
+			{
+				sources.push_back(a);
+			}
+			else
+			{
+				delete a;
+			}
 			return S_OK;
 		}
 
@@ -98,24 +126,23 @@ namespace DX
 					return S_OK;
 				}
 			}
-			return ERROR_FILE_NOT_FOUND;
+			return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 		}
 
 		int LoadFile(tchar const *filename, FileResource &data)
 		{
 			FileBase *file;
 			DXR(Open(filename, &file));
-			Ptr<FileBase> filep(file);
-			file->GetSize(data.Size());
-			data.Data() = new byte[data.Size()];
+			Ptr<FileBase> filep(file); // To make it close it
+			DXR(file->GetSize(data.Size()));
+			Ptr<byte> mem(new byte[data.Size()]);
 			size_t got;
-			if(file->Read(data.Data(), data.Size(), &got) != S_OK || got != data.Size())
+			DXR(file->Read(mem.get(), data.Size(), &got));
+			if(got != data.Size())
 			{
-				data.Data() = null;
-				data.Size() = 0;
-				return ERROR_FILE_INVALID;
+				return HRESULT_FROM_WIN32(ERROR_READ_FAULT);
 			}
-			filep.release();	// data owns it now...
+			data.Data() = mem.release();
 			return S_OK;
 		}
 	}

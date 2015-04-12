@@ -57,6 +57,8 @@ namespace DX
 		, mClassName(className == null ? tstring() : className)
 		, mWindowStyle(windowStyle)
 		, mParentHWND(parent)
+		, mClosed(false)
+		, mCreated(false)
 	{
 		mWindowInfo.cbSize = sizeof(WINDOWINFO);
 
@@ -66,16 +68,15 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Window::Open()
+	bool Window::Open()
 	{
 		if(!Init(WindowWidth(), WindowHeight()))
 		{
 			Close();
+			return false;
 		}
-		else
-		{
-			Show();
-		}
+		Show();
+		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -129,7 +130,6 @@ namespace DX
 			ErrorMessageBox(TEXT("Failed to create window (%08x) - %s"), err, Win32ErrorMessage(err).c_str());
 			return false;
 		}
-
 		GetWindowInfo(mHWND, &mWindowInfo);
 		return true;
 	}
@@ -233,9 +233,9 @@ namespace DX
 
 	bool Window::Update()
 	{
-		if(!mHWND)
+		if(!mHWND && !Open() && !mCreated)
 		{
-			Open();
+			return false;
 		}
 
 		Keyboard::LastKeyPressed = 0;
@@ -266,9 +266,19 @@ namespace DX
 
 		if(mActive && !mResizing)
 		{
+			CallOnUpdate();
+		}
+		return !mClosed;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::CallOnUpdate()
+	{
+		if(mCreated && !mClosed)
+		{
 			OnUpdate();
 		}
-		return true;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -320,7 +330,11 @@ namespace DX
 				{
 					Close();
 				}
-				Created.Invoke(WindowEvent(this));
+				else
+				{
+					Created.Invoke(WindowEvent(this));
+					mCreated = true;
+				}
 				break;
 
 			case WM_DESTROY:
@@ -695,6 +709,7 @@ namespace DX
 
 	void Window::Close()
 	{
+		mClosed = true;
 		DestroyWindow(mHWND);
 	}
 

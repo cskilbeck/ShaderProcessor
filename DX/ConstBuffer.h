@@ -16,7 +16,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename definition> struct ConstBuffer: definition, Buffer<definition>, Aligned16	// definition MUST be POD
+	template<typename definition> struct ConstBuffer: definition, Buffer<definition>	// definition MUST be POD and Aligned16
 	{
 		ConstBuffer()
 			: Buffer<definition>()

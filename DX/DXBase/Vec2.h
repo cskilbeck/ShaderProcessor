@@ -9,7 +9,8 @@
 namespace DX
 {
 	template<typename T> struct Point2;
-	struct Size2D;
+	template<typename T> struct Size2;
+	using Size2D = Size2<SIZE>;
 
 	//////////////////////////////////////////////////////////////////////
 

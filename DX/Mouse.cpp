@@ -37,7 +37,6 @@ static void HideMouse()
 
 namespace DX
 {
-
 	namespace Mouse
 	{
 		//////////////////////////////////////////////////////////////////////
@@ -59,9 +58,7 @@ namespace DX
 				Point2D p;
 				GetCursorPos(&p);
 				ScreenToClient(w.Handle(), &p);
-				POINT c;
-				c.x = w.WindowWidth() / 2;
-				c.y = w.WindowHeight() / 2;
+				Point2D c(w.ClientRect().HalfSize());
 				Mouse::Delta = Vec2f((float)p.x - c.x, (float)p.y - c.y);
 				Position += Mouse::Delta;
 				ClientToScreen(w.Handle(), &c);

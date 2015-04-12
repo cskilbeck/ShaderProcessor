@@ -558,7 +558,7 @@ void OutputPragmaDocs()
 {
 	TempFile t("PRD");
 	DiskFile d;
-	if(d.Create(t, DiskFile::Overwrite))
+	if(d.Create(t, DiskFile::Overwrite) == S_OK)
 	{
 		PutS(d, R"(<html>
 <body style="font-family:verdana; font-size:small;">

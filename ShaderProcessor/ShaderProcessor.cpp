@@ -462,12 +462,13 @@ int main(int argc, char *argv[])
 		dataFolder = AppendBackslash(options[DATA_FOLDER].arg);
 		outpath.append(dataFolder);
 		relativeBinFile = ReplaceAll(Format(TEXT("%s%s.sob"), dataFolder.c_str(), shaderName.c_str()), tstring("\\"), tstring("\\\\"));
-		binFile = Format("%s%s.sob", outpath.c_str(), shaderName.c_str());
 	}
 	else
 	{
-		relativeBinFile = Format("%s.sob", shaderName.c_str());
+		dataFolder = "";
 	}
+	relativeBinFile = ReplaceAll(Format(TEXT("%s%s.sob"), dataFolder.c_str(), shaderName.c_str()), tstring("\\"), tstring("\\\\"));
+	binFile = Format("%s%s.sob", outpath.c_str(), shaderName.c_str());
 
 	// Right, the output
 

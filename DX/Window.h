@@ -140,7 +140,7 @@ namespace DX
 		virtual void OnWindowPosChanged(WINDOWPOS *pos);
 		virtual void OnNCMouseMove(MousePos pos, uintptr hitTestValue);
 
-		void Open();
+		bool Open();
 		void Close();
 
 		bool Update();
@@ -184,6 +184,7 @@ namespace DX
 
 	protected:
 
+		void CallOnUpdate();
 		void DoResize();
 		void DoMove();
 		bool Init(int width, int height);
@@ -206,6 +207,8 @@ namespace DX
 		tstring		mCaption;
 		tstring		mClassName;
 		uint32		mWindowStyle;
+		bool		mClosed;
+		bool		mCreated;
 
 		static int	sWindowClassIndex;
 	};

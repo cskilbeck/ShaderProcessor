@@ -62,8 +62,11 @@ namespace DX
 
 	void DXWindow::OnResized()
 	{
-		mD3D.Resize(ClientWidth(), ClientHeight());
-		OnUpdate();
+		if(mD3D.mContext != null)
+		{
+			mD3D.Resize(ClientWidth(), ClientHeight());
+			CallOnUpdate();
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -944,18 +944,38 @@ void HLSLShader::OutputConstructor()
 	}
 	OutputLine("return S_OK;");
 	UnIndent("}");
-	OutputLine();
 
-	OutputLine("void Release() override");
-	OutputLine("{");
-	Indent();
-	OutputLine("%sShader::Release();", mShaderTypeDesc.name);
+	if(HasReleaseBindings())
+	{
+		OutputLine();
+		OutputLine("void Release() override");
+		OutputLine("{");
+		Indent();
+		OutputLine("%sShader::Release();", mShaderTypeDesc.name);
+		for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
+		{
+			(*i)->ReleaseOutput();
+		}
+		UnIndent("}");
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+bool HLSLShader::HasReleaseBindings()
+{
+	if(mBindings.empty())
+	{
+		return false;
+	}
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
-		(*i)->ReleaseOutput();
+		if((*i)->IsConstBuffer())
+		{
+			return true;
+		}
 	}
-	UnIndent("}");
-	OutputLine();
+	return false;
 }
 
 //////////////////////////////////////////////////////////////////////
