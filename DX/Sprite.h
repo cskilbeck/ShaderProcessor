@@ -232,11 +232,11 @@ namespace DX
 
 			if(!mPage.IsValid())
 			{
-				return ERROR_FILE_NOT_FOUND;
+				return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 			}
 			if(mPage.FSize() != tsize)
 			{
-				return ERROR_BAD_FORMAT;
+				return HRESULT_FROM_WIN32(ERROR_BAD_FORMAT);
 			}
 
 			int index = 0;

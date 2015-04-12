@@ -14,25 +14,25 @@ namespace DX
 	    HRSRC myResource = ::FindResource(NULL, MAKEINTRESOURCE(resourceid), RT_RCDATA);
 	    if(myResource == null)
 	    {
-	        return ERROR_RESOURCE_DATA_NOT_FOUND;
+			return HRESULT_FROM_WIN32(ERROR_RESOURCE_DATA_NOT_FOUND);
 	    }
 
 	    HGLOBAL myResourceData = ::LoadResource(NULL, myResource);
 	    if(myResourceData == null)
 	    {
-	        return ERROR_RESOURCE_FAILED;
+			return HRESULT_FROM_WIN32(ERROR_RESOURCE_FAILED);
 	    }
 
 	    void *pMyBinaryData = ::LockResource(myResourceData);
 	    if(pMyBinaryData == null)
 	    {
-	        return ERROR_RESOURCE_NOT_AVAILABLE;
+			return HRESULT_FROM_WIN32(ERROR_RESOURCE_NOT_AVAILABLE);
 	    }
 
 	    size_t s = (size_t)SizeofResource(GetModuleHandle(null), myResource);
 	    if(s == 0)
 	    {
-	        return ERROR_RESOURCE_FAILED;
+			return HRESULT_FROM_WIN32(ERROR_RESOURCE_FAILED);
 	    }
 
 	    if(size != null)

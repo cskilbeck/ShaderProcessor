@@ -1,9 +1,19 @@
 //////////////////////////////////////////////////////////////////////
-// RTCB001: DON'T RETURN A BOOL TO INDICATE SUCCESS/FAILURE (return a signed integer, where a negative value indicates failure)
+// RTCB001: DON'T RETURN A BOOL TO INDICATE SUCCESS or FAILURE (return a signed integer, where a negative value indicates failure)
 // RTCB002: DON'T DO ANYTHING THAT CAN FAIL IN A CONSTRUCTOR (unless you dig exceptions, in which case throw up all you like)
 // RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
 // RTCB004: 
 
+// Bullet
+// Normal mapping
+// Shadow mapping
+// Track resources and clean them up automatically (with warnings, like Font does)
+//		Textures
+//		Samplers
+//		etc
+// 2D UI Elements/SceneGraph
+// zLib: support Deflate64
+//		Test the AssetManager
 // ?? Shader de-duplication?
 // Proper logging instead of a janky handful of macros
 // Debug text
@@ -13,11 +23,7 @@
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader/Anim player
-// Normal mapping
-// Shadow mapping
-// 2D UI Elements/SceneGraph
 // SWF importer/converter/player!?
-// zLib: support Deflate64
 // Assimp
 //		Default shader
 //		Preprocessor / native loader
@@ -25,11 +31,6 @@
 //		Named shader support
 //		Skeleton/Weights
 //		* Override IOSystem/IOStream with AssetManager
-// Bullet
-// Track resources and clean them up automatically (with warnings, like Font does)
-//		Textures
-//		Samplers
-//		etc
 // Start the long and laborious process of making it platform agnostic
 //		ShaderProcessor (harumph, wtf to do about that? Cg? GLSL? PSSL? MeTal?)
 // Spock

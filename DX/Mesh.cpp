@@ -238,7 +238,7 @@ HRESULT Scene::Load(tchar const *filename)
 	if(scene == null)
 	{
 		TRACE("Error loading %s: %s\n", filename, importer.GetErrorString());
-		return ERROR_FILE_NOT_FOUND;
+		return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 	}
 
 	mRootNode.mTransform = IdentityMatrix;

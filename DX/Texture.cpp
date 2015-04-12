@@ -185,13 +185,12 @@ namespace DX
 		if(FAILED(hr))
 		{
 			mTexture2D.Release();
-			return hr;
 		}
 		else
 		{
 			mTexture2D->GetDesc(&mTextureDesc);
 		}
-		return S_OK;
+		return hr;
 	}
 
 	//////////////////////////////////////////////////////////////////////

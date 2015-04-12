@@ -236,18 +236,22 @@ namespace DX
 			memset(&mZStream, 0, sizeof(mZStream));
 			mWindow.reset(new byte[65536]);
 
-			int r;
+			int r = error_notsupported;
 			if(mHeader.Info.CompressionMethod == Deflate)
 			{
 				r = inflateBackInit(&mZStream, MAX_WBITS, mWindow.get());
 			}
-			else
+			else if(mHeader.Info.CompressionMethod == Deflate64)
 			{
 				r = inflateBack9Init(&mZStream, mWindow.get());
 			}
+			else if(mHeader.Info.CompressionMethod == None)
+			{
+				r = ok;
+			}
 			if(r != ok)
 			{
-				return false;
+				return r;
 			}
 		}
 

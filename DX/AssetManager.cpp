@@ -21,7 +21,7 @@ namespace DX
 		int Create(tchar const *name) override
 		{
 			folder = name;
-			return FolderExists(name) ? S_OK : ERROR_FILE_NOT_FOUND;
+			return FolderExists(name) ? S_OK : HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 		}
 
 		int Open(tchar const *name, FileBase **file) override
