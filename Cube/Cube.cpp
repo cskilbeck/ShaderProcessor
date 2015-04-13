@@ -247,12 +247,13 @@ bool MyDXWindow::OnCreate()
 	mGroundRigidBody->setRestitution(1);
 	mGroundRigidBody->setFriction(1);
 
-	btTransform bodyTransform(btQuaternion(btVector3(0.5f,1,0), 1.5f), Vec4(50, 50, 50));
-	Vec4f boxSize = Vec4(5, 5, 5);
+	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), Vec4(0, 10, 20));
+	Vec4f boxSize = Vec4(4, 4, 4);
 	boxShape = new btBoxShape(boxSize);
-	boxBody = new btRigidBody(1000.0f, new btDefaultMotionState(bodyTransform), boxShape);
+	boxBody = new btRigidBody(100.0f, new btDefaultMotionState(bodyTransform), boxShape, Physics::inertia(100.0f, boxShape));
 	boxBody->setFriction(0.1f);
-	boxBody->setRestitution(0.1f);
+	boxBody->setRestitution(0.25f);
+	boxBody->setDamping(0, 0);
 	Physics::DynamicsWorld->addRigidBody(boxBody);
 
 	AssetManager::AddFolder("data");
@@ -443,7 +444,13 @@ void MyDXWindow::OnFrame()
 	camera.Move(move);
 	camera.Update();
 
-	Physics::DynamicsWorld->stepSimulation(deltaTime, 10);
+	if(Keyboard::Pressed('B'))
+	{
+		boxBody->activate(true);
+		boxBody->applyCentralImpulse(btVector3(0, 20, 3000));
+	}
+
+	Physics::DynamicsWorld->stepSimulation(deltaTime * 2, 20, (deltaTime * 2) / 20);
 
 	cubePos = Vec4(15, 15, 0);
 	cubeScale = Vec4(5, 5, 5);
@@ -451,12 +458,6 @@ void MyDXWindow::OnFrame()
 
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
-
-	Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
-	physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-	physicsDebug.BeginScene(&camera);
-	Physics::DynamicsWorld->debugDrawWorld();
-	physicsDebug.EndScene();
 
 	// Draw spinning cube
 
@@ -771,6 +772,12 @@ void MyDXWindow::OnFrame()
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		Context()->Draw(4, 0);
 	}
+
+	Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
+	physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+	physicsDebug.BeginScene(&camera);
+	Physics::DynamicsWorld->debugDrawWorld();
+	physicsDebug.EndScene();
 
 	debug_end();
 }

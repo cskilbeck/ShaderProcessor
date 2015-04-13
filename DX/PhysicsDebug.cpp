@@ -61,9 +61,9 @@ void PhysicsDebug::drawLine(const btVector3& from, const btVector3& to, const bt
 	DXShaders::Color::InputVertex v;
 	v.Color = Color((float *)&color);
 	v.Color.SetAlpha(255);
-	v.Position = from.mVec128;
+	v.Position = from;
 	mDrawList.AddVertex(v);
-	v.Position = to.mVec128;
+	v.Position = to;
 	mDrawList.AddVertex(v);
 }
 
