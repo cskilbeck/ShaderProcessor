@@ -4,6 +4,11 @@
 
 //////////////////////////////////////////////////////////////////////
 
+namespace
+{
+	PhysicsDebug physicsDebug;
+}
+
 namespace DX
 {
 	namespace Physics
@@ -16,7 +21,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Physics::Open()
+		HRESULT Physics::Open(DXWindow *window)
 		{
 			CollisionConfiguration = new btDefaultCollisionConfiguration();
 			Dispatcher = new btCollisionDispatcher(CollisionConfiguration);
@@ -24,12 +29,27 @@ namespace DX
 			Solver = new btSequentialImpulseConstraintSolver;
 			DynamicsWorld = new btDiscreteDynamicsWorld(Dispatcher, OverlappingPairCache, Solver, CollisionConfiguration);
 			DynamicsWorld->setGravity(btVector3(0, 0, -9.8f));
+			DXR(physicsDebug.Create(window));
+			Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
+			return S_OK;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Physics::DebugDraw(Camera *camera)
+		{
+			physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+			physicsDebug.BeginScene(camera);
+			Physics::DynamicsWorld->debugDrawWorld();
+			physicsDebug.EndScene();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		void Physics::Close()
 		{
+			physicsDebug.Release();
+
 			// brute force cleanup
 			if(DynamicsWorld->getNumCollisionObjects() > 0)
 			{

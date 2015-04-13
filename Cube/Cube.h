@@ -40,8 +40,6 @@ struct MyDXWindow: DXWindow
 
 	DrawList drawList;
 
-	PhysicsDebug physicsDebug;
-
 	Shaders::UI uiShader;
 	Shaders::UI::VertBuffer UIVerts;
 	Texture uiTexture;

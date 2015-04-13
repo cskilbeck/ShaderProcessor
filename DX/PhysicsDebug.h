@@ -35,4 +35,3 @@ private:
 	Camera *									mCamera;
 	int											mDebugModes;
 };
-

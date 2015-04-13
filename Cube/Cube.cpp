@@ -236,9 +236,7 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	DXB(physicsDebug.Create(this));
-
-	Physics::Open();
+	Physics::Open(this);
 
 	mGroundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
@@ -252,8 +250,8 @@ bool MyDXWindow::OnCreate()
 	Vec4f boxSize = Vec4(4, 4, 4);
 	boxShape = new btBoxShape(boxSize);
 	boxBody = new btRigidBody(500.0f, new btDefaultMotionState(bodyTransform), boxShape, Physics::inertia(500.0f, boxShape));
-	boxBody->setFriction(0.1f);
-	boxBody->setRestitution(0.1f);
+	boxBody->setFriction(0.5);
+	boxBody->setRestitution(0.0f);
 	boxBody->setDamping(0.1f, 0.1f);
 	Physics::DynamicsWorld->addRigidBody(boxBody);
 
@@ -448,8 +446,8 @@ void MyDXWindow::OnFrame()
 	if(Keyboard::Pressed('B'))
 	{
 		boxBody->activate(true);
-		boxBody->applyCentralImpulse(btVector3(0, 20, 10000));
-		boxBody->applyTorqueImpulse(btVector3(10000, 10000, 30000));
+		boxBody->applyCentralImpulse(btVector3(0, 0, 10000));
+		boxBody->applyTorqueImpulse(btVector3(20000, 20000, 10000));
 	}
 
 	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, (deltaTime * 4) / 20);
@@ -798,11 +796,7 @@ void MyDXWindow::OnFrame()
 
 	if(Keyboard::Held(VK_SHIFT))
 	{
-		Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
-		physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-		physicsDebug.BeginScene(&camera);
-		Physics::DynamicsWorld->debugDrawWorld();
-		physicsDebug.EndScene();
+		Physics::DebugDraw(&camera);
 	}
 
 	debug_end();
@@ -815,7 +809,6 @@ void MyDXWindow::OnDestroy()
 	TRACE("=== BEGINNING OF OnDestroy() ===\n");
 
 	Physics::Close();
-	physicsDebug.Release();
 
 	debug_close();
 

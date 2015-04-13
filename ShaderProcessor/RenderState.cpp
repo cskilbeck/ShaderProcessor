@@ -168,8 +168,7 @@ std::map<param_type, std::function<void(string const &value, parameter const &pa
 	{
 		int_param, [] (string const &value, parameter const &param, uintptr offset)
 		{
-			char *end;
-			long l = strtol(value.c_str(), &end, 10);
+			long l = strtol(value.c_str(), null, 10);
 			*((int *)((byte *)param.target + offset)) = l;
 		}
 	},
@@ -822,7 +821,7 @@ tstring AddToPath(tchar const *dir)
 
 using regex_iter = std::regex_iterator<tstring::iterator>;
 
-static std::regex nameval_regex(R"((\w+)(\s*=\s*(\w+)|,)?)");
+static std::regex nameval_regex(R"((\w+)(\s*=\s*([_A-Za-z0-9\-\+\.]+)|,)?)");
 
 //////////////////////////////////////////////////////////////////////
 
