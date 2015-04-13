@@ -297,8 +297,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\BulletDynamics\Dynamics\btSimpleDynamicsWorld.cpp">
     </ClCompile>
-    <ClCompile Include="..\..\src\BulletDynamics\Dynamics\Bullet-C-API.cpp">
-    </ClCompile>
     <ClCompile Include="..\..\src\BulletDynamics\Featherstone\btMultiBody.cpp">
     </ClCompile>
     <ClCompile Include="..\..\src\BulletDynamics\Featherstone\btMultiBodyConstraint.cpp">
