@@ -110,6 +110,12 @@
     <ClInclude Include="RapidXML\xml_util.h">
       <Filter>Header Files\RapidXML</Filter>
     </ClInclude>
+    <ClInclude Include="Physics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsDebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp">
@@ -160,6 +166,12 @@
     <ClCompile Include="RapidXML\xml_util.cpp">
       <Filter>Header Files\RapidXML</Filter>
     </ClCompile>
+    <ClCompile Include="Physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PhysicsDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <SPOCK Include="Shaders\Sprite.shader">
@@ -169,6 +181,9 @@
       <Filter>Shaders</Filter>
     </SPOCK>
     <SPOCK Include="Shaders\Default.shader">
+      <Filter>Shaders</Filter>
+    </SPOCK>
+    <SPOCK Include="Shaders\Color.shader">
       <Filter>Shaders</Filter>
     </SPOCK>
   </ItemGroup>

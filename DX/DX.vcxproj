@@ -54,6 +54,8 @@
     <ClInclude Include="LoadImage.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Mouse.h" />
+    <ClInclude Include="Physics.h" />
+    <ClInclude Include="PhysicsDebug.h" />
     <ClInclude Include="PixelShader.h" />
     <ClInclude Include="RapidXML\rapidxml.hpp" />
     <ClInclude Include="RapidXML\xml_util.h" />
@@ -98,6 +100,8 @@
     <ClCompile Include="LoadImage.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Mouse.cpp" />
+    <ClCompile Include="Physics.cpp" />
+    <ClCompile Include="PhysicsDebug.cpp" />
     <ClCompile Include="RapidXML\xml_util.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Window.cpp" />
@@ -106,6 +110,9 @@
     <ClCompile Include="WinMessages.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <SPOCK Include="Shaders\Color.shader">
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
+    </SPOCK>
     <SPOCK Include="Shaders\Default.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>

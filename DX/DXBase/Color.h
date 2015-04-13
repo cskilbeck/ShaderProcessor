@@ -121,22 +121,22 @@ namespace DX
 
 		void SetAlpha(Byte a)
 		{
-			mColor = (mColor & kAlphaMask) | ((uint32)a << kAlphaOffset);
+			mColor = (mColor & ~kAlphaMask) | ((uint32)a << kAlphaOffset);
 		}
 
 		void SetRed(Byte r)
 		{
-			mColor = (mColor & kRedMask) | ((uint32)r << kRedOffset);
+			mColor = (mColor & ~kRedMask) | ((uint32)r << kRedOffset);
 		}
 
 		void SetGreen(Byte g)
 		{
-			mColor = (mColor & kGreenMask) | ((uint32)g << kGreenOffset);
+			mColor = (mColor & ~kGreenMask) | ((uint32)g << kGreenOffset);
 		}
 
 		void SetBlue(Byte b)
 		{
-			mColor = (mColor & kBlueMask) | ((uint32)b << kBlueOffset);
+			mColor = (mColor & ~kBlueMask) | ((uint32)b << kBlueOffset);
 		}
 
 		inline Color Lerp(Color const &other, Byte lerp) const		// 0 = this, 255 = other, 128 = 50:50
@@ -311,8 +311,8 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// Yuck - have to put this after Color is defined...
 
-	inline HLSLVec4<Byte> &HLSLVec4<Byte>::operator = (Color color)
-	{
-		c = color.mColor; return *this;
-	}
+	//inline HLSLVec4<Byte> &HLSLVec4<Byte>::operator = (Color color)
+	//{
+	//	c = color.mColor; return *this;
+	//}
 }

@@ -23,6 +23,7 @@
 
 #include "Bullet\src\btBulletCollisionCommon.h"
 #include "Bullet\src\btBulletDynamicsCommon.h"
+#include "Bullet\src\linearmath\btIDebugDraw.h"
 
 //////////////////////////////////////////////////////////////////////
 // DX
@@ -58,3 +59,5 @@
 #include "Archive.h"
 #include "Shaders/Default.shader.h"
 #include "Mesh.h"
+#include "Physics.h"
+#include "PhysicsDebug.h"

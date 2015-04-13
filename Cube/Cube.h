@@ -40,6 +40,8 @@ struct MyDXWindow: DXWindow
 
 	DrawList drawList;
 
+	PhysicsDebug physicsDebug;
+
 	Shaders::UI uiShader;
 	Shaders::UI::VertBuffer UIVerts;
 	Texture uiTexture;
@@ -64,6 +66,12 @@ struct MyDXWindow: DXWindow
 	RenderTarget renderTarget;
 	Shaders::Blit blitShader;
 	Shaders::Blit::VertBuffer blitVB;
+
+	btBoxShape *boxShape;
+	btRigidBody *boxBody;
+
+	btStaticPlaneShape *mGroundShape;
+	btRigidBody *mGroundRigidBody;
 
 	//////////////////////////////////////////////////////////////////////
 

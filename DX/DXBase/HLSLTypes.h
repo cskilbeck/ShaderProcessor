@@ -200,31 +200,32 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	struct Color;
+	using Byte4 = Color;
 
-	template <> struct HLSLVec4 < Byte >
-	{
-		uint32 c;
+	//template <> struct HLSLVec4 < Byte >
+	//{
+	//	uint32 c;
 
-		HLSLVec4()
-		{
-		}
+	//	HLSLVec4()
+	//	{
+	//	}
 
-		HLSLVec4(uint32 color) : c(color)
-		{
-		}
+	//	HLSLVec4(uint32 color) : c(color)
+	//	{
+	//	}
 
-		HLSLVec4<Byte> &operator = (uint32 color)
-		{
-			c = color; return *this;
-		}
+	//	HLSLVec4<Byte> &operator = (uint32 color)
+	//	{
+	//		c = color; return *this;
+	//	}
 
-		HLSLVec4<Byte> &operator = (Color color);
+	//	HLSLVec4<Byte> &operator = (Color color);
 
-		operator uint32() const
-		{
-			return (uint32)c;
-		}
-	};
+	//	operator uint32() const
+	//	{
+	//		return (uint32)c;
+	//	}
+	//};
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -238,6 +239,11 @@ namespace DX
 	using join2(T, 2) = join2(HLSLVec, 2)<T>;	\
 	using join2(T, 3) = join2(HLSLVec, 3)<T>;	\
 	using join2(T, 4) = join2(HLSLVec, 4)<T>;
+
+#define def_vec3(T)								\
+	using join2(T, 1) = join2(HLSLVec, 1)<T>;	\
+	using join2(T, 2) = join2(HLSLVec, 2)<T>;	\
+	using join2(T, 3) = join2(HLSLVec, 3)<T>;
 
 #define def_mat_col(T, C)	\
 	Mat(T, C, 1);			\
@@ -264,7 +270,7 @@ namespace DX
 	def_vec(Int)
 	def_vec(UShort)
 	def_vec(Short)
-	def_vec(Byte)
+	def_vec3(Byte)
 	def_vec(SByte)
 	def_vec(Void)
 

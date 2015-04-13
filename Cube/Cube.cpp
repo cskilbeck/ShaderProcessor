@@ -235,8 +235,25 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	btVector3 bob;
-	float x = bob.getX();
+	DXB(physicsDebug.Create(this));
+
+	Physics::Open();
+
+	mGroundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
+	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
+	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, mGroundShape, btVector3(0, 0, 0));
+	mGroundRigidBody = new btRigidBody(groundRigidBodyCI);
+	Physics::DynamicsWorld->addRigidBody(mGroundRigidBody, 1, -1);
+	mGroundRigidBody->setRestitution(1);
+	mGroundRigidBody->setFriction(1);
+
+	btTransform bodyTransform(btQuaternion(btVector3(0.5f,1,0), 1.5f), Vec4(50, 50, 50));
+	Vec4f boxSize = Vec4(5, 5, 5);
+	boxShape = new btBoxShape(boxSize);
+	boxBody = new btRigidBody(1000.0f, new btDefaultMotionState(bodyTransform), boxShape);
+	boxBody->setFriction(0.1f);
+	boxBody->setRestitution(0.1f);
+	Physics::DynamicsWorld->addRigidBody(boxBody);
 
 	AssetManager::AddFolder("data");
 	AssetManager::AddArchive("data.zip");
@@ -426,12 +443,20 @@ void MyDXWindow::OnFrame()
 	camera.Move(move);
 	camera.Update();
 
+	Physics::DynamicsWorld->stepSimulation(deltaTime, 10);
+
 	cubePos = Vec4(15, 15, 0);
 	cubeScale = Vec4(5, 5, 5);
 	cubeRot = Vec4(time * 0.8f, time * 0.9f, time * 0.7f);
 
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
+
+	Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
+	physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+	physicsDebug.BeginScene(&camera);
+	Physics::DynamicsWorld->debugDrawWorld();
+	physicsDebug.EndScene();
 
 	// Draw spinning cube
 
@@ -755,6 +780,9 @@ void MyDXWindow::OnFrame()
 void MyDXWindow::OnDestroy()
 {
 	TRACE("=== BEGINNING OF OnDestroy() ===\n");
+
+	Physics::Close();
+	physicsDebug.Release();
 
 	debug_close();
 
