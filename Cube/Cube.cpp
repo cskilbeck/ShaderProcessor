@@ -4,7 +4,7 @@
 // RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
 // RTCB004: 
 
-// Bullet
+// Cartoon Car Physics
 // Normal mapping
 // Shadow mapping
 // Track resources and clean them up automatically (with warnings, like Font does)
@@ -64,6 +64,7 @@
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // * Move some things into Matrix from Camera
 // * Fix Shader/ShaderBase constructor
+// * Bullet
 
 #include "stdafx.h"
 
@@ -247,13 +248,13 @@ bool MyDXWindow::OnCreate()
 	mGroundRigidBody->setRestitution(1);
 	mGroundRigidBody->setFriction(1);
 
-	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), Vec4(0, 10, 20));
+	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), Vec4(0, 90, 100));
 	Vec4f boxSize = Vec4(4, 4, 4);
 	boxShape = new btBoxShape(boxSize);
-	boxBody = new btRigidBody(100.0f, new btDefaultMotionState(bodyTransform), boxShape, Physics::inertia(100.0f, boxShape));
+	boxBody = new btRigidBody(500.0f, new btDefaultMotionState(bodyTransform), boxShape, Physics::inertia(500.0f, boxShape));
 	boxBody->setFriction(0.1f);
-	boxBody->setRestitution(0.25f);
-	boxBody->setDamping(0, 0);
+	boxBody->setRestitution(0.1f);
+	boxBody->setDamping(0.1f, 0.1f);
 	Physics::DynamicsWorld->addRigidBody(boxBody);
 
 	AssetManager::AddFolder("data");
@@ -447,10 +448,11 @@ void MyDXWindow::OnFrame()
 	if(Keyboard::Pressed('B'))
 	{
 		boxBody->activate(true);
-		boxBody->applyCentralImpulse(btVector3(0, 20, 3000));
+		boxBody->applyCentralImpulse(btVector3(0, 20, 10000));
+		boxBody->applyTorqueImpulse(btVector3(10000, 10000, 30000));
 	}
 
-	Physics::DynamicsWorld->stepSimulation(deltaTime * 2, 20, (deltaTime * 2) / 20);
+	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, (deltaTime * 4) / 20);
 
 	cubePos = Vec4(15, 15, 0);
 	cubeScale = Vec4(5, 5, 5);
@@ -458,6 +460,27 @@ void MyDXWindow::OnFrame()
 
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
+
+	// Draw a cube at the physics box transform
+
+	{
+		Matrix modelMatrix = ScaleMatrix(Vec4(4, 4, 4)) * Physics::btTransformToMatrix(boxBody->getWorldTransform());
+		auto &vc = cubeShader.vs.VertConstants;
+		vc.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+		vc.ModelMatrix = Transpose(modelMatrix);
+		vc.Update(Context());
+
+		auto &ps = cubeShader.ps.Camera;
+		ps.cameraPos = camera.position;
+		ps.Update(Context());
+
+		cubeShader.Activate(Context());
+		cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+		cubeIndices.Activate(Context());
+
+		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
+	}
 
 	// Draw spinning cube
 
@@ -773,11 +796,14 @@ void MyDXWindow::OnFrame()
 		Context()->Draw(4, 0);
 	}
 
-	Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
-	physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-	physicsDebug.BeginScene(&camera);
-	Physics::DynamicsWorld->debugDrawWorld();
-	physicsDebug.EndScene();
+	if(Keyboard::Held(VK_SHIFT))
+	{
+		Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
+		physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+		physicsDebug.BeginScene(&camera);
+		Physics::DynamicsWorld->debugDrawWorld();
+		physicsDebug.EndScene();
+	}
 
 	debug_end();
 }
