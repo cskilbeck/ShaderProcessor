@@ -977,7 +977,7 @@ SIMD_FORCE_INLINE btVector3 btVector3::rotate( const btVector3& wAxis, const btS
 	O = _mm_add_ps(O, Z);
     vcos = bt_pshufd_ps(vcos, 0x80);	//	(S S S 0)
 	
-	vsin = ((btVector3 const &)vsin * (btVector3 const &)C).mVec128;
+    vsin = vsin * C; 
 	O = O * wAxis.mVec128; 
 	__m128 X = mVec128 - O; 
 	
