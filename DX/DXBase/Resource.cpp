@@ -79,4 +79,10 @@ namespace DX
 		Delete(data);
 		size = 0;
 	}
+
+	void FileResource::Set(void *pdata, uint64 usize)
+	{
+		data = pdata;
+		size = usize;
+	}
 }

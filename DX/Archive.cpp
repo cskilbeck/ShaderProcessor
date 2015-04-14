@@ -66,16 +66,16 @@ namespace DX
 		{
 			return r;
 		}
-		if(!inputFile->Reopen(&mFile))									// get a new file handle for reading data
+		if(inputFile->Reopen(&mFile) != S_OK)									// get a new file handle for reading data
 		{
 			return Archive::error_fileerror;
 		}
 
-		if(!mFile->Seek(e.LocalHeaderOffset, SEEK_SET))					// goto localfileheader
+		if(mFile->Seek(e.LocalHeaderOffset, SEEK_SET) != S_OK)					// goto localfileheader
 		{
 			return error_fileerror;
 		}
-		if(!mFile->Get(mHeader))											// read localfileheader
+		if(mFile->Get(mHeader) != S_OK)											// read localfileheader
 		{
 			return error_fileerror;
 		}
@@ -89,7 +89,7 @@ namespace DX
 		{
 			return error_notsupported;
 		}
-		if(!mFile->Seek(mHeader.Info.FilenameLength, SEEK_CUR))			// tee up the file pointer to the data (or localextrainfo)
+		if(mFile->Seek(mHeader.Info.FilenameLength, SEEK_CUR) != S_OK)			// tee up the file pointer to the data (or localextrainfo)
 		{
 			return error_fileerror;
 		}
@@ -370,7 +370,7 @@ namespace DX
 			uint64 read_pos = file_size - back_read;
 			int32 read_size = min(CommentBufferSize + 4, (int32)(file_size - read_pos));
 
-			if(!mFile->Seek(read_pos, SEEK_SET))
+			if(mFile->Seek(read_pos, SEEK_SET) != S_OK)
 			{
 				return error_fileerror;
 			}
@@ -401,13 +401,13 @@ namespace DX
 
 	int Archive::GetCD64Location(uint64 &offset, uint64 const oldCDOffset)
 	{
-		if(!mFile->Seek(oldCDOffset - sizeof(EndOfCentralDirectory64Locator), SEEK_SET))
+		if(mFile->Seek(oldCDOffset - sizeof(EndOfCentralDirectory64Locator), SEEK_SET) != S_OK)
 		{
 			return error_fileerror;
 		}
 
 		EndOfCentralDirectory64Locator eocd;
-		if(!mFile->Get(eocd))
+		if(mFile->Get(eocd) != S_OK)
 		{
 			return error_fileerror;
 		}
@@ -415,13 +415,13 @@ namespace DX
 		{
 			return error_badzipfile;
 		}
-		if(!mFile->Seek(eocd.CDOffset, SEEK_SET))
+		if(mFile->Seek(eocd.CDOffset, SEEK_SET) != S_OK)
 		{
 			return error_fileerror;
 		}
 
 		uint32 signature;
-		if(!mFile->GetUInt32(signature))
+		if(mFile->GetUInt32(signature) != S_OK)
 		{
 			return error_fileerror;
 		}
@@ -449,13 +449,13 @@ namespace DX
 		{
 			return e;
 		}
-		if(!mFile->Seek(CDLocation, SEEK_SET))
+		if(mFile->Seek(CDLocation, SEEK_SET) != S_OK)
 		{
 			return error_fileerror;
 		}
 
 		EndOfCentralDirectory eocd;
-		if(!mFile->Get(eocd))
+		if(mFile->Get(eocd) != S_OK)
 		{
 			return error_fileerror;
 		}
@@ -475,13 +475,13 @@ namespace DX
 			{
 				return e;
 			}
-			if(!mFile->Seek(CDLocation, SEEK_SET))
+			if(mFile->Seek(CDLocation, SEEK_SET) != S_OK)
 			{
 				return error_fileerror;
 			}
 
 			EndOfCentralDirectory64 eocd64;
-			if(!mFile->Get(eocd64))
+			if(mFile->Get(eocd64) != S_OK)
 			{
 				return error_fileerror;
 			}
@@ -574,18 +574,57 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// not null terminated
+	// case insensitive
+	// \ == / for directory separation
+
+	static bool filenameCompare(char const *a, char const *b, int length)
+	{
+		for(int i = 0; i < length; ++i)
+		{
+			int x = *a++;
+			int y = *b++;
+
+			// handle filesystem separator char differences
+			if(x == '\\')
+			{
+				x = '/';
+			}
+			else
+			{
+				x = tolower(x);
+			}
+			if(y == '\\')
+			{
+				y = '/';
+			}
+			else
+			{
+				y = tolower(y);
+			}
+
+			// different chars? no match
+			if(x != y)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////
 	// Find a file by name in an Archive
 
 	int Archive::Locate(char const *name, Archive::File &file)
 	{
-		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
+		if(mFile->Seek(mCentralDirectoryLocation, SEEK_SET) != S_OK)
 		{
 			return error_fileerror;
 		}
 		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
 			FileHeader f;
-			if(!mFile->Get(f) || f.Signature != CentralHeaderSignature)
+			if(mFile->Get(f) != S_OK || f.Signature != CentralHeaderSignature)
 			{
 				return error_fileerror;
 			}
@@ -595,11 +634,11 @@ namespace DX
 			{
 				return error_fileerror;
 			}
-			if(_strnicmp(filename, name, f.Info.FilenameLength) == 0)
+			if(filenameCompare(filename, name, f.Info.FilenameLength))
 			{
 				return file.Init(mFile, f);
 			}
-			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+			if(mFile->Seek(f.FileCommentLength, SEEK_CUR) != S_OK)
 			{
 				return error_fileerror;
 			}
@@ -616,14 +655,14 @@ namespace DX
 		{
 			return error_filenotfound;
 		}
-		if(!mFile->Seek(mCentralDirectoryLocation, SEEK_SET))
+		if(mFile->Seek(mCentralDirectoryLocation, SEEK_SET) != S_OK)
 		{
 			return error_fileerror;
 		}
 		for(uint i = 0; i < mEntriesInCentralDirectory; ++i)
 		{
 			FileHeader f;
-			if(!mFile->Get(f))
+			if(mFile->Get(f) != S_OK)
 			{
 				return error_fileerror;
 			}
@@ -631,7 +670,7 @@ namespace DX
 			{
 				return error_badzipfile;
 			}
-			if(!mFile->Seek(f.Info.FilenameLength, SEEK_CUR))
+			if(mFile->Seek(f.Info.FilenameLength, SEEK_CUR) != S_OK)
 			{
 				return error_fileerror;
 			}
@@ -639,7 +678,7 @@ namespace DX
 			{
 				return file.Init(mFile, f);
 			}
-			if(!mFile->Seek(f.FileCommentLength, SEEK_CUR))
+			if(mFile->Seek(f.FileCommentLength, SEEK_CUR) != S_OK)
 			{
 				return error_fileerror;
 			}

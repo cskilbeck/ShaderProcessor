@@ -47,21 +47,22 @@ namespace DX
 
 		virtual int Read(void *buffer, uint64 size, uint64 *got = null) = 0;
 		virtual int Write(void const *buffer, uint64 size, uint64 *wrote = null) = 0;
-		virtual int Seek(size_t offset, int seekType, intptr *newPosition = null) = 0;
+		virtual int Seek(uint64 offset, int seekType, intptr *newPosition = null) = 0;
 		virtual int Reopen(FileBase **other) = 0;	// make a new one of the same type on the same file
 		virtual int GetPosition(uint64 &position) = 0;
 		virtual int GetSize(uint64 &size) = 0;
 		virtual void Close() = 0;
 		virtual tstring Name() = 0;
+		virtual bool CanSeek() = 0;
 
-		int Load(Blob &result)
+		int Load(FileResource &result)
 		{
 			uint64 size;
 			DXR(GetSize(size));
 			Ptr<byte> buffer(new byte[size]);
 			uint64 got;
 			DXR(Read(buffer.get(), size, &got));
-			result.Reset(buffer.release(), size);
+			result.Set(buffer.release(), size);
 			return true;
 		}
 
@@ -126,6 +127,11 @@ namespace DX
 			Close();
 		}
 
+		bool CanSeek() override
+		{
+			return true;
+		}
+
 		void Reset(size_t s)
 		{
 			Delete(ptr);
@@ -172,7 +178,7 @@ namespace DX
 			//return true;
 		}
 
-		int Seek(size_t offset, int seekType, intptr *newPosition = null) override
+		int Seek(uint64 offset, int seekType, intptr *newPosition = null) override
 		{
 			switch(seekType)
 			{
@@ -277,6 +283,11 @@ namespace DX
 			Release();
 		}
 
+		bool CanSeek() override
+		{
+			return true;
+		}
+
 		void Borrow(Handle handle)
 		{
 			owned = false;
@@ -324,7 +335,6 @@ namespace DX
 					share = FILE_SHARE_WRITE;
 					break;
 			}
-			Trace(TEXT("Open(%s)\n"), name);
 			h = CreateFile(name, access, share, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
 			if(!h.IsValid())
 			{
@@ -383,6 +393,10 @@ namespace DX
 					error = GetLastError();
 					return HRESULT_FROM_WIN32(error);
 				}
+				if(localGot == 0)	// eof
+				{
+					break;
+				}
 				total += localGot;
 			}
 			if(got != null)
@@ -415,7 +429,7 @@ namespace DX
 			return S_OK;
 		}
 
-		int Seek(size_t offset, int seekType, intptr *newPosition) override
+		int Seek(uint64 offset, int seekType, intptr *newPosition) override
 		{
 			LARGE_INTEGER l = { offset & MAXUINT32, offset >> 32 };
 			if(SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) == 0)
@@ -441,11 +455,7 @@ namespace DX
 		int GetPosition(uint64 &position) override
 		{
 			intptr newPos;
-			if(Seek(0, SEEK_CUR, &newPos) == 0)
-			{
-				error = GetLastError();
-				return HRESULT_FROM_WIN32(error);
-			}
+			SXR(Seek(0, SEEK_CUR, &newPos));
 			position = (uint64)newPos;
 			return S_OK;
 		}

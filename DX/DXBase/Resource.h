@@ -125,6 +125,7 @@ namespace DX
 		FileResource();
 		FileResource(void *data, uint64 size);
 		FileResource(tchar const *name);
+		void Set(void *data, uint64 size);	// takes ownership of the pointer
 		~FileResource();
 	};
 

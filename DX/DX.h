@@ -3,6 +3,11 @@
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
+// For IStream (for ZipStream) (for loading textures from Archives)
+
+#include <Objidl.h>
+
+//////////////////////////////////////////////////////////////////////
 // Assimp
 
 #include "assimp/include/assimp/Importer.hpp"
@@ -26,6 +31,12 @@
 #include "Bullet\src\linearmath\btIDebugDraw.h"
 
 //////////////////////////////////////////////////////////////////////
+// zlib
+
+#include "..\zlib-1.2.8\zlib.h"
+#include "..\zlib-1.2.8\infback9.h"
+
+//////////////////////////////////////////////////////////////////////
 // DX
 
 #include "Device.h"
@@ -35,28 +46,27 @@
 #include "Timer.h"
 #include "Camera.h"
 #include "DeferredContext.h"
+#include "Buffer.h"
+#include "Texture.h"
+#include "Sampler.h"
+#include "Shader.h"
+#include "DrawList.h"
+#include "Font.h"
 #include "Viewport.h"
 #include "LoadImage.h"
 #include "AssetManager.h"
-#include "Texture.h"
-#include "Sampler.h"
-#include "Buffer.h"
-#include "Shader.h"
+#include "Archive.h"
+#include "FileStream.h"
 #include "IndexBuffer.h"
 #include "ConstBuffer.h"
 #include "VertexBuffer.h"
 #include "VertexShader.h"
 #include "PixelShader.h"
 #include "GeometryShader.h"
-#include "DrawList.h"
-#include "Font.h"
 #include "Debug.h"
 #include "Sprite.h"
 #include "Window.h"
 #include "DXWindow.h"
-#include "..\zlib-1.2.8\zlib.h"
-#include "..\zlib-1.2.8\infback9.h"
-#include "Archive.h"
 #include "Shaders/Default.shader.h"
 #include "Mesh.h"
 #include "Physics.h"

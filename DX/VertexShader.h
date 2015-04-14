@@ -120,14 +120,6 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT CreateInputLayout(void const *blob, size_t size, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
-		{
-			DXR(Device->CreateInputLayout(inputElements, inputElementCount, blob, size, &mInputLayout));
-			return S_OK;
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 		HRESULT D3DCreate(void const *blob, size_t size) override
 		{
 			DXR(Device->CreateVertexShader(blob, size, null, &mVertexShader));
@@ -139,8 +131,8 @@ namespace DX
 		HRESULT Create(Resource &f, D3D11_INPUT_ELEMENT_DESC const *inputElements, uint inputElementCount)
 		{
 			Resource r = FindShaderInSOBFile(f, ShaderType::Vertex);
-			DXR(D3DCreate(r.Data(), r.Size()));
-			DXR(CreateInputLayout(r.Data(), r.Size(), inputElements, inputElementCount));
+			DXR(Shader::Create(r));
+			DXR(Device->CreateInputLayout(inputElements, inputElementCount, r.Data(), r.Size(), &mInputLayout));
 			return S_OK;
 		}
 

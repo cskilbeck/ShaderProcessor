@@ -27,7 +27,7 @@ namespace DX
 		int Open(tchar const *name, FileBase **file) override
 		{
 			Ptr<DiskFile> diskFile(new DiskFile());
-			DXR(diskFile->Open((folder + TEXT("/") + name).c_str(), DiskFile::ForReading));
+			SXR(diskFile->Open((folder + TEXT("/") + name).c_str(), DiskFile::ForReading));
 			*file = diskFile.release();
 			return S_OK;
 		}
@@ -43,7 +43,7 @@ namespace DX
 			{
 				return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 			}
-			DXR(archive.Open(&file));
+			SXR(archive.Open(&file));
 			return S_OK;
 		}
 
@@ -83,7 +83,7 @@ namespace DX
 		int AddFolder(tchar const *folderName)
 		{
 			Ptr<FolderSource> f(new FolderSource());
-			DXR(f->Create(folderName));
+			SXR(f->Create(folderName));
 			sources.push_back(f.release());
 			return S_OK;
 		}

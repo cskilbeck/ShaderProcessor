@@ -219,7 +219,7 @@ namespace DX
 
 			tstring textureName = TStringFromWideString(GetValue(root, L"imagePath"));
 
-			//textureName = GetPath(filename) + textureName;
+			textureName = GetPath(filename) + textureName;
 
 			Vec2f tsize(GetFloat(root, L"width"), GetFloat(root, L"height"));
 

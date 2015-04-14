@@ -597,7 +597,7 @@ HRESULT CreateWICTextureFromFile(_In_z_	const wchar *fileName,
 
 //////////////////////////////////////////////////////////////////////
 
-HRESULT CreateWICTextureFromDiskFile(_In_z_		DX::DiskFile *file,
+HRESULT CreateWICTextureFromFile(_In_z_		DX::FileBase *file,
 								_Out_opt_	ID3D11Resource **texture,
 								_Out_opt_	ID3D11ShaderResourceView **textureView,
 								_In_		size_t maxsize,
@@ -605,7 +605,7 @@ HRESULT CreateWICTextureFromDiskFile(_In_z_		DX::DiskFile *file,
 {
 	assert(DX::Device != null);
 
-	if((HANDLE)file == INVALID_HANDLE_VALUE || (texture == null && textureView == null))
+	if(file == null || (texture == null && textureView == null))
 	{
 		return E_INVALIDARG;
 	}
@@ -620,8 +620,30 @@ HRESULT CreateWICTextureFromDiskFile(_In_z_		DX::DiskFile *file,
 	DXR(GetWIC(&pWIC));
 
 	DXPtr<IWICBitmapDecoder> decoder;
-	ULONG_PTR p = (ULONG_PTR)(HANDLE)file->h;
-	DXR(pWIC->CreateDecoderFromFileHandle(p, 0, WICDecodeMetadataCacheOnLoad, &decoder));
+
+	// Can the file seek?
+	// If not, load it into memory and CreateDecoderFromMemory
+	// else create a FileStream pointer and CreateDecoderFromStream
+
+	FileResource b;
+	DXPtr<IStream> str;
+
+	FileStream *f;
+	IWICStream *w;
+
+	if(file->CanSeek())
+	{
+		DXR(DX::FileStream::Create(file, &f));
+		str = f;
+	}
+	else
+	{
+		DXR(file->Load(b));
+		DXR(pWIC->CreateStream(&w));
+		DXR(w->InitializeFromMemory((byte *)b.Data(), (DWORD)b.Size()));
+		str = w;
+	}
+	DXR(pWIC->CreateDecoderFromStream(str.get(), 0, WICDecodeMetadataCacheOnLoad, &decoder));
 
 	DXPtr<IWICBitmapFrameDecode> frame;
 	DXR(decoder->GetFrame(0, &frame));

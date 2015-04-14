@@ -4,6 +4,8 @@
 // RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
 // RTCB004: 
 
+// Physics: fixed timesteps for deterministic behaviour
+// Track and fix leaks
 // Cartoon Car Physics
 // Normal mapping
 // Shadow mapping
@@ -13,7 +15,6 @@
 //		etc
 // 2D UI Elements/SceneGraph
 // zLib: support Deflate64
-//		Test the AssetManager
 // ?? Shader de-duplication?
 // Proper logging instead of a janky handful of macros
 // Debug text
@@ -65,6 +66,7 @@
 // * Move some things into Matrix from Camera
 // * Fix Shader/ShaderBase constructor
 // * Bullet
+//		* Test the AssetManager
 
 #include "stdafx.h"
 
@@ -97,6 +99,67 @@ static Shaders::Phong::InputVertex verts[24] =
 	{ { -1, -1, +1 }, { 1, 1 }, 0xffffffff, { -1,  0,  0 } },// 22
 	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, { -1,  0,  0 } } // 23
 };
+
+//////////////////////////////////////////////////////////////////////
+
+namespace
+{
+	float dy1 = 0.0f;
+	float dy2 = 1.0f/3;
+	float dy3 = 2.0f/3;
+	float dy4 = 1.0f;
+
+	float dx1 = 0.0f;
+	float dx2 = 0.5f;
+	float dx3 = 1.0f;
+}
+
+static Shaders::Phong::InputVertex diceVerts[24] =
+{
+	// TOP 1
+
+	{ { -1, +1, +1 }, { dx1, dy1 }, Color::BrightRed, { 0, 0, +1 } },// 00
+	{ { +1, +1, +1 }, { dx2, dy1 }, Color::BrightRed, { 0, 0, +1 } },// 01
+	{ { +1, -1, +1 }, { dx2, dy2 }, Color::BrightRed, { 0, 0, +1 } },// 02
+	{ { -1, -1, +1 }, { dx1, dy2 }, Color::BrightRed, { 0, 0, +1 } },// 03
+
+	// BACK 2
+						    
+	{ { -1, -1, +1 }, { dx1, dy2 }, Color::BrightGreen, { 0, -1, 0 } },// 04
+	{ { +1, -1, +1 }, { dx2, dy2 }, Color::BrightGreen, { 0, -1, 0 } },// 05
+	{ { +1, -1, -1 }, { dx2, dy3 }, Color::BrightGreen, { 0, -1, 0 } },// 06
+	{ { -1, -1, -1 }, { dx1, dy3 }, Color::BrightGreen, { 0, -1, 0 } },// 07
+
+	// BOTTOM 6
+
+	{ { -1, -1, -1 }, { dx2, dy3 }, Color::BrightBlue, { 0, 0, -1 } },// 08
+	{ { +1, -1, -1 }, { dx3, dy3 }, Color::BrightBlue, { 0, 0, -1 } },// 09
+	{ { +1, +1, -1 }, { dx3, dy4 }, Color::BrightBlue, { 0, 0, -1 } },// 10
+	{ { -1, +1, -1 }, { dx2, dy4 }, Color::BrightBlue, { 0, 0, -1 } },// 11
+
+	// FRONT 5
+						    
+	{ { -1, +1, -1 }, { dx2, dy2 }, Color::Cyan, { 0, +1, 0 } },// 12
+	{ { +1, +1, -1 }, { dx3, dy2 }, Color::Cyan, { 0, +1, 0 } },// 13
+	{ { +1, +1, +1 }, { dx3, dy3 }, Color::Cyan, { 0, +1, 0 } },// 14
+	{ { -1, +1, +1 }, { dx2, dy3 }, Color::Cyan, { 0, +1, 0 } },// 15
+
+	// RIGHT 3
+						    
+	{ { +1, +1, +1 }, { dx1, dy3 }, Color::Magenta, { +1, 0, 0 } },// 16
+	{ { +1, +1, -1 }, { dx2, dy3 }, Color::Magenta, { +1, 0, 0 } },// 17
+	{ { +1, -1, -1 }, { dx2, dy4 }, Color::Magenta, { +1, 0, 0 } },// 18
+	{ { +1, -1, +1 }, { dx1, dy4 }, Color::Magenta, { +1, 0, 0 } },// 19
+
+	// LEFT 4
+						    
+	{ { -1, +1, -1 }, { dx2, dy1 }, Color::Yellow, { -1, 0, 0 } },// 20
+	{ { -1, +1, +1 }, { dx3, dy1 }, Color::Yellow, { -1, 0, 0 } },// 21
+	{ { -1, -1, +1 }, { dx3, dy2 }, Color::Yellow, { -1, 0, 0 } },// 22
+	{ { -1, -1, -1 }, { dx2, dy2 }, Color::Yellow, { -1, 0, 0 } } // 23
+};
+
+//////////////////////////////////////////////////////////////////////
 
 static Shaders::Instanced::InputVertex0 iCube[24] =
 {
@@ -159,15 +222,85 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 //////////////////////////////////////////////////////////////////////
 
+MyDXWindow::Box MyDXWindow::box[MyDXWindow::numBoxes];
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::Box::Create(Vec4f pos)
+{
+	Destroy();
+//	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), pos);
+	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
+	Vec4f boxSize = Vec4(4, 4, 4);
+	mShape = new btBoxShape(boxSize);
+	mBody = new btRigidBody(500.0f, new btDefaultMotionState(bodyTransform), mShape, Physics::inertia(500.0f, mShape));
+	mBody->setFriction(0.5);
+	mBody->setRestitution(0.0f);
+	mBody->setDamping(0.1f, 0.1f);
+	Physics::DynamicsWorld->addRigidBody(mBody);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::Box::Destroy()
+{
+	if(mBody != null)
+	{
+		Physics::DynamicsWorld->removeRigidBody(mBody);
+		Delete(mBody);
+	}
+	Delete(mShape);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::Box::Draw(MyDXWindow *window)
+{
+	Matrix modelMatrix = ScaleMatrix(Vec4(4, 4, 4)) * Physics::btTransformToMatrix(mBody->getWorldTransform());
+	window->DrawCube(modelMatrix);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::DrawCube(Matrix const &m)
+{
+	auto &vc = cubeShader.vs.VertConstants;
+	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.ModelMatrix = Transpose(m);
+	vc.Update(Context());
+
+	auto &ps = cubeShader.ps.Camera;
+	ps.cameraPos = camera.position;
+	ps.Update(Context());
+	cubeShader.Activate(Context());
+	cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+	cubeIndices.Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::SetupBoxes()
+{
+	for(int i = 0; i < numBoxes; ++i)
+	{
+		box[i].Create(Vec4(0, 50, (float)i * 8 + 4));
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 int MyDXWindow::CreateGrid()
 {
+	const int size = 500;
+	const int gap = 10;
 	vector<Shaders::Simple::InputVertex> v;
-	v.reserve(201 * 4 + 2);
-	for(int x = -100; x <= 100; x += 10)
+	for(int x = -size; x <= size; x += gap)
 	{
 		float a = (float)x;
-		float b = -100;
-		float t = 100;
+		float b = -size;
+		float t = size;
 		if(x == 0)
 		{
 			t *= 10;
@@ -185,8 +318,8 @@ int MyDXWindow::CreateGrid()
 		v.push_back({ { a, t, 0 }, cy });
 	}
 	v.push_back({ { 0, 0, 0 }, Color::Cyan });
-	v.push_back({ { 0, 0, 1000 }, Color::Cyan });
-	DXR(gridVB.Create(806, v.data(), StaticUsage));
+	v.push_back({ { 0, 0, size * 10 }, Color::Cyan });
+	DXR(gridVB.Create((uint)v.size(), v.data(), StaticUsage));
 	return S_OK;
 }
 
@@ -227,6 +360,8 @@ const float fpsLeft = 200;
 const float fpsTop = 200;
 uint fpsScroll = 0;
 
+//////////////////////////////////////////////////////////////////////
+
 bool MyDXWindow::OnCreate()
 {
 	TRACE("=== OnCreate() ===\n");
@@ -246,35 +381,23 @@ bool MyDXWindow::OnCreate()
 	mGroundRigidBody->setRestitution(1);
 	mGroundRigidBody->setFriction(1);
 
-	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), Vec4(0, 90, 100));
-	Vec4f boxSize = Vec4(4, 4, 4);
-	boxShape = new btBoxShape(boxSize);
-	boxBody = new btRigidBody(500.0f, new btDefaultMotionState(bodyTransform), boxShape, Physics::inertia(500.0f, boxShape));
-	boxBody->setFriction(0.5);
-	boxBody->setRestitution(0.0f);
-	boxBody->setDamping(0.1f, 0.1f);
-	Physics::DynamicsWorld->addRigidBody(boxBody);
+	// Create some boxes
+	SetupBoxes();
 
-	AssetManager::AddFolder("data");
+	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
-
-	FileBase *f;
-	if(AssetManager::Open("cube.dae", &f) == S_OK)
-	{
-		f->Close();
-	}
 
 	// decompressor test
 	if(false)
 	{
 		DiskFile d;
-		if(d.Open(TEXT("Data/big.zip"), DiskFile::ForReading) == S_OK)
+		if(d.Open(TEXT("big.zip"), DiskFile::ForReading) == S_OK)
 		{
 			Archive a;
 			if(a.Open(&d) == Archive::ok)
 			{
 				DiskFile d;
-				if(d.Open("data/big.bin", DiskFile::ForReading) == S_OK)
+				if(d.Open("big.bin", DiskFile::ForReading) == S_OK)
 				{
 					Archive::File s;
 					if(a.Locate("big.bin", s) == Archive::ok)
@@ -434,7 +557,8 @@ void MyDXWindow::OnFrame()
 		Mouse::SetMode(Mouse::Mode::Free, *this);
 	}
 
-	camera.CalculatePerspectiveProjectionMatrix(0.5f, (float)ClientWidth() / ClientHeight());
+	float aspect = (float)ClientWidth() / ClientHeight();
+	camera.CalculatePerspectiveProjectionMatrix(0.5f, aspect);
 
 	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -445,9 +569,17 @@ void MyDXWindow::OnFrame()
 
 	if(Keyboard::Pressed('B'))
 	{
-		boxBody->activate(true);
-		boxBody->applyCentralImpulse(btVector3(0, 0, 10000));
-		boxBody->applyTorqueImpulse(btVector3(20000, 20000, 10000));
+		SetupBoxes();
+	}
+
+	if(Keyboard::Pressed('N'))
+	{
+		for(int i = 0; i < numBoxes; ++i)
+		{
+			box[i].mBody->activate(true);
+			box[i].mBody->applyCentralImpulse(btVector3(0, 0, 10000));
+			box[i].mBody->applyTorqueImpulse(btVector3(10000, 10000, 1000));
+		}
 	}
 
 	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, (deltaTime * 4) / 20);
@@ -460,47 +592,14 @@ void MyDXWindow::OnFrame()
 	ClearDepth(DepthOnly, 1.0f, 0);
 
 	// Draw a cube at the physics box transform
-
+	for(int i = 0; i < numBoxes; ++i)
 	{
-		Matrix modelMatrix = ScaleMatrix(Vec4(4, 4, 4)) * Physics::btTransformToMatrix(boxBody->getWorldTransform());
-		auto &vc = cubeShader.vs.VertConstants;
-		vc.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vc.ModelMatrix = Transpose(modelMatrix);
-		vc.Update(Context());
-
-		auto &ps = cubeShader.ps.Camera;
-		ps.cameraPos = camera.position;
-		ps.Update(Context());
-
-		cubeShader.Activate(Context());
-		cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
-		cubeIndices.Activate(Context());
-
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
+		box[i].Draw(this);
 	}
 
 	// Draw spinning cube
 
-	{
-		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos);
-
-		auto &vc = cubeShader.vs.VertConstants;
-		vc.TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
-		vc.ModelMatrix = Transpose(modelMatrix);
-		vc.Update(Context());
-
-		auto &ps = cubeShader.ps.Camera;
-		ps.cameraPos = camera.position;
-		ps.Update(Context());
-
-		cubeShader.Activate(Context());
-		cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
-		cubeIndices.Activate(Context());
-
-		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
-	}
+	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos));
 
 	// Draw loaded model
 

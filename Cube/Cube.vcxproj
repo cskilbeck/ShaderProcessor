@@ -372,16 +372,14 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
-      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
     </SPOCK>
     <SPOCK Include="Shaders\Blit.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
@@ -402,16 +400,14 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">false</GenerateDebugInformation>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
-      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
     </SPOCK>
     <SPOCK Include="Shaders\Simple.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -449,16 +445,15 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">true</GenerateDebugInformation>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">$(ProjectDir)Data</DataRoot>
     </SPOCK>
     <SPOCK Include="Shaders\Phong.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
@@ -479,31 +474,30 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">true</GenerateDebugInformation>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
-      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
     </SPOCK>
     <SPOCK Include="Shaders\Splat.shader">
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
-      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">false</EmbedObject>
+      <EmbedObject Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">false</EmbedObject>
     </SPOCK>
     <SPOCK Include="Shaders\UI.shader">
       <EmbedObject Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedObject>
@@ -524,16 +518,14 @@
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">true</GenerateDebugInformation>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">
-      </DataFolder>
-      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='NoInline|x64'">Data</DataFolder>
+      <DataFolder Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Data</DataFolder>
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataFolder>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">$(ProjectDir)Data</DataRoot>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Data</DataRoot>
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
-      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)Data</DataRoot>
+      <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
     </SPOCK>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,6 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "DXBase.h"
+#include <Shlobj.h>
+#pragma comment(lib, "shell32.lib")
 
 //////////////////////////////////////////////////////////////////////
 
@@ -47,6 +49,40 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+
+	bool FileOrFolderExists(tchar const *filename)
+	{
+		return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool FileExists(tchar const *filename)
+	{
+		DWORD dwAttrib = GetFileAttributes(filename);
+		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) == 0;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool FolderExists(tchar const *foldername)
+	{
+		DWORD dwAttrib = GetFileAttributes(foldername);
+		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	int CreateFolder(tchar const *name)
+	{
+		int r = SHCreateDirectory(null, WideStringFromTString(name).c_str());
+		return (r == ERROR_SUCCESS ||
+				r == ERROR_ALREADY_EXISTS ||
+				r == ERROR_FILE_EXISTS)
+			? S_OK : HRESULT_FROM_WIN32(r);
+	}
+
+	//////////////////////////////////////////////////////////////////////
 	// Simple file loader
 	// TODO (charlie): get rid of this, use AssetManager::LoadFile
 
@@ -77,32 +113,17 @@ namespace DX
 
 	int SaveFile(tchar const *filename, void const *data, uint32 size)
 	{
+		// Check the folder exists
+		tstring folderName = GetPath(filename);
+		if(!FolderExists(folderName.c_str()))
+		{
+			// If it doesn't, create it
+			DXR(CreateFolder(folderName.c_str()));
+		}
+
 		DiskFile f;
 		DXR(f.Create(filename, DiskFile::Overwrite));
 		DXR(f.Write(data, size));
 		return S_OK;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool FileOrFolderExists(tchar const *filename)
-	{
-		return GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool FileExists(tchar const *filename)
-	{
-		DWORD dwAttrib = GetFileAttributes(filename);
-		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) == 0;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool FolderExists(tchar const *foldername)
-	{
-		DWORD dwAttrib = GetFileAttributes(foldername);
-		return dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
 	}
 }

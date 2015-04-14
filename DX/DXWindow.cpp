@@ -15,6 +15,7 @@ namespace DX
 		mTimer.Reset();
 		mDXWindow = mHWND;
 		mMessageWait = false;
+		mBaseAspectRatio = (float)width / height;
 	}
 
 	//////////////////////////////////////////////////////////////////////

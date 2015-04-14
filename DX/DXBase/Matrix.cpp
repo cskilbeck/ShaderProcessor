@@ -51,7 +51,18 @@ namespace DX
 
 	Matrix PerspectiveProjection(float fov /* = 0.5f */, float aspectRatio /* = 4.0f / 3.0f */, float nearZ /* = 1.0f */, float farZ /* = 1000.0f */)
 	{
-		return DirectX::XMMatrixPerspectiveFovRH(fov, aspectRatio, nearZ, farZ);
+		float    SinFov;
+		float    CosFov;
+		XMScalarSinCos(&SinFov, &CosFov, 0.5f * fov);
+		float Height = CosFov / SinFov;
+		float Width = Height / aspectRatio;
+		float fRange = farZ / (nearZ - farZ);
+		return Matrix(	Width, 0.0f, 0.0f, 0.0f,
+						0.0f, Height, 0.0f, 0.0f,
+						0.0f, 0.0f, fRange, -1.0f,
+						0.0f, 0.0f, fRange * nearZ, 0.0f );
+
+//		return DirectX::XMMatrixPerspectiveFovRH(fov, aspectRatio, nearZ, farZ);
 	}
 
 	//////////////////////////////////////////////////////////////////////

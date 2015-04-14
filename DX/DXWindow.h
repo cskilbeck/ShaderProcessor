@@ -52,6 +52,7 @@ namespace DX
 		HWND		mDXWindow;
 		int			mFrame;
 		Timer		mTimer;
+		float		mBaseAspectRatio;
 	};
 
 }

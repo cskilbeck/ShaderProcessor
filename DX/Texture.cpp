@@ -220,7 +220,7 @@ namespace DX
 	{
 		sAllTextures.push_back(this);
 		mName = file->Name();
-		DXR(CreateWICTextureFromDiskFile(file, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
+		DXR(CreateWICTextureFromFile(file, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
 		mTexture2D->GetDesc(&mTextureDesc);
 		return S_OK;
 	}
@@ -234,7 +234,7 @@ namespace DX
 		DiskFile *d;
 		DXR(AssetManager::Open(name, (FileBase **)&d));
 		Ptr<FileBase> filep(d);
-		DXR(CreateWICTextureFromDiskFile(d, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
+		DXR(CreateWICTextureFromFile(d, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
 		mTexture2D->GetDesc(&mTextureDesc);
 		return S_OK;
 	}

@@ -116,6 +116,9 @@
     <ClInclude Include="PhysicsDebug.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FileStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Texture.cpp">

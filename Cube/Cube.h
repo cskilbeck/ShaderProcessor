@@ -65,8 +65,30 @@ struct MyDXWindow: DXWindow
 	Shaders::Blit blitShader;
 	Shaders::Blit::VertBuffer blitVB;
 
-	btBoxShape *boxShape;
-	btRigidBody *boxBody;
+	struct Box
+	{
+		Box()
+			: mShape(null)
+			, mBody(null)
+		{
+		}
+
+		void Create(Vec4f pos);
+		void Destroy();
+		void Draw(MyDXWindow *window);
+
+		btBoxShape *mShape;
+		btRigidBody *mBody;
+	};
+
+	void SetupBoxes();
+	void DrawCube(Matrix const &m);
+
+	enum
+	{
+		numBoxes = 25
+	};
+	static Box box[numBoxes];
 
 	btStaticPlaneShape *mGroundShape;
 	btRigidBody *mGroundRigidBody;

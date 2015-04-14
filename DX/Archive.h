@@ -177,6 +177,11 @@ namespace DX
 			int GetPosition(uint64 &position) override;
 			tstring Name() override;
 
+			bool CanSeek() override
+			{
+				return false;
+			}
+
 		private:
 
 			friend struct Archive;

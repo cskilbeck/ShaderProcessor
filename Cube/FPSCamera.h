@@ -13,9 +13,9 @@ struct FPSCamera: Camera
 	Window *window;
 
 	FPSCamera(Window *w)
-		: position(Vec4(0, 0, 50))
+		: position(Vec4(0, -150, 250))
 		, yaw(0)
-		, pitch(-FLT_EPSILON)
+		, pitch(-PI/4)
 		, roll(0)
 		, window(w)
 	{
