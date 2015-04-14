@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////
-// RTCB001: DON'T RETURN A BOOL TO INDICATE SUCCESS or FAILURE (return a signed integer, where a negative value indicates failure)
-// RTCB002: DON'T DO ANYTHING THAT CAN FAIL IN A CONSTRUCTOR (unless you dig exceptions, in which case throw up all you like)
-// RTCB003: WHEN DECLARING FUNCTION PARAMETERS, PREFER enum TO bool
+// RTCB001: don't return a bool to indicate success or failure (return a signed integer, where a negative value indicates failure)
+// RTCB002: don't do anything that can fail in a constructor (unless you dig exceptions, in which case throw up all you like)
+// RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
 // Physics: fixed timesteps for deterministic behaviour
