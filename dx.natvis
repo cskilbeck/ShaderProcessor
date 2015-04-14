@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+    <Type Name="__m128">
+        <DisplayString>{{x={m128_f32[0]}, y={m128_f32[1]}, z={m128_f32[2]}, w={m128_f32[3]}}}</DisplayString>
+        <Expand>
+            <Item Name="X">m128_f32[0]</Item>
+            <Item Name="Y">m128_f32[1]</Item>
+            <Item Name="Z">m128_f32[2]</Item>
+            <Item Name="W">m128_f32[3]</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="btVector3">
+        <DisplayString>{{x={m_floats[0]}, y={m_floats[1]}, z={m_floats[2]}}}</DisplayString>
+        <Expand>
+            <Item Name="X">m_floats[0]</Item>
+            <Item Name="Y">m_floats[1]</Item>
+            <Item Name="Z">m_floats[2]</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="DX::Color">
+        <DisplayString>{{R={mColor &amp; 0xff}, G={(mColor >> 8) &amp; 0xff}, B={(mColor >> 16) &amp; 0xff}, A={(mColor >> 24) &amp; 0xff}}}</DisplayString>
+        <Expand>
+            <Item Name="R">mColor &amp; 0xff</Item>
+            <Item Name="G">(mColor >> 8) &amp; 0xff</Item>
+            <Item Name="B">(mColor >> 16) &amp; 0xff</Item>
+            <Item Name="A">(mColor >> 24) &amp; 0xff</Item>
+        </Expand>
+    </Type>
+
+    <Type Name="DirectX::XMMATRIX">
+        <Expand>
+            <Item Name="0">r[0]</Item>
+            <Item Name="1">r[1]</Item>
+            <Item Name="2">r[2]</Item>
+            <Item Name="3">r[3]</Item>
+        </Expand>
+    </Type>
+
+</AutoVisualizer>
