@@ -39,6 +39,8 @@
 //////////////////////////////////////////////////////////////////////
 // DX
 
+#include "DDSTextureLoader.h"
+
 #include "Device.h"
 #include "Event.h"
 #include "Keyboard.h"

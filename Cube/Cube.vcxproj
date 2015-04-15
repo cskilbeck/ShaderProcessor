@@ -483,6 +483,7 @@
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">3</OptimizationLevel>
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)</DataRoot>
     </SPOCK>
+    <SPOCK Include="Shaders\sphere.shader" />
     <SPOCK Include="Shaders\Splat.shader">
       <DataFolder Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </DataFolder>

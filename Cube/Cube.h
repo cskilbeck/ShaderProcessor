@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include "Shaders/sphere.shader.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -13,9 +14,18 @@ struct MyDXWindow: DXWindow
 
 	Shaders::Phong cubeShader;
 	Shaders::Phong::VertBuffer cubeVerts;
+	Shaders::Phong::VertBuffer diceVertBuffer;
 	IndexBuffer<uint16> cubeIndices;
 	Texture cubeTexture;
+	Texture diceTexture;
 	Sampler cubeSampler;
+
+	Shaders::sphere sphereShader;
+	Shaders::sphere::VertBuffer sphereVerts;
+	Texture sphereTexture;
+
+	Shaders::Phong::VertBuffer cylinderVerts;
+	IndexBuffer<uint16> cylinderIndices;
 
 	Shaders::Simple simpleShader;
 	Shaders::Simple::VertBuffer gridVB;
@@ -82,7 +92,9 @@ struct MyDXWindow: DXWindow
 	};
 
 	void SetupBoxes();
-	void DrawCube(Matrix const &m);
+	void DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture);
+	void DrawCylinder(Matrix const &m, Texture &texture);
+	void DrawSphere(Matrix const &m, Texture &texture);
 
 	enum
 	{
@@ -102,6 +114,8 @@ struct MyDXWindow: DXWindow
 	void OnFrame() override;
 	void OnDestroy() override;
 
+	int CreateSphere(int steps);
+	int CreateCylinder(int steps);
 	int CreateGrid();
 	int CreateOctahedron();
 };

@@ -11,7 +11,7 @@ namespace DX
 		Texture();
 
 		HRESULT Load(tchar const *name);
-		HRESULT Load(DiskFile *file);
+		HRESULT Load(FileBase *file, tchar const *name = null);
 
 		HRESULT Create(int w, int h,
 				Color color,

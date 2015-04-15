@@ -216,11 +216,29 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	HRESULT Texture::Load(DiskFile *file)
+	HRESULT Texture::Load(FileBase *file, tchar const *name)
 	{
+		if(name == null)
+		{
+			mName = file->Name();
+		}
+		if(_stricmp(GetExtension(mName.c_str()).c_str(), ".dds") == 0)
+		{
+			FileResource r;
+			DXR(file->Load(r));
+			uint8_t const *data = (uint8_t const *)r.Data();
+			size_t size = (size_t)r.Size();
+			ID3D11Resource *resource; 
+			ID3D11ShaderResourceView *srv;
+			DXR(DirectX::CreateDDSTextureFromMemory(Device, data, size, &resource, &srv));
+			mTexture2D = (ID3D11Texture2D *)resource;
+			mShaderResourceView = srv;
+		}
+		else
+		{
+			DXR(CreateWICTextureFromFile(file, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
+		}
 		sAllTextures.push_back(this);
-		mName = file->Name();
-		DXR(CreateWICTextureFromFile(file, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
 		mTexture2D->GetDesc(&mTextureDesc);
 		return S_OK;
 	}
@@ -229,13 +247,11 @@ namespace DX
 
 	HRESULT Texture::Load(tchar const *name)
 	{
-		mName = name;
-		sAllTextures.push_back(this);
-		DiskFile *d;
-		DXR(AssetManager::Open(name, (FileBase **)&d));
+		FileBase *d;
+		DXR(AssetManager::Open(name, &d));
 		Ptr<FileBase> filep(d);
-		DXR(CreateWICTextureFromFile(d, (ID3D11Resource **)&mTexture2D, &mShaderResourceView));
-		mTexture2D->GetDesc(&mTextureDesc);
+		DXR(Load(filep.get()));
+		mName = name;
 		return S_OK;
 	}
 

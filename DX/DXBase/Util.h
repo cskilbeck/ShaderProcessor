@@ -490,5 +490,17 @@ namespace DX
 		return deg * (180.0f / PI);
 	}
 
+	template<typename T> T IntPow(T base, T exp)
+	{
+		T r;
+		for(r = 1; exp != 0; exp >>= 1, base *= base)
+		{
+			if(exp & 1)
+			{
+				r *= base;
+			}
+		}
+		return r;
+	}
 
 }

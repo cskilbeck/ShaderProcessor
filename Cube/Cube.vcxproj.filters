@@ -54,5 +54,8 @@
     <SPOCK Include="Shaders\Splat.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
+    <SPOCK Include="Shaders\sphere.shader">
+      <Filter>Shader Files</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>

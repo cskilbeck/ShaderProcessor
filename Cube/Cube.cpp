@@ -4,7 +4,7 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
-// Physics: fixed timesteps for deterministic behaviour
+// Physics: fixed timesteps for deterministic behaviour (enable vblank and use framecount)
 // Track and fix leaks
 // Cartoon Car Physics
 // Normal mapping
@@ -257,21 +257,21 @@ void MyDXWindow::Box::Destroy()
 void MyDXWindow::Box::Draw(MyDXWindow *window)
 {
 	Matrix modelMatrix = ScaleMatrix(Vec4(4, 4, 4)) * Physics::btTransformToMatrix(mBody->getWorldTransform());
-	window->DrawCube(modelMatrix);
+	window->DrawCube(modelMatrix, window->diceVertBuffer, window->diceTexture);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void MyDXWindow::DrawCube(Matrix const &m)
+void MyDXWindow::DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture)
 {
 	auto &vc = cubeShader.vs.VertConstants;
 	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
-
 	auto &ps = cubeShader.ps.Camera;
 	ps.cameraPos = camera.position;
 	ps.Update(Context());
+	cubeShader.ps.picTexture = &texture;
 	cubeShader.Activate(Context());
 	cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
 	cubeIndices.Activate(Context());
@@ -287,6 +287,184 @@ void MyDXWindow::SetupBoxes()
 	{
 		box[i].Create(Vec4(0, 50, (float)i * 8 + 4));
 	}
+}
+
+int MyDXWindow::CreateSphere(int steps)
+{
+	float a = 1 / sqrtf(2);
+	Vec4f p[] = 
+	{
+		{ -a, a, 0 }, { a, a, 0 }, { -a, -a, 0 }, { a, -a, 0 },
+		{ 0, -a, a }, { 0, a, a }, { 0, -a, -a }, { 0, a, -a },
+		{ a, 0, -a }, { a, 0, a }, { -a, 0, -a }, { -a, 0, a }
+	};
+
+	struct Tri
+	{
+		Vec4f p1, p2, p3;
+		Tri() { }
+		Tri(Vec4f a, Vec4f b, Vec4f c) : p1(a) , p2(b) , p3(c) { }
+	};
+
+	int vsize = IntPow(4, steps) * 20;
+	vector<Tri> f(vsize);
+
+	f[0] = Tri(p[0], p[11], p[5]);
+	f[1] = Tri(p[0], p[5], p[1]);
+	f[2] = Tri(p[0], p[1], p[7]);
+	f[3] = Tri(p[0], p[7], p[10]);
+	f[4] = Tri(p[0], p[10], p[11]);
+
+	f[5] = Tri(p[1], p[5], p[9]);
+	f[6] = Tri(p[5], p[11], p[4]);
+	f[7] = Tri(p[11], p[10], p[2]);
+	f[8] = Tri(p[10], p[7], p[6]);
+	f[9] = Tri(p[7], p[1], p[8]);
+
+	f[10] = Tri(p[3], p[9], p[4]);
+	f[11] = Tri(p[3], p[4], p[2]);
+	f[12] = Tri(p[3], p[2], p[6]);
+	f[13] = Tri(p[3], p[6], p[8]);
+	f[14] = Tri(p[3], p[8], p[9]);
+
+	f[15] = Tri(p[4], p[9], p[5]);
+	f[16] = Tri(p[2], p[4], p[11]);
+	f[17] = Tri(p[6], p[2], p[10]);
+	f[18] = Tri(p[8], p[6], p[7]);
+	f[19] = Tri(p[9], p[8], p[1]);
+
+	int nt = 20;
+
+	for(int it = 0; it < steps; it++)
+	{
+		int ntold = nt;
+		for(int i = 0; i < ntold; i++)
+		{
+			Vec4f pa = Normalize(Average(f[i].p1, f[i].p2));
+			Vec4f pb = Normalize(Average(f[i].p2, f[i].p3));
+			Vec4f pc = Normalize(Average(f[i].p3, f[i].p1));
+			f[nt++] = Tri(f[i].p1, pa, pc);
+			f[nt++] = Tri(pa, f[i].p2, pb);
+			f[nt++] = Tri(pb, f[i].p3, pc);
+			f[i] = Tri(pa, pb, pc);
+		}
+	}
+
+	vector<Shaders::sphere::InputVertex> v(vsize * 3);
+	uint n = 0;
+	for(int i = 0; i < vsize; ++i)
+	{
+		v[n++] = { f[i].p1 };
+		v[n++] = { f[i].p3 };
+		v[n++] = { f[i].p2 };
+	}
+	DXR(sphereVerts.Create(n, v.data(), StaticUsage, NotCPUAccessible));
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
+{
+	auto &vc = sphereShader.vs.VertConstants;
+	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.ModelMatrix = Transpose(m);
+	vc.Update(Context());
+	auto &ps = sphereShader.ps.Camera;
+	ps.cameraPos = camera.position;
+	auto &l = sphereShader.ps.Light;
+	l.lightPos = lightPos;
+	l.ambientColor = Float3(0.9f, 0.9f, 0.9f);
+	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
+	l.specColor = Float3(15, 15, 15);
+	l.Update(Context());
+	ps.Update(Context());
+	sphereShader.ps.sphereTexture = &sphereTexture;
+	sphereShader.ps.tex1Sampler = &cubeSampler;
+	sphereShader.vs.SetVertexBuffers(Context(), 1, &sphereVerts);
+	sphereShader.Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->Draw(sphereVerts.Count(), 0);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+int MyDXWindow::CreateCylinder(int steps)
+{
+	vector<Shaders::Phong::InputVertex> v;
+	v.resize((steps + 1) * 2 + steps * 2);
+
+	int tb = (steps + 1) * 2;
+	int bb = tb + steps;
+	for(int i = 0; i <= steps; ++i)
+	{
+		half u = i / (float)steps;
+		float s, c;
+		float t = i * (PI * 2 / steps);
+		DirectX::XMScalarSinCos(&s, &c, t);
+		float s2 = s / 2;
+		float c2 = c / 2;
+		v[i * 2] = { Float3(s2, c2, 0.5f), Half2(u, 1), 0xffffffff, Float3(s, c, 0) };
+		v[i * 2 + 1] = { Float3(s2, c2, -0.5f), Half2(u, 0), 0xffffffff, Float3(s, c, 0) };
+		if(i < steps)
+		{
+			v[tb + i] = { Float3(s2, c2, 0.5f), Half2(s2 + 0.5f, c2 + 0.5f), 0xffffffff, Float3(0, 0, 1) };
+			v[bb + i] = { Float3(s2, c2, -0.5f), Half2(s2 + 0.5f, c2 + 0.5f), 0xffffffff, Float3(0, 0, -1) };
+		}
+	}
+	DXR(cylinderVerts.Create((uint)v.size(), v.data(), StaticUsage, NotCPUAccessible));
+
+	vector<uint16> idx;
+	idx.reserve(steps * 12);
+
+	// barrel
+	for(uint16 i = 0; i < steps; i++)
+	{
+		uint16 t = i * 2;
+		idx.push_back(t);
+		idx.push_back(t+1);
+		idx.push_back(t+2);
+		idx.push_back(t+1);
+		idx.push_back(t+3);
+		idx.push_back(t+2);
+	}
+
+	// top
+	for(int i = 0; i < steps - 1; ++i)
+	{
+		idx.push_back(tb);
+		idx.push_back(tb + i);
+		idx.push_back(tb + i + 1);
+	}
+
+	// bottom
+	for(int i = 0; i < steps - 1; ++i)
+	{
+		idx.push_back(bb);
+		idx.push_back(bb + i + 1);
+		idx.push_back(bb + i);
+	}
+	DXR(cylinderIndices.Create((uint16)idx.size(), idx.data(), StaticUsage, NotCPUAccessible));
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
+{
+	auto &vc = cubeShader.vs.VertConstants;
+	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.ModelMatrix = Transpose(m);
+	vc.Update(Context());
+	auto &ps = cubeShader.ps.Camera;
+	ps.cameraPos = camera.position;
+	ps.Update(Context());
+	cubeShader.ps.picTexture = &texture;
+	cubeShader.vs.SetVertexBuffers(Context(), 1, &cylinderVerts);
+	cubeShader.Activate(Context());
+	cylinderIndices.Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexed(cylinderIndices.Count(), 0, 0);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -436,6 +614,9 @@ bool MyDXWindow::OnCreate()
 
 	DXB(debug_open(this));
 
+	DXB(CreateCylinder(32));
+	DXB(CreateSphere(4));
+
 	DXB(FontManager::Load(TEXT("debug"), &font));
 	DXB(FontManager::Load(TEXT("Cooper_Black_48"), &bigFont));
 
@@ -445,8 +626,12 @@ bool MyDXWindow::OnCreate()
 	DXB(CreateGrid());
 	DXB(CreateOctahedron());
 
+	DXB(sphereShader.Create());
+
 	DXB(cubeShader.Create());
 	DXB(cubeTexture.Load(TEXT("temp.jpg")));
+	DXB(diceTexture.Load(TEXT("dice.png")));
+	DXB(sphereTexture.Load(TEXT("earth.dds")));
 	Sampler::Options o;
 	o.Filter = anisotropic;
 	DXB(cubeSampler.Create(o));
@@ -454,6 +639,7 @@ bool MyDXWindow::OnCreate()
 	cubeShader.ps.tex1Sampler = &cubeSampler;
 	DXB(cubeIndices.Create(_countof(indices), indices, StaticUsage));
 	DXB(cubeVerts.Create(_countof(verts), verts, StaticUsage));
+	DXB(diceVertBuffer.Create(_countof(diceVerts), diceVerts, StaticUsage));
 
 	DXB(instancedShader.Create());
 	DXB(instancedVB0.Create(_countof(iCube), iCube, StaticUsage));
@@ -574,11 +760,12 @@ void MyDXWindow::OnFrame()
 
 	if(Keyboard::Pressed('N'))
 	{
+		Random r;
 		for(int i = 0; i < numBoxes; ++i)
 		{
 			box[i].mBody->activate(true);
-			box[i].mBody->applyCentralImpulse(btVector3(0, 0, 10000));
-			box[i].mBody->applyTorqueImpulse(btVector3(10000, 10000, 1000));
+			box[i].mBody->applyCentralImpulse(btVector3(0, 0, r.Ranged(20000) + 10000.0f));
+			box[i].mBody->applyTorqueImpulse(btVector3(r.Ranged(10000) + 15000.0f, r.Ranged(10000) + 15000.0f, r.Ranged(10000) + 5000.0f));
 		}
 	}
 
@@ -599,7 +786,12 @@ void MyDXWindow::OnFrame()
 
 	// Draw spinning cube
 
-	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos));
+	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos), cubeVerts, cubeTexture);
+
+	DrawCylinder(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, 20, 0)), cubeTexture);
+
+	DrawSphere(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
+
 
 	// Draw loaded model
 
@@ -805,8 +997,9 @@ void MyDXWindow::OnFrame()
 	renderTarget.Clear(Context(), 0x208040);
 	renderTarget.ClearDepth(Context(), DepthOnly);
 	Viewport(0, 0, renderTarget.FWidth(), renderTarget.FHeight(), 0, 1).Activate(Context());
-	cubeShader.Activate(Context());
+	cubeShader.ps.picTexture = &cubeTexture;
 	cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+	cubeShader.Activate(Context());
 	cubeIndices.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
@@ -910,6 +1103,13 @@ void MyDXWindow::OnDestroy()
 	Physics::Close();
 
 	debug_close();
+
+	diceTexture.Release();
+	sphereTexture.Release();
+
+	cylinderIndices.Release();
+	cylinderVerts.Release();
+	sphereVerts.Release();
 
 	cubeShader.Release();
 	cubeVerts.Release();

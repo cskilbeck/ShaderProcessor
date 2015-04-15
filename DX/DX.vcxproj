@@ -40,6 +40,7 @@
     <ClInclude Include="Buffer.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ConstBuffer.h" />
+    <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="DeferredContext.h" />
     <ClInclude Include="Device.h" />
@@ -74,6 +75,9 @@
     <ClCompile Include="Archive.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DrawList.cpp" />
     <ClCompile Include="DX.cpp">
