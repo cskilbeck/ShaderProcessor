@@ -374,9 +374,9 @@ void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 	ps.cameraPos = camera.position;
 	auto &l = sphereShader.ps.Light;
 	l.lightPos = lightPos;
-	l.ambientColor = Float3(0.9f, 0.9f, 0.9f);
+	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
 	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
-	l.specColor = Float3(15, 15, 15);
+	l.specColor = Float3(4, 4, 4);
 	l.Update(Context());
 	ps.Update(Context());
 	sphereShader.ps.sphereTexture = &sphereTexture;
@@ -790,7 +790,7 @@ void MyDXWindow::OnFrame()
 
 	DrawCylinder(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, 20, 0)), cubeTexture);
 
-	DrawSphere(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
+	DrawSphere(RotationMatrix(Vec4(time * 0.5f, PI / 2, PI / 2)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
 
 
 	// Draw loaded model
