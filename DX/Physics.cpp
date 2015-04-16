@@ -30,18 +30,7 @@ namespace DX
 			DynamicsWorld = new btDiscreteDynamicsWorld(Dispatcher, OverlappingPairCache, Solver, CollisionConfiguration);
 			DynamicsWorld->setGravity(btVector3(0, 0, -9.8f));
 			DXR(physicsDebug.Create(window));
-			Physics::DynamicsWorld->setDebugDrawer(&physicsDebug);
 			return S_OK;
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
-		void Physics::DebugDraw(Camera *camera)
-		{
-			physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-			physicsDebug.BeginScene(camera);
-			Physics::DynamicsWorld->debugDrawWorld();
-			physicsDebug.EndScene();
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -90,7 +79,7 @@ namespace DX
 			if(b != null)
 			{
 				delete b->getMotionState();
-				Physics::DynamicsWorld->removeRigidBody(b);
+				DynamicsWorld->removeRigidBody(b);
 				delete b;
 				b = null;
 			}
@@ -121,6 +110,30 @@ namespace DX
 			}
 			shift = principal;
 			return newShape;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Physics::DebugBegin(Camera *camera)
+		{
+			DynamicsWorld->setDebugDrawer(&physicsDebug);
+			physicsDebug.setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+			physicsDebug.BeginScene(camera);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Physics::DebugEnd()
+		{
+			physicsDebug.EndScene();
+			DynamicsWorld->setDebugDrawer(null);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		btIDebugDraw *Physics::DebugDrawer()
+		{
+			return &physicsDebug;
 		}
 
 		//////////////////////////////////////////////////////////////////////

@@ -15,7 +15,7 @@ struct FPSCamera: Camera
 	FPSCamera(Window *w)
 		: position(Vec4(0, -150, 250))
 		, yaw(0)
-		, pitch(-PI/4)
+		, pitch(-PI / 4)
 		, roll(0)
 		, window(w)
 	{
@@ -49,6 +49,26 @@ struct FPSCamera: Camera
 	{
 		CalculateViewMatrix(position, yaw, pitch, roll);
 		CalculateViewProjectionMatrix();
+	}
+
+	void Save()
+	{
+		DiskFile f;
+		if(f.Create("camera.bin", DiskFile::Overwrite) != S_OK)
+		{
+			return;
+		}
+		f.Write(this, sizeof(*this) - sizeof(Window *));
+	}
+
+	void Load()
+	{
+		DiskFile f;
+		if(f.Open("camera.bin", DiskFile::Mode::ForReading) != S_OK)
+		{
+			return;
+		}
+		f.Read(this, sizeof(*this) - sizeof(Window *));
 	}
 };
 

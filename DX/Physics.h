@@ -19,7 +19,6 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		HRESULT Open(DXWindow *window);
-		void DebugDraw(Camera *camera);
 		void Close();
 
 		//////////////////////////////////////////////////////////////////////
@@ -27,6 +26,12 @@ namespace DX
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);
+
+		//////////////////////////////////////////////////////////////////////
+
+		void DebugBegin(Camera *camera);
+		btIDebugDraw *DebugDrawer();
+		void DebugEnd();
 
 		//////////////////////////////////////////////////////////////////////
 

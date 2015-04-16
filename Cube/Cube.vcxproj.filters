@@ -23,6 +23,9 @@
     <ClInclude Include="Cube.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Vehicle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Cube.cpp">
@@ -32,6 +35,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vehicle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,7 +60,7 @@
     <SPOCK Include="Shaders\Splat.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
-    <SPOCK Include="Shaders\sphere.shader">
+    <SPOCK Include="Shaders\Sphere.shader">
       <Filter>Shader Files</Filter>
     </SPOCK>
   </ItemGroup>

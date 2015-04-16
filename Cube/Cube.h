@@ -1,7 +1,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "Shaders/sphere.shader.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -20,8 +19,8 @@ struct MyDXWindow: DXWindow
 	Texture diceTexture;
 	Sampler cubeSampler;
 
-	Shaders::sphere sphereShader;
-	Shaders::sphere::VertBuffer sphereVerts;
+	Shaders::Sphere sphereShader;
+	Shaders::Sphere::VertBuffer sphereVerts;
 	Texture sphereTexture;
 
 	Shaders::Phong::VertBuffer cylinderVerts;
@@ -47,6 +46,10 @@ struct MyDXWindow: DXWindow
 
 	float deltaTime;
 	float oldDeltaTime;
+
+	bool debugPhysics;
+
+	Vehicle car;
 
 	DrawList drawList;
 
@@ -102,7 +105,7 @@ struct MyDXWindow: DXWindow
 	};
 	static Box box[numBoxes];
 
-	btStaticPlaneShape *mGroundShape;
+	btBoxShape *mGroundShape;
 	btRigidBody *mGroundRigidBody;
 
 	//////////////////////////////////////////////////////////////////////

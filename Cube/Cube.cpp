@@ -4,6 +4,13 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
+// Transparency
+// Shared constant buffers:
+//		if name begins with g_
+//		and both names are the same
+//		and both bindpoints are the same
+//			and map/unmap hasn't been called on the buffer
+//			then don't re-set it
 // Physics: fixed timesteps for deterministic behaviour (enable vblank and use framecount)
 // Track and fix leaks
 // Cartoon Car Physics
@@ -350,7 +357,7 @@ int MyDXWindow::CreateSphere(int steps)
 		}
 	}
 
-	vector<Shaders::sphere::InputVertex> v(vsize * 3);
+	vector<Shaders::Sphere::InputVertex> v(vsize * 3);
 	uint n = 0;
 	for(int i = 0; i < vsize; ++i)
 	{
@@ -374,9 +381,9 @@ void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 	ps.cameraPos = camera.position;
 	auto &l = sphereShader.ps.Light;
 	l.lightPos = lightPos;
-	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
-	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
-	l.specColor = Float3(4, 4, 4);
+	l.ambientColor = Float3(0.1f, 0.1f, 0.1f);
+	l.diffuseColor = Float3(1.7f, 1.7f, 1.7f);
+	l.specColor = Float3(2, 2, 2);
 	l.Update(Context());
 	ps.Update(Context());
 	sphereShader.ps.sphereTexture = &sphereTexture;
@@ -471,7 +478,7 @@ void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 
 int MyDXWindow::CreateGrid()
 {
-	const int size = 500;
+	const int size = 100;
 	const int gap = 10;
 	vector<Shaders::Simple::InputVertex> v;
 	for(int x = -size; x <= size; x += gap)
@@ -549,10 +556,13 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	debugPhysics = true;
 	Physics::Open(this);
 
-	mGroundShape = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
-	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
+	DXB(car.Create(Vec4(0, 0, 2)));
+
+	mGroundShape = new btBoxShape(btVector3(100, 100, 1));
+	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
 	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, mGroundShape, btVector3(0, 0, 0));
 	mGroundRigidBody = new btRigidBody(groundRigidBodyCI);
 	Physics::DynamicsWorld->addRigidBody(mGroundRigidBody, 1, -1);
@@ -607,6 +617,8 @@ bool MyDXWindow::OnCreate()
 			}
 		}
 	}
+
+	camera.Load();
 
 	DXB(scene.Load(TEXT("duck.dae")));
 
@@ -746,6 +758,8 @@ void MyDXWindow::OnFrame()
 	float aspect = (float)ClientWidth() / ClientHeight();
 	camera.CalculatePerspectiveProjectionMatrix(0.5f, aspect);
 
+	car.Update(deltaTime);
+
 	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	vc.Update(Context());
@@ -756,6 +770,7 @@ void MyDXWindow::OnFrame()
 	if(Keyboard::Pressed('B'))
 	{
 		SetupBoxes();
+		car.Reset();
 	}
 
 	if(Keyboard::Pressed('N'))
@@ -778,13 +793,15 @@ void MyDXWindow::OnFrame()
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
 
-	// Draw a cube at the physics box transform
 	for(int i = 0; i < numBoxes; ++i)
 	{
 		box[i].Draw(this);
 	}
 
-	// Draw spinning cube
+	if(!debugPhysics)
+	{
+		car.Draw(this);
+	}
 
 	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos), cubeVerts, cubeTexture);
 
@@ -792,10 +809,7 @@ void MyDXWindow::OnFrame()
 
 	DrawSphere(RotationMatrix(Vec4(time * 0.5f, PI / 2, PI / 2)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
 
-
-	// Draw loaded model
-
-	Matrix bob = ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(0, -5, 0)) * RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f);
+	Matrix bob = RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f) * ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(20, -20, 0));
 	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
 
 	// Instanced cubes
@@ -1086,9 +1100,16 @@ void MyDXWindow::OnFrame()
 		Context()->Draw(4, 0);
 	}
 
-	if(Keyboard::Held(VK_SHIFT))
+	if(Keyboard::Pressed(VK_RETURN))
 	{
-		Physics::DebugDraw(&camera);
+		debugPhysics = !debugPhysics;
+	}
+
+	if(debugPhysics)
+	{
+		Physics::DebugBegin(&camera);
+		Physics::DynamicsWorld->debugDrawWorld();
+		Physics::DebugEnd();
 	}
 
 	debug_end();
@@ -1099,6 +1120,8 @@ void MyDXWindow::OnFrame()
 void MyDXWindow::OnDestroy()
 {
 	TRACE("=== BEGINNING OF OnDestroy() ===\n");
+
+	camera.Save();
 
 	Physics::Close();
 
