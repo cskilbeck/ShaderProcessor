@@ -196,7 +196,7 @@ namespace DX
 		, mCurrentPageIndex(-1)
 	{
 		TRACE("Font::Font()\n");
-		vertexBuffer.CreateBuffer(VertexBufferType, 4096, null, DynamicUsage, Writeable);
+		vertexBuffer.CreateBuffer(VertexBufferType, 16384, null, DynamicUsage, Writeable);
 		sAllFonts.push_back(this);
 	}
 

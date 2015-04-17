@@ -6,8 +6,8 @@
 
 namespace DX
 {
-
-	typedef __m128 Vec4f;
+	typedef DirectX::XMVECTOR Vec4f;
+	typedef DirectX::FXMVECTOR CVec4f;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -41,57 +41,57 @@ namespace DX
 	Vec4f		Vec4(HLSLVec3<float> &f3);
 	Vec4f		Vec4(HLSLVec4<float> &f4);
 
-	Vec4f		SetX(Vec4f a, float x);
-	Vec4f		SetY(Vec4f a, float y);
-	Vec4f		SetZ(Vec4f a, float z);
-	Vec4f		SetW(Vec4f a, float w);
+	Vec4f		SetX(CVec4f a, float x);
+	Vec4f		SetY(CVec4f a, float y);
+	Vec4f		SetZ(CVec4f a, float z);
+	Vec4f		SetW(CVec4f a, float w);
 
-	Vec4f		Select(Vec4f a, Vec4f b, Vec4i const &mask);
+	Vec4f		Select(CVec4f a, CVec4f b, Vec4i const &mask);
 
 	Vec4f		Splat(float n);
 
-	Vec4f		SplatX(Vec4f x);
-	Vec4f		SplatY(Vec4f y);
-	Vec4f		SplatZ(Vec4f z);
-	Vec4f		SplatW(Vec4f w);
+	Vec4f		SplatX(CVec4f x);
+	Vec4f		SplatY(CVec4f y);
+	Vec4f		SplatZ(CVec4f z);
+	Vec4f		SplatW(CVec4f w);
 
-	Vec4f		MaskX(Vec4f x);
-	Vec4f		MaskY(Vec4f y);
-	Vec4f		MaskZ(Vec4f z);
-	Vec4f		MaskW(Vec4f w);
+	Vec4f		MaskX(CVec4f x);
+	Vec4f		MaskY(CVec4f y);
+	Vec4f		MaskZ(CVec4f z);
+	Vec4f		MaskW(CVec4f w);
 
-	float		GetX(Vec4f v);
-	float		GetY(Vec4f v);
-	float		GetZ(Vec4f v);
-	float		GetW(Vec4f v);
+	float		GetX(CVec4f v);
+	float		GetY(CVec4f v);
+	float		GetZ(CVec4f v);
+	float		GetW(CVec4f v);
 
-	Vec4f		GetX3(Vec4f a, Vec4f b, Vec4f c);
-	Vec4f		GetY3(Vec4f a, Vec4f b, Vec4f c);
-	Vec4f		GetZ3(Vec4f a, Vec4f b, Vec4f c);
+	Vec4f		GetX3(CVec4f a, CVec4f b, CVec4f c);
+	Vec4f		GetY3(CVec4f a, CVec4f b, CVec4f c);
+	Vec4f		GetZ3(CVec4f a, CVec4f b, CVec4f c);
 
-	Vec4f		GetXYZ(Vec4f x, Vec4f y, Vec4f z);
+	Vec4f		GetXYZ(CVec4f x, CVec4f y, CVec4f z);
 
-	Vec4f		Negate(Vec4f v);
-	float		Dot(Vec4f a, Vec4f b);
-	float		LengthSquared(Vec4f v);
-	float		Length(Vec4f v);
-	Vec4f		Normalize(Vec4f v);
-	Vec4f		Cross(Vec4f a, Vec4f b);
+	Vec4f		Negate(CVec4f v);
+	float		Dot(CVec4f a, CVec4f b);
+	float		LengthSquared(CVec4f v);
+	float		Length(CVec4f v);
+	Vec4f		Normalize(CVec4f v);
+	Vec4f		Cross(CVec4f a, CVec4f b);
 
 
-	Vec4f		operator + (Vec4f a, Vec4f b);
-	Vec4f		operator - (Vec4f a, Vec4f b);
-	Vec4f		operator * (Vec4f a, Vec4f b);
-	Vec4f		operator / (Vec4f a, Vec4f b);
-	Vec4f		operator * (Vec4f a, float b);
-	Vec4f		operator / (Vec4f a, float b);
-	Vec4f		operator * (float b, Vec4f a);
-	Vec4f		operator / (float b, Vec4f a);
-	Vec4f &		operator += (Vec4f &a, Vec4f b);
-	Vec4f &		operator -= (Vec4f &a, Vec4f b);
-	Vec4f &		operator *= (Vec4f &a, Vec4f b);
+	//Vec4f		operator + (CVec4f a, CVec4f b);
+	//Vec4f		operator - (CVec4f a, CVec4f b);
+	//Vec4f		operator * (CVec4f a, CVec4f b);
+	Vec4f		operator / (CVec4f a, CVec4f b);
+	Vec4f		operator * (CVec4f a, float b);
+	Vec4f		operator / (CVec4f a, float b);
+	Vec4f		operator * (float b, CVec4f a);
+	Vec4f		operator / (float b, CVec4f a);
+	Vec4f &		operator += (Vec4f &a, CVec4f b);
+	Vec4f &		operator -= (Vec4f &a, CVec4f b);
+	Vec4f &		operator *= (Vec4f &a, CVec4f b);
 	Vec4f &		operator *= (Vec4f &a, float b);
-	Vec4f &		operator /= (Vec4f &a, Vec4f b);
+	Vec4f &		operator /= (Vec4f &a, CVec4f b);
 	Vec4f &		operator /= (Vec4f &a, float b);
 
 	//////////////////////////////////////////////////////////////////////

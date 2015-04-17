@@ -23,6 +23,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci = null);
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);

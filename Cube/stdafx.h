@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include <SDKDDKVer.h>
 #include "DX.h"
-
-using namespace DX;
 
 #include "Shaders\Phong.shader.h"
 #include "Shaders\Simple.shader.h"
@@ -14,8 +11,11 @@ using namespace DX;
 #include "Shaders\Blit.shader.h"
 #include "Shaders\Instanced.shader.h"
 #include "Shaders\Splat.shader.h"
-#include "Shaders/Sphere.shader.h"
+#include "Shaders\Sphere.shader.h"
+
+using namespace DX;
 
 #include "FPSCamera.h"
+#include "FollowCamera.h"
 #include "Vehicle.h"
 #include "Cube.h"

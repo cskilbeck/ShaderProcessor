@@ -72,6 +72,34 @@ namespace DX
 			delete CollisionConfiguration;
 		}
 
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci)
+		{
+			assert(shape != null && shape->getShapeType() != INVALID_SHAPE_PROXYTYPE);
+			btVector3 localInertia(0, 0, 0);
+			if(mass != 0.0f)
+			{
+				shape->calculateLocalInertia(mass, localInertia);
+			}
+			btDefaultMotionState *ms = new btDefaultMotionState(transform);
+			btRigidBody::btRigidBodyConstructionInfo cInfo(mass, ms, shape, localInertia);
+			if(ci == null)
+			{
+				ci = &cInfo;
+			}
+			else
+			{
+				ci->m_mass = mass;
+				ci->m_motionState = ms;
+				ci->m_collisionShape = shape;
+				ci->m_localInertia = localInertia;
+			}
+
+			btRigidBody *body = new btRigidBody(*ci);
+			body->setContactProcessingThreshold(BT_LARGE_FLOAT);
+			DynamicsWorld->addRigidBody(body);
+			return body;
+		}
+
 		//////////////////////////////////////////////////////////////////////
 
 		void DeleteRigidBody(btRigidBody * &b)

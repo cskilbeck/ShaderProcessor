@@ -240,11 +240,10 @@ void MyDXWindow::Box::Create(Vec4f pos)
 	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
 	Vec4f boxSize = Vec4(4, 4, 4);
 	mShape = new btBoxShape(boxSize);
-	mBody = new btRigidBody(500.0f, new btDefaultMotionState(bodyTransform), mShape, Physics::inertia(500.0f, mShape));
+	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape);
 	mBody->setFriction(0.5);
 	mBody->setRestitution(0.0f);
-	mBody->setDamping(0.1f, 0.1f);
-	Physics::DynamicsWorld->addRigidBody(mBody);
+	mBody->setDamping(0.01f, 0.1f);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -559,7 +558,7 @@ bool MyDXWindow::OnCreate()
 	debugPhysics = true;
 	Physics::Open(this);
 
-	DXB(car.Create(Vec4(0, 0, 2)));
+	DXB(car.Create(Vec4(0, 0, 1.45f)));
 
 	mGroundShape = new btBoxShape(btVector3(100, 100, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
@@ -784,7 +783,7 @@ void MyDXWindow::OnFrame()
 		}
 	}
 
-	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, (deltaTime * 4) / 20);
+	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, 1 / 120.0f);
 
 	cubePos = Vec4(15, 15, 0);
 	cubeScale = Vec4(5, 5, 5);

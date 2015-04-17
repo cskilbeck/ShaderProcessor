@@ -13,6 +13,8 @@ struct Vehicle
 
 	btRaycastVehicle *				mVehicle;
 
+	btRaycastVehicle::btVehicleTuning mTuning;
+
 	float							mSteerAngle;
 	float							mEngineForce;
 	float							mBrakeForce;
