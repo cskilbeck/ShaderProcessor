@@ -88,8 +88,8 @@ int Vehicle::Create(Vec4f pos)
 	{
 		btWheelInfo &wheel = mVehicle->getWheelInfo(i);
 		wheel.m_suspensionStiffness = 40.0f;
-		wheel.m_frictionSlip = 2;
-		wheel.m_rollInfluence = 0.5f;
+		wheel.m_frictionSlip = 1;
+		wheel.m_rollInfluence = 0.25f;
 		wheel.m_wheelsDampingCompression = 4.4f;
 		wheel.m_wheelsDampingRelaxation = 2.3f;
 	}
@@ -179,11 +179,11 @@ void Vehicle::Update(float deltaTime)
 	float add = 0;
 	if(Keyboard::Held(VK_LEFT))
 	{
-		add += 0.04f;
+		add += 0.08f;
 	}
 	if(Keyboard::Held(VK_RIGHT))
 	{
-		add -= 0.04f;
+		add -= 0.08f;
 	}
 	if(add == 0.0f)
 	{
@@ -191,14 +191,14 @@ void Vehicle::Update(float deltaTime)
 	}
 	else
 	{
-		mSteerAngle = Constrain(mSteerAngle + add, -0.3f, 0.3f);
+		mSteerAngle = Constrain(mSteerAngle + add, -0.5f, 0.5f);
 	}
 
 	if(Keyboard::Held(VK_DOWN))
 	{
 		if(currentSpeed < 0.01f)
 		{
-			mEngineForce = -3000;
+			mEngineForce = -4000;
 			mBrakeForce = 0;
 		}
 		else
@@ -209,7 +209,7 @@ void Vehicle::Update(float deltaTime)
 	}
 	else if(Keyboard::Held(VK_UP))
 	{
-		mEngineForce = 5000;
+		mEngineForce = 8000;
 		mBrakeForce = 0;
 	}
 	else

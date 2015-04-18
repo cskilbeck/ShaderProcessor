@@ -13,8 +13,8 @@ struct MyDXWindow: DXWindow
 	int currentCamera;
 	Camera dashCam;
 
-	void LoadCameras();
-	void SaveCameras();
+	void Load();
+	void Save();
 
 	Shaders::Phong cubeShader;
 	Shaders::Phong::VertBuffer cubeVerts;

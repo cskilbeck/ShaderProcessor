@@ -4,7 +4,7 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
-// Transparency
+// Transparency sorting
 // Shared constant buffers:
 //		if name begins with g_
 //		and both names are the same
@@ -556,10 +556,12 @@ bool MyDXWindow::OnCreate()
 	cameras[0] = new FPSCamera(this);
 	cameras[1] = new FollowCamera(this);
 	currentCamera = 0;
-		
+	debugPhysics = true;
+
 	camera = cameras[currentCamera];
 
-	debugPhysics = true;
+	Load();
+
 	Physics::Open(this);
 
 	DXB(car.Create(Vec4(0, 0, 1.45f)));
@@ -577,51 +579,6 @@ bool MyDXWindow::OnCreate()
 
 	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
-
-	// decompressor test
-	if(false)
-	{
-		DiskFile d;
-		if(d.Open(TEXT("big.zip"), DiskFile::ForReading) == S_OK)
-		{
-			Archive a;
-			if(a.Open(&d) == Archive::ok)
-			{
-				DiskFile d;
-				if(d.Open("big.bin", DiskFile::ForReading) == S_OK)
-				{
-					Archive::File s;
-					if(a.Locate("big.bin", s) == Archive::ok)
-					{
-						Ptr<byte> buffer(new byte[4096]);
-						Ptr<byte> buffer2(new byte[4096]);
-						size_t len;
-						s.GetSize(len);
-						size_t got;
-						size_t total;
-						while(s.Read(buffer2.get(), 4096, &got) == Archive::ok && len > 0)
-						{
-							len -= got;
-							uint64 dgot;
-							if(d.Read(buffer.get(), 4096, &dgot) == S_OK)
-							{
-								total += dgot;
-
-								// check the results are the same
-								int s = memcmp(buffer.get(), buffer2.get(), 4096);
-								if(s != 0)
-								{
-									TRACE("Mismatch at %p!\n", total);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	LoadCameras();
 
 	DXB(scene.Load(TEXT("duck.dae")));
 
@@ -1097,7 +1054,7 @@ void MyDXWindow::OnDestroy()
 {
 	TRACE("=== BEGINNING OF OnDestroy() ===\n");
 
-	SaveCameras();
+	Save();
 
 	Physics::Close();
 
@@ -1206,62 +1163,21 @@ void FPSCamera::Process(float deltaTime)
 
 void FollowCamera::Process(float deltaTime)
 {
-	static int frame = 0;
+	if(Keyboard::Held(VK_PRIOR)) { distance += 40 * deltaTime; }
+	if(Keyboard::Held(VK_NEXT)) { distance -= 40 * deltaTime; }
+	if(Keyboard::Held(VK_HOME)) { height += 40 * deltaTime; }
+	if(Keyboard::Held(VK_END)) { height -= 40 * deltaTime; }
+	if(Keyboard::Held(VK_INSERT)) { targetHeight += 40 * deltaTime; }
+	if(Keyboard::Held(VK_DELETE)) { targetHeight -= 40 * deltaTime; }
 
-	btVector3 const &cp = window->car.mBody->getWorldTransform().getOrigin();
-
-	// smoosh camera towards a point behind the car
-	btVector3 const &d = window->car.mBody->getWorldTransform().getBasis().getRow(0);
-	float angle = atan2f(d.x(), d.y()) - PI / 2.0f;
-
-	if(Keyboard::Held(VK_PRIOR))
-	{
-		distance += 40 * deltaTime;
-	}
-	if(Keyboard::Held(VK_NEXT))
-	{
-		distance -= 40 * deltaTime;
-	}
-
-	if(Keyboard::Held(VK_HOME))
-	{
-		height += 40 * deltaTime;
-	}
-	if(Keyboard::Held(VK_END))
-	{
-		height -= 40 * deltaTime;
-	}
-	if(Keyboard::Held(VK_INSERT))
-	{
-		targetHeight += 40 * deltaTime;
-	}
-	if(Keyboard::Held(VK_DELETE))
-	{
-		targetHeight -= 40 * deltaTime;
-	}
-	float len = distance;
-
-	Vec4f bcp = Vec4(cp.x() + sinf(angle) * len, cp.y() - cosf(angle) * len, 0);
-
-	Vec4f diff2 = bcp - position;
-	position = position + diff2 * 0.1f;
-
-	Vec4f car = cp.get128();
-	Vec4f diff = car - position;
-	float distance = Length(diff);
-	diff = Normalize(diff);
-	diff = diff * (distance - len);
-	position = position + diff * 0.5f;
-
-	if(frame == 0)
-	{
-		position = bcp + Vec4(0, 0, height);
-	}
-	++frame;
-	Vec4f target = car + Vec4(0, 0, targetHeight);
+	Vec4f carPos = window->car.mBody->getWorldTransform().getOrigin().get128();
+	Vec4f cameraOffset = Negate(window->car.mBody->getWorldTransform().getBasis().getColumn(1).get128());
+	Vec4f bcp = carPos + Normalize(cameraOffset) * distance;
+	Vec4f diff = carPos - position;
+	diff = Normalize(diff) * (Length(diff) - distance);
+	position += (bcp - position) * 0.1f + diff * 0.5f;
+	Vec4f target = carPos + Vec4(0, 0, targetHeight);
 	Vec4f pos = position + Vec4(0, 0, height);
-
-	float pitch = atan2f(targetHeight - height, distance);
 
 	CalculateViewMatrix(target, pos, Vec4(0, 0, 1));
 	CalculatePerspectiveProjectionMatrix(0.5f, window->FClientWidth() / window->FClientHeight());
@@ -1269,7 +1185,7 @@ void FollowCamera::Process(float deltaTime)
 }
 
 
-void MyDXWindow::LoadCameras()
+void MyDXWindow::Load()
 {
 	DiskFile f;
 	if(f.Open("camera.bin", DiskFile::Mode::ForReading) != S_OK)
@@ -1280,9 +1196,11 @@ void MyDXWindow::LoadCameras()
 	{
 		cameras[i]->Read(f);
 	}
+	f.Get(currentCamera);
+	f.Get(debugPhysics);
 }
 
-void MyDXWindow::SaveCameras()
+void MyDXWindow::Save()
 {
 	DiskFile f;
 	if(f.Create("camera.bin", DiskFile::Overwrite) != S_OK)
@@ -1293,4 +1211,6 @@ void MyDXWindow::SaveCameras()
 	{
 		cameras[i]->Write(f);
 	}
+	f.Put(currentCamera);
+	f.Put(debugPhysics);
 }
