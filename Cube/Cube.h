@@ -8,8 +8,13 @@ struct MyDXWindow: DXWindow
 {
 	//////////////////////////////////////////////////////////////////////
 
-	FPSCamera camera;
-	FPSCamera dashCam;
+	DynamicCamera *cameras[2];
+	DynamicCamera *camera;
+	int currentCamera;
+	Camera dashCam;
+
+	void LoadCameras();
+	void SaveCameras();
 
 	Shaders::Phong cubeShader;
 	Shaders::Phong::VertBuffer cubeVerts;

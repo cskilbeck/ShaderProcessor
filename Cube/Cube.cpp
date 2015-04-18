@@ -211,9 +211,7 @@ static uint16 indices[36] =
 //////////////////////////////////////////////////////////////////////
 
 MyDXWindow::MyDXWindow()
-	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed),
-	camera(this),
-	dashCam(this)
+	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
 {
 }
 
@@ -271,11 +269,11 @@ void MyDXWindow::Box::Draw(MyDXWindow *window)
 void MyDXWindow::DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture)
 {
 	auto &vc = cubeShader.vs.VertConstants;
-	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
 	auto &ps = cubeShader.ps.Camera;
-	ps.cameraPos = camera.position;
+	ps.cameraPos = camera->position;
 	ps.Update(Context());
 	cubeShader.ps.picTexture = &texture;
 	cubeShader.Activate(Context());
@@ -373,11 +371,11 @@ int MyDXWindow::CreateSphere(int steps)
 void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 {
 	auto &vc = sphereShader.vs.VertConstants;
-	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
 	auto &ps = sphereShader.ps.Camera;
-	ps.cameraPos = camera.position;
+	ps.cameraPos = camera->position;
 	auto &l = sphereShader.ps.Light;
 	l.lightPos = lightPos;
 	l.ambientColor = Float3(0.1f, 0.1f, 0.1f);
@@ -459,11 +457,11 @@ int MyDXWindow::CreateCylinder(int steps)
 void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 {
 	auto &vc = cubeShader.vs.VertConstants;
-	vc.TransformMatrix = Transpose(camera.GetTransformMatrix(m));
+	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
 	auto &ps = cubeShader.ps.Camera;
-	ps.cameraPos = camera.position;
+	ps.cameraPos = camera->position;
 	ps.Update(Context());
 	cubeShader.ps.picTexture = &texture;
 	cubeShader.vs.SetVertexBuffers(Context(), 1, &cylinderVerts);
@@ -477,7 +475,7 @@ void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 
 int MyDXWindow::CreateGrid()
 {
-	const int size = 100;
+	const int size = 200;
 	const int gap = 10;
 	vector<Shaders::Simple::InputVertex> v;
 	for(int x = -size; x <= size; x += gap)
@@ -555,12 +553,18 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	cameras[0] = new FPSCamera(this);
+	cameras[1] = new FollowCamera(this);
+	currentCamera = 0;
+		
+	camera = cameras[currentCamera];
+
 	debugPhysics = true;
 	Physics::Open(this);
 
 	DXB(car.Create(Vec4(0, 0, 1.45f)));
 
-	mGroundShape = new btBoxShape(btVector3(100, 100, 1));
+	mGroundShape = new btBoxShape(btVector3(200, 200, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
 	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, mGroundShape, btVector3(0, 0, 0));
 	mGroundRigidBody = new btRigidBody(groundRigidBodyCI);
@@ -617,7 +621,7 @@ bool MyDXWindow::OnCreate()
 		}
 	}
 
-	camera.Load();
+	LoadCameras();
 
 	DXB(scene.Load(TEXT("duck.dae")));
 
@@ -693,13 +697,12 @@ bool MyDXWindow::OnCreate()
 	blitShader.ps.smplr = &uiSampler;
 	blitShader.ps.page = &renderTarget;
 
-	cubeShader.ps.Camera.cameraPos = dashCam.position;
+	cubeShader.ps.Camera.cameraPos = Vec4(0, 1, 0);
 	DXB(cubeShader.ps.Camera.Update());
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
-	dashCam.position = Vec4(0, 0, 0);
-	dashCam.LookAt(Vec4(0, 1, 0));
-	dashCam.Update();
+	dashCam.CalculateViewMatrix(Vec4(0, 1, 0), Vec4(0, 0, 0), Vec4(0, 0, 1));
+	dashCam.CalculateViewProjectionMatrix();
 
 	DXB(splatShader.Create());
 	DXB(splatVB.Create(8));
@@ -722,53 +725,27 @@ void MyDXWindow::OnFrame()
 
 	debug_begin();
 
-	float moveSpeed = 50.0f * deltaTime;
-	float strafeSpeed = 50.0f * deltaTime;
-
-	if(Keyboard::Held(VK_SHIFT))
-	{
-		moveSpeed *= 0.1f;
-		strafeSpeed *= 0.1f;
-	}
-
-	Vec4f move(Vec4(0, 0, 0));
-	if(Keyboard::Held('A')) { move += SetX(move, -strafeSpeed); }
-	if(Keyboard::Held('D')) { move += SetX(move, strafeSpeed); }
-	if(Keyboard::Held('W')) { move += SetY(move, moveSpeed); }
-	if(Keyboard::Held('S')) { move += SetY(move, -moveSpeed); }
-	if(Keyboard::Held('R')) { move += SetZ(move, strafeSpeed); }
-	if(Keyboard::Held('F')) { move += SetZ(move, -strafeSpeed); }
-
-	if(Mouse::Pressed & Mouse::Button::Right)
-	{
-		camera.LookAt(cubePos);
-	}
-
-	if(Mouse::Held & Mouse::Button::Left)
-	{
-		Mouse::SetMode(Mouse::Mode::Captured, *this);
-		camera.Rotate(Mouse::Delta.x * 0.001f, Mouse::Delta.y * 0.001f);
-	}
-	else
-	{
-		Mouse::SetMode(Mouse::Mode::Free, *this);
-	}
-
-	float aspect = (float)ClientWidth() / ClientHeight();
-	camera.CalculatePerspectiveProjectionMatrix(0.5f, aspect);
-
 	car.Update(deltaTime);
+
+	if(Keyboard::Pressed(' '))
+	{
+		currentCamera = 1 - currentCamera;
+	}
+	camera = cameras[currentCamera];
+
+	camera->Process(deltaTime);
 
 	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	vc.Update(Context());
 
-	camera.Move(move);
-	camera.Update();
-
 	if(Keyboard::Pressed('B'))
 	{
 		SetupBoxes();
+	}
+
+	if(Keyboard::Pressed('C'))
+	{
 		car.Reset();
 	}
 
@@ -809,7 +786,7 @@ void MyDXWindow::OnFrame()
 	DrawSphere(RotationMatrix(Vec4(time * 0.5f, PI / 2, PI / 2)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
 
 	Matrix bob = RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f) * ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(20, -20, 0));
-	scene.Render(Context(), bob, camera.GetTransformMatrix(bob), camera.position);
+	scene.Render(Context(), bob, camera->GetTransformMatrix(bob), camera->position);
 
 	// Instanced cubes
 
@@ -827,7 +804,7 @@ void MyDXWindow::OnFrame()
 		}
 		instancedVB1.UnMap(Context());
 
-		instancedShader.vs.VertConstants.Get()->Transform = Transpose(camera.GetTransformMatrix());
+		instancedShader.vs.VertConstants.Get()->Transform = Transpose(camera->GetTransformMatrix());
 		instancedShader.Activate(Context());
 		instancedShader.vs.SetVertexBuffers(Context(), 2, &instancedVB0, &instancedVB1);
 		cubeIndices.Activate(Context());
@@ -838,7 +815,7 @@ void MyDXWindow::OnFrame()
 	// Draw grid
 
 	simpleShader.Activate(Context());
-	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix());
+	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera->GetTransformMatrix());
 	simpleShader.vs.SetVertexBuffers(Context(), 1, &gridVB);
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB.Count(), 0);
@@ -847,7 +824,7 @@ void MyDXWindow::OnFrame()
 
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(lightPos);
-	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera.GetTransformMatrix(modelMatrix));
+	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera->GetTransformMatrix(modelMatrix));
 	simpleShader.vs.SetVertexBuffers(Context(), 1, &octahedronVB);
 	octahedronIB.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -922,7 +899,7 @@ void MyDXWindow::OnFrame()
 	// Drawlist some text
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
-	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera.yaw), (int)Rad2Deg(camera.pitch), (int)Rad2Deg(camera.roll));
+//	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera->yaw), (int)Rad2Deg(camera->pitch), (int)Rad2Deg(camera->roll));
 
 	bigFont->SetDrawList(drawList);
 	bigFont->Setup(Context(), this);
@@ -1106,7 +1083,7 @@ void MyDXWindow::OnFrame()
 
 	if(debugPhysics)
 	{
-		Physics::DebugBegin(&camera);
+		Physics::DebugBegin(camera);
 		Physics::DynamicsWorld->debugDrawWorld();
 		Physics::DebugEnd();
 	}
@@ -1120,7 +1097,7 @@ void MyDXWindow::OnDestroy()
 {
 	TRACE("=== BEGINNING OF OnDestroy() ===\n");
 
-	camera.Save();
+	SaveCameras();
 
 	Physics::Close();
 
@@ -1180,4 +1157,140 @@ void MyDXWindow::OnDestroy()
 	AssetManager::Close();
 
 	TRACE("=== END OF OnDestroy() ===\n");
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void FPSCamera::Process(float deltaTime)
+{
+	float moveSpeed = 50.0f * deltaTime;
+	float strafeSpeed = 50.0f * deltaTime;
+
+	if(Keyboard::Held(VK_SHIFT))
+	{
+		moveSpeed *= 0.1f;
+		strafeSpeed *= 0.1f;
+	}
+
+	Vec4f move(Vec4(0, 0, 0));
+	if(Keyboard::Held('A')) { move += SetX(move, -strafeSpeed); }
+	if(Keyboard::Held('D')) { move += SetX(move, strafeSpeed); }
+	if(Keyboard::Held('W')) { move += SetY(move, moveSpeed); }
+	if(Keyboard::Held('S')) { move += SetY(move, -moveSpeed); }
+	if(Keyboard::Held('R')) { move += SetZ(move, strafeSpeed); }
+	if(Keyboard::Held('F')) { move += SetZ(move, -strafeSpeed); }
+
+	Move(move);
+
+	if(Mouse::Pressed & Mouse::Button::Right)
+	{
+		LookAt(window->cubePos);
+	}
+
+	if(Mouse::Held & Mouse::Button::Left)
+	{
+		Mouse::SetMode(Mouse::Mode::Captured, *window);
+		Rotate(Mouse::Delta.x * 0.001f, Mouse::Delta.y * 0.001f);
+	}
+	else
+	{
+		Mouse::SetMode(Mouse::Mode::Free, *window);
+	}
+
+	CalculatePerspectiveProjectionMatrix(0.5f, window->FClientWidth() / window->FClientHeight());
+	CalculateViewMatrix(position, yaw, pitch, roll);
+	CalculateViewProjectionMatrix();
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void FollowCamera::Process(float deltaTime)
+{
+	static int frame = 0;
+
+	btVector3 const &cp = window->car.mBody->getWorldTransform().getOrigin();
+
+	// smoosh camera towards a point behind the car
+	btVector3 const &d = window->car.mBody->getWorldTransform().getBasis().getRow(0);
+	float angle = atan2f(d.x(), d.y()) - PI / 2.0f;
+
+	if(Keyboard::Held(VK_PRIOR))
+	{
+		distance += 40 * deltaTime;
+	}
+	if(Keyboard::Held(VK_NEXT))
+	{
+		distance -= 40 * deltaTime;
+	}
+
+	if(Keyboard::Held(VK_HOME))
+	{
+		height += 40 * deltaTime;
+	}
+	if(Keyboard::Held(VK_END))
+	{
+		height -= 40 * deltaTime;
+	}
+	if(Keyboard::Held(VK_INSERT))
+	{
+		targetHeight += 40 * deltaTime;
+	}
+	if(Keyboard::Held(VK_DELETE))
+	{
+		targetHeight -= 40 * deltaTime;
+	}
+	float len = distance;
+
+	Vec4f bcp = Vec4(cp.x() + sinf(angle) * len, cp.y() - cosf(angle) * len, 0);
+
+	Vec4f diff2 = bcp - position;
+	position = position + diff2 * 0.1f;
+
+	Vec4f car = cp.get128();
+	Vec4f diff = car - position;
+	float distance = Length(diff);
+	diff = Normalize(diff);
+	diff = diff * (distance - len);
+	position = position + diff * 0.5f;
+
+	if(frame == 0)
+	{
+		position = bcp + Vec4(0, 0, height);
+	}
+	++frame;
+	Vec4f target = car + Vec4(0, 0, targetHeight);
+	Vec4f pos = position + Vec4(0, 0, height);
+
+	float pitch = atan2f(targetHeight - height, distance);
+
+	CalculateViewMatrix(target, pos, Vec4(0, 0, 1));
+	CalculatePerspectiveProjectionMatrix(0.5f, window->FClientWidth() / window->FClientHeight());
+	CalculateViewProjectionMatrix();
+}
+
+
+void MyDXWindow::LoadCameras()
+{
+	DiskFile f;
+	if(f.Open("camera.bin", DiskFile::Mode::ForReading) != S_OK)
+	{
+		return;
+	}
+	for(int i = 0; i < _countof(cameras); ++i)
+	{
+		cameras[i]->Read(f);
+	}
+}
+
+void MyDXWindow::SaveCameras()
+{
+	DiskFile f;
+	if(f.Create("camera.bin", DiskFile::Overwrite) != S_OK)
+	{
+		return;
+	}
+	for(int i = 0; i < _countof(cameras); ++i)
+	{
+		cameras[i]->Write(f);
+	}
 }

@@ -4,7 +4,7 @@
 
 namespace DX
 {
-	class Camera : Aligned16
+	struct Camera : Aligned16
 	{
 	public:
 

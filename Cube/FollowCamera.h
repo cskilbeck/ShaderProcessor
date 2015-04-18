@@ -4,50 +4,40 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct FollowCamera: Camera
-{
-	Vec4f position;
-	Vec4f target;
-	Window *window;
+struct MyDXWindow;
 
-	FollowCamera(Window *w)
-		: position(Vec4(0, -150, 250))
+struct FollowCamera: DynamicCamera
+{
+	Vec4f target;
+	float distance;
+	float height;
+	float targetHeight;
+	MyDXWindow *window;
+
+	FollowCamera(MyDXWindow *w)
+		: DynamicCamera()
 		, target(Vec4(0, 0, 0))
 		, window(w)
+		, distance(50)
+		, height(30)
+		, targetHeight(30)
 	{
-		CalculatePerspectiveProjectionMatrix(0.5f, (float)w->ClientWidth() / w->ClientHeight());
-		Update();
 	}
 
-	void Update()
-	{
-		if(Length(target - position) < 30)
-		{
-			position = target - Normalize(position - target * 30);
-		}
+	void Process(float deltaTime) override;
 
-		CalculateViewMatrix(target, position, Vec4(0, 0, 1));
-		CalculateViewProjectionMatrix();
+	void Read(FileBase &f) override
+	{
+		f.Get(distance);
+		f.Get(height);
+		f.Get(targetHeight);
 	}
 
-	void Save()
+	void Write(FileBase &f) override
 	{
-		DiskFile f;
-		if(f.Create("followcamera.bin", DiskFile::Overwrite) != S_OK)
-		{
-			return;
-		}
-		f.Write(this, sizeof(*this) - sizeof(Window *));
-	}
-
-	void Load()
-	{
-		DiskFile f;
-		if(f.Open("followcamera.bin", DiskFile::Mode::ForReading) != S_OK)
-		{
-			return;
-		}
-		f.Read(this, sizeof(*this) - sizeof(Window *));
+		f.Put(distance);
+		f.Put(height);
+		f.Put(targetHeight);
 	}
 };
 

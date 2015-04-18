@@ -30,11 +30,11 @@ int Vehicle::Create(Vec4f pos)
 
 	mStartPosition = pos;
 
-	mBodyShape = new btBoxShape(btVector3(1, 2, 0.5f));
+	mBodyShape = new btBoxShape(btVector3(3, 4, 0.75f));
 
 	btTransform chassisTransform;
 	chassisTransform.setIdentity();
-	chassisTransform.setOrigin(btVector3(0, 0, 1));
+	chassisTransform.setOrigin(btVector3(0, 0, 0.7f));
 
 	mCompoundShape = new btCompoundShape();
 	mCompoundShape->addChildShape(chassisTransform, mBodyShape);
@@ -56,10 +56,10 @@ int Vehicle::Create(Vec4f pos)
 	mRayCaster = new btDefaultVehicleRaycaster(Physics::DynamicsWorld);
 
 	mTuning.m_maxSuspensionTravelCm = 500.0f;
-	mTuning.m_suspensionCompression = 4.4f;
-	mTuning.m_suspensionDamping = 2.3f;
-	mTuning.m_frictionSlip = 1000.0f;
-	mTuning.m_suspensionStiffness = 20.0f;
+	mTuning.m_suspensionCompression = 5.4f;
+	mTuning.m_suspensionDamping = 3.3f;
+	mTuning.m_frictionSlip = 500.0f;
+	mTuning.m_suspensionStiffness = 30.0f;
 
 	mVehicle = new btRaycastVehicle(mTuning, mBody, mRayCaster);
 
@@ -74,17 +74,22 @@ int Vehicle::Create(Vec4f pos)
 	btScalar wheelRadius = 1.5f;
 	btScalar connectionHeight = 0.5f;
 
-	mVehicle->addWheel(btVector3(-1.5f, +1.8f, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, true);
-	mVehicle->addWheel(btVector3(+1.5f, +1.8f, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, true);
-	mVehicle->addWheel(btVector3(+1.5f, -1.8f, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, false);
-	mVehicle->addWheel(btVector3(-1.5f, -1.8f, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, false);
+	Vec4f extents = mBodyShape->getHalfExtentsWithoutMargin().get128();
+	float width = GetX(extents) + 0.15f;
+	float length = GetY(extents) - 0.15f;
+	float height = GetZ(extents);
+
+	mVehicle->addWheel(btVector3(-width, +length, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, true);
+	mVehicle->addWheel(btVector3(+width, +length, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, true);
+	mVehicle->addWheel(btVector3(+width, -length, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, false);
+	mVehicle->addWheel(btVector3(-width, -length, connectionHeight), wheelDir, axleDir, suspensionRestLength, wheelRadius, mTuning, false);
 
 	for(int i = 0; i < mVehicle->getNumWheels(); ++i)
 	{
 		btWheelInfo &wheel = mVehicle->getWheelInfo(i);
-		wheel.m_suspensionStiffness = 20.0f;
-		wheel.m_frictionSlip = 1000.0f;
-		wheel.m_rollInfluence = 0.1f;
+		wheel.m_suspensionStiffness = 40.0f;
+		wheel.m_frictionSlip = 2;
+		wheel.m_rollInfluence = 0.5f;
 		wheel.m_wheelsDampingCompression = 4.4f;
 		wheel.m_wheelsDampingRelaxation = 2.3f;
 	}
@@ -99,28 +104,50 @@ void Vehicle::Release()
 
 //////////////////////////////////////////////////////////////////////
 
+static void DrawShapes(Matrix const &parent, btCollisionShape const *shape, MyDXWindow *w)
+{
+	switch(shape->getShapeType())
+	{
+		// add the rest...
+
+		case BOX_SHAPE_PROXYTYPE:
+		{
+			btBoxShape const *box = (btBoxShape  *)shape;
+			btVector3 halfExtent = box->getHalfExtentsWithMargin();
+			Matrix m = ScaleMatrix(halfExtent.mVec128) * parent;
+			w->DrawCube(m, w->cubeVerts, w->cubeTexture);
+		}
+		break;
+
+		case COMPOUND_SHAPE_PROXYTYPE:
+		{
+			const btCompoundShape *compoundShape = static_cast<btCompoundShape const *>(shape);
+			for(int i = compoundShape->getNumChildShapes() - 1; i >= 0; i--)
+			{
+				btTransform const &childTrans = compoundShape->getChildTransform(i);
+				const btCollisionShape *colShape = compoundShape->getChildShape(i);
+				Matrix m = Physics::btTransformToMatrix(childTrans) * parent;
+				DrawShapes(m, colShape, w);
+			}
+		}
+		break;
+	}
+}
+
 void Vehicle::Draw(MyDXWindow *w)
 {
-	Matrix modelMatrix = ScaleMatrix(Vec4(1, 2, 0.5f)) * Physics::btTransformToMatrix(mBody->getWorldTransform());
-	w->DrawCube(modelMatrix, w->cubeVerts, w->cubeTexture);
+	Matrix m;
+	btDefaultMotionState *ms = (btDefaultMotionState*)mBody->getMotionState();
+	m = Physics::btTransformToMatrix(ms->m_graphicsWorldTrans);
+
+	DrawShapes(m, mCompoundShape, w);
+
 	for(int i = 0; i < mVehicle->getNumWheels(); ++i)
 	{
-		mVehicle->updateWheelTransform(i, false);
 		btTransform const &t = mVehicle->getWheelTransformWS(i);
-		Matrix wheelMatrix = Physics::btTransformToMatrix(t);
+		Matrix wheelMatrix = ScaleMatrix(Vec4(3, 3, 0.5f)) * RotationMatrix(Vec4(0, PI / 2, 0)) * Physics::btTransformToMatrix(t);
 		w->DrawCylinder(wheelMatrix, w->cubeTexture);
 	}
-
-	btTransform const &t = mVehicle->getWheelTransformWS(0);
-	btMatrix3x3 const &m = t.getBasis();
-	btVector3 const &a = m.getRow(0);
-	btVector3 const &b = m.getRow(1);
-	btVector3 const &c = m.getRow(2);
-	btVector3 const &d = m.getRow(3);
-	debug_text(800, 200, "%8.4f %8.4f %8.4f %8.4f", a.x(), a.y(), a.z(), a.w());
-	debug_text(800, 215, "%8.4f %8.4f %8.4f %8.4f", b.x(), b.y(), b.z(), b.w());
-	debug_text(800, 230, "%8.4f %8.4f %8.4f %8.4f", c.x(), c.y(), c.z(), c.w());
-	debug_text(800, 245, "%8.4f %8.4f %8.4f %8.4f", d.x(), d.y(), d.z(), d.w());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -152,11 +179,11 @@ void Vehicle::Update(float deltaTime)
 	float add = 0;
 	if(Keyboard::Held(VK_LEFT))
 	{
-		add += 0.01f;
+		add += 0.04f;
 	}
 	if(Keyboard::Held(VK_RIGHT))
 	{
-		add -= 0.01f;
+		add -= 0.04f;
 	}
 	if(add == 0.0f)
 	{
@@ -164,20 +191,20 @@ void Vehicle::Update(float deltaTime)
 	}
 	else
 	{
-		mSteerAngle = Constrain(mSteerAngle + add, -0.04f, 0.04f);
+		mSteerAngle = Constrain(mSteerAngle + add, -0.3f, 0.3f);
 	}
 
 	if(Keyboard::Held(VK_DOWN))
 	{
 		if(currentSpeed < 0.01f)
 		{
-			mEngineForce = -400;
+			mEngineForce = -3000;
 			mBrakeForce = 0;
 		}
 		else
 		{
 			mEngineForce = 0;
-			mBrakeForce = 0.75f;
+			mBrakeForce = 15.75f;
 		}
 	}
 	else if(Keyboard::Held(VK_UP))
