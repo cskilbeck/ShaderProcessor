@@ -287,33 +287,6 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	// Hmmm - bullet defines conflicting functions
-
-#if defined(BT_NO_SIMD_OPERATOR_OVERLOADS) || !defined(BT_USE_SSE_IN_API) && 0
-
-	inline Vec4f operator + (CVec4f a, CVec4f b)
-	{
-		return _mm_add_ps(a, b);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline Vec4f operator - (CVec4f a, CVec4f b)
-	{
-		return _mm_sub_ps(a, b);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline Vec4f operator * (CVec4f a, CVec4f b)
-	{
-		return _mm_mul_ps(a, b);
-	}
-
-#endif
-
-	//////////////////////////////////////////////////////////////////////
-
 	inline Vec4f Average(CVec4f a, CVec4f b)
 	{
 		return _mm_add_ps(a, b) * 0.5f;

@@ -18,6 +18,7 @@ struct Vehicle
 	float							mSteerAngle;
 	float							mEngineForce;
 	float							mBrakeForce;
+	float							mWheelRadius;
 	Vec4f							mStartPosition;
 
 	Vehicle();

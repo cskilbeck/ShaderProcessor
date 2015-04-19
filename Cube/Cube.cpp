@@ -4,16 +4,20 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
-// Transparency sorting
+// Cartoon Car Physics
+//		wheelcasting
+//		parameter tweaker
+//		convex hull for body
+//		wheels spin based on engine as well as speed
 // Shared constant buffers:
 //		if name begins with g_
 //		and both names are the same
 //		and both bindpoints are the same
-//			and map/unmap hasn't been called on the buffer
+//			[? and map/unmap hasn't been called on the buffer] - does this matter? I don't think so... check it.
 //			then don't re-set it
+// Transparency sorting
 // Physics: fixed timesteps for deterministic behaviour (enable vblank and use framecount)
 // Track and fix leaks
-// Cartoon Car Physics
 // Normal mapping
 // Shadow mapping
 // Track resources and clean them up automatically (with warnings, like Font does)
@@ -408,12 +412,12 @@ int MyDXWindow::CreateCylinder(int steps)
 		DirectX::XMScalarSinCos(&s, &c, t);
 		float s2 = s / 2;
 		float c2 = c / 2;
-		v[i * 2] = { Float3(s2, c2, 0.5f), Half2(u, 1), 0xffffffff, Float3(s, c, 0) };
-		v[i * 2 + 1] = { Float3(s2, c2, -0.5f), Half2(u, 0), 0xffffffff, Float3(s, c, 0) };
+		v[i * 2 + 0] = { Float3(c, +1, s), Half2(u, 1), 0xffffffff, Float3(c, 0, s) };
+		v[i * 2 + 1] = { Float3(c, -1, s), Half2(u, 0), 0xffffffff, Float3(c, 0, s) };
 		if(i < steps)
 		{
-			v[tb + i] = { Float3(s2, c2, 0.5f), Half2(s2 + 0.5f, c2 + 0.5f), 0xffffffff, Float3(0, 0, 1) };
-			v[bb + i] = { Float3(s2, c2, -0.5f), Half2(s2 + 0.5f, c2 + 0.5f), 0xffffffff, Float3(0, 0, -1) };
+			v[tb + i] = { Float3(c, +1, s), Half2(c2 + 0.5f, s2 + 0.5f), 0xffffffff, Float3(0, +1, 0) };
+			v[bb + i] = { Float3(c, -1, s), Half2(c2 + 0.5f, s2 + 0.5f), 0xffffffff, Float3(0, -1, 0) };
 		}
 	}
 	DXR(cylinderVerts.Create((uint)v.size(), v.data(), StaticUsage, NotCPUAccessible));
@@ -425,7 +429,7 @@ int MyDXWindow::CreateCylinder(int steps)
 	for(uint16 i = 0; i < steps; i++)
 	{
 		uint16 t = i * 2;
-		idx.push_back(t);
+		idx.push_back(t+0);
 		idx.push_back(t+1);
 		idx.push_back(t+2);
 		idx.push_back(t+1);
@@ -436,17 +440,17 @@ int MyDXWindow::CreateCylinder(int steps)
 	// top
 	for(int i = 0; i < steps - 1; ++i)
 	{
-		idx.push_back(tb);
-		idx.push_back(tb + i);
+		idx.push_back(tb + 0 + 0);
+		idx.push_back(tb + i + 0);
 		idx.push_back(tb + i + 1);
 	}
 
 	// bottom
 	for(int i = 0; i < steps - 1; ++i)
 	{
-		idx.push_back(bb);
+		idx.push_back(bb + 0 + 0);
 		idx.push_back(bb + i + 1);
-		idx.push_back(bb + i);
+		idx.push_back(bb + i + 0);
 	}
 	DXR(cylinderIndices.Create((uint16)idx.size(), idx.data(), StaticUsage, NotCPUAccessible));
 	return S_OK;
@@ -564,6 +568,8 @@ bool MyDXWindow::OnCreate()
 
 	Physics::Open(this);
 
+	mCylinder = new btCylinderShape(btVector3(2, 0.25f, 2));
+
 	DXB(car.Create(Vec4(0, 0, 1.45f)));
 
 	mGroundShape = new btBoxShape(btVector3(200, 200, 1));
@@ -672,6 +678,84 @@ bool MyDXWindow::OnCreate()
 	return true;
 }
 
+// Aligned version of this
+
+struct ClosestConvexResultCallback : public btCollisionWorld::ConvexResultCallback, Aligned16
+{
+	ClosestConvexResultCallback(btVector3 const &convexFromWorld, btVector3 const &convexToWorld)
+		: m_convexFromWorld(convexFromWorld)
+		, m_convexToWorld(convexToWorld)
+		, m_hitCollisionObject(0)
+	{
+	}
+
+	btVector3	m_convexFromWorld; //used to calculate hitPointWorld from hitFraction
+	btVector3	m_convexToWorld;
+	btVector3	m_hitNormalWorld;
+	btVector3	m_hitPointWorld;
+
+	const btCollisionObject *m_hitCollisionObject;
+
+	virtual	btScalar addSingleResult(btCollisionWorld::LocalConvexResult &convexResult, bool normalInWorldSpace)
+	{
+		//caller already does the filter on the m_closestHitFraction
+		btAssert(convexResult.m_hitFraction <= m_closestHitFraction);
+
+		m_closestHitFraction = convexResult.m_hitFraction;
+		m_hitCollisionObject = convexResult.m_hitCollisionObject;
+		if(normalInWorldSpace)
+		{
+			m_hitNormalWorld = convexResult.m_hitNormalLocal;
+		}
+		else
+		{
+			///need to transform normal into worldspace
+			m_hitNormalWorld = m_hitCollisionObject->getWorldTransform().getBasis()*convexResult.m_hitNormalLocal;
+		}
+		m_hitPointWorld = convexResult.m_hitPointLocal;
+		return convexResult.m_hitFraction;
+	}
+}; 
+
+btQuaternion Slerp(btQuaternion q1, btQuaternion q2, float lambda)
+{
+	// assumes q1,q2 both already normalized
+	assert(fabs(q1.length2() - 1) < FLT_EPSILON && fabsf(q2.length2() - 1) < FLT_EPSILON);
+
+	float t = Max(fabsf(acosf(q1.dot(q2))), FLT_EPSILON);
+	float st = sinf(t);
+	float c1 = sinf((1 - lambda) * t) / st;
+	float c2 = sinf(lambda * t) / st;
+	return btQuaternion(q1 * c1 + q2 * c2);
+}
+
+void MyDXWindow::SweepTest()
+{
+	Vec4f startPos = Vec4(0, 10, 3);
+	Vec4f endPos = Vec4(0, -10, 3);
+
+	Vec4f startAngle = Vec4(PI, -PI/4, 0);
+	Vec4f endAngle = Vec4(0, -PI, PI/2);
+
+	btQuaternion sr(GetX(startAngle), GetY(startAngle), GetZ(startAngle));
+	btQuaternion er(GetX(endAngle), GetY(endAngle), GetZ(endAngle));
+	btTransform mStartPos(sr, startPos);
+	btTransform mEndPos(er, endPos);
+
+	Matrix st = Physics::btTransformToMatrix(mStartPos);
+	Matrix et = Physics::btTransformToMatrix(mEndPos);
+	Matrix sm = ScaleMatrix(mCylinder->getHalfExtentsWithoutMargin().get128());
+
+	ClosestConvexResultCallback collisionCallback(mStartPos.getOrigin(), mEndPos.getOrigin());
+	Physics::DynamicsWorld->convexSweepTest(mCylinder, mStartPos, mEndPos, collisionCallback);
+	float hit = (collisionCallback.m_hitCollisionObject != null) ? collisionCallback.m_closestHitFraction : 0;
+	btVector3 linearVel = endPos - startPos;
+	btVector3 curPos = startPos + linearVel * hit;
+	btQuaternion a = Slerp(sr, er, hit);
+	btTransform finalTransform = btTransform(a, curPos);
+	DrawCylinder(sm * Physics::btTransformToMatrix(finalTransform));
+}
+
 //////////////////////////////////////////////////////////////////////
 
 void MyDXWindow::OnFrame()
@@ -725,6 +809,8 @@ void MyDXWindow::OnFrame()
 
 	Clear(Color(32, 64, 128));
 	ClearDepth(DepthOnly, 1.0f, 0);
+
+	SweepTest();
 
 	for(int i = 0; i < numBoxes; ++i)
 	{
@@ -1163,16 +1249,18 @@ void FPSCamera::Process(float deltaTime)
 
 void FollowCamera::Process(float deltaTime)
 {
-	if(Keyboard::Held(VK_PRIOR)) { distance += 40 * deltaTime; }
-	if(Keyboard::Held(VK_NEXT)) { distance -= 40 * deltaTime; }
-	if(Keyboard::Held(VK_HOME)) { height += 40 * deltaTime; }
-	if(Keyboard::Held(VK_END)) { height -= 40 * deltaTime; }
-	if(Keyboard::Held(VK_INSERT)) { targetHeight += 40 * deltaTime; }
-	if(Keyboard::Held(VK_DELETE)) { targetHeight -= 40 * deltaTime; }
+	float d = 40 * deltaTime;
+	if(Keyboard::Held(VK_PRIOR)) { distance += d; }
+	if(Keyboard::Held(VK_NEXT)) { distance -= d; }
+	if(Keyboard::Held(VK_HOME)) { height += d; }
+	if(Keyboard::Held(VK_END)) { height -= d; }
+	if(Keyboard::Held(VK_INSERT)) { targetHeight += d; }
+	if(Keyboard::Held(VK_DELETE)) { targetHeight -= d; }
 
-	Vec4f carPos = window->car.mBody->getWorldTransform().getOrigin().get128();
-	Vec4f cameraOffset = Negate(window->car.mBody->getWorldTransform().getBasis().getColumn(1).get128());
-	Vec4f bcp = carPos + Normalize(cameraOffset) * distance;
+	btTransform const &carTransform = window->car.mBody->getWorldTransform();
+	Vec4f carPos = carTransform.getOrigin().get128();
+	Vec4f cameraOffset = carTransform.getBasis().getColumn(1).get128();
+	Vec4f bcp = carPos - Normalize(cameraOffset) * distance;
 	Vec4f diff = carPos - position;
 	diff = Normalize(diff) * (Length(diff) - distance);
 	position += (bcp - position) * 0.1f + diff * 0.5f;
@@ -1184,6 +1272,7 @@ void FollowCamera::Process(float deltaTime)
 	CalculateViewProjectionMatrix();
 }
 
+//////////////////////////////////////////////////////////////////////
 
 void MyDXWindow::Load()
 {
@@ -1200,6 +1289,8 @@ void MyDXWindow::Load()
 	f.Get(debugPhysics);
 }
 
+//////////////////////////////////////////////////////////////////////
+
 void MyDXWindow::Save()
 {
 	DiskFile f;
@@ -1213,4 +1304,39 @@ void MyDXWindow::Save()
 	}
 	f.Put(currentCamera);
 	f.Put(debugPhysics);
+}
+
+void MyDXWindow::DrawCube(Matrix const &m)
+{
+	DrawCube(m, cubeVerts, cubeTexture);
+}
+
+void MyDXWindow::DrawCylinder(Matrix const &m)
+{
+	DrawCylinder(m, cubeTexture);
+}
+
+void MyDXWindow::DrawSphere(Matrix const &m)
+{
+	DrawSphere(m, sphereTexture);
+}
+
+void MyDXWindow::DrawCapsule(Matrix const &m)
+{
+}
+
+void MyDXWindow::DrawTorus(Matrix const &m)
+{
+}
+
+void MyDXWindow::DrawCone(Matrix const &m)
+{
+}
+
+void MyDXWindow::DrawConvexMesh(Matrix const &m)
+{
+}
+
+void MyDXWindow::DrawTetrahedron(Matrix const &m)
+{
 }

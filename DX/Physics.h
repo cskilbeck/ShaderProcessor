@@ -6,6 +6,18 @@
 
 namespace DX
 {
+	struct iPhysicsRenderer
+	{
+		virtual void DrawCube(Matrix const &m) = 0;
+		virtual void DrawCylinder(Matrix const &m) = 0;
+		virtual void DrawSphere(Matrix const &m) = 0;
+		virtual void DrawCapsule(Matrix const &m) = 0;
+		virtual void DrawTorus(Matrix const &m) = 0;
+		virtual void DrawCone(Matrix const &m) = 0;
+		virtual void DrawConvexMesh(Matrix const &m) = 0;
+		virtual void DrawTetrahedron(Matrix const &m) = 0;
+	};
+
 	namespace Physics
 	{
 		//////////////////////////////////////////////////////////////////////
@@ -30,6 +42,8 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void DrawShape(Matrix const &parent, btCollisionShape const *shape, iPhysicsRenderer *w);
+			
 		void DebugBegin(Camera *camera);
 		btIDebugDraw *DebugDrawer();
 		void DebugEnd();
