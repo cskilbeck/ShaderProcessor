@@ -755,7 +755,6 @@ void* btDefaultVehicleRaycaster::castRay(const btVector3& from,const btVector3& 
 
 	if (rayCallback.hasHit())
 	{
-		
 		const btRigidBody* body = btRigidBody::upcast(rayCallback.m_collisionObject);
         if (body && body->hasContactResponse())
 		{

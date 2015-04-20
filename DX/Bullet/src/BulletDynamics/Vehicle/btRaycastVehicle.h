@@ -56,11 +56,12 @@ public:
 			btScalar	m_maxSuspensionForce;
 
 		};
-private:
+protected:
+	btVehicleRaycaster*	m_vehicleRaycaster;
 
+private:
 	btScalar	m_tau;
 	btScalar	m_damping;
-	btVehicleRaycaster*	m_vehicleRaycaster;
 	btScalar		m_pitchControl;
 	btScalar	m_steeringValue; 
 	btScalar m_currentVehicleSpeedKmHour;
@@ -94,7 +95,7 @@ public:
 			
 	const btTransform& getChassisWorldTransform() const;
 	
-	btScalar rayCast(btWheelInfo& wheel);
+	virtual btScalar rayCast(btWheelInfo& wheel);
 
 	virtual void updateVehicle(btScalar step);
 	

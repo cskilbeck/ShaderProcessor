@@ -20,6 +20,13 @@ namespace DX
 
 	namespace Physics
 	{
+		enum
+		{
+			CarMask = 128,
+			GroundMask = 256,
+			WheelMask = 512
+		};
+
 		//////////////////////////////////////////////////////////////////////
 
 		extern btDefaultCollisionConfiguration *		CollisionConfiguration;
@@ -35,7 +42,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci = null);
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, uint16 group, uint16 mask, btRigidBody::btRigidBodyConstructionInfo *ci = null);
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);

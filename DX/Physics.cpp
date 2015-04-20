@@ -21,7 +21,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Physics::Open(DXWindow *window)
+		HRESULT Open(DXWindow *window)
 		{
 			CollisionConfiguration = new btDefaultCollisionConfiguration();
 			Dispatcher = new btCollisionDispatcher(CollisionConfiguration);
@@ -35,7 +35,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Physics::Close()
+		void Close()
 		{
 			physicsDebug.Release();
 
@@ -72,7 +72,7 @@ namespace DX
 			delete CollisionConfiguration;
 		}
 
-		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci)
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, uint16 collisionGroup, uint16 collisionMask, btRigidBody::btRigidBodyConstructionInfo *ci)
 		{
 			assert(shape != null && shape->getShapeType() != INVALID_SHAPE_PROXYTYPE);
 			btVector3 localInertia(0, 0, 0);
@@ -95,7 +95,7 @@ namespace DX
 			}
 			btRigidBody *body = new btRigidBody(*ci);
 			body->setContactProcessingThreshold(BT_LARGE_FLOAT);
-			DynamicsWorld->addRigidBody(body);
+			DynamicsWorld->addRigidBody(body, collisionGroup, collisionMask);
 			return body;
 		}
 

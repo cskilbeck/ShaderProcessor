@@ -58,13 +58,12 @@ void PhysicsDebug::EndScene()
 
 void PhysicsDebug::drawLine(const btVector3& from, const btVector3& to, const btVector3& color)
 {
-	DXShaders::Color::InputVertex v;
-	v.Color = Color((float *)&color);
-	v.Color.SetAlpha(255);
-	v.Position = from;
-	mDrawList.AddVertex(v);
-	v.Position = to;
-	mDrawList.AddVertex(v);
+	DXShaders::Color::InputVertex vf = { from, (float *)&color };
+	DXShaders::Color::InputVertex vt = { to, (float *)&color };
+	vf.Color.SetAlpha(255);
+	vt.Color.SetAlpha(255);
+	mDrawList.AddVertex(vf);
+	mDrawList.AddVertex(vt);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -84,10 +83,9 @@ void PhysicsDebug::reportErrorWarning(const char* warningString)
 void PhysicsDebug::draw3dText(const btVector3& location, const char* textString)
 {
 	using namespace DirectX;
-	XMVECTOR v = XMVectorSet(location.x(), location.y(), location.z(), 1.0f);
-	XMVECTOR sp = XMVector3TransformCoord(v, mCamera->GetTransformMatrix());
-//	Vec2 screenPos((XMVectorGetX(sp) + 1) / 2 * Graphics::FWidth(), (-XMVectorGetY(sp) + 1) / 2 * Graphics::FHeight());
-//	mDebugFont->DrawString(mSpriteList, textString, screenPos, Font::HCentre, Font::VCentre);
+	Vec4f sp = TransformPoint(location.mVec128, mCamera->GetTransformMatrix());
+	Vec2f screenPos((GetX(sp) + 1) / 2 * mWindow->FClientWidth(), (-GetY(sp) + 1) / 2 * mWindow->FClientHeight());
+	debug_text((int)screenPos.x, (int)screenPos.y, textString);
 }
 
 //////////////////////////////////////////////////////////////////////

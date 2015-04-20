@@ -297,7 +297,7 @@ public:
 	///reserved for Bullet internal usage
 	int	getInternalType() const
 	{
-		return m_internalType;
+  		return m_internalType;
 	}
 
 	btTransform&	getWorldTransform()
