@@ -4,12 +4,17 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct MyDXWindow: DXWindow
+struct MyDXWindow: DXWindow, iPhysicsRenderer
 {
 	//////////////////////////////////////////////////////////////////////
 
-	FPSCamera camera;
-	FPSCamera dashCam;
+	DynamicCamera *cameras[2];
+	DynamicCamera *camera;
+	int currentCamera;
+	Camera dashCam;
+
+	void Load();
+	void Save();
 
 	Shaders::Phong cubeShader;
 	Shaders::Phong::VertBuffer cubeVerts;
@@ -108,6 +113,10 @@ struct MyDXWindow: DXWindow
 	btBoxShape *mGroundShape;
 	btRigidBody *mGroundRigidBody;
 
+	btCylinderShape *mCylinder;
+
+	void SweepTest();
+
 	//////////////////////////////////////////////////////////////////////
 
 	MyDXWindow();
@@ -121,5 +130,15 @@ struct MyDXWindow: DXWindow
 	int CreateCylinder(int steps);
 	int CreateGrid();
 	int CreateOctahedron();
-};
 
+	// iPhysicsRenderer
+
+	void DrawCube(Matrix const &m) override;
+	void DrawCylinder(Matrix const &m) override;
+	void DrawSphere(Matrix const &m) override;
+	void DrawCapsule(Matrix const &m) override;
+	void DrawTorus(Matrix const &m) override;
+	void DrawCone(Matrix const &m) override;
+	void DrawConvexMesh(Matrix const &m) override;
+	void DrawTetrahedron(Matrix const &m) override;
+};

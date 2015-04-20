@@ -210,11 +210,6 @@ public:
 		return *this;
 	}
 
-	operator __m128() const
-	{
-		return mVec128;
-	}
-
   /**@brief Inversely scale the vector 
    * @param s Scale factor to divide by */
 	SIMD_FORCE_INLINE btVector3& operator/=(const btScalar& s) 

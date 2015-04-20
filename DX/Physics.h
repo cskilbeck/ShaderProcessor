@@ -6,6 +6,18 @@
 
 namespace DX
 {
+	struct iPhysicsRenderer
+	{
+		virtual void DrawCube(Matrix const &m) = 0;
+		virtual void DrawCylinder(Matrix const &m) = 0;
+		virtual void DrawSphere(Matrix const &m) = 0;
+		virtual void DrawCapsule(Matrix const &m) = 0;
+		virtual void DrawTorus(Matrix const &m) = 0;
+		virtual void DrawCone(Matrix const &m) = 0;
+		virtual void DrawConvexMesh(Matrix const &m) = 0;
+		virtual void DrawTetrahedron(Matrix const &m) = 0;
+	};
+
 	namespace Physics
 	{
 		//////////////////////////////////////////////////////////////////////
@@ -23,12 +35,15 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci = null);
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);
 
 		//////////////////////////////////////////////////////////////////////
 
+		void DrawShape(Matrix const &parent, btCollisionShape const *shape, iPhysicsRenderer *w);
+			
 		void DebugBegin(Camera *camera);
 		btIDebugDraw *DebugDrawer();
 		void DebugEnd();

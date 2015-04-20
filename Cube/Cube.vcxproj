@@ -222,6 +222,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -320,6 +322,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="FollowCamera.h" />
     <ClInclude Include="FPSCamera.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Vehicle.h" />

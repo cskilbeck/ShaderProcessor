@@ -66,6 +66,13 @@ namespace DX
 			return true;
 		}
 
+		template<typename T> int Put(T &b)
+		{
+			uint64 put;
+			DXR(Write(&b, (uint32)sizeof(b), &put));
+			return (put == sizeof(b)) ? S_OK : E_FAIL;
+		}
+
 		template<typename T> int Get(T &b)
 		{
 			uint64 got;

@@ -87,8 +87,11 @@ namespace DX
 
 	inline Vec4f TransformPoint(Vec4f pos, DX::Matrix const &m)
 	{
-		Vec4f r = SplatX(pos) * m.r[0] + SplatY(pos) * m.r[1] + SplatZ(pos) * m.r[2] + m.r[3];
-		return r / SplatW(r);
+		Vec4f a = _mm_mul_ps(SplatX(pos), m.r[0]);
+		Vec4f b = _mm_mul_ps(SplatY(pos), m.r[1]);
+		Vec4f c = _mm_mul_ps(SplatZ(pos), m.r[2]);
+		Vec4f r = _mm_add_ps(_mm_add_ps(_mm_add_ps(a, b), c), m.r[3]);
+		return _mm_div_ps(r, SplatW(r));
 	}
 
 	//////////////////////////////////////////////////////////////////////

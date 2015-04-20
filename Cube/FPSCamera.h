@@ -4,23 +4,36 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct FPSCamera: Camera
+struct MyDXWindow;
+
+struct DynamicCamera : Camera
 {
 	Vec4f position;
+
+	DynamicCamera()
+		: position(Vec4(0, -150, 250))
+	{
+	}
+
+	virtual void Process(float deltaTime) = 0;
+	virtual void Read(FileBase &f) = 0;
+	virtual void Write(FileBase &f) = 0;
+};
+
+struct FPSCamera: DynamicCamera
+{
 	float yaw;
 	float pitch;
 	float roll;
-	Window *window;
+	MyDXWindow *window;
 
-	FPSCamera(Window *w)
-		: position(Vec4(0, -150, 250))
+	FPSCamera(MyDXWindow *w)
+		: DynamicCamera()
 		, yaw(0)
 		, pitch(-PI / 4)
 		, roll(0)
 		, window(w)
 	{
-		CalculatePerspectiveProjectionMatrix(0.5f, (float)w->ClientWidth() / w->ClientHeight());
-		Update();
 	}
 
 	void LookAt(Vec4f target)
@@ -45,30 +58,22 @@ struct FPSCamera: Camera
 		yaw += pan;
 	}
 
-	void Update()
+	void Process(float deltaTime) override;
+
+	void Write(FileBase &f) override
 	{
-		CalculateViewMatrix(position, yaw, pitch, roll);
-		CalculateViewProjectionMatrix();
+		f.Put(yaw);
+		f.Put(pitch);
+		f.Put(roll);
+		f.Put(position);
 	}
 
-	void Save()
+	void Read(FileBase &f) override
 	{
-		DiskFile f;
-		if(f.Create("camera.bin", DiskFile::Overwrite) != S_OK)
-		{
-			return;
-		}
-		f.Write(this, sizeof(*this) - sizeof(Window *));
-	}
-
-	void Load()
-	{
-		DiskFile f;
-		if(f.Open("camera.bin", DiskFile::Mode::ForReading) != S_OK)
-		{
-			return;
-		}
-		f.Read(this, sizeof(*this) - sizeof(Window *));
+		f.Get(yaw);
+		f.Get(pitch);
+		f.Get(roll);
+		f.Get(position);
 	}
 };
 

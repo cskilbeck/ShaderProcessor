@@ -176,12 +176,12 @@ long _maxdot_large( const float *vv, const float *vec, unsigned long count, floa
             for( index = 0; 0 == (test=_mm_movemask_ps( _mm_cmpeq_ps( stack_array[index], max))); index++ )   // local_count must be a multiple of 4
             {}
             // record where it is.
-            maxIndex = (long)(4*index + segment + indexTable[test]);
+            maxIndex = 4*index + segment + indexTable[test];
         }
     }
     
     // account for work we've already done
-    count -= (long)segment;
+    count -= segment;
     
     // Deal with the last < STACK_ARRAY_COUNT vectors
     max = dotMax;
@@ -424,7 +424,7 @@ long _maxdot_large( const float *vv, const float *vec, unsigned long count, floa
         size_t test;
         for( index = 0; 0 == (test=_mm_movemask_ps( _mm_cmpeq_ps( stack_array[index], max))); index++ )   // local_count must be a multiple of 4
         {}
-        maxIndex = (long)(4*index + segment + indexTable[test]);
+        maxIndex = 4*index + segment + indexTable[test];
     }
     
     _mm_store_ss( dotResult, dotMax);
@@ -561,12 +561,12 @@ long _mindot_large( const float *vv, const float *vec, unsigned long count, floa
             for( index = 0; 0 == (test=_mm_movemask_ps( _mm_cmpeq_ps( stack_array[index], min))); index++ )   // local_count must be a multiple of 4
             {}
             // record where it is.
-            minIndex = (long)(4*index + segment + indexTable[test]);
+            minIndex = 4*index + segment + indexTable[test];
         }
     }
     
     // account for work we've already done
-    count -= (long)segment;
+    count -= segment;
     
     // Deal with the last < STACK_ARRAY_COUNT vectors
     min = dotmin;
@@ -800,7 +800,7 @@ long _mindot_large( const float *vv, const float *vec, unsigned long count, floa
       // find min across the min vector, place in all elements of min -- big latency hit here
         min = _mm_min_ps(min, (float4) _mm_shuffle_ps( min, min, 0x4e));
         min = _mm_min_ps(min, (float4) _mm_shuffle_ps( min, min, 0xb1));
-
+        
         // It is slightly faster to do this part in scalar code when count < 8. However, the common case for
         // this where it actually makes a difference is handled in the early out at the top of the function, 
         // so it is less than a 1% difference here. I opted for improved code size, fewer branches and reduced 
@@ -812,7 +812,7 @@ long _mindot_large( const float *vv, const float *vec, unsigned long count, floa
         size_t test;
         for( index = 0; 0 == (test=_mm_movemask_ps( _mm_cmpeq_ps( stack_array[index], min))); index++ )   // local_count must be a multiple of 4
         {}
-        minIndex = (long)(4*index + segment + indexTable[test]);
+        minIndex = 4*index + segment + indexTable[test];
     }
     
     _mm_store_ss( dotResult, dotmin);
