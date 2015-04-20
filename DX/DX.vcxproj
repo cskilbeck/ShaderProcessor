@@ -120,6 +120,10 @@
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
     </SPOCK>
+    <SPOCK Include="Shaders\Debug.shader">
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
+    </SPOCK>
     <SPOCK Include="Shaders\Default.shader">
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateDebugInformation>
       <GenerateDebugInformation Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">true</GenerateDebugInformation>

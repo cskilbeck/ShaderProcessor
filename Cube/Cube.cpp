@@ -242,7 +242,7 @@ void MyDXWindow::Box::Create(Vec4f pos)
 	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
 	Vec4f boxSize = Vec4(4, 4, 4);
 	mShape = new btBoxShape(boxSize);
-	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape);
+	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape, Physics::GroundMask, -1);
 	mBody->setFriction(0.5);
 	mBody->setRestitution(0.0f);
 	mBody->setDamping(0.01f, 0.1f);
@@ -396,6 +396,7 @@ void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 }
 
 //////////////////////////////////////////////////////////////////////
+// These are Y cylinders...
 
 int MyDXWindow::CreateCylinder(int steps)
 {
@@ -570,7 +571,7 @@ bool MyDXWindow::OnCreate()
 
 	mCylinder = new btCylinderShape(btVector3(2, 0.25f, 2));
 
-	DXB(car.Create(Vec4(0, 0, 1.45f)));
+	DXB(car.Create(Vec4(0, 0, 5)));
 
 	mGroundShape = new btBoxShape(btVector3(200, 200, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
@@ -748,7 +749,7 @@ void MyDXWindow::SweepTest()
 
 	ClosestConvexResultCallback collisionCallback(mStartPos.getOrigin(), mEndPos.getOrigin());
 	Physics::DynamicsWorld->convexSweepTest(mCylinder, mStartPos, mEndPos, collisionCallback);
-	float hit = (collisionCallback.m_hitCollisionObject != null) ? collisionCallback.m_closestHitFraction : 0;
+	float hit = (collisionCallback.m_hitCollisionObject != null) ? collisionCallback.m_closestHitFraction : 1;
 	btVector3 linearVel = endPos - startPos;
 	btVector3 curPos = startPos + linearVel * hit;
 	btQuaternion a = Slerp(sr, er, hit);
@@ -764,10 +765,6 @@ void MyDXWindow::OnFrame()
 	deltaTime = (float)mTimer.Delta();
 	float time = (float)mTimer.WallTime();
 
-	debug_begin();
-
-	car.Update(deltaTime);
-
 	if(Keyboard::Pressed(' '))
 	{
 		currentCamera = 1 - currentCamera;
@@ -775,6 +772,12 @@ void MyDXWindow::OnFrame()
 	camera = cameras[currentCamera];
 
 	camera->Process(deltaTime);
+
+	debug_begin(*camera);
+
+	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
+
+	car.Update(deltaTime);
 
 	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -1077,18 +1080,22 @@ void MyDXWindow::OnFrame()
 		splatShader.vs.SetVertexBuffers(Context(), 1, &splatVB);
 		splatShader.Activate(Context());
 		
+		float y0 = fpsHeight - oldDeltaTime * 32 * fpsHeight;
+		float y1 = fpsHeight - deltaTime * 32 * fpsHeight;
+
 		Shaders::Splat::InputVertex *p;
 		splatVB.Map(Context(), p);
 		*p++ = { { x0, 0 }, 0xc0000000 };
 		*p++ = { { x1, 0 }, 0xc0000000 };
-		*p++ = { { x0, h }, 0xc0000000 };
-		*p++ = { { x1, h }, 0xc0000000 };
+		*p++ = { { x0, y0 }, 0xc0000000 };
+		*p++ = { { x1, y1 }, 0xc0000000 };
+		*p++ = { { x0, y0 + 1 }, 0xc0800000 };
+		*p++ = { { x1, y1 + 1 }, 0xc0800000 };
+		*p++ = { { x0, h }, 0xc0800000 };
+		*p++ = { { x1, h }, 0xc0800000 };
 		splatVB.UnMap(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-		Context()->Draw(4, 0);
-
-		float y0 = fpsHeight - oldDeltaTime * 32 * fpsHeight;
-		float y1 = fpsHeight - deltaTime * 32 * fpsHeight;
+		Context()->Draw(8, 0);
 
 		splatVB.Map(Context(), p);
 		*p++ = { { x0, y0 }, 0xffffffff };
@@ -1096,6 +1103,7 @@ void MyDXWindow::OnFrame()
 		splatVB.UnMap(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(2, 0);
+
 
 		ResetRenderTargetView();
 

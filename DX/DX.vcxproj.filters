@@ -195,5 +195,8 @@
     <SPOCK Include="Shaders\Color.shader">
       <Filter>Shaders</Filter>
     </SPOCK>
+    <SPOCK Include="Shaders\Debug.shader">
+      <Filter>Shaders</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>
