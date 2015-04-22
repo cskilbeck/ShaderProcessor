@@ -1267,7 +1267,7 @@ void FollowCamera::Process(float deltaTime)
 
 	btTransform const &carTransform = window->car.mBody->getWorldTransform();
 	Vec4f carPos = carTransform.getOrigin().get128();
-	Vec4f cameraOffset = carTransform.getBasis().getColumn(1).get128();
+	Vec4f cameraOffset = carTransform.getBasis().getColumn(1).get128() * Vec4(1,1,0);
 	Vec4f bcp = carPos - Normalize(cameraOffset) * distance;
 	Vec4f diff = carPos - position;
 	diff = Normalize(diff) * (Length(diff) - distance);
