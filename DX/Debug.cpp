@@ -40,6 +40,8 @@ namespace DX
 
 	void debug_close()
 	{
+		lineShader.Release();
+		lineVB.Release();
 		debugFont.Release();
 		mainWindow = null;
 	}

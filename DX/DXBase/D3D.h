@@ -127,5 +127,9 @@ namespace DX
 		T *p;
 	};
 
-
+	inline LONG GetRefCount(IUnknown *p)
+	{
+		p->AddRef();
+		return p->Release();
+	}
 }

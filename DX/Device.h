@@ -180,13 +180,17 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void ReleaseRenderTargets()
+		HRESULT ReleaseRenderTargets()
 		{
+			DXI(mContext->ClearState());
+			DXI(mContext->Flush());
+
 			mContext->OMSetRenderTargets(0, null, null);
 			mBackBuffer.Release();
 			mDepthBuffer.Release();
 			mDepthStencilView.Release();
 			mRenderTargetView.Release();
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -197,16 +201,11 @@ namespace DX
 			mHeight = height;
 			if(mContext != null)
 			{
-				DXI(mContext->ClearState());
-				DXI(mContext->Flush());
-				DXI(mContext->OMSetRenderTargets(0, null, null));
-				mBackBuffer.Release();
-				mDepthBuffer.Release();
-				mRenderTargetView.Release();
-				mDepthStencilView.Release();
+				DXR(ReleaseRenderTargets());
 				DXR(mSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
 				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
+
 			}
 			return S_OK;
 		}
@@ -216,16 +215,6 @@ namespace DX
 		void Close()
 		{
 			ReleaseRenderTargets();
-
-			mContext->OMSetBlendState(null, null, 0);
-			mContext->OMSetDepthStencilState(null, 0);
-			mContext->RSSetState(null);
-
-			if(mContext != null)
-			{
-				DXI(mContext->ClearState());
-				DXI(mContext->Flush());
-			}
 			mSwapChain.Release();
 			if(mContext != null)
 			{
@@ -244,7 +233,7 @@ namespace DX
 			DX::Device = null;
 
 #if defined(_DEBUG)
-			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_SUMMARY | D3D11_RLDO_DETAIL);
+			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			D3DDebug.Release();
 #endif
 			mFeatureLevel = (D3D_FEATURE_LEVEL)0;

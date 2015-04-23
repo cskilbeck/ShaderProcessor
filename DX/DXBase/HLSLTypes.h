@@ -99,7 +99,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <> struct HLSLVec3 < float >
+	template <> struct HLSLVec3<float>
 	{
 		union
 		{
@@ -127,7 +127,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <> struct HLSLVec4 < float >: Aligned16
+	template <> struct HLSLVec4<float>: Aligned16
 	{
 		union
 		{
@@ -204,31 +204,6 @@ namespace DX
 
 	struct Color;
 	using Byte4 = Color;
-
-	//template <> struct HLSLVec4 < Byte >
-	//{
-	//	uint32 c;
-
-	//	HLSLVec4()
-	//	{
-	//	}
-
-	//	HLSLVec4(uint32 color) : c(color)
-	//	{
-	//	}
-
-	//	HLSLVec4<Byte> &operator = (uint32 color)
-	//	{
-	//		c = color; return *this;
-	//	}
-
-	//	HLSLVec4<Byte> &operator = (Color color);
-
-	//	operator uint32() const
-	//	{
-	//		return (uint32)c;
-	//	}
-	//};
 
 	//////////////////////////////////////////////////////////////////////
 

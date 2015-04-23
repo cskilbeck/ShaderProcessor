@@ -59,12 +59,12 @@ namespace DX
 				(uint32)b << kBlueOffset;
 		}
 
-		Color(float *abgr)
+		Color(float *bgra)
 		{
-			uint32 b = (uint32)(abgr[0] * 255.0f);
-			uint32 g = (uint32)(abgr[1] * 255.0f);
-			uint32 r = (uint32)(abgr[2] * 255.0f);
-			uint32 a = (uint32)(abgr[3] * 255.0f);
+			uint32 b = (uint32)(bgra[0] * 255.0f);
+			uint32 g = (uint32)(bgra[1] * 255.0f);
+			uint32 r = (uint32)(bgra[2] * 255.0f);
+			uint32 a = (uint32)(bgra[3] * 255.0f);
 			mColor =
 				(uint32)a << kAlphaOffset |
 				(uint32)r << kRedOffset |
@@ -119,29 +119,33 @@ namespace DX
 			return (mColor >> kBlueOffset) & 0xff;
 		}
 
-		void SetAlpha(Byte a)
+		Color &SetAlpha(Byte a)
 		{
 			mColor = (mColor & ~kAlphaMask) | ((uint32)a << kAlphaOffset);
+			return *this;
 		}
 
-		void SetRed(Byte r)
+		Color &SetRed(Byte r)
 		{
 			mColor = (mColor & ~kRedMask) | ((uint32)r << kRedOffset);
+			return *this;
 		}
 
-		void SetGreen(Byte g)
+		Color &SetGreen(Byte g)
 		{
 			mColor = (mColor & ~kGreenMask) | ((uint32)g << kGreenOffset);
+			return *this;
 		}
 
-		void SetBlue(Byte b)
+		Color &SetBlue(Byte b)
 		{
 			mColor = (mColor & ~kBlueMask) | ((uint32)b << kBlueOffset);
+			return *this;
 		}
 
-		inline Color Lerp(Color const &other, Byte lerp) const		// 0 = this, 255 = other, 128 = 50:50
+		inline Color Lerp(Color const &other, uint lerp) const		// 0 = this, 256 = other, 128 = 50:50
 		{
-			int inv = 255 - lerp;
+			int inv = 256 - lerp;
 			return Color((Alpha()	* inv + other.Alpha()	* lerp) >> 8,
 						 (Red()		* inv + other.Red()		* lerp) >> 8,
 						 (Green()	* inv + other.Green()	* lerp) >> 8,
@@ -150,7 +154,7 @@ namespace DX
 
 		inline Color Lerp(Color const &other, float lerp) const
 		{
-			return Lerp(other, (Byte)(lerp * 255.0f));
+			return Lerp(other, (uint)(lerp * 256.0f));
 		}
 
 		Color operator * (Color const &o)
@@ -307,12 +311,4 @@ namespace DX
 		};
 
 	};
-
-	//////////////////////////////////////////////////////////////////////
-	// Yuck - have to put this after Color is defined...
-
-	//inline HLSLVec4<Byte> &HLSLVec4<Byte>::operator = (Color color)
-	//{
-	//	c = color.mColor; return *this;
-	//}
 }

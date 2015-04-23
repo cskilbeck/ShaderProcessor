@@ -5,10 +5,17 @@
 // RTCB004: 
 
 // Cartoon Car Physics
-//		wheelcasting
+//		\ wheelcasting
 //		parameter tweaker
+//			body dimensions
+//			wheel offsets
+//			suspension
+//			engine/brakes
+//			wheel friction
+//			steering
+//			weight distribution
 //		convex hull for body
-//		wheels spin based on engine as well as speed
+//		wheelspin based on engine as well as speed
 // Shared constant buffers:
 //		if name begins with g_
 //		and both names are the same
@@ -238,7 +245,6 @@ MyDXWindow::Box MyDXWindow::box[MyDXWindow::numBoxes];
 void MyDXWindow::Box::Create(Vec4f pos)
 {
 	Destroy();
-//	btTransform bodyTransform(btQuaternion(btVector3(0.5f, 1, 0.25f), 1.5f), pos);
 	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
 	Vec4f boxSize = Vec4(4, 4, 4);
 	mShape = new btBoxShape(boxSize);
@@ -1267,7 +1273,7 @@ void FollowCamera::Process(float deltaTime)
 
 	btTransform const &carTransform = window->car.mBody->getWorldTransform();
 	Vec4f carPos = carTransform.getOrigin().get128();
-	Vec4f cameraOffset = carTransform.getBasis().getColumn(1).get128() * Vec4(1,1,0);
+	Vec4f cameraOffset = SetZ(carTransform.getBasis().getColumn(1).get128(), 0);
 	Vec4f bcp = carPos - Normalize(cameraOffset) * distance;
 	Vec4f diff = carPos - position;
 	diff = Normalize(diff) * (Length(diff) - distance);
