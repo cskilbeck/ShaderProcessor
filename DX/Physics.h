@@ -20,13 +20,6 @@ namespace DX
 
 	namespace Physics
 	{
-		enum
-		{
-			CarMask = 128,
-			GroundMask = 256,
-			WheelMask = 512
-		};
-
 		//////////////////////////////////////////////////////////////////////
 
 		extern btDefaultCollisionConfiguration *		CollisionConfiguration;
@@ -37,20 +30,80 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct Mesh
+		{
+			//////////////////////////////////////////////////////////////////////
+
+			struct Triangle
+			{
+				Float3 const &p1, &p2, &p3;
+				Float3 const &n1, &n2, &n3;
+
+				Triangle(Mesh const &m, int i)
+					: p1(m.mVertices[m.mIndices[i + 0]])
+					, p2(m.mVertices[m.mIndices[i + 1]])
+					, p3(m.mVertices[m.mIndices[i + 2]])
+					, n1(m.mNormals[m.mIndices[i + 0]])
+					, n2(m.mNormals[m.mIndices[i + 1]])
+					, n3(m.mNormals[m.mIndices[i + 2]])
+				{
+				}
+
+				Vec4f GetInterpolatedNormal(CVec4f pos) const;
+				Vec4f GetNormal() const;
+				Vec4f GetPlane() const;
+				float DistanceFrom(CVec4f pos) const;
+			};
+
+			//////////////////////////////////////////////////////////////////////
+
+			Mesh();
+			~Mesh();
+
+			int LoadStatic(tchar const *filename);
+
+			void AddToWorld(uint16 collisionGroup, uint16 collisionMask)
+			{
+				DynamicsWorld->addRigidBody(mBody, collisionGroup, collisionMask);
+			}
+
+			vector<Float3> mVertices;
+			vector<Float3> mNormals;
+			vector<uint32> mIndices;	// 3 x uint16 per triangle
+			btTriangleIndexVertexArray *mArray;
+			btBvhTriangleMeshShape *mShape;
+			btRigidBody *mBody;
+			Triangle GetTriangle(int index)
+			{
+				return Triangle(*this, index * 3);
+			}
+
+			bool IsConvex() const;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		enum
+		{
+			CarMask = 128,
+			GroundMask = 256,
+			WheelMask = 512
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		HRESULT Open(DXWindow *window);
 		void Close();
 
 		//////////////////////////////////////////////////////////////////////
 
-		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, uint16 group, uint16 mask, btRigidBody::btRigidBodyConstructionInfo *ci = null);
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci = null);
+		void AddRigidBody(btRigidBody *b, uint16 collisionGroup, uint16 collisionMask);
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);
-
-		//////////////////////////////////////////////////////////////////////
-
+		int LoadMesh(tchar const *filename, btRigidBody **body, uint16 group, uint16 mask);
 		void DrawShape(Matrix const &parent, btCollisionShape const *shape, iPhysicsRenderer *w);
-			
 		void DebugBegin(Camera *camera);
 		btIDebugDraw *DebugDrawer();
 		void DebugEnd();

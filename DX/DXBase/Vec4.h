@@ -40,8 +40,8 @@ namespace DX
 
 	Vec4f		Vec4(float x, float y, float z);
 	Vec4f		Vec4(float x, float y, float z, float w);
-	Vec4f		Vec4(HLSLVec3<float> &f3);
-	Vec4f		Vec4(HLSLVec4<float> &f4);
+	Vec4f		Vec4(HLSLVec3<float> const &f3);
+	Vec4f		Vec4(HLSLVec4<float> const &f4);
 
 	Vec4f		SetX(CVec4f a, float x);
 	Vec4f		SetY(CVec4f a, float y);

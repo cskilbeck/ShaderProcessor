@@ -12,14 +12,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Vec4f Vec4(Float4 &f4)
+	inline Vec4f Vec4(Float4 const &f4)
 	{
 		return _mm_set_ps(f4.w, f4.z, f4.y, f4.z);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Vec4f Vec4(Float3 &f3)
+	inline Vec4f Vec4(Float3 const &f3)
 	{
 		return _mm_set_ps(0.0f, f3.z, f3.y, f3.z);
 	}

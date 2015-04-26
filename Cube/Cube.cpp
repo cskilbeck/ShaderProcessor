@@ -35,7 +35,6 @@
 // zLib: support Deflate64
 // ?? Shader de-duplication?
 // Proper logging instead of a janky handful of macros
-// Debug text
 // Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource/Blob mess
 // Pick a base aspect ratio and do the right thing when the window is resized
 // Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
@@ -79,6 +78,7 @@
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 //		* Fix MSBuild Spock dependency bug (building everything)
+// * Debug text
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
 // * Move some things into Matrix from Camera
@@ -248,7 +248,8 @@ void MyDXWindow::Box::Create(Vec4f pos)
 	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
 	Vec4f boxSize = Vec4(4, 4, 4);
 	mShape = new btBoxShape(boxSize);
-	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape, Physics::GroundMask, -1);
+	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape);
+	Physics::AddRigidBody(mBody, Physics::GroundMask, -1);
 	mBody->setFriction(0.5);
 	mBody->setRestitution(0.0f);
 	mBody->setDamping(0.01f, 0.1f);
@@ -295,11 +296,64 @@ void MyDXWindow::DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVer
 
 //////////////////////////////////////////////////////////////////////
 
+int MyDXWindow::CreateRamp()
+{
+	int vertStride = sizeof(PhysicalVertex);
+	int indexStride = 3 * sizeof(uint32);
+
+	// 2 lines of verts
+
+	const int TRIANGLE_SIZE = 40;
+	const int NUM_VERTS_X = 2;
+	const int NUM_VERTS_Y = 200;
+	const int totalVerts = NUM_VERTS_X * NUM_VERTS_Y;
+
+	const int totalTriangles = 2 * (NUM_VERTS_X - 1) * (NUM_VERTS_Y - 1);
+
+	mRampVerts = new PhysicalVertex[totalVerts];
+	mRampIndices = new int32[totalTriangles * 3];
+
+	for(int i = 0; i < NUM_VERTS_X; i++)
+	{
+		for(int j = 0; j < NUM_VERTS_Y; j++)
+		{
+			float height = sinf(j * PI * 8 / NUM_VERTS_Y) * 120;
+			mRampVerts[i + j * NUM_VERTS_X].position = { (i - NUM_VERTS_X * 2 + 3.5f) * TRIANGLE_SIZE, j * TRIANGLE_SIZE + 50.0f, height };
+		}
+	}
+
+	int index = 0;
+	for(int i = 0; i < NUM_VERTS_X - 1; i++)
+	{
+		for(int j = 0; j < NUM_VERTS_Y - 1; j++)
+		{
+			mRampIndices[index++] = j * NUM_VERTS_X + i;
+			mRampIndices[index++] = j * NUM_VERTS_X + i + 1;
+			mRampIndices[index++] = (j + 1) * NUM_VERTS_X + i + 1;
+
+			mRampIndices[index++] = j * NUM_VERTS_X + i;
+			mRampIndices[index++] = (j + 1) * NUM_VERTS_X + i + 1;
+			mRampIndices[index++] = (j + 1) * NUM_VERTS_X + i;
+		}
+	}
+
+	mRampArray = new btTriangleIndexVertexArray(totalTriangles, mRampIndices, indexStride, totalVerts, (btScalar *)mRampVerts, vertStride);
+	bool useQuantizedAabbCompression = true;
+	mRampShape = new btBvhTriangleMeshShape(mRampArray, useQuantizedAabbCompression);
+	btTransform t(btQuaternion(0, 0, 0), btVector3(0, 0, 0));
+	mRampBody = Physics::CreateRigidBody(0, t, mRampShape);
+	Physics::AddRigidBody(mRampBody, Physics::GroundMask, -1);
+
+	return 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void MyDXWindow::SetupBoxes()
 {
 	for(int i = 0; i < numBoxes; ++i)
 	{
-		box[i].Create(Vec4(0, 50, (float)i * 8 + 4));
+		box[i].Create(Vec4(50, 90, (float)i * 8 + 4));
 	}
 }
 
@@ -593,6 +647,9 @@ bool MyDXWindow::OnCreate()
 	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
 
+	bullet.LoadStatic(TEXT("track.dae"));
+	bullet.AddToWorld(Physics::GroundMask, -1);
+
 	DXB(scene.Load(TEXT("duck.dae")));
 
 	DXB(FontManager::Open(this));
@@ -612,6 +669,8 @@ bool MyDXWindow::OnCreate()
 	DXB(CreateOctahedron());
 
 	DXB(sphereShader.Create());
+
+	DXB(CreateRamp());
 
 	DXB(cubeShader.Create());
 	DXB(cubeTexture.Load(TEXT("temp.jpg")));
@@ -1085,9 +1144,11 @@ void MyDXWindow::OnFrame()
 		splatShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph.Width(), fpsGraph.Height()));
 		splatShader.vs.SetVertexBuffers(Context(), 1, &splatVB);
 		splatShader.Activate(Context());
+
+		float sixty = 1000.0f / 60;
 		
-		float y0 = fpsHeight - oldDeltaTime * 32 * fpsHeight;
-		float y1 = fpsHeight - deltaTime * 32 * fpsHeight;
+		float y0 = fpsHeight - oldDeltaTime * sixty * fpsHeight;
+		float y1 = fpsHeight - deltaTime * sixty * fpsHeight;
 
 		Shaders::Splat::InputVertex *p;
 		splatVB.Map(Context(), p);
@@ -1109,7 +1170,6 @@ void MyDXWindow::OnFrame()
 		splatVB.UnMap(Context());
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 		Context()->Draw(2, 0);
-
 
 		ResetRenderTargetView();
 

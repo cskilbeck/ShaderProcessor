@@ -490,6 +490,8 @@ namespace DX
 		return deg * (180.0f / PI);
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
 	template<typename T> T IntPow(T base, T exp)
 	{
 		T r;
@@ -503,4 +505,7 @@ namespace DX
 		return r;
 	}
 
+	////////////////////////////////////////////////////////////////////////
+
+	Vec4f GetPlane(CVec4f p1, CVec4f p2, CVec4f p3);
 }

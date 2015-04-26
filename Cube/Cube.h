@@ -113,9 +113,23 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	btBoxShape *mGroundShape;
 	btRigidBody *mGroundRigidBody;
 
+	struct PhysicalVertex
+	{
+		Float3 position;
+		Float3 normal;
+	};
+
+	PhysicalVertex *mRampVerts;
+	int32 *mRampIndices;
+	btTriangleIndexVertexArray *mRampArray;
+	btBvhTriangleMeshShape *mRampShape;
+	btRigidBody *mRampBody;
+
 	btCylinderShape *mCylinder;
 
 	void SweepTest();
+
+	Physics::Mesh bullet;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -130,6 +144,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	int CreateCylinder(int steps);
 	int CreateGrid();
 	int CreateOctahedron();
+	int CreateRamp();
 
 	// iPhysicsRenderer
 

@@ -63,6 +63,7 @@
 #include "AssetManager.h"
 #include "Archive.h"
 #include "FileStream.h"
+#include "Importer.h"
 #include "IndexBuffer.h"
 #include "ConstBuffer.h"
 #include "VertexBuffer.h"

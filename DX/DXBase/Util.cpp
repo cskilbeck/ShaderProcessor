@@ -301,6 +301,7 @@ namespace DX
 		SplitPath(path, pc);
 		return tstring(pc.drive) + pc.dir + pc.name + ext;
 	}
+
 	//////////////////////////////////////////////////////////////////////
 
 	void ErrorMessageBox(tchar const *format, ...)
@@ -312,5 +313,4 @@ namespace DX
 		TRACE(Format(TEXT("%s\n"), s.c_str()).c_str());
 		//assert(false);
 	}
-
 }

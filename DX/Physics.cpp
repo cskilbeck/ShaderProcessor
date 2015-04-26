@@ -72,7 +72,7 @@ namespace DX
 			delete CollisionConfiguration;
 		}
 
-		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, uint16 collisionGroup, uint16 collisionMask, btRigidBody::btRigidBodyConstructionInfo *ci)
+		btRigidBody *CreateRigidBody(float mass, const btTransform &transform, btCollisionShape *shape, btRigidBody::btRigidBodyConstructionInfo *ci)
 		{
 			assert(shape != null && shape->getShapeType() != INVALID_SHAPE_PROXYTYPE);
 			btVector3 localInertia(0, 0, 0);
@@ -95,8 +95,40 @@ namespace DX
 			}
 			btRigidBody *body = new btRigidBody(*ci);
 			body->setContactProcessingThreshold(BT_LARGE_FLOAT);
-			DynamicsWorld->addRigidBody(body, collisionGroup, collisionMask);
 			return body;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void AddRigidBody(btRigidBody *b, uint16 collisionGroup, uint16 collisionMask)
+		{
+			DynamicsWorld->addRigidBody(b, collisionGroup, collisionMask);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		int LoadMesh(tchar const *filename, btRigidBody **body, uint16 group, uint16 mask)
+		{
+			if(body == null)
+			{
+				return E_POINTER;
+			}
+
+			aiScene const *scene;
+			DXR(LoadScene(filename, &scene));
+
+			if(!scene->HasMeshes())
+			{
+				return E_FAIL;
+			}
+
+			aiMesh *mesh = scene->mMeshes[0];
+
+			aiVector3D *normals = mesh->mNormals;
+			aiVector3D *verts = mesh->mVertices;
+			aiFace *faces = mesh->mFaces;
+
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -218,6 +250,135 @@ namespace DX
 				}
 				break;
 			}
+		}
+
+		Mesh::Mesh()
+		{
+		}
+
+		Mesh::~Mesh()
+		{
+		}
+
+		int Mesh::LoadStatic(tchar const *filename)
+		{
+			if(filename == null)
+			{
+				return E_POINTER;
+			}
+
+			// load the mesh
+
+			aiScene const *s;
+			DXR(LoadScene(filename, &s));
+			if(!s->HasMeshes())
+			{
+				return E_INVALIDARG;
+			}
+
+			// TODO (charlie): LoadDynamic() - must be convex (and allow them to have mass)
+			// TODO (charlie): deal with multiple meshes, stored mass and center of mass offsets
+			// TODO (charlie): deal with collision mask and group stored in the file somehow
+
+			// just use mesh 0 for now
+
+			aiMesh *m = s->mMeshes[0];
+			if(!(m->HasPositions() && m->HasNormals() && m->HasFaces()))
+			{
+				return E_INVALIDARG;
+			}
+
+			// TODO (charlie): keep the scene around and use the data directly
+
+			mVertices.reserve(m->mNumVertices);
+			mNormals.reserve(m->mNumVertices);
+			mIndices.reserve(m->mNumFaces * 3);
+			for(uint i = 0; i < m->mNumVertices; ++i)
+			{
+				mVertices.push_back({ m->mVertices[i].x * 100, m->mVertices[i].y * 100, m->mVertices[i].z * 100.0f } );
+				mNormals.push_back({ m->mVertices[i].x, m->mVertices[i].y, m->mVertices[i].z });
+			}
+			for(uint i = 0; i < m->mNumFaces; ++i)
+			{
+				for(uint j = 0; j < 3; ++j)
+				{
+					mIndices.push_back((uint32)m->mFaces[i].mIndices[j]);
+				}
+			}
+
+			// create the physics objects
+
+			mArray = new btTriangleIndexVertexArray(	(int)m->mNumFaces,
+														(int *)mIndices.data(),
+														3 * sizeof(uint32),
+														(int)m->mNumVertices,
+														(btScalar *)mVertices.data(),
+														sizeof(Float3) );
+
+			bool useQuantizedAabbCompression = true;
+			mShape = new btBvhTriangleMeshShape(mArray, useQuantizedAabbCompression);
+			btTransform t(btQuaternion(0, 0, 0), btVector3(0, 0, 0));
+			mBody = Physics::CreateRigidBody(0, t, mShape);
+
+			// ditch the loaded mesh
+
+			Delete(s);
+
+			return S_OK;
+		}
+
+		bool Mesh::IsConvex() const
+		{
+			for(int i = 0; i < mIndices.size(); i += 3)
+			{
+				Triangle t(*this, i);
+				for(int j = 0; j < mVertices.size(); ++j)
+				{
+					if(t.DistanceFrom(Vec4(mVertices[j])) < -FLT_EPSILON)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		// if h is not coplanar to and contained within the triangle the results are not valid
+
+		Vec4f Mesh::Triangle::GetInterpolatedNormal(CVec4f h) const
+		{
+			Vec4f pos1 = Vec4(p1), pos2 = Vec4(p2), pos3 = Vec4(p3);
+			Vec4f edge2 = pos3 - pos1;
+			float p1p2p3 = LengthSquared(Cross(pos2 - pos1, edge2));
+			float p2p3p = LengthSquared(Cross(pos3 - pos2, h - pos2));
+			float p3p1p = LengthSquared(Cross(edge2, h - pos3));
+			float u = sqrtf(p2p3p / p1p2p3);
+			float v = sqrtf(p3p1p / p1p2p3);
+			float w = 1.0f - u - v;
+			Vec4f norm1 = Vec4(n1), norm2 = Vec4(n2), norm3 = Vec4(n3);
+			return u * norm1 + v * norm2 + w * norm3;
+		}
+
+		// normalized triangle normal
+
+		Vec4f Mesh::Triangle::GetNormal() const
+		{
+			return Normalize(Cross(Vec4(p2) - Vec4(p1), Vec4(p3) - Vec4(p1)));
+		}
+
+		// xyzw where xyz is the normal and w is the distance from the origin
+
+		Vec4f Mesh::Triangle::GetPlane() const
+		{
+			Vec4f normal = GetNormal();
+			return SetW(normal, Dot(normal, Vec4(p1)));
+		}
+
+		// if +ive, it's outside the plane, if -ive, it's inside the plane
+
+		float Mesh::Triangle::DistanceFrom(CVec4f pos) const
+		{
+			return Dot(GetNormal(), pos - Vec4(p1));
 		}
 
 	} // ::Physics}

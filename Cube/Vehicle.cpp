@@ -52,7 +52,8 @@ int Vehicle::Create(Vec4f pos)
 	bodyInfo.m_linearDamping = 0.1f;
 	bodyInfo.m_angularDamping = 0.1f;
 
-	mBody = Physics::CreateRigidBody(mass, chassisTransform, mCompoundShape, Physics::CarMask, -1, &bodyInfo);
+	mBody = Physics::CreateRigidBody(mass, chassisTransform, mCompoundShape, &bodyInfo);
+	Physics::AddRigidBody(mBody, Physics::CarMask, -1);
 	mBody->setActivationState(DISABLE_DEACTIVATION);
 
 	mRayCaster = new btDefaultVehicleRaycaster(Physics::DynamicsWorld);
