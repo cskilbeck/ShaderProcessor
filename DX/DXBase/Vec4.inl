@@ -21,7 +21,7 @@ namespace DX
 
 	inline Vec4f Vec4(Float3 const &f3)
 	{
-		return _mm_set_ps(0.0f, f3.z, f3.y, f3.z);
+		return _mm_set_ps(0.0f, f3.z, f3.y, f3.x);
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -52,9 +52,11 @@
 #include <unordered_map>
 #include <map>
 #include <exception>
+#include <cstdarg>
 
 //////////////////////////////////////////////////////////////////////
 // DX
+
 
 #include "Aligned.h"
 #include "Types.h"
@@ -69,6 +71,7 @@
 #include "HLSLTypes.h"
 #include "Vec4.inl"
 #include "Matrix.h"
+#include "Random.h"
 #include "Color.h"
 #include "UTF8.h"
 #include "Util.h"
@@ -79,7 +82,6 @@
 #include "Point.h"
 #include "Size.h"
 #include "Rect.h"
-#include "Random.h"
 #include "D3D.h"
 #include "Registry.h"
 

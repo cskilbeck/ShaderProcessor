@@ -165,6 +165,36 @@ void	btRaycastVehicle::updateWheelTransformsWS(btWheelInfo& wheel , bool interpo
 	wheel.m_raycastInfo.m_wheelAxleWS = chassisTrans.getBasis() * wheel.m_wheelAxleCS;
 }
 
+#include <string>
+#include <cstdarg>
+#include <Windows.h>
+
+
+static std::string _Format_V(char const *fmt, va_list v)
+{
+	char buffer[512];
+	int l = _vsnprintf_s(buffer, _countof(buffer), _TRUNCATE, fmt, v);
+	if(l != -1)
+	{
+		return std::string(buffer);
+	}
+	l = _vscprintf(fmt, v);
+	char *buf = new char[l + 1];
+	l = _vsnprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
+	std::string s(buf, buf + l);
+	delete(buf);
+	return s;
+}
+
+static void _trace(char const *f, ...)
+{
+	va_list args;
+	va_start(args, f);
+	OutputDebugStringA(_Format_V(f, args).c_str());
+	va_end(args);
+}
+
+
 btScalar btRaycastVehicle::rayCast(btWheelInfo& wheel)
 {
 	updateWheelTransformsWS( wheel,false);

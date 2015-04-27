@@ -72,6 +72,12 @@ namespace DX
 				(uint32)b << kBlueOffset;
 		}
 
+		static inline Color Random()
+		{
+			static DX::Random r;
+			return Color(r.Next() & 0xff, r.Next() & 0xff, r.Next() & 0xff);
+		}
+
 		float *GetFloatsRGBA(float *f) const
 		{
 			f[0] = Red() / 255.0f;

@@ -930,6 +930,19 @@ void MyDXWindow::OnFrame()
 		car.Draw(this);
 	}
 
+	for(int i = 0; i < car.mVehicle->getNumWheels(); ++i)
+	{
+		btWheelInfo &w = car.mVehicle->m_wheelInfo[i];
+		w.updateWheel(*car.mBody, w.m_raycastInfo);
+		auto r = w.m_raycastInfo;
+		if(r.m_isInContact)
+		{
+			Vec4f p = r.m_contactPointWS.mVec128;
+			Vec4f n = r.m_contactNormalWS.mVec128;
+			debug_line(p, p + n * 10, Color::Magenta);
+		}
+	}
+
 	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos), cubeVerts, cubeTexture);
 
 	DrawCylinder(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, 20, 0)), cubeTexture);

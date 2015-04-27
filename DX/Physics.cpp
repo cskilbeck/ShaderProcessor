@@ -313,7 +313,7 @@ namespace DX
 				Triangle t(*this, i);
 				for(int j = 0; j < mVertices.size(); ++j)
 				{
-					if(t.DistanceFrom(Vec4(mVertices[j])) < -FLT_EPSILON)
+					if(t.DistanceFrom(Vec4(mVertices[j])) > FLT_EPSILON)
 					{
 						return false;
 					}

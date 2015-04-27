@@ -17,8 +17,8 @@ namespace DX
 	typedef unsigned int	uint;
 	typedef wchar_t			wchar;
 	typedef TCHAR			tchar;
-	typedef LONG_PTR		intptr;
-	typedef ULONG_PTR		uintptr;
+	typedef intptr_t		intptr;
+	typedef uintptr_t		uintptr;
 
 	const nullptr_t null = nullptr;
 
