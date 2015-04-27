@@ -24,12 +24,12 @@ struct Vehicle
 	float							mBrakeForce;
 	float							mWheelRadius;
 	float							mWheelWidth;
-	Vec4f							mStartPosition;
+	btTransform						mStartTransform;
 
 	Vehicle();
 	~Vehicle();
 
-	int Create(Vec4f pos);
+	int Create(btTransform transform);
 	void Reset();
 	void Draw(MyDXWindow *window);
 	void Update(float deltaTime);

@@ -26,6 +26,7 @@ namespace DX
 			Node *					mParent;
 			vector<Mesh *>			mMeshes;
 			aligned_vector<Node>	mChildren;
+			string					mName;
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -36,11 +37,14 @@ namespace DX
 		void Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos);
 		void RenderNode(ID3D11DeviceContext *context, Node &node, Matrix const &transform, Matrix const &modelMatrix);
 
+		Node *FindNode(char const *name);
+		
 		//////////////////////////////////////////////////////////////////////
 
 		Node								mRootNode;
 		Shaders::Default					mShader;
 		vector<Mesh>						mMeshes;
+
 
 		static void CleanUp();
 

@@ -22,7 +22,7 @@ Vehicle::~Vehicle()
 
 //////////////////////////////////////////////////////////////////////
 
-int Vehicle::Create(Vec4f pos)
+int Vehicle::Create(btTransform transform)
 {
 	mWheelRadius = 2.0f;
 	mWheelWidth = 0.5f;
@@ -30,7 +30,7 @@ int Vehicle::Create(Vec4f pos)
 	mBrakeForce = 0;
 	mSteerAngle = 0;
 
-	mStartPosition = pos;
+	mStartTransform = transform;
 
 	mBodyShape = new btBoxShape(btVector3(3, 6, 0.75f));
 
@@ -41,7 +41,7 @@ int Vehicle::Create(Vec4f pos)
 	mCompoundShape = new btCompoundShape();
 	mCompoundShape->addChildShape(chassisTransform, mBodyShape);
 
-	mMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), pos));
+	mMotionState = new btDefaultMotionState(mStartTransform);
 	btScalar mass = 2000;
 	btVector3 inertia;
 	mCompoundShape->calculateLocalInertia(mass, inertia);
@@ -87,6 +87,7 @@ int Vehicle::Create(Vec4f pos)
 	//	wheel.m_wheelsDampingCompression = 4.4f;
 	//	wheel.m_wheelsDampingRelaxation = 2.3f;
 	//}
+	Reset();
 	return S_OK;
 }
 
@@ -95,6 +96,8 @@ int Vehicle::Create(Vec4f pos)
 void Vehicle::Release()
 {
 }
+
+//////////////////////////////////////////////////////////////////////
 
 void Vehicle::Draw(MyDXWindow *w)
 {
@@ -122,7 +125,7 @@ void Vehicle::Reset()
 {
 	mSteerAngle = 0;
 	mEngineForce = 0;
-	mBody->setCenterOfMassTransform(btTransform(btQuaternion(0, 0, 0, 1), mStartPosition));
+	mBody->setCenterOfMassTransform(mStartTransform);
 	mBody->setLinearVelocity(btVector3(0, 0, 0));
 	mBody->setAngularVelocity(btVector3(0, 0, 0));
 	Physics::DynamicsWorld->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(mBody->getBroadphaseHandle(), Physics::DynamicsWorld->getDispatcher());

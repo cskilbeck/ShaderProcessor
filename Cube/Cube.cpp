@@ -601,6 +601,41 @@ int MyDXWindow::CreateOctahedron()
 
 //////////////////////////////////////////////////////////////////////
 
+int MyDXWindow::LoadTrack(btTransform &carTransform)
+{
+	// load the mesh
+	aiScene const *scene;
+	DXR(LoadScene(TEXT("track.dae"), &scene));
+
+	// find the track node
+	aiNode *trackNode = FindNode(scene, "track");
+	if(!trackNode)
+	{
+		return E_INVALIDARG;
+	}
+
+	track.LoadFromNode(scene, trackNode);
+
+	aiNode *start = FindNode(scene, "start");
+	if(start != null)
+	{
+		// snarf transform for car
+		aiMatrix4x4 m = start->mTransformation;
+		m.Transpose();
+		memcpy(&carTransform, &m, sizeof(carTransform));
+	}
+	else
+	{
+		carTransform = btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 5));
+	}
+
+	Delete(scene);
+	
+	return S_OK;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 const int fpsWidth = 256;
 const int fpsHeight = 128;
 const float fpsLeft = 200;
@@ -627,11 +662,17 @@ bool MyDXWindow::OnCreate()
 
 	Load();
 
+	AssetManager::AddFolder("Data");
+	AssetManager::AddArchive("data.zip");
+
 	Physics::Open(this);
+
+	btTransform carTransform;
+	DXB(LoadTrack(carTransform));
 
 	mCylinder = new btCylinderShape(btVector3(2, 0.25f, 2));
 
-	DXB(car.Create(Vec4(0, 0, 5)));
+	DXB(car.Create(carTransform));
 
 	mGroundShape = new btBoxShape(btVector3(200, 200, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
@@ -643,12 +684,6 @@ bool MyDXWindow::OnCreate()
 
 	// Create some boxes
 	SetupBoxes();
-
-	AssetManager::AddFolder("Data");
-	AssetManager::AddArchive("data.zip");
-
-	bullet.LoadStatic(TEXT("track.dae"));
-	bullet.AddToWorld(Physics::GroundMask, -1);
 
 	DXB(scene.Load(TEXT("duck.dae")));
 
@@ -870,6 +905,11 @@ void MyDXWindow::OnFrame()
 	}
 
 	Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, 1 / 120.0f);
+
+	debug_text(100, 400, "%8.4f %8.4f %8.4f",
+			   Length(car.mVehicle->m_wheelInfo[0].m_worldTransform.getBasis().getRow(0).mVec128),
+			   Length(car.mVehicle->m_wheelInfo[0].m_worldTransform.getBasis().getRow(1).mVec128),
+			   Length(car.mVehicle->m_wheelInfo[0].m_worldTransform.getBasis().getRow(2).mVec128));
 
 	cubePos = Vec4(15, 15, 0);
 	cubeScale = Vec4(5, 5, 5);

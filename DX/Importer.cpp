@@ -129,6 +129,23 @@ namespace
 		}
 	};
 
+	aiNode *FindTheNode(aiNode *cur, char const *name)
+	{
+		if(_stricmp(cur->mName.C_Str(), name) == 0)
+		{
+			return cur;
+		}
+		for(uint i = 0; i < cur->mNumChildren; ++i)
+		{
+			aiNode *s = FindTheNode(cur->mChildren[i], name);
+			if(s != null)
+			{
+				return s;
+			}
+		}
+		return null;
+	}
+
 }
 
 namespace DX
@@ -159,5 +176,10 @@ namespace DX
 		}
 		*scene = importer->GetScene();
 		return S_OK;
+	}
+
+	aiNode *FindNode(aiScene const *scene, char const *name)
+	{
+		return FindTheNode(scene->mRootNode, name);
 	}
 }

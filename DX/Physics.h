@@ -60,7 +60,7 @@ namespace DX
 			Mesh();
 			~Mesh();
 
-			int LoadStatic(tchar const *filename);
+			int LoadFromMesh(aiNode *node, aiMesh *mesh);
 
 			void AddToWorld(uint16 collisionGroup, uint16 collisionMask)
 			{
@@ -79,6 +79,13 @@ namespace DX
 			}
 
 			bool IsConvex() const;
+		};
+
+		struct World
+		{
+			vector<Mesh *> mMeshes;
+
+			int LoadFromNode(aiScene const *scene, aiNode *node);
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -102,7 +109,6 @@ namespace DX
 		void DeleteRigidBody(btRigidBody * &b);
 		btVector3 inertia(float mass, btCollisionShape *shape);
 		btCompoundShape *InitCompoundShape(btCompoundShape *shape, btScalar *masses, btTransform &shift);
-		int LoadMesh(tchar const *filename, btRigidBody **body, uint16 group, uint16 mask);
 		void DrawShape(Matrix const &parent, btCollisionShape const *shape, iPhysicsRenderer *w);
 		void DebugBegin(Camera *camera);
 		btIDebugDraw *DebugDrawer();

@@ -24,6 +24,7 @@
 
 #define ROLLING_INFLUENCE_FIX
 
+#pragma optimize( "", off )
 
 btRigidBody& btActionInterface::getFixedBody()
 {
@@ -768,3 +769,5 @@ void* btDefaultVehicleRaycaster::castRay(const btVector3& from,const btVector3& 
 	return 0;
 }
 
+
+#pragma optimize( "", on )

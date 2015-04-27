@@ -129,7 +129,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	void SweepTest();
 
-	Physics::Mesh bullet;
+	Physics::World track;
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -145,6 +145,8 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	int CreateGrid();
 	int CreateOctahedron();
 	int CreateRamp();
+
+	int LoadTrack(btTransform &carTransform);
 
 	// iPhysicsRenderer
 

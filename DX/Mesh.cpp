@@ -53,6 +53,29 @@ Sampler Scene::mDefaultSampler;
 
 //////////////////////////////////////////////////////////////////////
 
+Scene::Node *Scene::FindNode(char const *name)
+{
+	std::function<Node *(Node *)> finder = [name, finder] (Node *c) -> Node *
+	{
+		if(c->mName.compare(name) == 0)
+		{
+			return c;
+		}
+		for(auto &n : c->mChildren)
+		{
+			Node *f = finder(&n);
+			if(f != null)
+			{
+				return f;
+			}
+		}
+		return (Node *)null;
+	};
+	return finder(&mRootNode);
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void Scene::Unload()
 {
 	for(uint i = 0; i < mShader.ps.mNumTextures; ++i)
@@ -228,9 +251,7 @@ HRESULT Scene::Load(tchar const *filename)
 
 void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix const &transform, Matrix const &modelMatrix)
 {
-	// use a bool which tells whether any of this node's children have anything to render
-	// if it's false, return;
-	// else:
+	// TODO (charlie): use a bool which tells whether any of this node's children have anything to render
 	if(!node.mMeshes.empty())
 	{
 		mShader.vs.VertConstants.TransformMatrix = Transpose(transform);

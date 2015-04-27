@@ -107,32 +107,6 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		int LoadMesh(tchar const *filename, btRigidBody **body, uint16 group, uint16 mask)
-		{
-			if(body == null)
-			{
-				return E_POINTER;
-			}
-
-			aiScene const *scene;
-			DXR(LoadScene(filename, &scene));
-
-			if(!scene->HasMeshes())
-			{
-				return E_FAIL;
-			}
-
-			aiMesh *mesh = scene->mMeshes[0];
-
-			aiVector3D *normals = mesh->mNormals;
-			aiVector3D *verts = mesh->mVertices;
-			aiFace *faces = mesh->mFaces;
-
-			return S_OK;
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 		void DeleteRigidBody(btRigidBody * &b)
 		{
 			if(b != null)
@@ -260,70 +234,75 @@ namespace DX
 		{
 		}
 
-		int Mesh::LoadStatic(tchar const *filename)
+		int Mesh::LoadFromMesh(aiNode *node, aiMesh *mesh)
 		{
-			if(filename == null)
-			{
-				return E_POINTER;
-			}
-
-			// load the mesh
-
-			aiScene const *s;
-			DXR(LoadScene(filename, &s));
-			if(!s->HasMeshes())
-			{
-				return E_INVALIDARG;
-			}
-
 			// TODO (charlie): LoadDynamic() - must be convex (and allow them to have mass)
 			// TODO (charlie): deal with multiple meshes, stored mass and center of mass offsets
 			// TODO (charlie): deal with collision mask and group stored in the file somehow
 
-			// just use mesh 0 for now
-
-			aiMesh *m = s->mMeshes[0];
-			if(!(m->HasPositions() && m->HasNormals() && m->HasFaces()))
+			if(mesh == null)
 			{
-				return E_INVALIDARG;
+				return E_POINTER;
 			}
 
-			// TODO (charlie): keep the scene around and use the data directly
-
-			mVertices.reserve(m->mNumVertices);
-			mNormals.reserve(m->mNumVertices);
-			mIndices.reserve(m->mNumFaces * 3);
-			for(uint i = 0; i < m->mNumVertices; ++i)
+			// empty mesh? that's ok man...
+			if(!(mesh->HasPositions() && mesh->HasNormals() && mesh->HasFaces()))
 			{
-				mVertices.push_back({ m->mVertices[i].x * 100, m->mVertices[i].y * 100, m->mVertices[i].z * 100.0f } );
-				mNormals.push_back({ m->mVertices[i].x, m->mVertices[i].y, m->mVertices[i].z });
+				return S_OK;
 			}
-			for(uint i = 0; i < m->mNumFaces; ++i)
+
+			// for transforming the verts
+			aiMatrix4x4 const *transform = &node->mTransformation;
+
+			// for transforming the normals
+			aiMatrix3x3 normalTransform(*transform);
+
+			// transform the verts and normals
+			mVertices.reserve(mesh->mNumVertices);
+			mNormals.reserve(mesh->mNumVertices);
+			for(uint i = 0; i < mesh->mNumVertices; ++i)
+			{
+				aiVector3D v = mesh->mVertices[i];
+				aiVector3D n = mesh->mNormals[i];
+				aiTransformVecByMatrix4(&v, transform);
+				aiTransformVecByMatrix3(&n, &normalTransform);
+				mVertices.push_back({ v.x, v.y, v.z });
+				mNormals.push_back({ n.x, n.y, n.z });
+			}
+
+			// grab the indices into a linear array
+			mIndices.reserve(mesh->mNumFaces * 3);
+			for(uint i = 0; i < mesh->mNumFaces; ++i)
 			{
 				for(uint j = 0; j < 3; ++j)
 				{
-					mIndices.push_back((uint32)m->mFaces[i].mIndices[j]);
+					mIndices.push_back((uint32)mesh->mFaces[i].mIndices[j]);
 				}
 			}
 
 			// create the physics objects
-
-			mArray = new btTriangleIndexVertexArray(	(int)m->mNumFaces,
-														(int *)mIndices.data(),
-														3 * sizeof(uint32),
-														(int)m->mNumVertices,
-														(btScalar *)mVertices.data(),
-														sizeof(Float3) );
-
+			mArray = new btTriangleIndexVertexArray((int)mesh->mNumFaces,
+													(int *)mIndices.data(),
+													3 * sizeof(uint32),
+													(int)mesh->mNumVertices,
+													(btScalar *)mVertices.data(),
+													sizeof(Float3));
 			bool useQuantizedAabbCompression = true;
 			mShape = new btBvhTriangleMeshShape(mArray, useQuantizedAabbCompression);
 			btTransform t(btQuaternion(0, 0, 0), btVector3(0, 0, 0));
-			mBody = Physics::CreateRigidBody(0, t, mShape);
+			mBody = CreateRigidBody(0, t, mShape);
+			return S_OK;
+		}
 
-			// ditch the loaded mesh
-
-			Delete(s);
-
+		int World::LoadFromNode(aiScene const *scene, aiNode *node)
+		{
+			mMeshes.resize(node->mNumMeshes);
+			for(uint m = 0; m < node->mNumMeshes; ++m)
+			{
+				mMeshes[m] = new Mesh();
+				DXR(mMeshes[m]->LoadFromMesh(node, scene->mMeshes[node->mMeshes[m]]));
+				mMeshes[m]->AddToWorld(GroundMask, -1);
+			}
 			return S_OK;
 		}
 
