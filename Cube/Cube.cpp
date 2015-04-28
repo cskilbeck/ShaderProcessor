@@ -1073,6 +1073,8 @@ void MyDXWindow::OnFrame()
 
 	drawList.Execute();
 
+	debug_quad(Vec4(-60, 20, 0), Vec4(-50, 20, 0), Vec4(-50, 30, 0), Vec4(-60, 30, 0), Color::Cyan);
+
 	// Draw some sprites immediate mode
 
 	spriteShader.gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -1183,7 +1185,23 @@ void MyDXWindow::OnFrame()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	Context()->Draw(blitVB.Count(), 0);
 
-	// Draw graph
+	if(Keyboard::Pressed(VK_RETURN))
+	{
+		debugPhysics = !debugPhysics;
+	}
+
+	if(debugPhysics)
+	{
+		Physics::DebugBegin(camera);
+		Physics::DynamicsWorld->debugDrawWorld();
+		Physics::DebugEnd();
+	}
+
+	track.DrawNormals();
+
+	debug_end();
+
+	// Draw timer graph
 
 	{
 		int speed = 4;
@@ -1245,20 +1263,6 @@ void MyDXWindow::OnFrame()
 		Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 		Context()->Draw(4, 0);
 	}
-
-	if(Keyboard::Pressed(VK_RETURN))
-	{
-		debugPhysics = !debugPhysics;
-	}
-
-	if(debugPhysics)
-	{
-		Physics::DebugBegin(camera);
-		Physics::DynamicsWorld->debugDrawWorld();
-		Physics::DebugEnd();
-	}
-
-	debug_end();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1460,7 +1464,7 @@ void MyDXWindow::DrawCone(Matrix const &m)
 {
 }
 
-void MyDXWindow::DrawConvexMesh(Matrix const &m)
+void MyDXWindow::DrawConvexMesh(Matrix const &m, btBvhTriangleMeshShape const *mesh)
 {
 }
 

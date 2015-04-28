@@ -205,6 +205,12 @@ namespace DX
 				}
 				break;
 
+				case CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE:
+				{
+					w->DrawConvexMesh(IdentityMatrix, (btBvhTriangleMeshShape const *)shape);
+				}
+				break;
+
 				case CAPSULE_SHAPE_PROXYTYPE:
 				{
 					btCapsuleShape const *c = (btCapsuleShape const *)shape;
@@ -259,15 +265,14 @@ namespace DX
 
 			// transform the verts and normals
 			mVertices.reserve(mesh->mNumVertices);
-			mNormals.reserve(mesh->mNumVertices);
 			for(uint i = 0; i < mesh->mNumVertices; ++i)
 			{
 				aiVector3D v = mesh->mVertices[i];
 				aiVector3D n = mesh->mNormals[i];
 				aiTransformVecByMatrix4(&v, transform);
 				aiTransformVecByMatrix3(&n, &normalTransform);
-				mVertices.push_back({ v.x, v.y, v.z });
-				mNormals.push_back({ n.x, n.y, n.z });
+				n.Normalize();
+				mVertices.push_back({ { v.x, v.y, v.z }, { n.x, n.y, n.z } });
 			}
 
 			// grab the indices into a linear array
@@ -286,11 +291,12 @@ namespace DX
 													3 * sizeof(uint32),
 													(int)mesh->mNumVertices,
 													(btScalar *)mVertices.data(),
-													sizeof(Float3));
+													sizeof(Vert));
 			bool useQuantizedAabbCompression = true;
 			mShape = new btBvhTriangleMeshShape(mArray, useQuantizedAabbCompression);
 			btTransform t(btQuaternion(0, 0, 0), btVector3(0, 0, 0));
 			mBody = CreateRigidBody(0, t, mShape);
+			mBody->setUserPointer(this);
 			return S_OK;
 		}
 
@@ -306,6 +312,22 @@ namespace DX
 			return S_OK;
 		}
 
+		void Mesh::DrawNormals()
+		{
+			for(auto &v : mVertices)
+			{
+				debug_line(Vec4(v.Position), Vec4(v.Position) + Vec4(v.Normal) * 2, Color::White);
+			}
+		}
+
+		void World::DrawNormals()
+		{
+			for(auto &m : mMeshes)
+			{
+				m->DrawNormals();
+			}
+		}
+
 		bool Mesh::IsConvex() const
 		{
 			for(int i = 0; i < mIndices.size(); i += 3)
@@ -313,7 +335,7 @@ namespace DX
 				Triangle t(*this, i);
 				for(int j = 0; j < mVertices.size(); ++j)
 				{
-					if(t.DistanceFrom(Vec4(mVertices[j])) > FLT_EPSILON)
+					if(t.DistanceFrom(Vec4(mVertices[j].Position)) > FLT_EPSILON)
 					{
 						return false;
 					}
@@ -326,23 +348,29 @@ namespace DX
 
 		Vec4f Mesh::Triangle::GetInterpolatedNormal(CVec4f h) const
 		{
-			Vec4f pos1 = Vec4(p1), pos2 = Vec4(p2), pos3 = Vec4(p3);
+			Vec4f pos1 = Vec4(p1.Position), pos2 = Vec4(p2.Position), pos3 = Vec4(p3.Position);
+			Vec4f edge1 = pos2 - pos1;
 			Vec4f edge2 = pos3 - pos1;
-			float p1p2p3 = LengthSquared(Cross(pos2 - pos1, edge2));
-			float p2p3p = LengthSquared(Cross(pos3 - pos2, h - pos2));
+			Vec4f edge3 = pos3 - pos2;
+			assert(Length(edge1) > FLT_EPSILON);
+			assert(Length(edge2) > FLT_EPSILON);
+			assert(Length(edge3) > FLT_EPSILON);
+			float p1p2p3 = LengthSquared(Cross(edge1, edge2));
+			float p2p3p = LengthSquared(Cross(edge3, h - pos2));
 			float p3p1p = LengthSquared(Cross(edge2, h - pos3));
 			float u = sqrtf(p2p3p / p1p2p3);
 			float v = sqrtf(p3p1p / p1p2p3);
 			float w = 1.0f - u - v;
-			Vec4f norm1 = Vec4(n1), norm2 = Vec4(n2), norm3 = Vec4(n3);
-			return u * norm1 + v * norm2 + w * norm3;
+			Vec4f norm1 = Vec4(p1.Normal), norm2 = Vec4(p2.Normal), norm3 = Vec4(p3.Normal);
+			Vec4f r = u * norm1 + v * norm2 + w * norm3;
+			return r;
 		}
 
 		// normalized triangle normal
 
 		Vec4f Mesh::Triangle::GetNormal() const
 		{
-			return Normalize(Cross(Vec4(p2) - Vec4(p1), Vec4(p3) - Vec4(p1)));
+			return Normalize(Cross(Vec4(p2.Position) - Vec4(p1.Position), Vec4(p3.Position) - Vec4(p1.Position)));
 		}
 
 		// xyzw where xyz is the normal and w is the distance from the origin
@@ -350,14 +378,14 @@ namespace DX
 		Vec4f Mesh::Triangle::GetPlane() const
 		{
 			Vec4f normal = GetNormal();
-			return SetW(normal, Dot(normal, Vec4(p1)));
+			return SetW(normal, Dot(normal, Vec4(p1.Position)));
 		}
 
 		// if +ive, it's outside the plane, if -ive, it's inside the plane
 
 		float Mesh::Triangle::DistanceFrom(CVec4f pos) const
 		{
-			return Dot(GetNormal(), pos - Vec4(p1));
+			return Dot(GetNormal(), pos - Vec4(p1.Position));
 		}
 
 	} // ::Physics}

@@ -2,6 +2,7 @@
 
 #pragma blend(0, enabled, src=src_alpha, dest=inv_src_alpha, op=add)
 #pragma depth(disabled, write=disabled)
+#pragma culling(mode=none)
 
 //////////////////////////////////////////////////////////////////////
 

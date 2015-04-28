@@ -23,4 +23,9 @@ namespace DX
 	void debug_cube(Vec4f bottomLeft, Vec4f topRight, Color color);
 	void debug_cylinder(Vec4f start, Vec4f end, float radius, Color color);
 	void debug_cylinder(Matrix const &matrix, Color color);
+
+	void debug_axes(Vec4f pos, float len = 1);
+
+	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color);
+	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color);
 }

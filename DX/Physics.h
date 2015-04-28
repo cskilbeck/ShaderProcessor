@@ -14,7 +14,7 @@ namespace DX
 		virtual void DrawCapsule(Matrix const &m) = 0;
 		virtual void DrawTorus(Matrix const &m) = 0;
 		virtual void DrawCone(Matrix const &m) = 0;
-		virtual void DrawConvexMesh(Matrix const &m) = 0;
+		virtual void DrawConvexMesh(Matrix const &m, btBvhTriangleMeshShape const *mesh) = 0;
 		virtual void DrawTetrahedron(Matrix const &m) = 0;
 	};
 
@@ -34,18 +34,24 @@ namespace DX
 		{
 			//////////////////////////////////////////////////////////////////////
 
+			struct Vert
+			{
+				Float3 Position;
+				Float3 Normal;
+			};
+
+			//////////////////////////////////////////////////////////////////////
+
 			struct Triangle
 			{
-				Float3 const &p1, &p2, &p3;
-				Float3 const &n1, &n2, &n3;
+				Vert const &p1, &p2, &p3;
+				int index;
 
 				Triangle(Mesh const &m, int i)
-					: p1(m.mVertices[m.mIndices[i + 0]])
+					: index(i)
+					, p1(m.mVertices[m.mIndices[i + 0]])
 					, p2(m.mVertices[m.mIndices[i + 1]])
 					, p3(m.mVertices[m.mIndices[i + 2]])
-					, n1(m.mNormals[m.mIndices[i + 0]])
-					, n2(m.mNormals[m.mIndices[i + 1]])
-					, n3(m.mNormals[m.mIndices[i + 2]])
 				{
 				}
 
@@ -67,8 +73,7 @@ namespace DX
 				DynamicsWorld->addRigidBody(mBody, collisionGroup, collisionMask);
 			}
 
-			vector<Float3> mVertices;
-			vector<Float3> mNormals;
+			vector<Vert> mVertices;
 			vector<uint32> mIndices;	// 3 x uint16 per triangle
 			btTriangleIndexVertexArray *mArray;
 			btBvhTriangleMeshShape *mShape;
@@ -79,6 +84,8 @@ namespace DX
 			}
 
 			bool IsConvex() const;
+			Vec4f GetInterpolatedNormal(int triangleIndex, CVec4f pos);
+			void DrawNormals();
 		};
 
 		struct World
@@ -86,6 +93,7 @@ namespace DX
 			vector<Mesh *> mMeshes;
 
 			int LoadFromNode(aiScene const *scene, aiNode *node);
+			void DrawNormals();
 		};
 
 		//////////////////////////////////////////////////////////////////////

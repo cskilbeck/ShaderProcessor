@@ -156,6 +156,6 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	void DrawCapsule(Matrix const &m) override;
 	void DrawTorus(Matrix const &m) override;
 	void DrawCone(Matrix const &m) override;
-	void DrawConvexMesh(Matrix const &m) override;
+	void DrawConvexMesh(Matrix const &m, btBvhTriangleMeshShape const *mesh) override;
 	void DrawTetrahedron(Matrix const &m) override;
 };

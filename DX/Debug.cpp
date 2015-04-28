@@ -17,6 +17,31 @@ namespace
 	DrawList debugLineList;
 	DXWindow *mainWindow;
 	Vec2f cursorPos;
+	enum primType
+	{
+		None,
+		Lines,
+		Triangles
+	};
+	primType currentPrimType;
+
+	void Begin(primType type)
+	{
+		if(type != currentPrimType)
+		{
+			debugLineList.End();
+			switch(type)
+			{
+				case Lines:
+					debugLineList.BeginLineList();
+					break;
+				case Triangles:
+					debugLineList.BeginTriangleList();
+					break;
+			}
+			currentPrimType = type;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -33,6 +58,7 @@ namespace DX
 		DXR(lineShader.Create());
 		DXR(lineVB.Create(32768));
 		mainWindow = w;
+		currentPrimType = None;
 		return S_OK;
 	}
 
@@ -58,7 +84,8 @@ namespace DX
 
 		debugLineList.Reset(mainWindow->Context(), &lineShader, &lineVB);
 		debugLineList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
-		debugLineList.BeginLineList();
+
+		currentPrimType = None;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -117,8 +144,44 @@ namespace DX
 
 	void debug_line(Vec4f start, Vec4f end, Color color)
 	{
+		Begin(Lines);
 		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ start, color });
 		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ end, color });
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color)
+	{
+		Begin(Triangles);
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color)
+	{
+		Begin(Triangles);
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ d, color });
+		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_axes(Vec4f pos, float len)
+	{
+		Vec4f Z = Vec4(0, 0, len);
+		Vec4f Y = Vec4(0, len, 0);
+		Vec4f X = Vec4(len, 0, 0);
+		debug_line(pos - Z, pos + Z, Color::BrightBlue);
+		debug_line(pos - Y, pos + Y, Color::BrightGreen);
+		debug_line(pos - Z, pos + Z, Color::BrightRed);
 	}
 
 	//////////////////////////////////////////////////////////////////////

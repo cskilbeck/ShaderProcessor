@@ -10,6 +10,21 @@ class WheelCastVehicle;
 
 //////////////////////////////////////////////////////////////////////
 
+class MyVehicleRaycaster: public btVehicleRaycaster
+{
+public:
+	MyVehicleRaycaster(btDynamicsWorld *world)
+		: btVehicleRaycaster()
+		, m_dynamicsWorld(world)
+	{
+	}
+
+	void *castRay(const btVector3& from, const btVector3& to, btVehicleRaycasterResult& result) override;
+
+private:
+	btDynamicsWorld *m_dynamicsWorld;
+};
+
 struct Vehicle
 {
 	btCompoundShape *				mCompoundShape;
@@ -17,7 +32,7 @@ struct Vehicle
 	btRigidBody *					mBody;
 	btDefaultMotionState *			mMotionState;
 	btRaycastVehicle *				mVehicle;
-	btDefaultVehicleRaycaster *		mRayCaster;
+	MyVehicleRaycaster *			mRayCaster;
 	btRaycastVehicle::btVehicleTuning mTuning;
 	float							mSteerAngle;
 	float							mEngineForce;
