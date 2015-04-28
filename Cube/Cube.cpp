@@ -4,6 +4,7 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
+// sort out units (metres, right?)
 // Cartoon Car Physics
 //		\ wheelcasting
 //		parameter tweaker
@@ -538,10 +539,12 @@ void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 
 //////////////////////////////////////////////////////////////////////
 
+const int gridSize = 500;
+
 int MyDXWindow::CreateGrid()
 {
-	const int size = 200;
-	const int gap = 10;
+	const int size = gridSize;
+	const int gap = 50;
 	vector<Shaders::Simple::InputVertex> v;
 	for(int x = -size; x <= size; x += gap)
 	{
@@ -674,7 +677,7 @@ bool MyDXWindow::OnCreate()
 
 	DXB(car.Create(carTransform));
 
-	mGroundShape = new btBoxShape(btVector3(200, 200, 1));
+	mGroundShape = new btBoxShape(btVector3((float)gridSize, (float)gridSize, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
 	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, mGroundShape, btVector3(0, 0, 0));
 	mGroundRigidBody = new btRigidBody(groundRigidBodyCI);
@@ -705,7 +708,7 @@ bool MyDXWindow::OnCreate()
 
 	DXB(sphereShader.Create());
 
-	DXB(CreateRamp());
+	//DXB(CreateRamp());
 
 	DXB(cubeShader.Create());
 	DXB(cubeTexture.Load(TEXT("temp.jpg")));
@@ -890,6 +893,10 @@ void MyDXWindow::OnFrame()
 
 	if(Keyboard::Pressed('C'))
 	{
+		car.UnFlip();
+	}
+	if(Keyboard::Pressed('V'))
+	{
 		car.Reset();
 	}
 
@@ -930,16 +937,46 @@ void MyDXWindow::OnFrame()
 		car.Draw(this);
 	}
 
-	for(int i = 0; i < car.mVehicle->getNumWheels(); ++i)
+	// do a bunch of raytests around the car
+
+	if(false)
 	{
-		btWheelInfo &w = car.mVehicle->m_wheelInfo[i];
-		w.updateWheel(*car.mBody, w.m_raycastInfo);
-		auto r = w.m_raycastInfo;
-		if(r.m_isInContact)
+		Vec4f p = car.mVehicle->getChassisWorldTransform().getOrigin().mVec128;
+		Vec4f right = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(0).mVec128;
+		Vec4f d = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(1).mVec128;
+
+		p += d * 30 + right * -10;
+
+		for(float t = 0; t < 20; t += 0.1f)
 		{
-			Vec4f p = r.m_contactPointWS.mVec128;
-			Vec4f n = r.m_contactNormalWS.mVec128;
-			debug_line(p, p + n * 10, Color::Magenta);
+			btVehicleRaycaster::btVehicleRaycasterResult r;
+			MyVehicleRaycaster caster(Physics::DynamicsWorld);
+			Vec4f c = p + right * t + Vec4(0, 0, 4);
+			Vec4f d = Vec4(0, 0, -20);
+			caster.castRay(c, c + d, r);
+			float f = r.m_distFraction;
+			if(f < 0)
+			{
+				f = 100;
+			}
+			debug_line(c, c + d * f, Color::White);
+		}
+	}
+
+
+	if(false)
+	{
+		for(int i = 0; i < car.mVehicle->getNumWheels(); ++i)
+		{
+			btWheelInfo &w = car.mVehicle->m_wheelInfo[i];
+			w.updateWheel(*car.mBody, w.m_raycastInfo);
+			auto r = w.m_raycastInfo;
+			if(r.m_isInContact)
+			{
+				Vec4f p = r.m_contactPointWS.mVec128;
+				Vec4f n = r.m_contactNormalWS.mVec128;
+				debug_line(p, p + n * 10, Color::Magenta);
+			}
 		}
 	}
 
@@ -1197,7 +1234,8 @@ void MyDXWindow::OnFrame()
 		Physics::DebugEnd();
 	}
 
-	track.DrawNormals();
+//	track.DrawNormals();
+	track.Draw();
 
 	debug_end();
 

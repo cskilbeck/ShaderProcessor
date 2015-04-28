@@ -56,6 +56,13 @@ int Vehicle::Create(btTransform transform)
 	Physics::AddRigidBody(mBody, Physics::CarMask, -1);
 	mBody->setActivationState(DISABLE_DEACTIVATION);
 
+	mTuning.m_suspensionStiffness = btScalar(5.88) * 4;
+	mTuning.m_suspensionCompression = btScalar(0.83) * 4;
+	mTuning.m_suspensionDamping = btScalar(0.88) * 4;
+	mTuning.m_maxSuspensionTravelCm = btScalar(500.);
+	mTuning.m_frictionSlip = btScalar(10.5) / 4;
+	mTuning.m_maxSuspensionForce = btScalar(6000) * 2;
+
 	mRayCaster = new MyVehicleRaycaster(Physics::DynamicsWorld);
 	mVehicle = new btRaycastVehicle(mTuning, mBody, mRayCaster);
 
@@ -65,7 +72,7 @@ int Vehicle::Create(btTransform transform)
 
 	btVector3 wheelDir(0, 0, -1);
 	btVector3 axleDir(1, 0, 0);
-	btScalar suspensionRestLength = 0.5f;
+	btScalar suspensionRestLength = 1.0f;
 	btScalar connectionHeight = 0.7f;
 
 	Vec4f extents = mBodyShape->getHalfExtentsWithMargin().get128();
@@ -78,15 +85,6 @@ int Vehicle::Create(btTransform transform)
 	mVehicle->addWheel(btVector3(+width, -length, connectionHeight), wheelDir, axleDir, suspensionRestLength, mWheelRadius, mTuning, false);
 	mVehicle->addWheel(btVector3(-width, -length, connectionHeight), wheelDir, axleDir, suspensionRestLength, mWheelRadius, mTuning, false);
 
-	//for(int i = 0; i < mVehicle->getNumWheels(); ++i)
-	//{
-	//	btWheelInfo &wheel = mVehicle->getWheelInfo(i);
-	//	wheel.m_suspensionStiffness = 9800.0f;
-	//	wheel.m_frictionSlip = 1;
-	//	wheel.m_rollInfluence = 0.1f;
-	//	wheel.m_wheelsDampingCompression = 4.4f;
-	//	wheel.m_wheelsDampingRelaxation = 2.3f;
-	//}
 	Reset();
 	return S_OK;
 }
@@ -121,6 +119,32 @@ void Vehicle::Draw(MyDXWindow *w)
 
 //////////////////////////////////////////////////////////////////////
 
+void Vehicle::UnFlip()
+{
+	btTransform const &car = mVehicle->getChassisWorldTransform();
+	btTransform t;
+	t.setOrigin(car.getOrigin() + btVector3(0, 0, 5));
+	btQuaternion q;
+	q.setRotation(btVector3(0, 0, 1), car.getRotation().getAngle());
+	t.setRotation(q);
+	mSteerAngle = 0;
+	mEngineForce = 0;
+	mBody->setCenterOfMassTransform(t);
+	mBody->setLinearVelocity(btVector3(0, 0, 0));
+	mBody->setAngularVelocity(btVector3(0, 0, 0));
+	Physics::DynamicsWorld->getBroadphase()->getOverlappingPairCache()->cleanProxyFromPairs(mBody->getBroadphaseHandle(), Physics::DynamicsWorld->getDispatcher());
+	if(mVehicle != null)
+	{
+		mVehicle->resetSuspension();
+		for(int i = 0; i < mVehicle->getNumWheels(); i++)
+		{
+			mVehicle->updateWheelTransform(i, true);
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void Vehicle::Reset()
 {
 	mSteerAngle = 0;
@@ -148,11 +172,11 @@ void Vehicle::Update(float deltaTime)
 	float handBrake = 0;
 	if(Keyboard::Held(VK_LEFT))
 	{
-		add += 0.01f;
+		add += 0.02f;
 	}
 	if(Keyboard::Held(VK_RIGHT))
 	{
-		add -= 0.01f;
+		add -= 0.02f;
 	}
 	if(add == 0)
 	{
@@ -160,7 +184,7 @@ void Vehicle::Update(float deltaTime)
 	}
 	else
 	{
-		mSteerAngle = Constrain(mSteerAngle + add, -0.1f, 0.1f);
+		mSteerAngle = Constrain(mSteerAngle + add, -0.15f, 0.15f);
 	}
 
 	if(Keyboard::Held(VK_CONTROL))

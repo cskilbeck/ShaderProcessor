@@ -320,11 +320,28 @@ namespace DX
 			}
 		}
 
+		void Mesh::Draw()
+		{
+			for(int i = 0; i < mIndices.size(); i += 3)
+			{
+				Triangle t(*this, i);
+				debug_triangle(Vec4(t.p1.Position), Vec4(t.p2.Position), Vec4(t.p3.Position), Color::DarkSlateGray & 0x80ffffff); 
+			}
+		}
+
 		void World::DrawNormals()
 		{
 			for(auto &m : mMeshes)
 			{
 				m->DrawNormals();
+			}
+		}
+
+		void World::Draw()
+		{
+			for(auto &m : mMeshes)
+			{
+				m->Draw();
 			}
 		}
 

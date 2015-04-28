@@ -86,6 +86,7 @@ namespace DX
 			bool IsConvex() const;
 			Vec4f GetInterpolatedNormal(int triangleIndex, CVec4f pos);
 			void DrawNormals();
+			void Draw();
 		};
 
 		struct World
@@ -94,6 +95,7 @@ namespace DX
 
 			int LoadFromNode(aiScene const *scene, aiNode *node);
 			void DrawNormals();
+			void Draw();
 		};
 
 		//////////////////////////////////////////////////////////////////////

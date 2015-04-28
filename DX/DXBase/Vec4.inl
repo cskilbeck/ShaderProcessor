@@ -294,6 +294,22 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Vec4f AxisAngleFromQuaternion(CVec4f quat)
+	{
+		float w = GetW(quat);
+		return SetW(quat / sqrtf(1 - w * w), 2 * acosf(w));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec4f QuaternionFromAxisAngle(CVec4f axisAngle)
+	{
+		float a = GetW(axisAngle) / 2;
+		return SetW(axisAngle * sinf(a), cos(a));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline Vec4f operator / (CVec4f a, CVec4f b)
 	{
 		return _mm_div_ps(a, b);

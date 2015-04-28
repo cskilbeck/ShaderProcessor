@@ -46,6 +46,7 @@ struct Vehicle
 
 	int Create(btTransform transform);
 	void Reset();
+	void UnFlip();
 	void Draw(MyDXWindow *window);
 	void Update(float deltaTime);
 	void Release();
