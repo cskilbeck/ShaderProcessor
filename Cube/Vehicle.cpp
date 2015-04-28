@@ -189,9 +189,9 @@ void Vehicle::Update(float deltaTime)
 
 	if(Keyboard::Held(VK_CONTROL))
 	{
-		handBrake = 20;
+		handBrake = 25;
 		mEngineForce = 0;
-		mBrakeForce = 0;
+		mBrakeForce = 5;
 	}
 	else
 	{
@@ -206,8 +206,8 @@ void Vehicle::Update(float deltaTime)
 			else
 			{
 				mEngineForce = 0;
-				mBrakeForce = 5;
-				handBrake = 5;
+				mBrakeForce = 10;
+				handBrake = 20;
 			}
 		}
 		else if(Keyboard::Held(VK_UP))

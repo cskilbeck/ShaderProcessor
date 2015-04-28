@@ -539,12 +539,12 @@ void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 
 //////////////////////////////////////////////////////////////////////
 
-const int gridSize = 500;
+const int gridSize = 1000;
 
 int MyDXWindow::CreateGrid()
 {
 	const int size = gridSize;
-	const int gap = 50;
+	const int gap = gridSize / 20;
 	vector<Shaders::Simple::InputVertex> v;
 	for(int x = -size; x <= size; x += gap)
 	{
@@ -939,7 +939,7 @@ void MyDXWindow::OnFrame()
 
 	// do a bunch of raytests around the car
 
-	if(false)
+	if(true)
 	{
 		Vec4f p = car.mVehicle->getChassisWorldTransform().getOrigin().mVec128;
 		Vec4f right = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(0).mVec128;
@@ -955,16 +955,15 @@ void MyDXWindow::OnFrame()
 			Vec4f d = Vec4(0, 0, -20);
 			caster.castRay(c, c + d, r);
 			float f = r.m_distFraction;
-			if(f < 0)
+			if(r.m_distFraction >= 0)
 			{
-				f = 100;
+				debug_line(c, r.m_hitPointInWorld.mVec128, Color::White);
 			}
-			debug_line(c, c + d * f, Color::White);
 		}
 	}
 
 
-	if(false)
+	if(true)
 	{
 		for(int i = 0; i < car.mVehicle->getNumWheels(); ++i)
 		{
@@ -978,6 +977,7 @@ void MyDXWindow::OnFrame()
 				debug_line(p, p + n * 10, Color::Magenta);
 			}
 		}
+		track.DrawNormals();
 	}
 
 	DrawCube(RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(cubePos), cubeVerts, cubeTexture);
