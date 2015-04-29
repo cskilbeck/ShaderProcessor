@@ -19,7 +19,7 @@ public:
 	{
 	}
 
-	void *castRay(const btVector3& from, const btVector3& to, btVehicleRaycasterResult& result) override;
+	void *castRay(btVector3 const &from, btVector3 const &to, btVehicleRaycasterResult& result) override;
 
 private:
 	btDynamicsWorld *m_dynamicsWorld;

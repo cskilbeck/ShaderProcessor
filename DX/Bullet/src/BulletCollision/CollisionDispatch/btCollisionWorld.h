@@ -242,8 +242,9 @@ public:
 	struct	ClosestRayResultCallback : public RayResultCallback
 	{
 		ClosestRayResultCallback(const btVector3&	rayFromWorld,const btVector3&	rayToWorld)
-		:m_rayFromWorld(rayFromWorld),
-		m_rayToWorld(rayToWorld)
+			: RayResultCallback()
+			, m_rayFromWorld(rayFromWorld)
+			, m_rayToWorld(rayToWorld)
 		{
 		}
 

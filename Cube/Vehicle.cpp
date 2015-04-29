@@ -263,12 +263,11 @@ public:
 	}
 
 	int m_triangle_index;
-
 };
 
 //////////////////////////////////////////////////////////////////////
 
-void *MyVehicleRaycaster::castRay(const btVector3& from, const btVector3& to, btVehicleRaycasterResult& result)
+void *MyVehicleRaycaster::castRay(btVector3 const &from, btVector3 const &to, btVehicleRaycasterResult &result)
 {
 	ClosestWithNormal rayCallback(from, to);
 
@@ -280,16 +279,19 @@ void *MyVehicleRaycaster::castRay(const btVector3& from, const btVector3& to, bt
 		if(body && body->hasContactResponse())
 		{
 			result.m_hitPointInWorld = rayCallback.m_hitPointWorld;
-			result.m_hitNormalInWorld = rayCallback.m_hitNormalWorld;
-			result.m_hitNormalInWorld.normalize();
 			result.m_distFraction = rayCallback.m_closestHitFraction;
-			result.m_triangle_index = -1;
 
 			Physics::Mesh *mesh = (Physics::Mesh *)body->getUserPointer();
 			if(mesh != null && rayCallback.m_triangle_index > -1)
 			{
 				result.m_triangle_index = rayCallback.m_triangle_index;
 				result.m_hitNormalInWorld = mesh->GetInterpolatedNormal(rayCallback.m_triangle_index, result.m_hitPointInWorld.mVec128);
+			}
+			else
+			{
+				result.m_hitNormalInWorld = rayCallback.m_hitNormalWorld;
+				result.m_hitNormalInWorld.normalize();
+				result.m_triangle_index = -1;
 			}
 			return (void *)body;
 		}
