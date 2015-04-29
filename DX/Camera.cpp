@@ -18,6 +18,7 @@ namespace DX
 
 	void Camera::CalculateViewMatrix(Vec4f target, Vec4f position, Vec4f up)
 	{
+		mPosition = position;
 		mViewMatrix = ViewMatrix(target, position, up);
 	}
 
@@ -25,6 +26,7 @@ namespace DX
 
 	void Camera::CalculateViewMatrix(Vec4f position, float yaw, float pitch, float roll)
 	{
+		mPosition = position;
 		mViewMatrix = ViewMatrix(position, yaw, pitch, roll);
 	}
 

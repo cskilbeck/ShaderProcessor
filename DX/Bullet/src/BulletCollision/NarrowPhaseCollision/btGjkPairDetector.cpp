@@ -440,7 +440,7 @@ void btGjkPairDetector::getClosestPointsNonVirtual(const ClosestPointInput& inpu
 		}
 #endif 
 
-		if (m_fixContactNormalDirection)
+		if (m_fixContactNormalDirection && 0)
 		{
 			///@workaround for sticky convex collisions
 			//in some degenerate cases (usually when the use uses very small margins) 
@@ -458,7 +458,8 @@ void btGjkPairDetector::getClosestPointsNonVirtual(const ClosestPointInput& inpu
 			btVector3 posB = (aabbMin+aabbMax)*btScalar(0.5);
 
 			btVector3 diff = posA-posB;
-			if (diff.dot(normalInB) < 0.f)
+			float d = diff.dot(normalInB);
+			if (d < 0.f)
 				normalInB *= -1.f;
 		}
 		m_cachedSeparatingAxis = normalInB;

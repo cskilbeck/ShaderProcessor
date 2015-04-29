@@ -16,6 +16,7 @@ namespace
 	DrawList debugDrawList;
 	DrawList debugLineList;
 	DXWindow *mainWindow;
+	Vec4f cameraPos;
 	Vec2f cursorPos;
 	enum primType
 	{
@@ -85,6 +86,8 @@ namespace DX
 		debugLineList.Reset(mainWindow->Context(), &lineShader, &lineVB);
 		debugLineList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
 
+		cameraPos = camera.GetPosition();
+
 		currentPrimType = None;
 	}
 
@@ -142,7 +145,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void debug_line(Vec4f start, Vec4f end, Color color)
+	void debug_line(CVec4f start, CVec4f end, Color color)
 	{
 		Begin(Lines);
 		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ start, color });
@@ -173,8 +176,20 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// a screen facing quad of 2x2 pixels
 
-	void debug_axes(Vec4f pos, float len)
+	void debug_dot(CVec4f pos, Color color)
+	{
+		Vec4f d = pos - cameraPos;
+		float l = Length(d) / 640;	// screenwidth / 2
+		Vec4f s = Normalize(Cross(d, Vec4(0, 0, 1))) * l;
+		Vec4f u = Normalize(Cross(d, s)) * l;
+		debug_quad(pos - s - u, pos + s - u, pos + s + u, pos - s + u, color);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_axes(CVec4f pos, float len)
 	{
 		Vec4f Z = Vec4(0, 0, len);
 		Vec4f Y = Vec4(0, len, 0);
@@ -186,7 +201,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void debug_cube(Vec4f bottomLeft, Vec4f topRight, Color color)
+	void debug_cube(CVec4f bottomLeft, CVec4f topRight, Color color)
 	{
 		Vec4f d = topRight - bottomLeft;
 		Vec4f x = Vec4(GetX(d), 0, 0);
@@ -206,11 +221,11 @@ namespace DX
 		debug_line(bottomLeft + x + y, topRight, color);
 
 		// top square
-		bottomLeft += z;
-		debug_line(bottomLeft, bottomLeft + x, color);
-		debug_line(bottomLeft, bottomLeft + y, color);
-		debug_line(bottomLeft + x, bottomLeft + x + y, color);
-		debug_line(bottomLeft + y, topRight, color);
+		Vec4f bl = bottomLeft + z;
+		debug_line(bl, bl + x, color);
+		debug_line(bl, bl + y, color);
+		debug_line(bl + x, bl + x + y, color);
+		debug_line(bl + y, topRight, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -243,7 +258,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void debug_cylinder(Vec4f start, Vec4f end, float radius, Color color)
+	void debug_cylinder(CVec4f start, CVec4f end, float radius, Color color)
 	{
 		Matrix rotationMatrix;
 		Vec4f d(end - start);

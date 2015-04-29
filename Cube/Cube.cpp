@@ -675,7 +675,7 @@ bool MyDXWindow::OnCreate()
 
 	mCylinder = new btCylinderShape(btVector3(2, 0.25f, 2));
 
-	//DXB(car.Create(carTransform));
+	DXB(car.Create(carTransform));
 
 	mGroundShape = new btBoxShape(btVector3((float)gridSize, (float)gridSize, 1));
 	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
@@ -880,7 +880,7 @@ void MyDXWindow::OnFrame()
 
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 
-	//car.Update(deltaTime);
+	car.Update(deltaTime);
 
 	auto &vc = blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -941,69 +941,43 @@ void MyDXWindow::OnFrame()
 
 	if(true)
 	{
-		//static bool fail = false;
-		//Vec4f p = car.mVehicle->getChassisWorldTransform().getOrigin().mVec128;
-		//Vec4f right = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(0).mVec128;
-		//Vec4f d = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(1).mVec128;
+		static bool fail = false;
+		Vec4f p = car.mVehicle->getChassisWorldTransform().getOrigin().mVec128;
+		Vec4f right = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(0).mVec128;
+		Vec4f d = car.mVehicle->getChassisWorldTransform().getBasis().getColumn(1).mVec128;
 
-		//p += d * 30 + right * -10;
+		p += d * 30 + right * -10;
 
-		//for(float t = 0; t < 20; t += 0.1f)
-		//{
-		//	btVehicleRaycaster::btVehicleRaycasterResult r;
-		//	MyVehicleRaycaster caster(Physics::DynamicsWorld);
-		//	Vec4f c = p + right * t + Vec4(0, 0, 4);
-		//	Vec4f d = Vec4(0, 0, -20);
-		//	caster.castRay(c, c + d, r);
-		//	float f = r.m_distFraction;
-		//	if(r.m_distFraction >= 0)
-		//	{
-		//		debug_line(c, r.m_hitPointInWorld.mVec128, Color::White);
-		//	}
-		//	else if(!fail)
-		//	{
-		//		TRACE("%20.10f,%20.10f,%20.10f\n", GetX(c), GetY(c), GetZ(c));
-		//		fail = true;
-		//	}
-		//}
-		//if(Keyboard::Pressed('0'))
-		//{
-		//	fail = false;
-		//}
+		for(float t = 0; t < 20; t += 0.1f)
+		{
+			btVehicleRaycaster::btVehicleRaycasterResult r;
+			MyVehicleRaycaster caster(Physics::DynamicsWorld);
+			Vec4f c = p + right * t + Vec4(0, 0, 4);
+			Vec4f d = Vec4(0, 0, -20);
+			caster.castRay(c, c + d, r);
+			float f = r.m_distFraction;
+			if(r.m_distFraction >= 0)
+			{
+				debug_line(c, r.m_hitPointInWorld.mVec128, Color::White);
+			}
+			else if(!fail)
+			{
+				TRACE("%20.10f,%20.10f,%20.10f\n", GetX(c), GetY(c), GetZ(c));
+				fail = true;
+			}
+		}
+		if(Keyboard::Pressed('0'))
+		{
+			fail = false;
+		}
 
 		Vec4f test[] =
 		{
 			Vec4(1, 1, 6),
-			 Vec4(-428.5751342773f,     -475.6480102539f,        6.0997819901f),
-			 Vec4(-428.7184753418f,     -475.4935607910f,        6.1046781540f),
-			 Vec4(-429.8026428223f,     -474.2611083984f,        6.1950588226f),
-			 Vec4(-428.7141418457f,     -475.4316711426f,        6.1776161194f),
-			 Vec4(-428.9863281250f,     -475.1352844238f,        6.1875929832f),
-			 Vec4(-428.6410217285f,     -475.4998779297f,        6.1889681816f),
-			 Vec4(-428.9831848145f,     -475.1359558105f,        6.1834497452f),
-			 Vec4(-428.7170715332f,     -475.4185180664f,        6.2625350952f),
-			 Vec4(-428.5905761719f,     -475.5669250488f,        6.1783051491f),
-			 Vec4(-428.6665039063f,     -475.4847412109f,        6.1839704514f),
-			 Vec4(-428.6610717773f,     -475.4883117676f,        6.1734609604f),
-			 Vec4(-429.4165649414f,     -474.6765136719f,        6.1637253761f),
-			 Vec4(-428.5249328613f,     -475.6302795410f,        6.2100963593f),
-			 Vec4(-429.7581787109f,     -474.3139343262f,        6.0820903778f),
-			 Vec4(-443.5126342773f,     -489.5751342773f,        6.1586647034f),
-			 Vec4(-443.6582946777f,     -489.4117126465f,        6.2521252632f),
-			 Vec4(-445.1406555176f,     -487.8123168945f,        6.1603908539f),
-			 Vec4(-443.6325683594f,     -489.4263610840f,        6.2532796860f),
-			 Vec4(-444.3318786621f,     -488.6875915527f,        6.1568593979f),
-			 Vec4(-443.9064636230f,     -489.1184082031f,        6.2432298660f),
-			 Vec4(-443.7016906738f,     -489.3438110352f,        6.1681652069f),
-			 Vec4(-443.4805908203f,     -489.5671997070f,        6.2023692131f),
-			 Vec4(-449.0411376953f,     -493.2162780762f,        6.0195941925f),
-			 Vec4(-448.8897705078f,     -493.3593750000f,        6.3463001251f),
-			 Vec4(-448.8208618164f,     -493.4395751953f,        6.1642360687f),
-			 Vec4(-448.3298034668f,     -493.9442443848f,        6.4069299698f),
-			 Vec4(-449.0711364746f,     -493.1363830566f,        6.3556270599f)
+			Vec4(-428.5751342773f, -475.6480102539f, 6.0997819901f)
 		};
 
-		float y = 400.0f;
+		int y = 400;
 		for(auto const &t : test)
 		{
 			btVehicleRaycaster::btVehicleRaycasterResult r;
@@ -1011,13 +985,24 @@ void MyDXWindow::OnFrame()
 			Vec4f s = t;
 			Vec4f e = s + Vec4(0, 0, -20);
 			caster.castRay(s, e, r);
-			Color c = (r.m_distFraction >= 0) ? Color::BrightGreen : Color::BrightRed;
+			Color c;
+			if(r.m_distFraction >= 0)
+			{
+				c = Color::BrightGreen;
+				e = r.m_hitPointInWorld.mVec128;
+			}
+			else
+			{
+				c = Color::BrightRed;
+			}
 			debug_line(s, e, c);
+			debug_dot(e, Color::White);
 			debug_text(400, y, "%f", r.m_distFraction);
 			y += 15;
 		}
 	}
 
+	//debug_dot(Vec4(-1, -1, 0), Color::Random());
 
 	if(false)
 	{
@@ -1030,7 +1015,8 @@ void MyDXWindow::OnFrame()
 			{
 				Vec4f p = r.m_contactPointWS.mVec128;
 				Vec4f n = r.m_contactNormalWS.mVec128;
-				debug_line(p, p + n * 10, Color::Magenta);
+				debug_line(p, p + n * 10, Color::BrightGreen);
+				debug_dot(r.m_contactPointWS.mVec128, Color::White);
 			}
 		}
 		track.DrawNormals();
@@ -1474,7 +1460,6 @@ void FPSCamera::Process(float deltaTime)
 
 void FollowCamera::Process(float deltaTime)
 {
-	return;
 	float d = 40 * deltaTime;
 	if(Keyboard::Held(VK_PRIOR)) { distance += d; }
 	if(Keyboard::Held(VK_NEXT)) { distance -= d; }

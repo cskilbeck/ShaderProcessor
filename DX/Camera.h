@@ -19,6 +19,7 @@ namespace DX
 		void				SetViewMatrix(Matrix const &m);
 		Matrix const &		GetViewMatrix() const;
 		Vec4f				GetYawPitchRoll() const;
+		Vec4f				GetPosition() const;
 		
 		void				CalculateViewMatrix(Vec4f target, Vec4f position, Vec4f up);
 		void				CalculateViewMatrix(Vec4f position, float yaw, float pitch, float roll);
@@ -35,6 +36,7 @@ namespace DX
 		Matrix			mViewMatrix;
 		Matrix			mProjectionMatrix;
 		Matrix			mTransformMatrix;
+		Vec4f			mPosition;
 	};
 
 
@@ -106,5 +108,8 @@ namespace DX
 		return mViewMatrix;
 	}
 
-
+	inline Vec4f Camera::GetPosition() const
+	{
+		return mPosition;
+	}
 }

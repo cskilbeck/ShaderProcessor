@@ -94,7 +94,8 @@ namespace DX
 				ci->m_localInertia = localInertia;
 			}
 			btRigidBody *body = new btRigidBody(*ci);
-			body->setContactProcessingThreshold(BT_LARGE_FLOAT);
+			//body->setContactProcessingThreshold(BT_LARGE_FLOAT);
+			body->setContactProcessingThreshold(0);
 			return body;
 		}
 
