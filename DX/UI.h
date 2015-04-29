@@ -11,12 +11,17 @@ namespace DX
 			Element *mElement;
 		};
 
-		struct MouseClickedEvent : UIEvent
+		struct ClickedEvent : UIEvent
 		{
 			Vec2f	mMousePosition;
 		};
 
-		struct Element : Aligned16, list_node<Element>
+		struct ElementBase: list_node<ElementBase>
+		{
+			ElementBase *				mParent;
+		};
+
+		struct Element : Aligned16, ElementBase
 		{
 			enum: uint32
 			{
@@ -29,8 +34,7 @@ namespace DX
 			};
 
 			Matrix						mTransform;	// don't mess with this
-			linked_list<Element>		mChildren;
-			Element *					mParent;
+			linked_list<ElementBase>	mChildren;
 			float						mTransparency;
 			int							mZIndex;
 			Flags32						mFlags;
@@ -39,31 +43,53 @@ namespace DX
 			Vec2f						mSize;
 			Vec2f						mPivot;
 
-			template<uint32 f> bool Is() const
+			void AddChild(ElementBase &e)
 			{
-				return mFlags(f);
+				mChildren.push_back(e);
+				e.mParent = this;
 			}
 
-			template<uint32 f> void Set(bool s)
+			void RemoveChild(ElementBase &e)
 			{
-				if(s)
+				mChildren.remove(e);
+				e.mParent = null;
+			}
+
+			bool Is(uint32 f) const
+			{
+				return mFlags.IsAnySet(f);
+			}
+
+			void Set(uint32 f)
+			{
+				mFlags.Set(f);
+			}
+
+			void Clear(uint32 f)
+			{
+				mFlags.Clear(f);
+			}
+
+			void SetFlag(uint32 f, bool v)
+			{
+				if(v)
 				{
-					mFlags.Set(f);
+					Set(f);
 				}
 				else
 				{
-					mFlags.Clear(f);
+					Clear(f);
 				}
 			}
 
 			bool IsVisible() const
 			{
-				return Is<eVisible>();
+				return Is(eVisible);
 			}
 
 			void SetVisible(bool s)
 			{
-				Set<eVisible>(s);
+				Set(eVisible);
 			}
 
 			void Show()
@@ -84,7 +110,7 @@ namespace DX
 			void SetPosition(Vec2f pos)
 			{
 				mPosition = pos;
-				Set<eDirty>(true);
+				Set(eDirty);
 			}
 
 			Vec2f const &GetSize() const
@@ -95,7 +121,7 @@ namespace DX
 			void SetSize(Vec2f size)
 			{
 				mSize = size;
-				Set<eDirty>(true);
+				Set(eDirty);
 			}
 
 			Vec2f const &GetPivot() const
@@ -106,12 +132,13 @@ namespace DX
 			void SetPivot(Vec2f pivot)
 			{
 				mPivot = pivot;
-				Set<eDirty>(true);
+				Set(eDirty);
 			}
 
 			void UpdateMatrix()
 			{
 				// calculate matrix based on position, size & pivot
+				Clear(eDirty);
 			}
 
 			bool						mActive;
@@ -119,19 +146,7 @@ namespace DX
 			bool						mClosed;
 			bool						mModal;
 
-			Event<MouseClickedEvent>	OnMouseClicked;
-
-			void AddChild(Element &e)
-			{
-				mChildren.push_back(e);
-				e.mParent = this;
-			}
-
-			void RemoveChild(Element &e)
-			{
-				mChildren.remove(e);
-				e.mParent = null;
-			}
+			Event<ClickedEvent>	OnClicked;
 
 			virtual void OnDraw()
 			{
@@ -153,7 +168,8 @@ namespace DX
 				OnDraw();
 				for(auto &r : mChildren)
 				{
-					r.Draw(window, m);
+					Element &e = (Element &)r;
+					e.Draw(window, m);
 				}
 			}
 
@@ -162,7 +178,8 @@ namespace DX
 				OnUpdate(deltaTime);
 				for(auto &r : mChildren)
 				{
-					r.Update(deltaTime);
+					Element &e = (Element &)r;
+					e.Update(deltaTime);
 				}
 			}
 		};
