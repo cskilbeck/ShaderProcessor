@@ -32,6 +32,10 @@ namespace DX
 		Vec2f(float _x, float _y) : x(_x), y(_y)
 		{
 		}
+		
+		Vec2f(Float2 f) : x(f.x), y(f.y)
+		{
+		}
 
 		Vec2f(Vec2f const &o)
 		{

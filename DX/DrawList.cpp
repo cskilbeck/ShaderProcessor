@@ -311,13 +311,11 @@ namespace DX
 			switch(((Item *)t)->mType)
 			{
 				case it_Texture:
-					assert(csi != null);
 					csi->SetTexture((TextureItem *)t);
 					t += sizeof(TextureItem);
 					break;
 
 				case it_Sampler:
-					assert(csi != null);
 					csi->SetSampler((SamplerItem *)t);
 					t += sizeof(SamplerItem);
 					break;
@@ -328,13 +326,11 @@ namespace DX
 					break;
 
 				case it_Constants:
-					assert(csi != null);
 					csi->SetConstants((ConstBufferItem *)t, mContext);
 					t += sizeof(ConstBufferItem) + ((ConstBufferItem *)t)->mSize;
 					break;
 
 				case it_DrawCall:
-					assert(csi != null);
 					csi->Activate(mContext);
 					((DrawCallItem *)t)->Execute(mContext);
 					t += sizeof(DrawCallItem);

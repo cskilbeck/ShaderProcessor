@@ -16,42 +16,43 @@ namespace DX
 			Vec2f	mMousePosition;
 		};
 
-		struct ElementBase: list_node<ElementBase>
+		struct ElementBase: Aligned16, list_node<ElementBase>
 		{
 			ElementBase *				mParent;
 		};
 
-		struct Element : Aligned16, ElementBase
+		struct Element : ElementBase
 		{
 			enum: uint32
 			{
-				eVisible = 1,
-				eActive = 2,
-				eEnabled = 4,
-				eClosed = 8,
-				eModel = 16,
-				eDirty = 32
+				eVisible = 1,		// draw it or don't
+				eActive = 2,		// call OnUpdate() or don't
+				eEnabled = 4,		// process input messages or don't
+				eClosed = 8,		// close requested, will happen at the end of the frame
+				eModal = 16			// block parental input
 			};
 
 			Matrix						mTransform;	// don't mess with this
 			linked_list<ElementBase>	mChildren;
-			float						mTransparency;
 			int							mZIndex;
 			Flags32						mFlags;
-		private:
 			Vec2f						mPosition;
 			Vec2f						mSize;
+			Vec2f						mScale;
 			Vec2f						mPivot;
+			Matrix						mMatrix;
 
-			void AddChild(ElementBase &e)
+			Event<ClickedEvent>	OnClicked;
+
+			void AddChild(Element &e)
 			{
-				mChildren.push_back(e);
+				mChildren.push_back((ElementBase &)e);
 				e.mParent = this;
 			}
 
-			void RemoveChild(ElementBase &e)
+			void RemoveChild(Element &e)
 			{
-				mChildren.remove(e);
+				mChildren.remove((ElementBase &)e);
 				e.mParent = null;
 			}
 
@@ -70,7 +71,7 @@ namespace DX
 				mFlags.Clear(f);
 			}
 
-			void SetFlag(uint32 f, bool v)
+			void SetFlag(uint32 f, bool v = true)
 			{
 				if(v)
 				{
@@ -102,7 +103,7 @@ namespace DX
 				SetVisible(false);
 			}
 
-			Vec2f const &GetPosition() const
+			Vec2f GetPosition() const
 			{
 				return mPosition;
 			}
@@ -110,10 +111,9 @@ namespace DX
 			void SetPosition(Vec2f pos)
 			{
 				mPosition = pos;
-				Set(eDirty);
 			}
 
-			Vec2f const &GetSize() const
+			Vec2f GetSize() const
 			{
 				return mSize;
 			}
@@ -121,10 +121,9 @@ namespace DX
 			void SetSize(Vec2f size)
 			{
 				mSize = size;
-				Set(eDirty);
 			}
 
-			Vec2f const &GetPivot() const
+			Vec2f GetPivot() const
 			{
 				return mPivot;
 			}
@@ -132,21 +131,7 @@ namespace DX
 			void SetPivot(Vec2f pivot)
 			{
 				mPivot = pivot;
-				Set(eDirty);
 			}
-
-			void UpdateMatrix()
-			{
-				// calculate matrix based on position, size & pivot
-				Clear(eDirty);
-			}
-
-			bool						mActive;
-			bool						mEnabled;
-			bool						mClosed;
-			bool						mModal;
-
-			Event<ClickedEvent>	OnClicked;
 
 			virtual void OnDraw()
 			{
@@ -162,9 +147,7 @@ namespace DX
 
 			void Draw(DXWindow *window, Matrix &transform)
 			{
-				UpdateMatrix();
 				Matrix m = transform * mTransform;
-				// stash matrix into Shader here
 				OnDraw();
 				for(auto &r : mChildren)
 				{
