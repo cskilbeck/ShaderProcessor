@@ -38,8 +38,10 @@ namespace DX
 
 		void SetDrawList(DrawList &drawList);
 		void Setup(ID3D11DeviceContext *context, Window const * const window);
+		void Setup(ID3D11DeviceContext *context, Matrix const &matrix);
 
 		void SetupContext(ID3D11DeviceContext *context, Window const * const window);
+		void SetupContext(ID3D11DeviceContext *context, Matrix const &matrix);
 
 		void Begin();
 		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);

@@ -49,6 +49,11 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	Scene scene;
 
+	Texture buttonTexture;
+
+	UI::Element root;
+	UI::LabelButton button;
+
 	float deltaTime;
 	float oldDeltaTime;
 

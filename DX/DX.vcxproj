@@ -163,6 +163,9 @@
       <DataRoot Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">
       </DataRoot>
     </SPOCK>
+    <SPOCK Include="Shaders\Image2D.shader">
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
+    </SPOCK>
     <SPOCK Include="Shaders\Sprite.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">gsMain</GeometryShaderFunction>

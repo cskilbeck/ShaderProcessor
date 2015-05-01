@@ -13,8 +13,8 @@ namespace
 	DXPtr<Font> debugFont;
 	DXShaders::Debug lineShader;
 	DXShaders::Debug::VertBuffer lineVB;
-	DrawList debugDrawList;
-	DrawList debugLineList;
+	DrawList debugTextDrawList;
+	DrawList debugGraphicsDrawList;
 	DXWindow *mainWindow;
 	Vec4f cameraPos;
 	Vec2f cursorPos;
@@ -30,14 +30,14 @@ namespace
 	{
 		if(type != currentPrimType)
 		{
-			debugLineList.End();
+			debugGraphicsDrawList.End();
 			switch(type)
 			{
 				case Lines:
-					debugLineList.BeginLineList();
+					debugGraphicsDrawList.BeginLineList();
 					break;
 				case Triangles:
-					debugLineList.BeginTriangleList();
+					debugGraphicsDrawList.BeginTriangleList();
 					break;
 			}
 			currentPrimType = type;
@@ -78,16 +78,12 @@ namespace DX
 	void debug_begin(Camera &camera)
 	{
 		cursorPos = Vec2f::zero;
-
-		debugFont->SetDrawList(debugDrawList);
+		debugFont->SetDrawList(debugTextDrawList);
 		debugFont->Setup(mainWindow->Context(), mainWindow);
 		debugFont->Begin();
-
-		debugLineList.Reset(mainWindow->Context(), &lineShader, &lineVB);
-		debugLineList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
-
+		debugGraphicsDrawList.Reset(mainWindow->Context(), &lineShader, &lineVB);
+		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
 		cameraPos = camera.GetPosition();
-
 		currentPrimType = None;
 	}
 
@@ -95,12 +91,11 @@ namespace DX
 
 	void debug_end()
 	{
-		debugLineList.End();
+		debugGraphicsDrawList.End();
 		debugFont->End();
-		debugDrawList.End();
 		mainWindow->ResetRenderTargetView();
-		debugDrawList.Execute();
-		debugLineList.Execute();
+		debugGraphicsDrawList.Execute();
+		debugTextDrawList.Execute();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -148,8 +143,8 @@ namespace DX
 	void debug_line(CVec4f start, CVec4f end, Color color)
 	{
 		Begin(Lines);
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ start, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ end, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ start, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ end, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -157,9 +152,9 @@ namespace DX
 	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color)
 	{
 		Begin(Triangles);
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -167,12 +162,12 @@ namespace DX
 	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color)
 	{
 		Begin(Triangles);
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ d, color });
-		debugLineList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ d, color });
+		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////

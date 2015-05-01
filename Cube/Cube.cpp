@@ -4,6 +4,8 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
+// Font vertexbuffer situation...
+// 2D UI Elements/SceneGraph
 // sort out units (metres, right?)
 // Cartoon Car Physics
 //		\ wheelcasting
@@ -33,7 +35,6 @@
 //		Textures
 //		Samplers
 //		etc
-// 2D UI Elements/SceneGraph
 // zLib: support Deflate64
 // ?? Shader de-duplication?
 // Proper logging instead of a janky handful of macros
@@ -657,6 +658,11 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
+	KeyPressed += [this] (KeyboardEvent const &e)
+	{
+		Trace("[%04x] : %c\n", e.key, e.key);
+	};
+
 	cameras[0] = new FPSCamera(this);
 	cameras[1] = new FollowCamera(this);
 	currentCamera = 0;
@@ -727,6 +733,12 @@ bool MyDXWindow::OnCreate()
 	DXB(instancedShader.Create());
 	DXB(instancedVB0.Create(_countof(iCube), iCube, StaticUsage));
 	DXB(instancedVB1.Create(64));
+
+	DXB(buttonTexture.Load("button.png"));
+
+	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
+	button.SetFont(bigFont).SetText("Click Me");
+	root.AddChild(button);
 
 	lightPos = Vec4(0, -15, 20, 0);
 
@@ -1145,11 +1157,10 @@ void MyDXWindow::OnFrame()
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
 //	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera->yaw), (int)Rad2Deg(camera->pitch), (int)Rad2Deg(camera->roll));
 
-	bigFont->SetDrawList(drawList);
-	bigFont->Setup(Context(), this);
-	bigFont->Begin();
-	bigFont->DrawString("HELLO WORLD", Vec2f(FClientWidth() / 2, FClientHeight()), Font::HCentre, Font::VBottom);
-	bigFont->End();
+	// UI test
+
+	root.SetPosition(FClientSize() / 2);
+	root.Draw(Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	drawList.Execute();
 

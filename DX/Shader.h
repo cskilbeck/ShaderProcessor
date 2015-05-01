@@ -227,6 +227,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		bool IsInitialized() const
+		{
+			return mBlendState != null;	// janky for now
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		DXPtr<ID3D11BlendState>				mBlendState;
 		DXPtr<ID3D11DepthStencilState>		mDepthStencilState;
 		DXPtr<ID3D11RasterizerState>		mRasterizerState;

@@ -143,6 +143,7 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// TODO (charlie): get rid of this idiocy
 
 	void Font::SetDrawList(DrawList &drawList)
 	{
@@ -151,11 +152,11 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::Setup(ID3D11DeviceContext *context, Window const * const window)
+	void Font::Setup(ID3D11DeviceContext *context, Matrix const &matrix)
 	{
 		using Font = DXShaders::Font;
 		DXShaders::Font::GS::vConstants_t v;
-		v.TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		v.TransformMatrix = Transpose(matrix);
 		auto *vb = (Font::VertBuffer *)&vertexBuffer;
 		mDrawList->Reset(context, &shader, vb);
 		mDrawList->SetConstantData(Geometry, v, Font::GS::vConstants_index);
@@ -163,12 +164,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
+	void Font::Setup(ID3D11DeviceContext *context, Window const * const window)
+	{
+		Setup(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::SetupContext(ID3D11DeviceContext *context, Matrix const &matrix)
 	{
 		using Font = DXShaders::Font;
-		shader.gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+		shader.gs.vConstants.Get()->TransformMatrix = Transpose(matrix);
 		Font::VertBuffer *vb = (Font::VertBuffer *)&vertexBuffer;
 		vb->Activate(context);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
+	{
+		SetupContext(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -402,7 +417,7 @@ namespace DX
 		Vec2f dummyOffset;
 		Vec2f &off = (offset == null) ? dummyOffset : *offset;
 		off.Set(0, 0);
-		Vec2f mmax(0.0f, (float)mHeight);
+		Vec2f mmax(0.0f, 0.0f);
 
 		float x = 0;
 		float y = 0;
