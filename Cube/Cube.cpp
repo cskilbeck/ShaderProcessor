@@ -5,7 +5,6 @@
 // RTCB004: 
 
 // 2D UI Elements/SceneGraph
-//		dirty regions ?
 //		cliprectangle ?
 //		3d view/rendertarget
 //		picking
@@ -1170,7 +1169,8 @@ void MyDXWindow::OnFrame()
 	// Drawlist some text
 
 	{
-		Font::Instance i(bigFont.get(), &drawList, &bigFontVB);
+		Font i;
+		i.Init(bigFont.get(), &drawList, &bigFontVB);
 		i.Begin(Context(), this);
 		i.DrawString("HELLOWORLD", Vec2f(400, 500));
 		i.End();

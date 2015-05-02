@@ -77,8 +77,28 @@ namespace DX
 
 		struct ElementBase: Aligned16, list_node<ElementBase>
 		{
-			ElementBase *mParent;
-			int mZIndex;
+			Matrix			mMatrix;
+			ElementBase *	mParent;
+			int				mZIndex;
+			Flags32			mFlags;
+			Vec2f			mPosition;
+			Vec2f			mSize;
+			Vec2f			mScale;
+			Vec2f			mPivot;
+			float			mAngle;
+
+			enum: uint32
+			{
+				eHidden = 1,		// draw it or don't
+				eActive = 2,		// call OnUpdate() or don't
+				eEnabled = 4,		// process input messages or don't
+				eClosed = 8,		// close requested, will happen at the end of the frame
+				eModal = 16,		// block parental input
+				eReorder = 32,		// child was added, sort children
+				eDirtyMatrix = 64,	// Matrix needs to be rebuilt
+				eHovering = 128,	// Mouse is currently hovering over the Element
+				ePressed = 256		// Mouse button is pressed down on the Element
+			};
 
 			bool operator < (ElementBase &o)
 			{
@@ -88,43 +108,6 @@ namespace DX
 			ElementBase()
 				: mParent(null)
 				, mZIndex(0)
-			{
-			}
-		};
-
-		//////////////////////////////////////////////////////////////////////
-
-		struct Element: ElementBase
-		{
-			enum: uint32
-			{
-				eVisible = 1,		// draw it or don't
-				eActive = 2,		// call OnUpdate() or don't
-				eEnabled = 4,		// process input messages or don't
-				eClosed = 8,		// close requested, will happen at the end of the frame
-				eModal = 16,		// block parental input
-				eReorder = 32		// child was added, sort children
-			};
-
-			linked_list<ElementBase>	mChildren;
-			Flags32						mFlags;
-			Vec2f						mPosition;
-			Vec2f						mSize;
-			Vec2f						mScale;
-			Vec2f						mPivot;
-			float						mAngle;
-
-			Event<ClickedEvent>	Clicked;
-			Event<PressedEvent> Pressed;
-			Event<ReleasedEvent> Released;
-			Event<UIEvent> Updated;
-			Event<MouseEvent> MouseEntered;
-			Event<MouseEvent> MouseLeft;
-
-			//////////////////////////////////////////////////////////////////////
-
-			Element()
-				: ElementBase()
 				, mFlags(0)
 				, mPosition(0, 0)
 				, mSize(0, 0)
@@ -132,24 +115,6 @@ namespace DX
 				, mPivot(0, 0)
 				, mAngle(0)
 			{
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			Element &AddChild(Element &e)
-			{
-				mChildren.push_back((ElementBase &)e);
-				e.mParent = this;
-				Set(eReorder);
-				return *this;
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			void RemoveChild(Element &e)
-			{
-				mChildren.remove((ElementBase &)e);
-				e.mParent = null;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -191,14 +156,14 @@ namespace DX
 
 			bool IsVisible() const
 			{
-				return Is(eVisible);
+				return !Is(eHidden);
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetVisible(bool s)
+			ElementBase &SetVisible(bool s)
 			{
-				Set(eVisible);
+				SetFlag(eHidden, !s);
 				return *this;
 			}
 
@@ -225,9 +190,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetPosition(Vec2f pos)
+			ElementBase &SetPosition(Vec2f pos)
 			{
 				mPosition = pos;
+				Set(eDirtyMatrix);
 				return *this;
 			}
 
@@ -240,9 +206,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetSize(Vec2f size)
+			ElementBase &SetSize(Vec2f size)
 			{
 				mSize = size;
+				Set(eDirtyMatrix);
 				return *this;
 			}
 
@@ -255,9 +222,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetPivot(Vec2f pivot)
+			ElementBase &SetPivot(Vec2f pivot)
 			{
 				mPivot = pivot;
+				Set(eDirtyMatrix);
 				return *this;
 			}
 
@@ -270,9 +238,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetScale(Vec2f scale)
+			ElementBase &SetScale(Vec2f scale)
 			{
 				mScale = scale;
+				Set(eDirtyMatrix);
 				return *this;
 			}
 
@@ -285,29 +254,130 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetRotation(float angle)
+			ElementBase &SetRotation(float angle)
 			{
 				mAngle = angle;
+				Set(eDirtyMatrix);
 				return *this;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Vec2f ScreenToLocal(Vec2f point)
+			{
+				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mMatrix);
+				return Vec2f(GetX(p), GetY(p));
+			}
+
+			//////////////////////////////////////////////////////////////////////
+			
+			Vec2f LocalToScreen(Vec2f point)
+			{
+				// trickier - have to invert the matrix
+				Vec4f determinant;
+				Matrix inverse = DirectX::XMMatrixInverse(&determinant, mMatrix);
+				if(LengthSquared(determinant) <= FLT_EPSILON)
+				{
+					return Vec2f::zero;
+				}
+				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), inverse);
+				return Vec2f(GetX(p), GetY(p));
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			bool ContainsLocalPoint(Vec2f point)
+			{
+				return point >= Vec2f::zero && point < mSize;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			bool ContainsScreenPoint(Vec2f point)
+			{
+				return ContainsLocalPoint(ScreenToLocal(point));
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void SetupMatrix()
+			{
+				if(Is(eDirtyMatrix))
+				{
+					Vec2f p = mPivot * -mSize;
+					mMatrix =
+						TranslationMatrix(Vec4(p.x, p.y, 0)) *						// place it around the pivot point
+						ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
+						RotationMatrix(0, 0, mAngle) *							// rotate it
+						TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0));	// translate it
+					Clear(eDirtyMatrix);
+				}
+			}
+
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct Element: ElementBase
+		{
+			linked_list<ElementBase>	mChildren;
+
+			Event<ClickedEvent>			Clicked;
+			Event<PressedEvent>			Pressed;
+			Event<ReleasedEvent>		Released;
+			Event<UIEvent>				Updating;
+			Event<UIEvent>				Updated;
+			Event<MouseEvent>			MouseEntered;
+			Event<MouseEvent>			MouseLeft;
+			Event<MouseEvent>			Hovering;
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element()
+				: ElementBase()
+			{
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element &AddChild(Element &e)
+			{
+				mChildren.push_back((ElementBase &)e);
+				e.mParent = this;
+				Set(eReorder);
+				return *this;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void RemoveChild(Element &e)
+			{
+				mChildren.remove((ElementBase &)e);
+				e.mParent = null;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void SortChildren()
+			{
+				if(Is(eReorder))
+				{
+					mChildren.sort();
+					Clear(eReorder);
+				}
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
 			virtual void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 			{
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			virtual void OnHover()
-			{
+				// Empty UI Element doesn't draw anything, useful as a container for other elements
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
 			virtual void OnUpdate(float deltaTime)
 			{
-				Updated.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -318,10 +388,33 @@ namespace DX
 
 			void Update(float deltaTime)
 			{
-				OnUpdate(deltaTime);
-				for(auto &r : mChildren)
+				Vec2f local = ScreenToLocal(Mouse::Position);
+				if(ContainsLocalPoint(local))
 				{
-					((Element &)r).Update(deltaTime);
+					if(!Is(eHovering))
+					{
+						MouseEntered.Invoke(MouseEvent(this, local));
+						Set(eHovering);
+					}
+					Hovering.Invoke(MouseEvent(this, local));
+				}
+				else
+				{
+					if(Is(eHovering))
+					{
+						MouseLeft.Invoke(MouseEvent(this, local));
+						Clear(eHovering);
+					}
+				}
+				if(Is(eActive))
+				{
+					Updating.Invoke(this);
+					OnUpdate(deltaTime);
+					for(auto &r : mChildren)
+					{
+						((Element &)r).Update(deltaTime);
+					}
+					Updated.Invoke(this);
 				}
 			}
 		};
@@ -352,14 +445,14 @@ namespace DX
 		struct Label: Element
 		{
 			string mText;
-			Font *mFont;
-			Font::Instance mFontInstance;
+			Typeface *mTypeface;
+			Font mFont;
 
 			//////////////////////////////////////////////////////////////////////
 
 			Label()
 				: Element()
-				, mFont(null)
+				, mTypeface(null)
 			{
 			}
 
@@ -367,19 +460,19 @@ namespace DX
 
 			void Measure()
 			{
-				if(!mText.empty() && mFont != null)
+				if(!mText.empty() && mTypeface != null)
 				{
-					mSize = mFont->MeasureString(mText.c_str());
-					float hb = mFont->GetBaseline() / mFont->GetHeight() / 2;
+					mSize = mTypeface->MeasureString(mText.c_str());
+					float hb = mTypeface->GetBaseline() / mTypeface->GetHeight() / 2;
 					SetPivot(Vec2f(0.5f, hb));
 				}
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Label &SetFont(Font *font)
+			Label &SetFont(Typeface *font)
 			{
-				mFont = font;
+				mTypeface = font;
 				Measure();
 				return *this;
 			}
@@ -483,7 +576,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			LabelButton &SetFont(Font *f)
+			LabelButton &SetFont(Typeface *f)
 			{
 				label.SetFont(f);
 				return *this;

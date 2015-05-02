@@ -10,12 +10,12 @@ using namespace DX;
 
 namespace
 {
-	DXPtr<Font> debugFont;
+	DXPtr<Typeface> debugFont;
 	DXShaders::Debug lineShader;
 	DXShaders::Debug::VertBuffer lineVB;
 	DrawList debugTextDrawList;
 	DrawList debugGraphicsDrawList;
-	Font::Instance fontInstance;
+	Font fontInstance;
 	DXShaders::Font::VertBuffer fontVB;
 	DXWindow *mainWindow;
 	Vec4f cameraPos;

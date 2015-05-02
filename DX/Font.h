@@ -9,7 +9,7 @@
 namespace DX
 {
 	// rename this to TypeFace
-	struct Font: RefCounted
+	struct Typeface: RefCounted
 	{
 		struct Glyph;
 		struct Layer;
@@ -21,21 +21,6 @@ namespace DX
 			Vec2f		mTopLeft;
 			Vec2f		mBottomRight;
 			wstring		mText;
-		};
-
-		enum HorizontalAlign
-		{
-			HLeft = 0,
-			HRight = 1,
-			HCentre = 2
-		};
-
-		enum VerticalAlign
-		{
-			VTop = 3,
-			VCentre = 4,
-			VBaseline = 5,
-			VBottom = 6
 		};
 
 		int GetHeight() const;
@@ -52,16 +37,16 @@ namespace DX
 
 		tstring mName;
 
-		list_node<Font> mListNode;
+		list_node<Typeface> mListNode;
 
-		~Font();
+		~Typeface();
 
 	private:
 
-		Font();
+		Typeface();
 
 		friend struct FontManager;
-		friend struct Instance;
+		friend struct Font;
 
 		Glyph *GetGlyph(wchar c);
 
@@ -82,51 +67,48 @@ namespace DX
 		Layer *				mLayers;
 		KerningValue *		mKerningValues;
 		Graphic *			mGraphics;
+	};
 
-	public:
+	//////////////////////////////////////////////////////////////////////
 
+	struct Font
+	{
 		using VB = DXShaders::Font::VertBuffer;
 
-		struct Instance
+		enum HorizontalAlign
 		{
-			Font *			mFont;				// instance of which font
-			DrawList *		mDrawList;			// drawlist it draws into
-			int				mCurrentPageIndex;	// which page was last used to draw a char
-			VB *mVertexBuffer;		// where the verts get stashed
-
-			Instance()
-				: mFont(null)
-				, mDrawList(null)
-				, mCurrentPageIndex(-1)
-				, mVertexBuffer(null)
-			{
-			}
-
-			Instance(Font *font, DrawList *drawList, VB *vertexBuffer)
-				: mFont(font)
-				, mDrawList(drawList)
-				, mCurrentPageIndex(-1)
-				, mVertexBuffer(vertexBuffer)
-			{
-			}
-
-			void Init(Font *font, DrawList *drawList, VB *vertexBuffer)
-			{
-				mFont = font;
-				mDrawList = drawList;
-				mCurrentPageIndex = -1;
-				mVertexBuffer = vertexBuffer;
-			}
-			void Begin(ID3D11DeviceContext *context, Matrix const &matrix);
-			void Begin(ID3D11DeviceContext *context, Window const * const window);
-			bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
-			void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
-			void End()
-			{
-				mDrawList->End();
-			}
+			HLeft = 0,
+			HRight = 1,
+			HCentre = 2
 		};
 
+		enum VerticalAlign
+		{
+			VTop = 3,
+			VCentre = 4,
+			VBaseline = 5,
+			VBottom = 6
+		};
+
+		Typeface *		mTypeface;			// instance of which font
+		DrawList *		mDrawList;			// drawlist it draws into
+		int				mCurrentPageIndex;	// which page was last used to draw a char
+		VB *			mVertexBuffer;		// where the verts get stashed
+
+		Font()
+			: mTypeface(null)
+			, mDrawList(null)
+			, mCurrentPageIndex(-1)
+			, mVertexBuffer(null)
+		{
+		}
+
+		void Init(Typeface *typeface, DrawList *drawList, VB *vertexBuffer);
+		void Begin(ID3D11DeviceContext *context, Matrix const &matrix);
+		void Begin(ID3D11DeviceContext *context, Window const * const window);
+		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
+		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
+		void End();
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -136,6 +118,6 @@ namespace DX
 		static HRESULT Open(Window *window);
 		static bool IsOpen();
 		static void Close();
-		static HRESULT Load(tchar const *name, Font **fontPtr);
+		static HRESULT Load(tchar const *name, Typeface **fontPtr);
 	};
 }

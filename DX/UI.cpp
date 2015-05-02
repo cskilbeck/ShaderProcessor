@@ -46,23 +46,20 @@ namespace DX
 
 		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix &transform)
 		{
-			if(Is(eReorder))
+			SortChildren();
+			SetupMatrix();
+			Matrix tr = mMatrix * transform;
+			if(!Is(eHidden))
 			{
-				mChildren.sort();
-			}
-			Vec2f p = mPivot * -mSize;
-			Matrix tr =
-				TranslationMatrix(Vec4(p.x, p.y, 0)) *						// place it around the pivot point
-				ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
-				RotationMatrix(0, 0, mAngle) *							// rotate it
-				TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0)) *	// translate it
-				transform;
-			OnDraw(tr, context, drawList);
-			for(auto &r : mChildren)
-			{
-				((Element &)r).Draw(context, drawList, tr);
+				OnDraw(tr, context, drawList);
+				for(auto &r : mChildren)
+				{
+					((Element &)r).Draw(context, drawList, tr);
+				}
 			}
 		}
+
+		//////////////////////////////////////////////////////////////////////
 
 		void Rectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
@@ -77,13 +74,17 @@ namespace DX
 			drawList.End();
 		}
 
+		//////////////////////////////////////////////////////////////////////
+
 		void Label::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			mFontInstance.Init(mFont, &drawList, &fontVB);
-			mFontInstance.Begin(context, matrix);
-			mFontInstance.DrawString(mText.c_str(), Vec2f(0, 0));
-			mFontInstance.End();
+			mFont.Init(mTypeface, &drawList, &fontVB);
+			mFont.Begin(context, matrix);
+			mFont.DrawString(mText.c_str(), Vec2f(0, 0));
+			mFont.End();
 		}
+
+		//////////////////////////////////////////////////////////////////////
 
 		void Image::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{

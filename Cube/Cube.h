@@ -69,8 +69,8 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	Texture uiTexture;
 	Sampler uiSampler;
 
-	DXPtr<Font> font;
-	DXPtr<Font> bigFont;
+	DXPtr<Typeface> font;
+	DXPtr<Typeface> bigFont;
 
 	Font::VB fontVB;
 	Font::VB bigFontVB;

@@ -10,7 +10,7 @@ namespace
 {
 	using namespace DX;
 
-	linked_list<Font, &Font::mListNode> sAllFonts;
+	linked_list<Typeface, &Typeface::mListNode> sAllFonts;
 	bool initialised = false;
 	DXShaders::Font shader;
 	Sampler sampler;
@@ -21,9 +21,9 @@ namespace
 	{
 		while(!sAllFonts.empty())
 		{
-			Font *f = sAllFonts.head();
+			Typeface *f = sAllFonts.head();
 			TRACE(TEXT("Warning, dangling font %s being destructed\n"), f->mName.c_str());
-			f->~Font();
+			f->~Typeface();
 		}
 		shader.Release();
 		sampler.Release();
@@ -32,7 +32,7 @@ namespace
 
 //////////////////////////////////////////////////////////////////////
 
-struct Font::KerningValue
+struct Typeface::KerningValue
 {
 	wchar otherChar;			// if the char before me was this
 	float amount;				// add this to the x cursor pos before drawing
@@ -40,7 +40,7 @@ struct Font::KerningValue
 
 //////////////////////////////////////////////////////////////////////
 
-struct Font::Graphic
+struct Typeface::Graphic
 {
 	Vec2f drawOffset;			// add this to the cursor position before drawing it
 	Half2 size;					// size in pixels
@@ -51,7 +51,7 @@ struct Font::Graphic
 
 //////////////////////////////////////////////////////////////////////
 
-struct Font::Glyph
+struct Typeface::Glyph
 {
 	float advance;				// advance the x cursor pos this much after drawing
 	wchar character;			// what character this Glyph is for
@@ -65,7 +65,7 @@ struct Font::Glyph
 
 //////////////////////////////////////////////////////////////////////
 
-struct Font::Layer
+struct Typeface::Layer
 {
 	Color color;
 	Vec2f offset;
@@ -124,7 +124,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	HRESULT FontManager::Load(tchar const *name, Font **font)
+	HRESULT FontManager::Load(tchar const *name, Typeface **font)
 	{
 		tstring l = ToLower(name);
 		for(auto &f : sAllFonts)
@@ -136,14 +136,14 @@ namespace DX
 				return S_OK;
 			}
 		}
-		*font = new Font();
+		*font = new Typeface();
 		DXR((*font)->LoadFromFile(name));
 		return S_OK;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	Font::Font()
+	Typeface::Typeface()
 		: mPages(null)
 		, mGlyphs(null)
 		, mLayers(null)
@@ -156,7 +156,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Font::~Font()
+	Typeface::~Typeface()
 	{
 		TRACE("Deleting font %s\n", mName.c_str());
 
@@ -173,7 +173,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	HRESULT Font::LoadFromFile(tchar const *filename)
+	HRESULT Typeface::LoadFromFile(tchar const *filename)
 	{
 		TRACE("Loading font %s\n", filename);
 		mName = ToLower(tstring(filename));
@@ -307,7 +307,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Vec2f Font::MeasureChar(wchar c, Vec2f *offsetOf)
+	Vec2f Typeface::MeasureChar(wchar c, Vec2f *offsetOf)
 	{
 		Vec2f offset;
 		float right = 0;
@@ -350,7 +350,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Vec2f Font::MeasureString(char const *text, Vec2f *offset, vector<Link> *links) const
+	Vec2f Typeface::MeasureString(char const *text, Vec2f *offset, vector<Link> *links) const
 	{
 		Vec2f dummyOffset;
 		Vec2f &off = (offset == null) ? dummyOffset : *offset;
@@ -497,7 +497,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	Font::Glyph *Font::GetGlyph(wchar c)
+	Typeface::Glyph *Typeface::GetGlyph(wchar c)
 	{
 		Map::const_iterator i = mGlyphMap.find(c);
 		if(i != mGlyphMap.end())
@@ -509,21 +509,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	int Font::GetHeight() const
+	int Typeface::GetHeight() const
 	{
 		return mHeight;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	float Font::GetBaseline() const
+	float Typeface::GetBaseline() const
 	{
 		return mBaseline;
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	string Font::WrapText(string txt, uint pixelWidth, string lineBreak)
+	string Typeface::WrapText(string txt, uint pixelWidth, string lineBreak)
 	{
 		int lineBreakLength = (int)lineBreak.size();
 		uint lastGood = 1;
@@ -573,7 +573,17 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::Instance::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
+	void Font::Init(Typeface *typeface, DrawList *drawList, VB *vertexBuffer)
+	{
+		mTypeface = typeface;
+		mDrawList = drawList;
+		mCurrentPageIndex = -1;
+		mVertexBuffer = vertexBuffer;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
 	{
 		using GS = DXShaders::Font::GS;
 		GS::vConstants_t v;
@@ -585,27 +595,34 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::Instance::Begin(ID3D11DeviceContext *context, Window const * const window)
+	void Font::Begin(ID3D11DeviceContext *context, Window const * const window)
 	{
 		Begin(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool Font::Instance::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
+	void Font::End()
+	{
+		mDrawList->End();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool Font::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
 	{
 		assert(mDrawList != null);
 		bool rc = false;
-		Glyph *glyph = mFont->GetGlyph(c);
+		Typeface::Glyph *glyph = mTypeface->GetGlyph(c);
 		if(glyph != null)
 		{
 			if(layer < glyph->imageTableSize)
 			{
-				Graphic &graphic = glyph->imageTable[layer];
+				Typeface::Graphic &graphic = glyph->imageTable[layer];
 				if(mCurrentPageIndex != graphic.pageIndex)
 				{
 					mDrawList->End();
-					mDrawList->SetTexture(Pixel, *mFont->mPages[graphic.pageIndex]);
+					mDrawList->SetTexture(Pixel, *mTypeface->mPages[graphic.pageIndex]);
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
@@ -625,7 +642,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::Instance::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
+	void Font::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
 	{
 		Vec2f drawOffset;
 		Vec2f offset;
@@ -634,20 +651,20 @@ namespace DX
 
 		switch(vertAlign)
 		{
-			case Font::VTop:
+			case VTop:
 				offset.y = 0;
 				break;
 
-			case Font::VBaseline:
-				offset.y = -mFont->mBaseline;
+			case VBaseline:
+				offset.y = -mTypeface->mBaseline;
 				break;
 
-			case Font::VBottom:
-				offset.y = -(float)mFont->mHeight;
+			case VBottom:
+				offset.y = -(float)mTypeface->mHeight;
 				break;
 
-			case Font::VCentre:
-				stringSize = mFont->MeasureString(text, &drawOffset);
+			case VCentre:
+				stringSize = mTypeface->MeasureString(text, &drawOffset);
 				measured = true;
 				offset.y = -stringSize.y / 2;
 				break;
@@ -655,33 +672,33 @@ namespace DX
 
 		switch(horizAlign)
 		{
-			case Font::HLeft:
+			case HLeft:
 				offset.x = 0;
 				break;
 
-			case Font::HCentre:
+			case HCentre:
 				if(!measured)
 				{
-					stringSize = mFont->MeasureString(text, &drawOffset);
+					stringSize = mTypeface->MeasureString(text, &drawOffset);
 				}
 				offset.x = -stringSize.x / 2;
 				break;
 
-			case Font::HRight:
+			case HRight:
 				if(!measured)
 				{
-					stringSize = mFont->MeasureString(text, &drawOffset);
+					stringSize = mTypeface->MeasureString(text, &drawOffset);
 				}
 				offset.x = -stringSize.x;
 				break;
 		}
 
 		Vec2f cursor;
-		for(int i = 0; i < mFont->mLayerCount; ++i)
+		for(int i = 0; i < mTypeface->mLayerCount; ++i)
 		{
 			if((layerMask & (1 << i)) != 0)
 			{
-				Layer &l = mFont->mLayers[i];
+				Typeface::Layer &l = mTypeface->mLayers[i];
 				cursor = pos + l.offset + offset;
 
 				uint32 layerColor = l.color;
@@ -756,7 +773,7 @@ namespace DX
 							else if(c == '\n')
 							{
 								cursor.x = pos.x + l.offset.x + offset.x;
-								cursor.y += mFont->mHeight;
+								cursor.y += mTypeface->mHeight;
 								continue;
 							}
 							else if(c == '#')
@@ -785,7 +802,4 @@ namespace DX
 		}
 		pos = cursor;
 	}
-
-	//////////////////////////////////////////////////////////////////////
-
 }
