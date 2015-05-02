@@ -15,6 +15,8 @@ namespace
 	DXShaders::Debug::VertBuffer lineVB;
 	DrawList debugTextDrawList;
 	DrawList debugGraphicsDrawList;
+	Font::Instance fontInstance;
+	DXShaders::Font::VertBuffer fontVB;
 	DXWindow *mainWindow;
 	Vec4f cameraPos;
 	Vec2f cursorPos;
@@ -55,9 +57,11 @@ namespace DX
 	{
 		assert(FontManager::IsOpen());
 		DXR(FontManager::Load("debug", &debugFont));
-
+		DXR(fontVB.Create(8192));
 		DXR(lineShader.Create());
 		DXR(lineVB.Create(32768));
+
+		fontInstance.Init(debugFont, &debugTextDrawList, &fontVB);
 		mainWindow = w;
 		currentPrimType = None;
 		return S_OK;
@@ -67,6 +71,7 @@ namespace DX
 
 	void debug_close()
 	{
+		fontVB.Release();
 		lineShader.Release();
 		lineVB.Release();
 		debugFont.Release();
@@ -78,9 +83,7 @@ namespace DX
 	void debug_begin(Camera &camera)
 	{
 		cursorPos = Vec2f::zero;
-		debugFont->SetDrawList(debugTextDrawList);
-		debugFont->Setup(mainWindow->Context(), mainWindow);
-		debugFont->Begin();
+		fontInstance.Begin(mainWindow->Context(), mainWindow);
 		debugGraphicsDrawList.Reset(mainWindow->Context(), &lineShader, &lineVB);
 		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
 		cameraPos = camera.GetPosition();
@@ -92,7 +95,7 @@ namespace DX
 	void debug_end()
 	{
 		debugGraphicsDrawList.End();
-		debugFont->End();
+		fontInstance.End();
 		mainWindow->ResetRenderTargetView();
 		debugGraphicsDrawList.Execute();
 		debugTextDrawList.Execute();
@@ -105,7 +108,7 @@ namespace DX
 		va_list v;
 		va_start(v, fmt);
 		string s = Format_V(fmt, v);
-		debugFont->DrawString(s.c_str(), cursorPos);
+		fontInstance.DrawString(s.c_str(), cursorPos);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -115,7 +118,7 @@ namespace DX
 		va_list v;
 		va_start(v, fmt);
 		string s = StringFromWideString(Format_V(fmt, v));
-		debugFont->DrawString(s.c_str(), cursorPos);
+		fontInstance.DrawString(s.c_str(), cursorPos);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -125,7 +128,7 @@ namespace DX
 		va_list v;
 		va_start(v, fmt);
 		string s = Format_V(fmt, v);
-		debugFont->DrawString(s.c_str(), Vec2f((float)x, (float)y));
+		fontInstance.DrawString(s.c_str(), Vec2f((float)x, (float)y));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -135,7 +138,7 @@ namespace DX
 		va_list v;
 		va_start(v, fmt);
 		string s = StringFromWideString(Format_V(fmt, v));
-		debugFont->DrawString(s.c_str(), Vec2f((float)x, (float)y));
+		fontInstance.DrawString(s.c_str(), Vec2f((float)x, (float)y));
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -53,6 +53,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	UI::Element root;
 	UI::LabelButton button;
+	UI::Rectangle rectangle;
 
 	float deltaTime;
 	float oldDeltaTime;
@@ -70,6 +71,9 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	DXPtr<Font> font;
 	DXPtr<Font> bigFont;
+
+	Font::VB fontVB;
+	Font::VB bigFontVB;
 
 	Shaders::Sprite spriteShader;
 	Shaders::Sprite::VertBuffer spriteVerts;

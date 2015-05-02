@@ -190,6 +190,9 @@
     <ClCompile Include="Importer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <SPOCK Include="Shaders\Sprite.shader">
@@ -208,6 +211,9 @@
       <Filter>Shaders</Filter>
     </SPOCK>
     <SPOCK Include="Shaders\Image2D.shader">
+      <Filter>Shaders</Filter>
+    </SPOCK>
+    <SPOCK Include="Shaders\Color2D.shader">
       <Filter>Shaders</Filter>
     </SPOCK>
   </ItemGroup>

@@ -2,12 +2,20 @@
 
 #pragma once
 
+#include "Shaders\Font.Shader.h"
+
 //////////////////////////////////////////////////////////////////////
 
 namespace DX
 {
+	// rename this to TypeFace
 	struct Font: RefCounted
 	{
+		struct Glyph;
+		struct Layer;
+		struct KerningValue;
+		struct Graphic;
+
 		struct Link
 		{
 			Vec2f		mTopLeft;
@@ -30,22 +38,17 @@ namespace DX
 			VBottom = 6
 		};
 
-		Vec2f MeasureChar(wchar c, Vec2f *offsetOf = null);
-		Vec2f MeasureString(char const *text, Vec2f *offset = null, vector<Link> *links = null) const;
 		int GetHeight() const;
 		float GetBaseline() const;
+
+		float GetNormalizedBaseline() const
+		{
+			return GetBaseline() / GetHeight();
+		}
+
+		Vec2f MeasureChar(wchar c, Vec2f *offsetOf = null);
+		Vec2f MeasureString(char const *text, Vec2f *offset = null, vector<Link> *links = null) const;
 		string WrapText(string txt, uint pixelWidth, string lineBreak);
-
-		void SetDrawList(DrawList &drawList);
-		void Setup(ID3D11DeviceContext *context, Window const * const window);
-		void Setup(ID3D11DeviceContext *context, Matrix const &matrix);
-
-		void SetupContext(ID3D11DeviceContext *context, Window const * const window);
-		void SetupContext(ID3D11DeviceContext *context, Matrix const &matrix);
-
-		void Begin();
-		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
-		void End();
 
 		tstring mName;
 
@@ -57,18 +60,14 @@ namespace DX
 
 		Font();
 
-		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
-
 		friend struct FontManager;
+		friend struct Instance;
+
+		Glyph *GetGlyph(wchar c);
 
 		HRESULT LoadFromFile(tchar const *filename);
 
-		typedef std::unordered_map<wchar, int> Map;	// map into Glyph array per char
-
-		struct Glyph;
-		struct Layer;
-		struct KerningValue;
-		struct Graphic;
+		typedef std::unordered_map<wchar, int> Map;	// map into Glyph array per char - fix with a big reverse lookup? (would be 256K though, and mostly empty...)
 
 		float				mBaseline;
 		int					mHeight;
@@ -77,18 +76,57 @@ namespace DX
 		int					mLayerCount;
 		int					mKerningValueCount;
 		int					mGraphicCount;
-
-		int					mCurrentPageIndex;
-
-		TypelessBuffer		vertexBuffer;
-
 		Map					mGlyphMap;
 		Texture **			mPages;
 		Glyph *				mGlyphs;
 		Layer *				mLayers;
 		KerningValue *		mKerningValues;
 		Graphic *			mGraphics;
-		DrawList *			mDrawList;
+
+	public:
+
+		using VB = DXShaders::Font::VertBuffer;
+
+		struct Instance
+		{
+			Font *			mFont;				// instance of which font
+			DrawList *		mDrawList;			// drawlist it draws into
+			int				mCurrentPageIndex;	// which page was last used to draw a char
+			VB *mVertexBuffer;		// where the verts get stashed
+
+			Instance()
+				: mFont(null)
+				, mDrawList(null)
+				, mCurrentPageIndex(-1)
+				, mVertexBuffer(null)
+			{
+			}
+
+			Instance(Font *font, DrawList *drawList, VB *vertexBuffer)
+				: mFont(font)
+				, mDrawList(drawList)
+				, mCurrentPageIndex(-1)
+				, mVertexBuffer(vertexBuffer)
+			{
+			}
+
+			void Init(Font *font, DrawList *drawList, VB *vertexBuffer)
+			{
+				mFont = font;
+				mDrawList = drawList;
+				mCurrentPageIndex = -1;
+				mVertexBuffer = vertexBuffer;
+			}
+			void Begin(ID3D11DeviceContext *context, Matrix const &matrix);
+			void Begin(ID3D11DeviceContext *context, Window const * const window);
+			bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
+			void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
+			void End()
+			{
+				mDrawList->End();
+			}
+		};
+
 	};
 
 	//////////////////////////////////////////////////////////////////////

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE BitmapFont>
-<BitmapFont PageCount="1" Height="15" InternalLeading="3" Baseline="180">
+<BitmapFont PageCount="1" Height="15" InternalLeading="3" Baseline="16">
   <Graph>
     <Nodes Count="9">
       <FontNode id="0" inputs="0" outputs="2" X="62" Y="145">

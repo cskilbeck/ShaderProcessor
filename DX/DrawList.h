@@ -25,6 +25,9 @@ namespace DX
 		void End();
 		void Execute();
 
+		Texture *GetCurrentTexture(uint index = 0);
+		bool IsDrawCallInProgress() const;
+
 	private:
 
 		template<typename T> T *Add();
@@ -41,6 +44,8 @@ namespace DX
 		byte *mVertZero;
 		byte *mVertPointer;
 		byte *mVertBase;
+
+		Texture *mTextures[8];
 		
 		void *mCurrentDrawCallItem;
 		ID3D11DeviceContext *mContext;
@@ -90,5 +95,4 @@ namespace DX
 	{
 		SetConsts(shaderType, (byte *)&data, sizeof(T), index);
 	}
-
 }

@@ -113,6 +113,7 @@
     <ClCompile Include="PhysicsDebug.cpp" />
     <ClCompile Include="RapidXML\xml_util.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -122,6 +123,9 @@
     <SPOCK Include="Shaders\Color.shader">
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
+    </SPOCK>
+    <SPOCK Include="Shaders\Color2D.shader">
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
     </SPOCK>
     <SPOCK Include="Shaders\Debug.shader">
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>

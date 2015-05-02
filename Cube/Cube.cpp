@@ -4,8 +4,15 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: 
 
-// Font vertexbuffer situation...
 // 2D UI Elements/SceneGraph
+//		dirty regions ?
+//		cliprectangle ?
+//		3d view/rendertarget
+//		picking
+//		scrollbar
+//		checkbox
+//		inputbox !?
+//		listview
 // sort out units (metres, right?)
 // Cartoon Car Physics
 //		\ wheelcasting
@@ -81,6 +88,7 @@
 //		* documentation generator for shader #pragmas
 //		* Syntax highlighting for .shader files
 //		* Fix MSBuild Spock dependency bug (building everything)
+// * Font vertexbuffer situation...
 // * Debug text
 // * Fix the Event system (get rid of heap allocations, make it flexible)
 // * Fix ViewMatrix Axes Y/Z up etc & mul(vert, matrix) thing (left/right handed)
@@ -675,6 +683,8 @@ bool MyDXWindow::OnCreate()
 	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
 
+	UI::Open();
+
 	Physics::Open(this);
 
 	btTransform carTransform;
@@ -707,6 +717,9 @@ bool MyDXWindow::OnCreate()
 	DXB(FontManager::Load(TEXT("debug"), &font));
 	DXB(FontManager::Load(TEXT("Cooper_Black_48"), &bigFont));
 
+	DXB(fontVB.Create(8192));
+	DXB(bigFontVB.Create(8192));
+
 	DXB(simpleShader.Create());
 	DXB(simpleVB.Create(128, null, DynamicUsage, Writeable));
 
@@ -737,8 +750,10 @@ bool MyDXWindow::OnCreate()
 	DXB(buttonTexture.Load("button.png"));
 
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
-	button.SetFont(bigFont).SetText("Click Me");
+	button.SetFont(font).SetText("Click Me !");
+	rectangle.SetColor(0x80ff0000).SetPosition(Vec2f(100, 200)).SetSize(Vec2f(50, 50));
 	root.AddChild(button);
+	root.AddChild(rectangle);
 
 	lightPos = Vec4(0, -15, 20, 0);
 
@@ -1154,12 +1169,19 @@ void MyDXWindow::OnFrame()
 
 	// Drawlist some text
 
+	{
+		Font::Instance i(bigFont.get(), &drawList, &bigFontVB);
+		i.Begin(Context(), this);
+		i.DrawString("HELLOWORLD", Vec2f(400, 500));
+		i.End();
+	}
+
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
 //	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera->yaw), (int)Rad2Deg(camera->pitch), (int)Rad2Deg(camera->roll));
 
 	// UI test
 
-	root.SetPosition(FClientSize() / 2);
+	root.SetPosition(FClientSize() / 2).SetRotation(time);
 	root.Draw(Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	drawList.Execute();
@@ -1365,12 +1387,18 @@ void MyDXWindow::OnDestroy()
 
 	Save();
 
+	UI::Close();
+
 	Physics::Close();
 
 	debug_close();
 
 	diceTexture.Release();
 	sphereTexture.Release();
+
+	buttonTexture.Release();
+	fontVB.Release();
+	bigFontVB.Release();
 
 	cylinderIndices.Release();
 	cylinderVerts.Release();

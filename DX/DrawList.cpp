@@ -205,6 +205,7 @@ namespace DX
 		mContext = context;
 		mCurrentVertexBuffer = vb;
 		mCurrentDrawCallItem = null;
+		memset(mTextures, 0, sizeof(mTextures));
 
 		ShaderItem *i = Add<ShaderItem>();
 		mCurrentShader = shader;
@@ -219,12 +220,20 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	Texture *DrawList::GetCurrentTexture(uint index)
+	{
+		return mTextures[index];
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::SetTexture(ShaderType shaderType, Texture &t, uint index)
 	{
 		TextureItem *ti = Add<TextureItem>();
 		ti->mShaderType = shaderType;
 		ti->mTexture = &t;
 		ti->mIndex = index;
+		mTextures[index] = &t;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -293,6 +302,13 @@ namespace DX
 			mVertBase = mVertPointer;
 			mCurrentDrawCallItem = null;
 		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool DrawList::IsDrawCallInProgress() const
+	{
+		return mCurrentDrawCallItem != null;
 	}
 
 	//////////////////////////////////////////////////////////////////////

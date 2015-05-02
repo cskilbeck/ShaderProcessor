@@ -3,7 +3,6 @@
 #include "DX.h"
 #include "RapidXML\rapidxml.hpp"
 #include "RapidXML\xml_util.h"
-#include "Shaders\Font.Shader.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -143,64 +142,6 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// TODO (charlie): get rid of this idiocy
-
-	void Font::SetDrawList(DrawList &drawList)
-	{
-		mDrawList = &drawList;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::Setup(ID3D11DeviceContext *context, Matrix const &matrix)
-	{
-		using Font = DXShaders::Font;
-		DXShaders::Font::GS::vConstants_t v;
-		v.TransformMatrix = Transpose(matrix);
-		auto *vb = (Font::VertBuffer *)&vertexBuffer;
-		mDrawList->Reset(context, &shader, vb);
-		mDrawList->SetConstantData(Geometry, v, Font::GS::vConstants_index);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::Setup(ID3D11DeviceContext *context, Window const * const window)
-	{
-		Setup(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::SetupContext(ID3D11DeviceContext *context, Matrix const &matrix)
-	{
-		using Font = DXShaders::Font;
-		shader.gs.vConstants.Get()->TransformMatrix = Transpose(matrix);
-		Font::VertBuffer *vb = (Font::VertBuffer *)&vertexBuffer;
-		vb->Activate(context);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::SetupContext(ID3D11DeviceContext *context, Window const * const window)
-	{
-		SetupContext(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::End()
-	{
-		mDrawList->End();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void Font::Begin()
-	{
-		mCurrentPageIndex = -1;
-	}
-
-	//////////////////////////////////////////////////////////////////////
 
 	Font::Font()
 		: mPages(null)
@@ -208,10 +149,8 @@ namespace DX
 		, mLayers(null)
 		, mKerningValues(null)
 		, mGraphics(null)
-		, mCurrentPageIndex(-1)
 	{
 		TRACE("Font::Font()\n");
-		vertexBuffer.CreateBuffer(VertexBufferType, 16384, null, DynamicUsage, Writeable);
 		sAllFonts.push_back(this);
 	}
 
@@ -230,7 +169,6 @@ namespace DX
 		Delete(mLayers);
 		Delete(mKerningValues);
 		Delete(mGraphics);
-		vertexBuffer.Release();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -559,6 +497,32 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	Font::Glyph *Font::GetGlyph(wchar c)
+	{
+		Map::const_iterator i = mGlyphMap.find(c);
+		if(i != mGlyphMap.end())
+		{
+			return &mGlyphs[i->second];
+		}
+		return null;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	int Font::GetHeight() const
+	{
+		return mHeight;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	float Font::GetBaseline() const
+	{
+		return mBaseline;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	string Font::WrapText(string txt, uint pixelWidth, string lineBreak)
 	{
 		int lineBreakLength = (int)lineBreak.size();
@@ -609,25 +573,39 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool Font::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
+	void Font::Instance::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
+	{
+		using GS = DXShaders::Font::GS;
+		GS::vConstants_t v;
+		v.TransformMatrix = Transpose(matrix);
+		mDrawList->Reset(context, &shader, mVertexBuffer);
+		mDrawList->SetConstantData(Geometry, v, GS::vConstants_index);
+		mCurrentPageIndex = -1;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Instance::Begin(ID3D11DeviceContext *context, Window const * const window)
+	{
+		Begin(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool Font::Instance::DrawChar(int layer, Vec2f &cursor, wchar c, Color color)
 	{
 		assert(mDrawList != null);
 		bool rc = false;
-		Map::const_iterator i = mGlyphMap.find(c);
-		if(i != mGlyphMap.end())
+		Glyph *glyph = mFont->GetGlyph(c);
+		if(glyph != null)
 		{
-			Glyph &glyph = mGlyphs[i->second];
-			if(layer < glyph.imageTableSize)
+			if(layer < glyph->imageTableSize)
 			{
-				Graphic &graphic = glyph.imageTable[layer];
+				Graphic &graphic = glyph->imageTable[layer];
 				if(mCurrentPageIndex != graphic.pageIndex)
 				{
-					Texture *t = mPages[graphic.pageIndex];
-					if(mCurrentPageIndex != -1)
-					{
-						mDrawList->End();
-					}
-					mDrawList->SetTexture(Pixel, *t);
+					mDrawList->End();
+					mDrawList->SetTexture(Pixel, *mFont->mPages[graphic.pageIndex]);
 					mDrawList->BeginPointList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
@@ -639,7 +617,7 @@ namespace DX
 				v.UVb = graphic.bottomRight;
 				v.Color = color;
 			}
-			cursor.x += glyph.advance;
+			cursor.x += glyph->advance;
 			rc = true;
 		}
 		return rc;
@@ -647,7 +625,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
+	void Font::Instance::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
 	{
 		Vec2f drawOffset;
 		Vec2f offset;
@@ -661,15 +639,15 @@ namespace DX
 				break;
 
 			case Font::VBaseline:
-				offset.y = -mBaseline;
+				offset.y = -mFont->mBaseline;
 				break;
 
 			case Font::VBottom:
-				offset.y = -(float)mHeight;
+				offset.y = -(float)mFont->mHeight;
 				break;
 
 			case Font::VCentre:
-				stringSize = MeasureString(text, &drawOffset);
+				stringSize = mFont->MeasureString(text, &drawOffset);
 				measured = true;
 				offset.y = -stringSize.y / 2;
 				break;
@@ -684,7 +662,7 @@ namespace DX
 			case Font::HCentre:
 				if(!measured)
 				{
-					stringSize = MeasureString(text, &drawOffset);
+					stringSize = mFont->MeasureString(text, &drawOffset);
 				}
 				offset.x = -stringSize.x / 2;
 				break;
@@ -692,18 +670,18 @@ namespace DX
 			case Font::HRight:
 				if(!measured)
 				{
-					stringSize = MeasureString(text, &drawOffset);
+					stringSize = mFont->MeasureString(text, &drawOffset);
 				}
 				offset.x = -stringSize.x;
 				break;
 		}
 
 		Vec2f cursor;
-		for(int i = 0; i < mLayerCount; ++i)
+		for(int i = 0; i < mFont->mLayerCount; ++i)
 		{
 			if((layerMask & (1 << i)) != 0)
 			{
-				Layer &l = mLayers[i];
+				Layer &l = mFont->mLayers[i];
 				cursor = pos + l.offset + offset;
 
 				uint32 layerColor = l.color;
@@ -778,7 +756,7 @@ namespace DX
 							else if(c == '\n')
 							{
 								cursor.x = pos.x + l.offset.x + offset.x;
-								cursor.y += mHeight;
+								cursor.y += mFont->mHeight;
 								continue;
 							}
 							else if(c == '#')
@@ -806,20 +784,6 @@ namespace DX
 			}
 		}
 		pos = cursor;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	int Font::GetHeight() const
-	{
-		return mHeight;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	float Font::GetBaseline() const
-	{
-		return mBaseline;
 	}
 
 	//////////////////////////////////////////////////////////////////////

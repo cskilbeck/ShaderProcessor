@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "Shaders/Image2D.shader.h"
-
 //////////////////////////////////////////////////////////////////////
 
 namespace DX
@@ -13,6 +11,11 @@ namespace DX
 
 	namespace UI
 	{
+		//////////////////////////////////////////////////////////////////////
+
+		void Open();
+		void Close();
+
 		//////////////////////////////////////////////////////////////////////
 
 		struct Element;
@@ -309,25 +312,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix &transform)
-			{
-				if(Is(eReorder))
-				{
-					mChildren.sort();
-				}
-				Vec2f p = mPivot * -mSize;
-				Matrix tr =
-					TranslationMatrix(Vec4(p.x, p.y, 0)) *						// place it around the pivot point
-					ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
-					RotationMatrix(0, 0, mAngle) *							// rotate it
-					TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0)) *	// translate it
-					transform;
-				OnDraw(tr, context, drawList);
-				for(auto &r : mChildren)
-				{
-					((Element &)r).Draw(context, drawList, tr);
-				}
-			}
+			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix &transform);
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -343,10 +328,32 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct Rectangle: Element
+		{
+			Color mColor;
+
+			Rectangle &SetColor(Color c)
+			{
+				mColor = c;
+				return *this;
+			}
+
+			Color GetColor() const
+			{
+				return mColor;
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+		// need a font instance and vertexbuffer
+
 		struct Label: Element
 		{
 			string mText;
 			Font *mFont;
+			Font::Instance mFontInstance;
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -388,14 +395,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override
-			{
-				mFont->SetDrawList(drawList);
-				mFont->Setup(context, matrix);
-				mFont->Begin();
-				mFont->DrawString(mText.c_str(), Vec2f(0, 0), Font::HLeft, Font::VTop);
-				mFont->End();
-			}
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -434,31 +434,8 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override
-			{
-				using namespace DXShaders;
-				using Vert = Image2D::InputVertex;
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 
-				static Image2D image2DShader;
-				static Image2D::VertBuffer image2DVertBuffer;
-
-				if(!image2DShader.IsInitialized())
-				{
-					image2DShader.Create();
-					image2DVertBuffer.Create(16384);
-				}
-
-				drawList.Reset(context, &image2DShader, &image2DVertBuffer);
-				drawList.SetTexture(Pixel, *mGraphic);
-				drawList.SetSampler(Pixel, *mSampler);
-				drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::vConstants_index);
-				drawList.BeginTriangleStrip();
-				drawList.AddVertex<Vert>({ { 0000000, mSize.y }, { 0, 1 }, 0xffffffff });
-				drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });
-				drawList.AddVertex<Vert>({ { 0000000, 0000000 }, { 0, 0 }, 0xffffffff });
-				drawList.AddVertex<Vert>({ { mSize.x, 0000000 }, { 1, 0 }, 0xffffffff });
-				drawList.End();
-			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
