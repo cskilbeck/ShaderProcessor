@@ -919,8 +919,6 @@ void MyDXWindow::OnFrame()
 
 	debug_begin(*camera);
 
-	debug_text(500, 500, "%f,%f", Mouse::Position.x, Mouse::Position.y);
-
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 
 	car.Update(deltaTime);
@@ -1197,13 +1195,13 @@ void MyDXWindow::OnFrame()
 
 	// UI test
 
-	Vec2f l1 = button.ScreenToLocal(Mouse::Position);
-	Vec2f l2 = button.LocalToScreen(Mouse::Position);
-	debug_text(500, 520, "%f,%f", l1.x, l1.y);
-	debug_text(500, 540, "%f,%f", l2.x, l2.y);
+	//Vec2f l1 = button.ScreenToLocal(Mouse::Position);
+	//Vec2f l2 = button.LocalToScreen(Mouse::Position);
+	//debug_text(500, 500, "%f,%f", Mouse::Position.x, Mouse::Position.y);
+	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
+	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetPosition(FClientSize() / 2);// .SetRotation(time);
-
+	root.SetPosition(FClientSize() * 0.75f).SetRotation(time);
 	root.Update(deltaTime, IdentityMatrix);
 	root.Draw(Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
