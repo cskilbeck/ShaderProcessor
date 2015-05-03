@@ -1,5 +1,12 @@
 //////////////////////////////////////////////////////////////////////
 // TODO (charlie): fix how janky and lame this is
+// TODO (charlie): scrollbars
+// TODO (charlie): cliprectangles
+// TODO (charlie): listview
+// TODO (charlie): input
+// TODO (charlie): checkbox
+// TODO (charlie): slider
+// TODO (charlie): etc
 
 #pragma once
 
@@ -78,6 +85,8 @@ namespace DX
 		struct ElementBase: Aligned16, list_node<ElementBase>
 		{
 			Matrix			mMatrix;
+			Matrix			mTransformMatrix;
+			Matrix			mInverseMatrix;
 			ElementBase *	mParent;
 			int				mZIndex;
 			Flags32			mFlags;
@@ -90,7 +99,7 @@ namespace DX
 			enum: uint32
 			{
 				eHidden = 1,		// draw it or don't
-				eActive = 2,		// call OnUpdate() or don't
+				eInActive = 2,		// call OnUpdate() or don't
 				eEnabled = 4,		// process input messages or don't
 				eClosed = 8,		// close requested, will happen at the end of the frame
 				eModal = 16,		// block parental input
@@ -114,6 +123,9 @@ namespace DX
 				, mScale(1, 1)
 				, mPivot(0, 0)
 				, mAngle(0)
+				, mMatrix(IdentityMatrix)
+				, mTransformMatrix(IdentityMatrix)
+				, mInverseMatrix(IdentityMatrix)
 			{
 			}
 
@@ -121,7 +133,7 @@ namespace DX
 
 			bool Is(uint32 f) const
 			{
-				return mFlags.IsAnySet(f);
+				return mFlags.AreAllSet(f);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -142,14 +154,7 @@ namespace DX
 
 			void SetFlag(uint32 f, bool v = true)
 			{
-				if(v)
-				{
-					Set(f);
-				}
-				else
-				{
-					Clear(f);
-				}
+				v ? Set(f) : Clear(f);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -231,6 +236,23 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			Matrix const &GetMatrix()
+			{
+				if(Is(eDirtyMatrix))
+				{
+					Vec2f p = mPivot * -mSize;
+					mMatrix =
+						TranslationMatrix(Vec4(p.x, p.y, 0)) *					// place it around the pivot point
+						ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
+						RotationMatrix(0, 0, mAngle) *							// rotate it
+						TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0));	// translate it
+					Clear(eDirtyMatrix);
+				}
+				return mMatrix;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			Vec2f GetScale() const
 			{
 				return mScale;
@@ -263,24 +285,17 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Vec2f ScreenToLocal(Vec2f point)
+			Vec2f LocalToScreen(Vec2f point)
 			{
-				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mMatrix);
+				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mTransformMatrix);
 				return Vec2f(GetX(p), GetY(p));
 			}
 
 			//////////////////////////////////////////////////////////////////////
 			
-			Vec2f LocalToScreen(Vec2f point)
+			Vec2f ScreenToLocal(Vec2f point)
 			{
-				// trickier - have to invert the matrix
-				Vec4f determinant;
-				Matrix inverse = DirectX::XMMatrixInverse(&determinant, mMatrix);
-				if(LengthSquared(determinant) <= FLT_EPSILON)
-				{
-					return Vec2f::zero;
-				}
-				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), inverse);
+				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mInverseMatrix);
 				return Vec2f(GetX(p), GetY(p));
 			}
 
@@ -297,23 +312,6 @@ namespace DX
 			{
 				return ContainsLocalPoint(ScreenToLocal(point));
 			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			void SetupMatrix()
-			{
-				if(Is(eDirtyMatrix))
-				{
-					Vec2f p = mPivot * -mSize;
-					mMatrix =
-						TranslationMatrix(Vec4(p.x, p.y, 0)) *						// place it around the pivot point
-						ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
-						RotationMatrix(0, 0, mAngle) *							// rotate it
-						TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0));	// translate it
-					Clear(eDirtyMatrix);
-				}
-			}
-
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -382,39 +380,62 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix &transform);
+			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
 
 			//////////////////////////////////////////////////////////////////////
+			// TODO (charlie): modality
 
-			void Update(float deltaTime)
+			void Update(float deltaTime, Matrix const &matrix)
 			{
-				Vec2f local = ScreenToLocal(Mouse::Position);
-				if(ContainsLocalPoint(local))
+				// matrices are always updated even if it's inactive
+				mTransformMatrix = GetMatrix() * matrix;
+				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
+
+				// clicking & onupdate only called if it's active
+				if(!Is(eInActive))
 				{
-					if(!Is(eHovering))
+					Vec2f local = ScreenToLocal(Mouse::Position);
+					if(ContainsLocalPoint(local))
 					{
-						MouseEntered.Invoke(MouseEvent(this, local));
-						Set(eHovering);
+						if(!Is(eHovering))
+						{
+							MouseEntered.Invoke(MouseEvent(this, local));
+							Set(eHovering);
+						}
+						Hovering.Invoke(MouseEvent(this, local));
+						if(Mouse::Pressed & Mouse::Button::Left)
+						{
+							Set(ePressed);
+							Pressed.Invoke(PressedEvent(this, local));
+						}
+						if(Mouse::Released & Mouse::Button::Left && Is(ePressed))
+						{
+							Clear(ePressed);
+							Released.Invoke(ReleasedEvent(this, local));
+						}
 					}
-					Hovering.Invoke(MouseEvent(this, local));
-				}
-				else
-				{
-					if(Is(eHovering))
+					else
 					{
-						MouseLeft.Invoke(MouseEvent(this, local));
-						Clear(eHovering);
+						if(Is(eHovering))
+						{
+							MouseLeft.Invoke(MouseEvent(this, local));
+							Clear(eHovering);
+						}
+						if(Is(ePressed))
+						{
+							Clear(ePressed);
+							Released.Invoke(ReleasedEvent(this, local));
+						}
 					}
-				}
-				if(Is(eActive))
-				{
 					Updating.Invoke(this);
 					OnUpdate(deltaTime);
-					for(auto &r : mChildren)
-					{
-						((Element &)r).Update(deltaTime);
-					}
 					Updated.Invoke(this);
+				}
+
+				// children processed always (to keep matrices up  to date)
+				for(auto &r : mChildren)
+				{
+					((Element &)r).Update(deltaTime, mTransformMatrix);
 				}
 			}
 		};
@@ -444,7 +465,7 @@ namespace DX
 
 		struct Label: Element
 		{
-			string mText;
+			string mText;	// UTF8
 			Typeface *mTypeface;
 			Font mFont;
 

@@ -52,12 +52,13 @@ namespace DX
 
 		void Update(Window &w)
 		{
+			Point2D p;
+			GetCursorPos(&p);
+			ScreenToClient(w.Handle(), &p);
+
 			if(w.IsActive() && GetMode() == Mode::Captured)
 			{
 				HideMouse();
-				Point2D p;
-				GetCursorPos(&p);
-				ScreenToClient(w.Handle(), &p);
 				Point2D c(w.ClientRect().HalfSize());
 				Mouse::Delta = Vec2f((float)p.x - c.x, (float)p.y - c.y);
 				Position += Mouse::Delta;
@@ -66,6 +67,7 @@ namespace DX
 			}
 			else
 			{
+				Position = p;
 				ShowMouse();
 			}
 		}

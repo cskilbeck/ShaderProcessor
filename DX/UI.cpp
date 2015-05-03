@@ -25,8 +25,8 @@ namespace DX
 		void Open()
 		{
 			image2DShader.Create();
-			image2DVertBuffer.Create(8192);
 			colorShader.Create();
+			image2DVertBuffer.Create(8192);
 			fontVB.Create(8192);
 			colorVB.Create(8192);
 		}
@@ -36,25 +36,23 @@ namespace DX
 		void Close()
 		{
 			image2DShader.Release();
-			image2DVertBuffer.Release();
 			colorShader.Release();
+			image2DVertBuffer.Release();
 			fontVB.Release();
 			colorVB.Release();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix &transform)
+		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
 		{
-			SortChildren();
-			SetupMatrix();
-			Matrix tr = mMatrix * transform;
-			if(!Is(eHidden))
+			if(IsVisible())
 			{
-				OnDraw(tr, context, drawList);
+				SortChildren();
+				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{
-					((Element &)r).Draw(context, drawList, tr);
+					((Element &)r).Draw(context, drawList, ortho);
 				}
 			}
 		}
@@ -93,10 +91,10 @@ namespace DX
 			drawList.SetSampler(Pixel, *mSampler);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::vConstants_index);
 			drawList.BeginTriangleStrip();
-			drawList.AddVertex<Vert>({ { 0000000, mSize.y }, { 0, 1 }, 0xffffffff });
+			drawList.AddVertex<Vert>({ { 0, mSize.y }, { 0, 1 }, 0xffffffff });
 			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });
-			drawList.AddVertex<Vert>({ { 0000000, 0000000 }, { 0, 0 }, 0xffffffff });
-			drawList.AddVertex<Vert>({ { mSize.x, 0000000 }, { 1, 0 }, 0xffffffff });
+			drawList.AddVertex<Vert>({ { 0, 0}, { 0, 0 }, 0xffffffff });
+			drawList.AddVertex<Vert>({ { mSize.x, 0}, { 1, 0 }, 0xffffffff });
 			drawList.End();
 		}
 	}

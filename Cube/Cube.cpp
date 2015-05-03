@@ -2,20 +2,14 @@
 // RTCB001: don't return a bool to indicate success or failure (return a signed integer, where a negative value indicates failure)
 // RTCB002: don't do anything that can fail in a constructor (unless you dig exceptions, in which case throw up all you like)
 // RTCB003: when declaring function parameters, prefer enum to bool
-// RTCB004: 
+// RTCB004: status flags should be off (0) in the default state (eg prefer Disabled = 0 to Enabled = 1, Hidden = 0 to Visible = 1)
 
 // 2D UI Elements/SceneGraph
-//		cliprectangle ?
-//		3d view/rendertarget
-//		picking
-//		scrollbar
-//		checkbox
-//		inputbox !?
-//		listview
+// Fix mouse capture mess
 // sort out units (metres, right?)
 // Cartoon Car Physics
 //		\ wheelcasting
-//		parameter tweaker
+//		parameter tweaker (UI)
 //			body dimensions
 //			wheel offsets
 //			suspension
@@ -94,7 +88,7 @@
 // * Move some things into Matrix from Camera
 // * Fix Shader/ShaderBase constructor
 // * Bullet
-//		* Test the AssetManager
+// * Test the AssetManager
 
 #include "stdafx.h"
 
@@ -754,6 +748,26 @@ bool MyDXWindow::OnCreate()
 	root.AddChild(button);
 	root.AddChild(rectangle);
 
+	button.MouseEntered += [] (UI::MouseEvent e)
+	{
+		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+		b->SetScale(Vec2f(1.1f, 1.1f));
+		b->SetText("ENTER!");
+	};
+
+	button.MouseLeft += [] (UI::MouseEvent e)
+	{
+		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+		b->SetScale(Vec2f(1, 1));
+		b->SetText("LEAVE!");
+	};
+
+	button.Pressed += [] (UI::PressedEvent e)
+	{
+		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+		b->SetText("PRESSED!");
+	};
+
 	lightPos = Vec4(0, -15, 20, 0);
 
 	auto &l = cubeShader.ps.Light;
@@ -904,6 +918,8 @@ void MyDXWindow::OnFrame()
 	camera->Process(deltaTime);
 
 	debug_begin(*camera);
+
+	debug_text(500, 500, "%f,%f", Mouse::Position.x, Mouse::Position.y);
 
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 
@@ -1181,7 +1197,14 @@ void MyDXWindow::OnFrame()
 
 	// UI test
 
-	root.SetPosition(FClientSize() / 2).SetRotation(time);
+	Vec2f l1 = button.ScreenToLocal(Mouse::Position);
+	Vec2f l2 = button.LocalToScreen(Mouse::Position);
+	debug_text(500, 520, "%f,%f", l1.x, l1.y);
+	debug_text(500, 540, "%f,%f", l2.x, l2.y);
+
+	root.SetPosition(FClientSize() / 2);// .SetRotation(time);
+
+	root.Update(deltaTime, IdentityMatrix);
 	root.Draw(Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	drawList.Execute();

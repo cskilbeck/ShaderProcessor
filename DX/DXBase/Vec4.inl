@@ -161,7 +161,8 @@ namespace DX
 
 	inline Vec4f SplatW(CVec4f w)
 	{
-		return Permute(3, 3, 3, 3, w);
+		Vec4f n = Permute(3, 3, 3, 3, w);
+		return n;
 	}
 
 	//////////////////////////////////////////////////////////////////////
