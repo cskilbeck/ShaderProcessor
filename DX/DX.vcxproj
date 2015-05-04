@@ -144,7 +144,8 @@
     <SPOCK Include="Shaders\Font.shader">
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">gsMain</GeometryShaderFunction>
-      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">gsMain</GeometryShaderFunction>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DXShaders</Namespace>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">DXShaders</Namespace>

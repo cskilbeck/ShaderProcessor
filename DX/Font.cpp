@@ -43,9 +43,8 @@ struct Typeface::KerningValue
 struct Typeface::Graphic
 {
 	Vec2f drawOffset;			// add this to the cursor position before drawing it
-	Half2 size;					// size in pixels
-	Half2 topLeft;				// top left on the texture page
-	Half2 bottomRight;			// bottom right on the texture page
+	Vec2f size;					// size in pixels
+	Vec2f topLeft;				// top left on the texture page
 	int pageIndex;				// which page it's on
 };
 
@@ -264,27 +263,19 @@ namespace DX
 								if(gl.imageTableSize != 0)
 								{
 									gl.imageTable = mGraphics + graphicIndex;
-									node *graphicNode = glyph->first_node();
+									node *g = glyph->first_node();
 
 									int numGraphics = 0;
 
-									while(graphicNode != null)
+									while(g != null)
 									{
 										Graphic &gr = mGraphics[graphicIndex++];
-										gr.pageIndex = GetInt(graphicNode, L"page");
-
+										gr.pageIndex = GetInt(g, L"page");
 										Texture *t = mPages[gr.pageIndex];
-										float tw = t->FWidth();
-										float th = t->FHeight();
-
-										gr.drawOffset = Vec2f(GetFloat(graphicNode, L"offsetX"), GetFloat(graphicNode, L"offsetY"));
-										Vec2f size = Vec2f(GetFloat(graphicNode, L"w"), GetFloat(graphicNode, L"h"));
-										Vec2f pos = Vec2f(GetFloat(graphicNode, L"x"), GetFloat(graphicNode, L"y"));
-
-										gr.size = Half2(size.x, size.y);
-										gr.topLeft = Half2(pos.x / tw, pos.y / th);
-										gr.bottomRight = Half2((pos.x + size.x) / tw, (pos.y + size.y) / th);
-										graphicNode = graphicNode->next_sibling();
+										gr.drawOffset = Vec2f(GetFloat(g, L"offsetX"), GetFloat(g, L"offsetY"));
+										gr.size = Vec2f(GetFloat(g, L"w"), GetFloat(g, L"h"));
+										gr.topLeft = Vec2f(GetFloat(g, L"x"), GetFloat(g, L"y")) / t->FSize();
+										g = g->next_sibling();
 
 										++numGraphics;
 
@@ -619,20 +610,31 @@ namespace DX
 			if(layer < glyph->imageTableSize)
 			{
 				Typeface::Graphic &graphic = glyph->imageTable[layer];
+				Texture *t = mTypeface->mPages[graphic.pageIndex];
 				if(mCurrentPageIndex != graphic.pageIndex)
 				{
 					mDrawList->End();
-					mDrawList->SetTexture(Pixel, *mTypeface->mPages[graphic.pageIndex]);
-					mDrawList->BeginPointList();
+					mDrawList->SetTexture(Pixel, *t);
+					mDrawList->BeginTriangleList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
 				using Vert = DXShaders::Font::InputVertex;
-				Vert &v = mDrawList->AddVertex<Vert>();
-				v.Position = cursor + graphic.drawOffset;
-				v.Size = graphic.size;
-				v.UVa = graphic.topLeft;
-				v.UVb = graphic.bottomRight;
-				v.Color = color;
+				Vec2f wide = Vec2f(graphic.size.x, 0);
+				Vec2f high = Vec2f(0, graphic.size.y);
+				Vec2f topLeft = cursor + graphic.drawOffset;
+				Vec2f topRight = topLeft + wide;
+				Vec2f bottomLeft = topLeft + wide;
+				Vec2f bottomRight = topLeft + graphic.size;
+				wide /= t->FSize();
+				high /= t->FSize();
+				Vec2f size = graphic.size / t->FSize();
+				mDrawList->AddVertex<Vert>({ topLeft, graphic.topLeft, color });
+				mDrawList->AddVertex<Vert>({ topRight, graphic.topLeft + wide, color });
+				mDrawList->AddVertex<Vert>({ bottomLeft, graphic.topLeft + high, color });
+
+				mDrawList->AddVertex<Vert>({ bottomLeft, graphic.topLeft + high, color });
+				mDrawList->AddVertex<Vert>({ topRight, graphic.topLeft + wide, color });
+				mDrawList->AddVertex<Vert>({ bottomRight, graphic.topLeft + size, color });
 			}
 			cursor.x += glyph->advance;
 			rc = true;

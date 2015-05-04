@@ -10,6 +10,14 @@ cbuffer vConstants
 	matrix TransformMatrix;
 }
 
+cbuffer ClipPlanes : register(b4)
+{
+	float4 Clip0;
+	float4 Clip1;
+	float4 Clip2;
+	float4 Clip3;
+};
+
 Texture2D page;
 sampler smplr;
 
@@ -18,9 +26,7 @@ sampler smplr;
 struct VS_INPUT
 {
 	float2 Position	: semantic : ();
-	float2 Size		: semantic : (type=half);
-	float2 UVa		: semantic : (type=half);
-	float2 UVb		: semantic : (type=half);
+	float2 UV		: semantic : (type=half);
 	float4 Color	: semantic : (type=byte);
 };
 
@@ -31,42 +37,22 @@ struct PS_INPUT
 	float4 Position : SV_Position;
 	float4 Color: COLOR;
 	float2 UV: TEXCOORD0;
+	float4 Clip : SV_ClipDistance0;
 };
 
 //////////////////////////////////////////////////////////////////////
 
-VS_INPUT vsMain(VS_INPUT v)
+PS_INPUT vsMain(VS_INPUT i)
 {
-	return v;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-[maxvertexcount(4)]
-void gsMain(point VS_INPUT i[1], inout TriangleStream<PS_INPUT> stream)
-{
-	float2 c[4];
-	float2 uv[4];
-
-	c[0] = float2(0,0);
-	c[1] = float2(i[0].Size.x, 0);
-	c[2] = float2(0, i[0].Size.y);
-	c[3] = i[0].Size;
-
-	uv[0] = i[0].UVa;
-	uv[1] = float2(i[0].UVb.x, i[0].UVa.y);
-	uv[2] = float2(i[0].UVa.x, i[0].UVb.y);
-	uv[3] = i[0].UVb;
-
-	stream.RestartStrip();
-	for(int j=0; j<4; ++j)
-	{
-		PS_INPUT o;
-		o.Position = mul(float4(c[j] + i[0].Position, 0, 1), TransformMatrix);
-		o.Color = i[0].Color;
-		o.UV = uv[j];
-		stream.Append(o);
-	}
+	PS_INPUT o;
+	o.Position = mul(float4(i.Position, 0, 1), TransformMatrix);
+	o.Color = i.Color;
+	o.UV = i.UV;
+	o.Clip = float4(dot(o.Position.xy, Clip0.xy) - Clip0.w,
+					dot(o.Position.xy, Clip1.xy) - Clip1.w,
+					dot(o.Position.xy, Clip2.xy) - Clip2.w,
+					dot(o.Position.xy, Clip3.xy) - Clip3.w);
+	return o;
 }
 
 //////////////////////////////////////////////////////////////////////

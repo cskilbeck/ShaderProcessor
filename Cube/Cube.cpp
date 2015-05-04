@@ -4,7 +4,9 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: status flags should be off (0) in the default state (eg prefer Disabled = 0 to Enabled = 1, Hidden = 0 to Visible = 1)
 
+// !! Arrays in Constant Buffers not being reflected correctly...
 // 2D UI Elements/SceneGraph
+// ?3D SceneGraph
 // Fix mouse capture mess
 // sort out units (metres, right?)
 // Cartoon Car Physics
@@ -22,12 +24,14 @@
 // Shared constant buffers:
 //		if name begins with g_
 //		and both names are the same
+//		and they have the same definition (hash it? or create a table of indices?)
 //		and both bindpoints are the same
 //			[? and map/unmap hasn't been called on the buffer] - does this matter? I don't think so... check it.
 //			then don't re-set it
 // Transparency sorting
 // Physics: fixed timesteps for deterministic behaviour (enable vblank and use framecount)
 // Track and fix leaks
+// Frustum Culling
 // Uber shader
 // Normal mapping
 // Shadow mapping
@@ -744,9 +748,12 @@ bool MyDXWindow::OnCreate()
 
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
 	button.SetFont(font).SetText("Click Me !");
-	rectangle.SetColor(0x80ff0000).SetPosition(Vec2f(100, 200)).SetSize(Vec2f(50, 50));
+	rectangle.SetColor(0x80ffffff).SetPosition(Vec2f(0, 0)).SetSize(Vec2f(2500, 2500)).SetPivot(Vec2f(0.5f, 0.5f));
+	clipRect.SetPosition(Vec2f(0, 0)).SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
 	root.AddChild(button);
-	root.AddChild(rectangle);
+	root.AddChild(clipRect);
+	clipRect.AddChild(rectangle);
+	root.AddChild(clipRect);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -922,10 +929,6 @@ void MyDXWindow::OnFrame()
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 
 	car.Update(deltaTime);
-
-	auto &vc = blitShader.vs.vConstants;
-	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	vc.Update(Context());
 
 	if(Keyboard::Pressed('B'))
 	{
@@ -1201,9 +1204,9 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetPosition(FClientSize() * 0.75f).SetRotation(time);
+	root.SetPosition(FClientSize() * 0.5f).SetRotation(time);
 	root.Update(deltaTime, IdentityMatrix);
-	root.Draw(Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
+	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	drawList.Execute();
 
@@ -1311,6 +1314,10 @@ void MyDXWindow::OnFrame()
 	bv[2] = { { l, b }, { 0, 1 } };
 	bv[3] = { { r, b }, { 1, 1 } };
 	blitVB.UnMap(Context());
+
+	auto &vc = blitShader.vs.vConstants;
+	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	vc.Update(Context());
 
 	blitShader.ps.page = &renderTarget;
 	blitShader.ps.smplr = &uiSampler;

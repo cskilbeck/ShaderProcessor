@@ -14,7 +14,10 @@ namespace DX
 		template<typename T> void Reset(ID3D11DeviceContext *context, ShaderState *shader, T *vertbuffer);
 		void SetTexture(ShaderType shaderType, Texture &t, uint index = 0);
 		void SetSampler(ShaderType shaderType, Sampler &s, uint index = 0);
+		void SetScissorRect(Rect2D const &rect);
+		void ResetScissorRect();
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
+		template <typename T> void SetImmediateConstantData(ShaderType shaderType, T &data, uint index);
 		void BeginPointList();
 		void BeginTriangleList();
 		void BeginTriangleStrip();
@@ -35,6 +38,7 @@ namespace DX
 		void BeginDrawCall(uint32 topology);
 		void SetShader(ID3D11DeviceContext *context, ShaderState *shader, TypelessBuffer *vb, uint vertexSize);
 		void SetConsts(ShaderType shaderType, byte *data, uint size, uint index);
+		void SetImmediateConsts(ShaderType shaderType, byte *data, uint size, uint bindPoint);
 		void UnMapCurrentVertexBuffer();
 
 		byte *mItemBuffer;
@@ -94,5 +98,12 @@ namespace DX
 	template <typename T> inline void DrawList::SetConstantData(ShaderType shaderType, T &data, uint index)
 	{
 		SetConsts(shaderType, (byte *)&data, sizeof(T), index);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	template <typename T> inline void DrawList::SetImmediateConstantData(ShaderType shaderType, T &data, uint bindPoint)
+	{
+		SetImmediateConsts(shaderType, (byte *)&data, sizeof(T), bindPoint);
 	}
 }

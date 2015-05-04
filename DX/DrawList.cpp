@@ -15,9 +15,12 @@ namespace
 		it_Sampler,
 		it_Shader,
 		it_Constants,
+		it_ImmediateConstants,
 		it_RenderTarget,
 		it_Clear,
 		it_ClearDepth,
+		it_ScissorRect,
+		it_ResetScissorRect,
 		it_DrawCall
 	};
 
@@ -77,6 +80,20 @@ namespace
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct ImmediateConstBufferItem: Item
+	{
+		enum
+		{
+			eType = it_ImmediateConstants
+		};
+
+		ShaderType mShaderType;
+		uint32 mBindPoint;
+		uint32 mSize;
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct ShaderItem: Item
 	{
 		enum
@@ -108,6 +125,16 @@ namespace
 			b->UnMap(context);
 		}
 
+		void SetImmediateConstants(ImmediateConstBufferItem *item, ID3D11DeviceContext *context)
+		{
+			Shader *s = mShader->Shaders[item->mShaderType];
+			TypelessBuffer *b = s->mConstBuffers[item->mIndex];
+			byte *p;
+			DXV(b->Map(context, p));
+			memcpy(p, (byte *)item + sizeof(ConstBufferItem), item->mSize);
+			b->UnMap(context);
+		}
+
 		void Activate(ID3D11DeviceContext *context)
 		{
 			mShader->Activate_V(context);
@@ -119,6 +146,31 @@ namespace
 			// so... drawing things in a drawlist is limited to one vertex stream in stream slot 0
 			context->IASetVertexBuffers(0, 1, &b, &stride, &offset);
 		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	struct ScissorRectItem: Item
+	{
+		enum
+		{
+			eType = it_ScissorRect
+		};
+
+		uint32	mIndex;
+		Rect2D	mRect;
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
+	struct ResetScissorRectItem: Item
+	{
+		enum
+		{
+			eType = it_ResetScissorRect
+		};
+
+		uint32	mIndex;
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -198,6 +250,17 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DrawList::SetImmediateConsts(ShaderType shaderType, byte *data, uint size, uint bindPoint)
+	{
+		ImmediateConstBufferItem *i = Add<ImmediateConstBufferItem >();
+		AddData(data, size);
+		i->mShaderType = shaderType;
+		i->mBindPoint = bindPoint;
+		i->mSize = size;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DrawList::SetShader(ID3D11DeviceContext *context, ShaderState *shader, TypelessBuffer *vb, uint vertSize)
 	{
 		UnMapCurrentVertexBuffer();
@@ -244,6 +307,21 @@ namespace DX
 		si->mShaderType = shaderType;
 		si->mSampler = &s;
 		si->mIndex = index;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::SetScissorRect(Rect2D const &rect)
+	{
+		ScissorRectItem *si = Add<ScissorRectItem>();
+		si->mRect = rect;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::ResetScissorRect()
+	{
+		ResetScissorRectItem *si = Add<ResetScissorRectItem>();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -327,34 +405,68 @@ namespace DX
 			switch(((Item *)t)->mType)
 			{
 				case it_Texture:
+				{
 					csi->SetTexture((TextureItem *)t);
 					t += sizeof(TextureItem);
-					break;
+				}
+				break;
 
 				case it_Sampler:
+				{
 					csi->SetSampler((SamplerItem *)t);
 					t += sizeof(SamplerItem);
-					break;
+				}
+				break;
 
 				case it_Shader:
+				{
 					csi = (ShaderItem *)t;
 					t += sizeof(ShaderItem);
-					break;
+				}
+				break;
 
 				case it_Constants:
+				{
 					csi->SetConstants((ConstBufferItem *)t, mContext);
 					t += sizeof(ConstBufferItem) + ((ConstBufferItem *)t)->mSize;
-					break;
+				}
+				break;
+
+				case it_ImmediateConstants:
+				{
+					csi->SetImmediateConstants((ImmediateConstBufferItem *)t, mContext);
+					t += sizeof(ImmediateConstBufferItem) + ((ImmediateConstBufferItem *)t)->mSize;
+				}
+				break;
 
 				case it_DrawCall:
+				{
 					csi->Activate(mContext);
 					((DrawCallItem *)t)->Execute(mContext);
 					t += sizeof(DrawCallItem);
-					break;
+				}
+				break;
+
+				case it_ScissorRect:
+				{
+					ScissorRectItem *s = (ScissorRectItem *)t;
+					mContext->RSSetScissorRects(1, &s->mRect);
+					t += sizeof(ScissorRectItem);
+				}
+				break;
+
+				case it_ResetScissorRect:
+				{
+					mContext->RSSetScissorRects(0, &Rect2D(0, 0, INT_MAX, INT_MAX));
+					t += sizeof(ResetScissorRectItem);
+				}
+				break;
 
 				default:
+				{
 					assert(false && "Corrupt DrawList!");
-					return;
+				}
+				return;
 			}
 		}
 

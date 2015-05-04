@@ -54,6 +54,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	UI::Element root;
 	UI::LabelButton button;
 	UI::Rectangle rectangle;
+	UI::ClipRectangle clipRect;
 
 	float deltaTime;
 	float oldDeltaTime;

@@ -44,6 +44,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
+		{
+			rootElement->Draw(context, drawList, ortho);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
 		{
 			if(IsVisible())
@@ -59,10 +66,59 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void ClipRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			Vec4f corners[4] =
+			{
+				Vec4(0, 0, 0, 0),				// topleft
+				Vec4(mSize.x, 0, 0, 0),			// topright
+				Vec4(0, mSize.y, 0, 0),			// bottomleft
+				Vec4(mSize.x, mSize.y, 0, 0)	// bottomright
+			};
+
+			for(int i = 0; i < 4; ++i)
+			{
+				corners[i] = TransformPoint(corners[i], matrix);
+			}
+			// now work out the planes
+			Vec4f p[4] =
+			{
+				Normalize(corners[1] - corners[0]),
+				Normalize(corners[0] - corners[1]),
+				Normalize(corners[2] - corners[0]),
+				Normalize(corners[0] - corners[2])
+			};
+
+			for(int i = 0; i < 4; ++i)
+			{
+				p[i] = SetW(p[i], Dot(p[i], corners[i]));
+			}
+
+			// TODO (charlie): shared constant buffers needed here... (all UI shaders share clip planes)
+			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::ClipPlanes_index);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void Rectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			static int t = 0;
+			t += 1;
+			float f = t / PI / 8;
+			float x = sinf(f);
+			float y = cosf(f);
+			float ar = 720.0f / 1280.0f;
+			Vec4f v[4] =
+			{
+				Vec4(-y, x * ar, 0, -0.25f),
+				Vec4(y, -x * ar, 0, -0.25f),
+				Vec4(x, y * ar, 0, -0.25f),
+				Vec4(-x, -y * ar, 0, -0.25f)
+			};
+
 			drawList.Reset(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::VertConstants_index);
+			drawList.SetConstantData(Vertex, v, DXShaders::Color2D::VS::ClipPlanes_index);
 			drawList.BeginTriangleStrip();
 			using Vert = DXShaders::Color2D::InputVertex;
 			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });

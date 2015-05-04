@@ -19,7 +19,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		virtual ~TypelessBuffer()
+		~TypelessBuffer()
 		{
 //			Release();
 		}

@@ -18,14 +18,15 @@ namespace DX
 
 	namespace UI
 	{
+		struct Element;
+
 		//////////////////////////////////////////////////////////////////////
 
 		void Open();
+		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
 		void Close();
 
 		//////////////////////////////////////////////////////////////////////
-
-		struct Element;
 
 		struct UIEvent
 		{
@@ -457,6 +458,13 @@ namespace DX
 				return mColor;
 			}
 
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct ClipRectangle: Element
+		{
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
