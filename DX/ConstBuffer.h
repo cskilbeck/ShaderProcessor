@@ -115,11 +115,9 @@ namespace DX
 						break;
 					}
 				}
-				if(i < OffsetCount)
+				if(i == OffsetCount)
 				{
-					TRACE("ConstBuffer %s aliased\n", name);
 					cp = b;
-					// ADDREF or something?
 					break;
 				}
 			}
@@ -128,12 +126,6 @@ namespace DX
 		// found one?
 		if(cp == null)
 		{
-			TRACE("ConstBuffer %s created (%d, %d)\n", name, OffsetCount, bindPoint);
-			for(uint i = 0; i < OffsetCount; ++i)
-			{
-				TRACE("Var %d: %d, %d, %d, %s\n", i, Offsets[i].offset, Offsets[i].elements, Offsets[i].type, Offsets[i].name);
-			}
-			TRACE("\n");
 			// no, make a fresh one
 			cp = new ConstBuffer<definition>();
 			cp->mName = name;
