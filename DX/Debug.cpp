@@ -71,9 +71,9 @@ namespace DX
 
 	void debug_close()
 	{
-		fontVB.Release();
+		fontVB.Destroy();
 		lineShader.Release();
-		lineVB.Release();
+		lineVB.Destroy();
 		debugFont.Release();
 		mainWindow = null;
 	}

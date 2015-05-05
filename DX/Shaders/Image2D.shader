@@ -1,23 +1,12 @@
 //////////////////////////////////////////////////////////////////////
 
-#pragma depth(disabled, write=disabled)
 #pragma blend(0, enabled, src=src_alpha, dest=inv_src_alpha, op=add)
+#pragma depth(disabled, write=disabled)
 #pragma culling(mode=none)
 
 //////////////////////////////////////////////////////////////////////
 
-cbuffer vConstants
-{
-	matrix TransformMatrix;
-}
-
-cbuffer ClipPlanes : register(b4)
-{
-	float4 Clip0;
-	float4 Clip1;
-	float4 Clip2;
-	float4 Clip3;
-};
+#include "2D.h"
 
 //////////////////////////////////////////////////////////////////////
 
@@ -40,7 +29,7 @@ struct PS_INPUT
 	float4 Position : SV_Position;
 	float2 TexCoord : TEXCOORD0;
 	float4 Color	: COLOR0;
-	float4 Clip : SV_ClipDistance0;
+	float4 Clip		: SV_ClipDistance0;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -51,10 +40,7 @@ PS_INPUT vsMain(VS_INPUT v)
 	o.Position = mul(float4(v.Position.xy, 0.5, 1), TransformMatrix);
 	o.TexCoord = v.TexCoord;
 	o.Color = v.Color;
-	o.Clip = float4(dot(o.Position.xy, Clip0.xy) - Clip0.w,
-					dot(o.Position.xy, Clip1.xy) - Clip1.w,
-					dot(o.Position.xy, Clip2.xy) - Clip2.w,
-					dot(o.Position.xy, Clip3.xy) - Clip3.w);
+	o.Clip = DoClip(o.Position.xy);
 	return o;
 }
 

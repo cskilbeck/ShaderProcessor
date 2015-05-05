@@ -146,9 +146,9 @@ namespace DX
 		HRESULT SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
 			Shaders::Sprite::GS::vConstants_t *v;
-			DXR(mShader.gs.vConstants.Map(context, v));
+			DXR(mShader.gs.vConstants->Map(context, v));
 			v->TransformMatrix = Transpose(OrthoProjection2D(width, height));
-			mShader.gs.vConstants.UnMap(context);
+			mShader.gs.vConstants->UnMap(context);
 			return S_OK;
 		}
 
@@ -192,7 +192,7 @@ namespace DX
 			mSampler.Release();
 			mShader.Release();
 			mPage.Release();
-			mVertexBuffer.Release();
+			mVertexBuffer.Destroy();
 			mSprites.clear();
 		}
 

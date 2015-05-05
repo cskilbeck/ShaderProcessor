@@ -99,8 +99,8 @@ void Scene::Unload()
 
 	for(auto &mesh : mMeshes)
 	{
-		mesh.mIndexBuffer.Release();
-		mesh.mVertexBuffer.Release();
+		mesh.mIndexBuffer.Destroy();
+		mesh.mVertexBuffer.Destroy();
 	}
 }
 
@@ -127,7 +127,7 @@ HRESULT Scene::Load(tchar const *filename)
 
 	Shaders::Default::PS &ps = mShader.ps;
 
-	auto l = ps.Light.Get();
+	auto l = ps.Light->Get();
 	l->lightPos = Float3(0, -15, 20);
 	l->ambientColor = Float3(0.1f, 0.1f, 0.1f);
 	l->diffuseColor = Float3(0.8f, 0.8f, 0.8f);
@@ -254,9 +254,9 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 	// TODO (charlie): use a bool which tells whether any of this node's children have anything to render
 	if(!node.mMeshes.empty())
 	{
-		mShader.vs.VertConstants.TransformMatrix = Transpose(transform);
-		mShader.vs.VertConstants.ModelMatrix = modelMatrix;
-		mShader.vs.VertConstants.Update(context);
+		mShader.vs.VertConstants->TransformMatrix = Transpose(transform);
+		mShader.vs.VertConstants->ModelMatrix = modelMatrix;
+		mShader.vs.VertConstants->Update(context);
 		for(auto const m : node.mMeshes)
 		{
 			mShader.vs.SetVertexBuffers(context, 1, &m->mVertexBuffer);
@@ -276,8 +276,8 @@ void Scene::RenderNode(ID3D11DeviceContext *context, Scene::Node &node, Matrix c
 
 void Scene::Render(ID3D11DeviceContext *context, Matrix &modelMatrix, Matrix &cameraMatrix, Vec4f cameraPos)
 {
-	mShader.ps.Camera.cameraPos = cameraPos;
-	mShader.ps.Camera.Update(context);
+	mShader.ps.Camera->cameraPos = cameraPos;
+	mShader.ps.Camera->Update(context);
 	mShader.Activate(context);
 	RenderNode(context, mRootNode, cameraMatrix, Transpose(modelMatrix));
 }

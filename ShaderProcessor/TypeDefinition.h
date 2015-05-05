@@ -39,7 +39,6 @@ struct VariableType
 				members.push_back(new VariableType(reflection, childType, i));
 			}
 		}
-
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -204,6 +203,8 @@ struct TypeDefinition
 	void ConstructorOutput(int index);
 	void CreateOutput(int bindPoint);
 	void ReleaseOutput();
+
+	void DefinitionOutput();
 
 	Binding *								mBinding;		// only set for top level ones (const buffers, basically)
 	D3D11_SHADER_BUFFER_DESC				mDesc;

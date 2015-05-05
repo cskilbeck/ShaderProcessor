@@ -44,7 +44,7 @@ struct Typeface::Graphic
 {
 	Vec2f drawOffset;			// add this to the cursor position before drawing it
 	Vec2f size;					// size in pixels
-	Vec2f topLeft;				// top left on the texture page
+	Half2 uv[4];				// top left on the texture page
 	int pageIndex;				// which page it's on
 };
 
@@ -272,9 +272,22 @@ namespace DX
 										Graphic &gr = mGraphics[graphicIndex++];
 										gr.pageIndex = GetInt(g, L"page");
 										Texture *t = mPages[gr.pageIndex];
+										float tw = t->FWidth();
+										float th = t->FHeight();
 										gr.drawOffset = Vec2f(GetFloat(g, L"offsetX"), GetFloat(g, L"offsetY"));
 										gr.size = Vec2f(GetFloat(g, L"w"), GetFloat(g, L"h"));
-										gr.topLeft = Vec2f(GetFloat(g, L"x"), GetFloat(g, L"y")) / t->FSize();
+										float left = GetFloat(g, L"x");
+										float top = GetFloat(g, L"y");
+										float right = left + gr.size.x;
+										float bottom = top + gr.size.y;
+										left /= tw;
+										top /= th;
+										right /= tw;
+										bottom /= th;
+										gr.uv[0] = { left, top };
+										gr.uv[1] = { right, top };
+										gr.uv[2] = { left, bottom };
+										gr.uv[3] = { right , bottom };
 										g = g->next_sibling();
 
 										++numGraphics;
@@ -576,11 +589,11 @@ namespace DX
 
 	void Font::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
 	{
-		using GS = DXShaders::Font::GS;
-		GS::vConstants_t v;
+		using VS = DXShaders::Font::VS;
+		VS::g_VertConstants2D_t v;
 		v.TransformMatrix = Transpose(matrix);
 		mDrawList->Reset(context, &shader, mVertexBuffer);
-		mDrawList->SetConstantData(Geometry, v, GS::vConstants_index);
+		mDrawList->SetConstantData(Vertex, v, VS::g_VertConstants2D_index);
 		mCurrentPageIndex = -1;
 	}
 
@@ -618,23 +631,18 @@ namespace DX
 					mDrawList->BeginTriangleList();
 					mCurrentPageIndex = graphic.pageIndex;
 				}
+				Vec2f v[4];
+				v[0] = cursor + graphic.drawOffset;
+				v[1] = Vec2f(v[0].x + graphic.size.x, v[0].y);
+				v[2] = Vec2f(v[0].x, v[0].y + graphic.size.y );
+				v[3] = v[0] + graphic.size;
 				using Vert = DXShaders::Font::InputVertex;
-				Vec2f wide = Vec2f(graphic.size.x, 0);
-				Vec2f high = Vec2f(0, graphic.size.y);
-				Vec2f topLeft = cursor + graphic.drawOffset;
-				Vec2f topRight = topLeft + wide;
-				Vec2f bottomLeft = topLeft + wide;
-				Vec2f bottomRight = topLeft + graphic.size;
-				wide /= t->FSize();
-				high /= t->FSize();
-				Vec2f size = graphic.size / t->FSize();
-				mDrawList->AddVertex<Vert>({ topLeft, graphic.topLeft, color });
-				mDrawList->AddVertex<Vert>({ topRight, graphic.topLeft + wide, color });
-				mDrawList->AddVertex<Vert>({ bottomLeft, graphic.topLeft + high, color });
-
-				mDrawList->AddVertex<Vert>({ bottomLeft, graphic.topLeft + high, color });
-				mDrawList->AddVertex<Vert>({ topRight, graphic.topLeft + wide, color });
-				mDrawList->AddVertex<Vert>({ bottomRight, graphic.topLeft + size, color });
+				mDrawList->AddVertex<Vert>({ v[0], graphic.uv[0], color });
+				mDrawList->AddVertex<Vert>({ v[1], graphic.uv[1], color });
+				mDrawList->AddVertex<Vert>({ v[2], graphic.uv[2], color });
+				mDrawList->AddVertex<Vert>({ v[1], graphic.uv[1], color });
+				mDrawList->AddVertex<Vert>({ v[3], graphic.uv[3], color });
+				mDrawList->AddVertex<Vert>({ v[2], graphic.uv[2], color });
 			}
 			cursor.x += glyph->advance;
 			rc = true;

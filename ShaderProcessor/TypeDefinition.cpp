@@ -150,7 +150,7 @@ void TypeDefinition::StaticsOutput(string const &shaderName)
 		Output(sep);
 		OutputLine();
 		OutputIndent();
-		Output("{ \"%s\", %d }", v.Name(), v.StartOffset());
+		Output("{ \"%s\", %d, %d, %d }", v.Name(), v.StartOffset(), v.Type->Type(), v.Type->Elements());
 		sep = ",";
 	}
 	OutputLine();
@@ -218,7 +218,7 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 	}
 	UnIndent("};");
 	OutputLine();
-	OutputLine("ConstBuffer<%s_t> %s;", mDesc.Name, mDesc.Name);
+	OutputLine("ConstBuffer<%s_t> *%s;", mDesc.Name, mDesc.Name);
 	OutputLine("enum { %s_index = %d };", mDesc.Name, mIndex);
 	OutputLine();
 }
@@ -239,10 +239,16 @@ void TypeDefinition::CreateOutput(int bindPoint)
 	{
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
-	OutputLine("%s.Create(%u, %s_%s_Offsets, %s, this, %d, %d);", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
+//	OutputLine("%s.Create(%u, %s_%s_Offsets, %s, this, %d, %d);", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
+	OutputLine("DXR(CreateConstBuffer<%s_t>(\"%s\", &%s,%u, %s_%s_Offsets, %s, this, %d, %d));", mDesc.Name, mDesc.Name, mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
 }
 
 void TypeDefinition::ReleaseOutput()
 {
-	OutputLine("%s.Release();", mDesc.Name);
+	OutputLine("%s->Release();", mDesc.Name);
+}
+
+void TypeDefinition::DefinitionOutput()
+{
+	// Output enough info to disambiguate
 }

@@ -32,7 +32,7 @@ int PhysicsDebug::Create(DX::DXWindow *window)
 void PhysicsDebug::Release()
 {
 	mShader.Release();
-	mVertexBuffer.Release();
+	mVertexBuffer.Destroy();
 }
 
 //////////////////////////////////////////////////////////////////////

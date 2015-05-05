@@ -4,6 +4,34 @@
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: status flags should be off (0) in the default state (eg prefer Disabled = 0 to Enabled = 1, Hidden = 0 to Visible = 1)
 
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+// Shared Constant Buffers:
+
+// All ConstantBuffers are global
+// There is a global list of ConstantBuffers
+// Each ConstantBuffer has an 'Index' which specifies where in the global list it is
+
+// ConstantBuffer: Name, Type (Vertex, Pixel etc), BindPoint, Definition *
+// Definition: Field *[]
+// Field: Name, Type, Offset, Size
+
+// When a Shader is loaded, scan the ConstantBuffers and look for a match in the Global CB list
+// If a match is found, refer to that one, else add to the Global CB list
+
+// There is a per-shader-type bindpoint tracking list (Bindpoint <--> CB Index)
+
+// When a ConstantBuffer needs to be Set, check if the currently bound CB Index is the same, if it is, skip the Set()
+// ^^^ allow this behaviour to be overridden (force CB set)
+
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+
+
+
+
 // !! Arrays in Constant Buffers not being reflected correctly...
 // 2D UI Elements/SceneGraph
 // ?3D SceneGraph
@@ -95,6 +123,83 @@
 // * Test the AssetManager
 
 #include "stdafx.h"
+
+//////////////////////////////////////////////////////////////////////
+
+enum _Type: uint32
+{
+	_Float = 1,
+	_Int = 2,
+	_UInt = 3
+	//etc
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct _Field
+{
+	string			mName;
+	_Type			mType;
+	uint32			mOffset;
+	uint32			mSize;		// 1 for non-array fields
+
+	bool operator == (_Field &o)
+	{
+		return mName.compare(o.mName) == 0 &&
+			mType == o.mType &&
+			mOffset == o.mOffset &&
+			mSize == o.mSize;
+	}
+
+	bool operator != (_Field &o)
+	{
+		return !(*this == o);
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct _Definition
+{
+	string			mName;
+	vector<_Field>	mFields;
+
+	bool operator == (_Definition &o)
+	{
+		if(mName.compare(o.mName) != 0 ||
+		   mFields.size() != o.mFields.size())
+		{
+			return false;
+		}
+		for(size_t i = 0, l = mFields.size(); i < l; ++i)
+		{
+			if(mFields[i] != o.mFields[i])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+};
+
+//////////////////////////////////////////////////////////////////////
+
+struct _ConstBuffer
+{
+	string			mName;
+	ShaderType		mShaderType;
+	uint32			mIndex;
+	uint32			mBindPoint;
+	_Definition *	mDefinition;
+
+	bool operator == (_ConstBuffer  &o)
+	{
+		return mName.compare(o.mName) == 0 &&
+			mShaderType == o.mShaderType &&
+			mBindPoint == o.mBindPoint &&
+			*mDefinition == *(o.mDefinition);
+	}
+};
 
 //////////////////////////////////////////////////////////////////////
 
@@ -287,11 +392,11 @@ void MyDXWindow::Box::Draw(MyDXWindow *window)
 
 void MyDXWindow::DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture)
 {
-	auto &vc = cubeShader.vs.VertConstants;
+	auto &vc = *cubeShader.vs.VertConstants;
 	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
-	auto &ps = cubeShader.ps.Camera;
+	auto &ps = *cubeShader.ps.Camera;
 	ps.cameraPos = camera->position;
 	ps.Update(Context());
 	cubeShader.ps.picTexture = &texture;
@@ -442,19 +547,19 @@ int MyDXWindow::CreateSphere(int steps)
 
 void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 {
-	auto &vc = sphereShader.vs.VertConstants;
-	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
-	vc.ModelMatrix = Transpose(m);
-	vc.Update(Context());
-	auto &ps = sphereShader.ps.Camera;
-	ps.cameraPos = camera->position;
-	auto &l = sphereShader.ps.Light;
-	l.lightPos = lightPos;
-	l.ambientColor = Float3(0.1f, 0.1f, 0.1f);
-	l.diffuseColor = Float3(1.7f, 1.7f, 1.7f);
-	l.specColor = Float3(2, 2, 2);
-	l.Update(Context());
-	ps.Update(Context());
+	auto vc = sphereShader.vs.VertConstants;
+	vc->TransformMatrix = Transpose(camera->GetTransformMatrix(m));
+	vc->ModelMatrix = Transpose(m);
+	vc->Update(Context());
+	auto ps = sphereShader.ps.Camera;
+	ps->cameraPos = camera->position;
+	auto l = sphereShader.ps.Light;
+	l->lightPos = lightPos;
+	l->ambientColor = Float3(0.1f, 0.1f, 0.1f);
+	l->diffuseColor = Float3(1.7f, 1.7f, 1.7f);
+	l->specColor = Float3(2, 2, 2);
+	l->Update(Context());
+	ps->Update(Context());
 	sphereShader.ps.sphereTexture = &sphereTexture;
 	sphereShader.ps.tex1Sampler = &cubeSampler;
 	sphereShader.vs.SetVertexBuffers(Context(), 1, &sphereVerts);
@@ -529,11 +634,11 @@ int MyDXWindow::CreateCylinder(int steps)
 
 void MyDXWindow::DrawCylinder(Matrix const &m, Texture &texture)
 {
-	auto &vc = cubeShader.vs.VertConstants;
+	auto &vc = *cubeShader.vs.VertConstants;
 	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc.ModelMatrix = Transpose(m);
 	vc.Update(Context());
-	auto &ps = cubeShader.ps.Camera;
+	auto &ps = *cubeShader.ps.Camera;
 	ps.cameraPos = camera->position;
 	ps.Update(Context());
 	cubeShader.ps.picTexture = &texture;
@@ -777,7 +882,7 @@ bool MyDXWindow::OnCreate()
 
 	lightPos = Vec4(0, -15, 20, 0);
 
-	auto &l = cubeShader.ps.Light;
+	auto &l = *cubeShader.ps.Light;
 	l.lightPos = lightPos;
 	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
 	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
@@ -790,10 +895,10 @@ bool MyDXWindow::OnCreate()
 	DXB(uiSampler.Create());
 	uiShader.ps.page = &uiTexture;
 	uiShader.ps.smplr = &uiSampler;
-	uiShader.vs.vConstants.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-	DXB(uiShader.vs.vConstants.Update());
-	uiShader.ps.pConstants.Color = Float4(1, 1, 1, 1);
-	DXB(uiShader.ps.pConstants.Update());
+	uiShader.vs.vConstants->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	DXB(uiShader.vs.vConstants->Update());
+	uiShader.ps.pConstants->Color = Float4(1, 1, 1, 1);
+	DXB(uiShader.ps.pConstants->Update());
 
 	DXB(spriteShader.Create());
 	DXB(spriteVerts.Create(2, null, DynamicUsage, Writeable));
@@ -812,8 +917,8 @@ bool MyDXWindow::OnCreate()
 	blitShader.ps.smplr = &uiSampler;
 	blitShader.ps.page = &renderTarget;
 
-	cubeShader.ps.Camera.cameraPos = Vec4(0, 1, 0);
-	DXB(cubeShader.ps.Camera.Update());
+	cubeShader.ps.Camera->cameraPos = Vec4(0, 1, 0);
+	DXB(cubeShader.ps.Camera->Update());
 
 	dashCam.CalculatePerspectiveProjectionMatrix(0.5f, 1.0f);
 	dashCam.CalculateViewMatrix(Vec4(0, 1, 0), Vec4(0, 0, 0), Vec4(0, 0, 1));
@@ -1091,7 +1196,7 @@ void MyDXWindow::OnFrame()
 		}
 		instancedVB1.UnMap(Context());
 
-		instancedShader.vs.VertConstants.Get()->Transform = Transpose(camera->GetTransformMatrix());
+		instancedShader.vs.VertConstants->Get()->Transform = Transpose(camera->GetTransformMatrix());
 		instancedShader.Activate(Context());
 		instancedShader.vs.SetVertexBuffers(Context(), 2, &instancedVB0, &instancedVB1);
 		cubeIndices.Activate(Context());
@@ -1102,7 +1207,7 @@ void MyDXWindow::OnFrame()
 	// Draw grid
 
 	simpleShader.Activate(Context());
-	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera->GetTransformMatrix());
+	simpleShader.vs.VertConstants->Get()->TransformMatrix = Transpose(camera->GetTransformMatrix());
 	simpleShader.vs.SetVertexBuffers(Context(), 1, &gridVB);
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	Context()->Draw(gridVB.Count(), 0);
@@ -1111,7 +1216,7 @@ void MyDXWindow::OnFrame()
 
 	Matrix modelMatrix = ScaleMatrix(Vec4(0.25f, 0.25f, 0.25f));
 	modelMatrix *= TranslationMatrix(lightPos);
-	simpleShader.vs.VertConstants.Get()->TransformMatrix = Transpose(camera->GetTransformMatrix(modelMatrix));
+	simpleShader.vs.VertConstants->Get()->TransformMatrix = Transpose(camera->GetTransformMatrix(modelMatrix));
 	simpleShader.vs.SetVertexBuffers(Context(), 1, &octahedronVB);
 	octahedronIB.Activate(Context());
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -1155,7 +1260,7 @@ void MyDXWindow::OnFrame()
 		y1 = y0 + h;
 
 		c.Color = Float4(1, 1, 1, 1);
-		drawList.SetConstantData(Pixel, c, uiShader.ps.pConstants.Index());
+		drawList.SetConstantData(Pixel, c, uiShader.ps.pConstants->Index());
 		drawList.BeginTriangleList();
 		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
 		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
@@ -1214,7 +1319,7 @@ void MyDXWindow::OnFrame()
 
 	// Draw some sprites immediate mode
 
-	spriteShader.gs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+	spriteShader.gs.vConstants->Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	Sprite *v;
 	spriteVerts.Map(Context(), (Shaders::Sprite::InputVertex * &)v);
@@ -1280,7 +1385,7 @@ void MyDXWindow::OnFrame()
 
 	{
 		Matrix modelMatrix = RotationMatrix(cubeRot) * ScaleMatrix(cubeScale) * TranslationMatrix(Vec4(0, 30, 0));
-		auto &vc = cubeShader.vs.VertConstants;
+		auto &vc = *cubeShader.vs.VertConstants;
 		vc.TransformMatrix = Transpose(dashCam.GetTransformMatrix(modelMatrix));
 		vc.ModelMatrix = Transpose(modelMatrix);
 		vc.Update();
@@ -1315,7 +1420,7 @@ void MyDXWindow::OnFrame()
 	bv[3] = { { r, b }, { 1, 1 } };
 	blitVB.UnMap(Context());
 
-	auto &vc = blitShader.vs.vConstants;
+	auto &vc = *blitShader.vs.vConstants;
 	vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 	vc.Update(Context());
 
@@ -1354,7 +1459,7 @@ void MyDXWindow::OnFrame()
 
 		Viewport(0, 0, fpsGraph.FWidth(), fpsGraph.FHeight(), 0, 1).Activate(Context());
 		fpsGraph.Activate(Context());
-		splatShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph.Width(), fpsGraph.Height()));
+		splatShader.vs.vConstants->Get()->TransformMatrix = Transpose(OrthoProjection2D(fpsGraph.Width(), fpsGraph.Height()));
 		splatShader.vs.SetVertexBuffers(Context(), 1, &splatVB);
 		splatShader.Activate(Context());
 
@@ -1397,8 +1502,8 @@ void MyDXWindow::OnFrame()
 		UIVerts.UnMap(Context());
 
 		uiShader.vs.SetVertexBuffers(Context(), 1, &UIVerts);
-		uiShader.vs.vConstants.Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		uiShader.ps.pConstants.Get()->Color = Vec4(1, 1, 1, 1);
+		uiShader.vs.vConstants->Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		uiShader.ps.pConstants->Get()->Color = Vec4(1, 1, 1, 1);
 		uiShader.ps.page = &fpsGraph;
 		uiShader.ps.smplr = &fpsSampler;
 		uiShader.Activate(Context());
@@ -1425,29 +1530,29 @@ void MyDXWindow::OnDestroy()
 	sphereTexture.Release();
 
 	buttonTexture.Release();
-	fontVB.Release();
-	bigFontVB.Release();
+	fontVB.Destroy();
+	bigFontVB.Destroy();
 
-	cylinderIndices.Release();
-	cylinderVerts.Release();
-	sphereVerts.Release();
+	cylinderIndices.Destroy();
+	cylinderVerts.Destroy();
+	sphereVerts.Destroy();
 
 	cubeShader.Release();
-	cubeVerts.Release();
-	cubeIndices.Release();
+	cubeVerts.Destroy();
+	cubeIndices.Destroy();
 	cubeTexture.Release();
 	cubeSampler.Release();
 	simpleShader.Release();
-	gridVB.Release();
-	octahedronVB.Release();
-	simpleVB.Release();
-	octahedronIB.Release();
+	gridVB.Destroy();
+	octahedronVB.Destroy();
+	simpleVB.Destroy();
+	octahedronIB.Destroy();
 	instancedShader.Release();
-	instancedVB0.Release();
-	instancedVB1.Release();
+	instancedVB0.Destroy();
+	instancedVB1.Destroy();
 	scene.Unload();
 	uiShader.Release();
-	UIVerts.Release();
+	UIVerts.Destroy();
 	uiTexture.Release();
 	uiSampler.Release();
 
@@ -1455,12 +1560,12 @@ void MyDXWindow::OnDestroy()
 	bigFont.Release();
 
 	spriteShader.Release();
-	spriteVerts.Release();
+	spriteVerts.Destroy();
 	spriteTexture.Release();
 	spriteSampler.Release();
 
 	splatShader.Release();
-	splatVB.Release();
+	splatVB.Destroy();
 
 	fpsGraph.Release();
 	fpsSampler.Release();
@@ -1470,7 +1575,7 @@ void MyDXWindow::OnDestroy()
 	renderTarget.Release();
 
 	blitShader.Release();
-	blitVB.Release();
+	blitVB.Destroy();
 
 	Scene::CleanUp();
 	Texture::FlushAll();

@@ -37,9 +37,9 @@ namespace DX
 		{
 			image2DShader.Release();
 			colorShader.Release();
-			image2DVertBuffer.Release();
-			fontVB.Release();
-			colorVB.Release();
+			image2DVertBuffer.Destroy();
+			fontVB.Destroy();
+			colorVB.Destroy();
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -47,6 +47,8 @@ namespace DX
 		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
 		{
 			rootElement->Draw(context, drawList, ortho);
+			Vec4f p[4] = { 0 };
+			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -80,7 +82,8 @@ namespace DX
 			{
 				corners[i] = TransformPoint(corners[i], matrix);
 			}
-			// now work out the planes
+
+			// now work out the normals
 			Vec4f p[4] =
 			{
 				Normalize(corners[1] - corners[0]),
@@ -89,13 +92,14 @@ namespace DX
 				Normalize(corners[0] - corners[2])
 			};
 
+			// and the planes
 			for(int i = 0; i < 4; ++i)
 			{
 				p[i] = SetW(p[i], Dot(p[i], corners[i]));
 			}
 
-			// TODO (charlie): shared constant buffers needed here... (all UI shaders share clip planes)
-			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::ClipPlanes_index);
+			// set clip planes into the constant buffer
+			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -117,8 +121,8 @@ namespace DX
 			};
 
 			drawList.Reset(context, &colorShader, &colorVB);
-			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::VertConstants_index);
-			drawList.SetConstantData(Vertex, v, DXShaders::Color2D::VS::ClipPlanes_index);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+			drawList.SetConstantData(Vertex, v, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 			drawList.BeginTriangleStrip();
 			using Vert = DXShaders::Color2D::InputVertex;
 			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });
@@ -145,7 +149,7 @@ namespace DX
 			drawList.Reset(context, &image2DShader, &image2DVertBuffer);
 			drawList.SetTexture(Pixel, *mGraphic);
 			drawList.SetSampler(Pixel, *mSampler);
-			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::vConstants_index);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::g_VertConstants2D_index);
 			drawList.BeginTriangleStrip();
 			drawList.AddVertex<Vert>({ { 0, mSize.y }, { 0, 1 }, 0xffffffff });
 			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });

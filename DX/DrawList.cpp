@@ -15,7 +15,6 @@ namespace
 		it_Sampler,
 		it_Shader,
 		it_Constants,
-		it_ImmediateConstants,
 		it_RenderTarget,
 		it_Clear,
 		it_ClearDepth,
@@ -80,20 +79,6 @@ namespace
 
 	//////////////////////////////////////////////////////////////////////
 
-	struct ImmediateConstBufferItem: Item
-	{
-		enum
-		{
-			eType = it_ImmediateConstants
-		};
-
-		ShaderType mShaderType;
-		uint32 mBindPoint;
-		uint32 mSize;
-	};
-
-	//////////////////////////////////////////////////////////////////////
-
 	struct ShaderItem: Item
 	{
 		enum
@@ -116,16 +101,6 @@ namespace
 		}
 
 		void SetConstants(ConstBufferItem *item, ID3D11DeviceContext *context)
-		{
-			Shader *s = mShader->Shaders[item->mShaderType];
-			TypelessBuffer *b = s->mConstBuffers[item->mIndex];
-			byte *p;
-			DXV(b->Map(context, p));
-			memcpy(p, (byte *)item + sizeof(ConstBufferItem), item->mSize);
-			b->UnMap(context);
-		}
-
-		void SetImmediateConstants(ImmediateConstBufferItem *item, ID3D11DeviceContext *context)
 		{
 			Shader *s = mShader->Shaders[item->mShaderType];
 			TypelessBuffer *b = s->mConstBuffers[item->mIndex];
@@ -245,17 +220,6 @@ namespace DX
 		AddData(data, size);
 		i->mShaderType = shaderType;
 		i->mIndex = index;
-		i->mSize = size;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void DrawList::SetImmediateConsts(ShaderType shaderType, byte *data, uint size, uint bindPoint)
-	{
-		ImmediateConstBufferItem *i = Add<ImmediateConstBufferItem >();
-		AddData(data, size);
-		i->mShaderType = shaderType;
-		i->mBindPoint = bindPoint;
 		i->mSize = size;
 	}
 
@@ -406,6 +370,7 @@ namespace DX
 			{
 				case it_Texture:
 				{
+					assert(csi != null);
 					csi->SetTexture((TextureItem *)t);
 					t += sizeof(TextureItem);
 				}
@@ -413,6 +378,7 @@ namespace DX
 
 				case it_Sampler:
 				{
+					assert(csi != null);
 					csi->SetSampler((SamplerItem *)t);
 					t += sizeof(SamplerItem);
 				}
@@ -427,22 +393,19 @@ namespace DX
 
 				case it_Constants:
 				{
-					csi->SetConstants((ConstBufferItem *)t, mContext);
-					t += sizeof(ConstBufferItem) + ((ConstBufferItem *)t)->mSize;
-				}
-				break;
-
-				case it_ImmediateConstants:
-				{
-					csi->SetImmediateConstants((ImmediateConstBufferItem *)t, mContext);
-					t += sizeof(ImmediateConstBufferItem) + ((ImmediateConstBufferItem *)t)->mSize;
+					assert(csi != null);
+					ConstBufferItem *c = (ConstBufferItem *)t;
+					csi->SetConstants(c, mContext);
+					t += sizeof(ConstBufferItem) + c->mSize;
 				}
 				break;
 
 				case it_DrawCall:
 				{
+					assert(csi != null);
+					DrawCallItem *d = (DrawCallItem *)t;
 					csi->Activate(mContext);
-					((DrawCallItem *)t)->Execute(mContext);
+					d->Execute(mContext);
 					t += sizeof(DrawCallItem);
 				}
 				break;

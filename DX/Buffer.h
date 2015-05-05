@@ -26,7 +26,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Release()
+		void Destroy()
 		{
 			if(mOwnData)
 			{
@@ -107,7 +107,7 @@ namespace DX
 
 		HRESULT Set(ID3D11DeviceContext *context, byte *data)
 		{
-			Release();
+			Destroy();
 			mData = data;
 			mOwnData = false;
 			DXR(Commit(context));
@@ -190,7 +190,7 @@ namespace DX
 
 			MappedResource(MappedResource &other)
 			{
-				Release();
+				Destroy();
 				buffer = other.buffer;
 				DXI(resource = buffer->Map());
 			}
@@ -236,6 +236,13 @@ namespace DX
 		{
 			mSizeOf = sizeof(T);
 			return TypelessBuffer::CreateBuffer(type, count * sizeof(T), (byte *)data, usage, rwOption);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Release()
+		{
+			TypelessBuffer::Destroy();
 		}
 
 		//////////////////////////////////////////////////////////////////////
