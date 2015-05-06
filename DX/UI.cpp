@@ -53,6 +53,13 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void Update(Element *rootElement, float deltaTime)
+		{
+			rootElement->Update(deltaTime, IdentityMatrix);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
 		{
 			if(IsVisible())
@@ -70,59 +77,43 @@ namespace DX
 
 		void ClipRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec4f corners[4] =
-			{
-				Vec4(0, 0, 0, 0),				// topleft
-				Vec4(mSize.x, 0, 0, 0),			// topright
-				Vec4(0, mSize.y, 0, 0),			// bottomleft
-				Vec4(mSize.x, mSize.y, 0, 0)	// bottomright
-			};
+			// the clip rectangle corners
+			Vec4f topLeft = TransformPoint(Vec4(0, 0, 0, 0), matrix);
+			Vec4f topRight = TransformPoint(Vec4(mSize.x, 0, 0, 0), matrix);
+			Vec4f bottomLeft = TransformPoint(Vec4(0, mSize.y, 0, 0), matrix);
+			Vec4f bottomRight = TransformPoint(Vec4(mSize.x, mSize.y, 0, 0), matrix);
 
-			for(int i = 0; i < 4; ++i)
-			{
-				corners[i] = TransformPoint(corners[i], matrix);
-			}
+			// get the edges
+			Vec4f topEdge = topRight - topLeft;
+			Vec4f leftEdge = bottomLeft - topLeft;
+			Vec4f bottomEdge = bottomRight - bottomLeft;
+			Vec4f rightEdge = bottomRight - topRight;
 
 			// now work out the normals
-			Vec4f p[4] =
+			Vec4f left = Normalize(Vec4(-GetY(leftEdge), GetX(leftEdge), 0, 0));
+			Vec4f right = Normalize(Vec4(GetY(rightEdge), -GetX(rightEdge), 0, 0));
+			Vec4f top = Normalize(Vec4(GetY(topEdge), -GetX(topEdge), 0, 0));
+			Vec4f bottom = Normalize(Vec4(-GetY(bottomEdge), GetX(bottomEdge), 0, 0));
+
+			// now the planes
+			Vec4f planes[4] =
 			{
-				Normalize(corners[1] - corners[0]),
-				Normalize(corners[0] - corners[1]),
-				Normalize(corners[2] - corners[0]),
-				Normalize(corners[0] - corners[2])
+				SetW(left, Dot(left, topLeft)),
+				SetW(right, Dot(right, topRight)),
+				SetW(top, Dot(top, topLeft)),
+				SetW(bottom, Dot(bottom, bottomLeft)),
 			};
 
-			// and the planes
-			for(int i = 0; i < 4; ++i)
-			{
-				p[i] = SetW(p[i], Dot(p[i], corners[i]));
-			}
-
 			// set clip planes into the constant buffer
-			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
+			drawList.SetConstantData(Vertex, planes, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		void Rectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			static int t = 0;
-			t += 1;
-			float f = t / PI / 8;
-			float x = sinf(f);
-			float y = cosf(f);
-			float ar = 720.0f / 1280.0f;
-			Vec4f v[4] =
-			{
-				Vec4(-y, x * ar, 0, -0.25f),
-				Vec4(y, -x * ar, 0, -0.25f),
-				Vec4(x, y * ar, 0, -0.25f),
-				Vec4(-x, -y * ar, 0, -0.25f)
-			};
-
 			drawList.Reset(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
-			drawList.SetConstantData(Vertex, v, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 			drawList.BeginTriangleStrip();
 			using Vert = DXShaders::Color2D::InputVertex;
 			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });

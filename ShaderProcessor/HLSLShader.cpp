@@ -781,7 +781,6 @@ void HLSLShader::OutputConstBufferMembers()
 	}
 
 	OutputComment("Const Buffers");
-	int index = 0;
 	for(auto i = mBindings.begin(); i != mBindings.end(); ++i)
 	{
 		if((*i)->IsConstBuffer())

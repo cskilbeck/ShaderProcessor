@@ -158,6 +158,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Vec2f operator - (Vec2f const &a)
+	{
+		return Vec2f(-a.x, -a.y);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline bool operator <= (Vec2f const &a, Vec2f const &b)
 	{
 		return a.x <= b.x && a.y <= b.y;

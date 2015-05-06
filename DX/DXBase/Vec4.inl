@@ -318,6 +318,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Vec4f operator - (CVec4f a)
+	{
+		return _mm_sub_ps(_mm_set_ss(0), a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline Vec4f operator * (CVec4f a, float b)
 	{
 		return _mm_mul_ps(a, _mm_set_ps(b, b, b, b));

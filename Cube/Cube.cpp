@@ -768,10 +768,10 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	KeyPressed += [this] (KeyboardEvent const &e)
-	{
-		Trace("[%04x] : %c\n", e.key, e.key);
-	};
+	//KeyPressed += [this] (KeyboardEvent const &e)
+	//{
+	//	Trace("[%04x] : %c\n", e.key, e.key);
+	//};
 
 	cameras[0] = new FPSCamera(this);
 	cameras[1] = new FollowCamera(this);
@@ -851,14 +851,16 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
-	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
-	button.SetFont(font).SetText("Click Me !");
-	rectangle.SetColor(0x80ffffff).SetPosition(Vec2f(0, 0)).SetSize(Vec2f(2500, 2500)).SetPivot(Vec2f(0.5f, 0.5f));
-	clipRect.SetPosition(Vec2f(0, 0)).SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
-	root.AddChild(button);
+	clipRect.SetPivot(Vec2f::half);
+	clipRect.SetSize(Vec2f(200, 200));
 	root.AddChild(clipRect);
+
+	rectangle.SetColor(0x80ffffff).SetSize(Vec2f(2500, 2500)).SetPivot(Vec2f::half);
 	clipRect.AddChild(rectangle);
-	root.AddChild(clipRect);
+
+	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
+	button.SetFont(font).SetText("Click Me !").SetPosition(clipRect.GetSize() / 10);
+	clipRect.AddChild(button);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -1260,7 +1262,7 @@ void MyDXWindow::OnFrame()
 		y1 = y0 + h;
 
 		c.Color = Float4(1, 1, 1, 1);
-		drawList.SetConstantData(Pixel, c, uiShader.ps.pConstants->Index());
+		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
 		drawList.BeginTriangleList();
 		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
 		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
@@ -1309,8 +1311,10 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetPosition(FClientSize() * 0.5f).SetRotation(time);
-	root.Update(deltaTime, IdentityMatrix);
+	root.SetPosition(FClientSize() * 0.5f);
+	clipRect.SetRotation(Mouse::Position.x / FClientWidth() * PI * 2);
+
+	UI::Update(&root, deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 
 	drawList.Execute();

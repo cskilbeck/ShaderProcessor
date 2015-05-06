@@ -82,6 +82,8 @@ namespace DX
 	Vec4f		AxisAngleFromQuaternion(CVec4f quat);
 	Vec4f		QuaternionFromAxisAngle(CVec4f axisAngle);
 
+	Vec4f		operator - (CVec4f a);
+
 	Vec4f		operator / (CVec4f a, CVec4f b);
 	Vec4f		operator * (CVec4f a, float b);
 	Vec4f		operator / (CVec4f a, float b);

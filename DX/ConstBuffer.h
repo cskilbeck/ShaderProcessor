@@ -28,7 +28,6 @@ namespace DX
 	{
 		ConstBuffer()
 			: Buffer<definition>()
-			, mIndex(0)
 			, mOffsetCount(0)
 			, mOffsets(null)
 			, mDefaults(null)
@@ -74,20 +73,33 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		uint32 Index() const
-		{
-			return mIndex;
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 	private:
 
-		template<typename T> friend HRESULT CreateConstBuffer(char const *name, ConstBuffer<T> **constBuffer, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint);
+		template<typename T> friend HRESULT CreateConstBuffer(char const *name, ConstBuffer<T> **constBuffer, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint bindPoint);
+
+		HRESULT Init(char const *name, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, uint bindPoint, uint ID)
+		{
+			mName = name;
+			mOffsetCount = OffsetCount;
+			mOffsets = Offsets;
+			mDefaults = Defaults;
+			mBindPoint = bindPoint;
+			mID = (uint32)gConstBuffers.size();
+			if(mDefaults != null)
+			{
+				memcpy(this, mDefaults, sizeof(definition)); // definition must be most-derived and *** THERE CAN BE NO VIRTUALS ***!
+			}
+			else
+			{
+				memset(this, 0, sizeof(definition));
+			}
+			DXR(CreateBuffer(BufferType::ConstantBufferType, 1, this, DynamicUsage, Writeable));
+			return S_OK;
+		}
 
 		char const *					mName;
-		uint32							mIndex;
 		uint32							mBindPoint;
+		uint32							mID;				// where in the global constbuffer list this one is
 		uint32							mOffsetCount;
 		ConstBufferOffset const *		mOffsets;
 		uint32 *			 			mDefaults;
@@ -96,8 +108,9 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	extern vector<TypelessBuffer *> gConstBuffers;
+	extern int gBindings[64];
 
-	template<typename definition> HRESULT CreateConstBuffer(char const *name, ConstBuffer<definition> **constBuffer, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint index, uint bindPoint)
+	template<typename definition> HRESULT CreateConstBuffer(char const *name, ConstBuffer<definition> **constBuffer, uint32 OffsetCount, ConstBufferOffset const Offsets[], uint32 *Defaults, Shader *parent, uint bindPoint)
 	{
 		ConstBuffer<definition> *cp = null;
 
@@ -105,8 +118,11 @@ namespace DX
 		for(auto c : gConstBuffers)
 		{
 			ConstBuffer<definition> *b = (ConstBuffer<definition> *)c;
+
+			// name, offsetcount & bindpoint the same?
 			if(strcmp(b->mName, name) == 0 && OffsetCount == b->mOffsetCount && bindPoint == b->mBindPoint)
 			{
+				// all offsets the same?
 				uint i = 0;
 				for(; i < OffsetCount; ++i)
 				{
@@ -117,6 +133,7 @@ namespace DX
 				}
 				if(i == OffsetCount)
 				{
+					// yes, found a match
 					cp = b;
 					break;
 				}
@@ -128,24 +145,11 @@ namespace DX
 		{
 			// no, make a fresh one
 			cp = new ConstBuffer<definition>();
-			cp->mName = name;
-			cp->mOffsetCount = OffsetCount;
-			cp->mOffsets = Offsets;
-			cp->mDefaults = Defaults;
-			cp->mIndex = index;
-			cp->mBindPoint = bindPoint;
-			if(cp->mDefaults != null)
-			{
-				memcpy(cp, cp->mDefaults, sizeof(definition)); // definition must be most-derived and *** THERE CAN BE NO VIRTUALS ***!
-			}
-			else
-			{
-				memset(cp, 0, sizeof(definition));
-			}
-			DXR(cp->CreateBuffer(BufferType::ConstantBufferType, 1, cp, DynamicUsage, Writeable));
 
 			// and add it to the global constbuffer list
 			gConstBuffers.push_back(cp);
+
+			DXR(cp->Init(name, OffsetCount, Offsets, Defaults, bindPoint, (uint32)gConstBuffers.size()));
 		}
 
 		// tack it onto the shader

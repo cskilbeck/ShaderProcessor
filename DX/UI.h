@@ -23,6 +23,7 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		void Open();
+		void Update(Element *rootElement, float deltaTime);
 		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
 		void Close();
 
@@ -244,7 +245,7 @@ namespace DX
 					Vec2f p = mPivot * -mSize;
 					mMatrix =
 						TranslationMatrix(Vec4(p.x, p.y, 0)) *					// place it around the pivot point
-						ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
+						ScaleMatrix(Vec4(mScale.x, mScale.y, 0)) *				// scale it
 						RotationMatrix(0, 0, mAngle) *							// rotate it
 						TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0));	// translate it
 					Clear(eDirtyMatrix);

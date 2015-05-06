@@ -240,7 +240,7 @@ void TypeDefinition::CreateOutput(int bindPoint)
 		defaultStr = Format("%s_%s_Defaults", Printer::ShaderName().c_str(), mDesc.Name);
 	}
 //	OutputLine("%s.Create(%u, %s_%s_Offsets, %s, this, %d, %d);", mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
-	OutputLine("DXR(CreateConstBuffer<%s_t>(\"%s\", &%s,%u, %s_%s_Offsets, %s, this, %d, %d));", mDesc.Name, mDesc.Name, mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), mIndex, bindPoint);
+	OutputLine("DXR(CreateConstBuffer<%s_t>(\"%s\", &%s,%u, %s_%s_Offsets, %s, this, %d));", mDesc.Name, mDesc.Name, mDesc.Name, mVariables.size(), Printer::ShaderName().c_str(), mDesc.Name, defaultStr.c_str(), bindPoint);
 }
 
 void TypeDefinition::ReleaseOutput()
