@@ -245,7 +245,7 @@ namespace DX
 					Vec2f p = mPivot * -mSize;
 					mMatrix =
 						TranslationMatrix(Vec4(p.x, p.y, 0)) *					// place it around the pivot point
-						ScaleMatrix(Vec4(mScale.x, mScale.y, 0)) *				// scale it
+						ScaleMatrix(Vec4(mScale.x, mScale.y, 1)) *				// scale it
 						RotationMatrix(0, 0, mAngle) *							// rotate it
 						TranslationMatrix(Vec4(mPosition.x, mPosition.y, 0));	// translate it
 					Clear(eDirtyMatrix);
@@ -287,7 +287,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Vec2f LocalToScreen(Vec2f point)
+			Vec2f LocalToScreen(Vec2f point) const
 			{
 				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mTransformMatrix);
 				return Vec2f(GetX(p), GetY(p));
@@ -295,7 +295,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 			
-			Vec2f ScreenToLocal(Vec2f point)
+			Vec2f ScreenToLocal(Vec2f point) const
 			{
 				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mInverseMatrix);
 				return Vec2f(GetX(p), GetY(p));
@@ -303,14 +303,14 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			bool ContainsLocalPoint(Vec2f point)
+			bool ContainsLocalPoint(Vec2f point) const
 			{
 				return point >= Vec2f::zero && point < mSize;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			bool ContainsScreenPoint(Vec2f point)
+			bool ContainsScreenPoint(Vec2f point) const
 			{
 				return ContainsLocalPoint(ScreenToLocal(point));
 			}
@@ -369,6 +369,13 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			virtual bool IsClipper() const
+			{
+				return false;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			virtual void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 			{
 				// Empty UI Element doesn't draw anything, useful as a container for other elements
@@ -387,17 +394,17 @@ namespace DX
 			//////////////////////////////////////////////////////////////////////
 			// TODO (charlie): modality
 
-			void Update(float deltaTime, Matrix const &matrix)
+			void Update(float deltaTime, Matrix const &matrix, bool clip)
 			{
 				// matrices are always updated even if it's inactive
 				mTransformMatrix = GetMatrix() * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
-				// clicking & onupdate only called if it's active
-				if(!Is(eInActive))
+				// clicking & onupdate only called if it's active (and not clipped)
+				if(!(Is(eInActive)))
 				{
 					Vec2f local = ScreenToLocal(Mouse::Position);
-					if(ContainsLocalPoint(local))
+					if(ContainsLocalPoint(local) && !clip)
 					{
 						if(!Is(eHovering))
 						{
@@ -418,6 +425,8 @@ namespace DX
 					}
 					else
 					{
+						clip |= IsClipper();
+
 						if(Is(eHovering))
 						{
 							MouseLeft.Invoke(MouseEvent(this, local));
@@ -437,7 +446,7 @@ namespace DX
 				// children processed always (to keep matrices up  to date)
 				for(auto &r : mChildren)
 				{
-					((Element &)r).Update(deltaTime, mTransformMatrix);
+					((Element &)r).Update(deltaTime, mTransformMatrix, clip);
 				}
 			}
 		};
@@ -466,6 +475,7 @@ namespace DX
 
 		struct ClipRectangle: Element
 		{
+			bool IsClipper() const override;
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 

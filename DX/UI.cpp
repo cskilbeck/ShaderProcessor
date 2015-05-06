@@ -55,7 +55,7 @@ namespace DX
 
 		void Update(Element *rootElement, float deltaTime)
 		{
-			rootElement->Update(deltaTime, IdentityMatrix);
+			rootElement->Update(deltaTime, IdentityMatrix, false);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -71,6 +71,13 @@ namespace DX
 					((Element &)r).Draw(context, drawList, ortho);
 				}
 			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		bool ClipRectangle::IsClipper() const
+		{
+			return true;
 		}
 
 		//////////////////////////////////////////////////////////////////////

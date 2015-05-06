@@ -148,6 +148,20 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void SetUserData(uintptr p)
+		{
+			mUser = p;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		uintptr GetUserData() const
+		{
+			return mUser;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		HRESULT Commit(ID3D11DeviceContext *context)
 		{
 			byte *p;
@@ -169,6 +183,7 @@ namespace DX
 		ReadWriteOption		mRWOption;
 		D3D11_MAP			mMapType;
 		bool				mOwnData;
+		uintptr				mUser;			// use it for whatever (eg Index in the gConstBuffers array, ptr to your own shit, whatever)
 	};
 
 	//////////////////////////////////////////////////////////////////////

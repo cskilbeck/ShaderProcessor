@@ -21,10 +21,22 @@
 // When a Shader is loaded, scan the ConstantBuffers and look for a match in the Global CB list
 // If a match is found, refer to that one, else add to the Global CB list
 
-// There is a per-shader-type bindpoint tracking list (Bindpoint <--> CB Index)
+// THEN:
 
+// There is a per-shader-type bindpoint tracking list (Bindpoint <--> CB Index)
 // When a ConstantBuffer needs to be Set, check if the currently bound CB Index is the same, if it is, skip the Set()
 // ^^^ allow this behaviour to be overridden (force CB set)
+
+// BUT:
+
+// the global list doesn't know what type it is because it's a list of TypelessBuffers
+
+// SO:
+
+// make an intermediate ConstBufferBase type which has an index?
+
+// TypelessBuffer -> Buffer<T>
+// TypelessBuffer -> ConstBufferBase -> ConstBuffer<T>
 
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -1311,8 +1323,10 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetPosition(FClientSize() * 0.5f);
-	clipRect.SetRotation(Mouse::Position.x / FClientWidth() * PI * 2);
+	root.SetSize(FClientSize());
+	clipRect.SetPosition(root.GetSize() / 2);
+	clipRect.SetRotation(time / 8);
+//	clipRect.SetRotation(Mouse::Position.x / FClientWidth() * PI * 2);
 
 	UI::Update(&root, deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
