@@ -24,7 +24,7 @@ namespace DX
 		void BeginLineStrip();
 		template <typename T> void AddVertex(T const &vertex);
 		template <typename T> T &AddVertex();
-		void End();
+		int End();	// returns the # of verts which were submitted in the drawcall (which is no longer current)
 		void Execute();
 
 		Texture *GetCurrentTexture(uint index = 0);

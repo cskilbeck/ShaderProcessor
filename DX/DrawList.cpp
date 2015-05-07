@@ -164,6 +164,7 @@ namespace
 		void Execute(ID3D11DeviceContext *context)
 		{
 			context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)mTopology);
+			assert(mCount < 8192);
 			context->Draw(mCount, mBase);
 		}
 	};
@@ -181,7 +182,13 @@ namespace DX
 		, mCurrentShader(null)
 		, mCurrentDrawCallItem(null)
 		, mItemPointer(mItemBuffer)
+		, mContext(null)
+		, mVertexSize(0)
+		, mVertBase(null)
+		, mVertPointer(null)
+		, mVertZero(null)
 	{
+		memset(mTextures, 0, sizeof(mTextures));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -224,25 +231,29 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// what if it's the same vertexbuffeR?
 
 	void DrawList::SetShader(ID3D11DeviceContext *context, ShaderState *shader, TypelessBuffer *vb, uint vertSize)
 	{
-		UnMapCurrentVertexBuffer();
+		if(mContext == null || shader != mCurrentShader || vb != mCurrentVertexBuffer)
+		{
+			UnMapCurrentVertexBuffer();
 
-		mContext = context;
-		mCurrentVertexBuffer = vb;
-		mCurrentDrawCallItem = null;
-		memset(mTextures, 0, sizeof(mTextures));
+			mContext = context;
+			mCurrentVertexBuffer = vb;
+			mCurrentDrawCallItem = null;
+			memset(mTextures, 0, sizeof(mTextures));
 
-		ShaderItem *i = Add<ShaderItem>();
-		mCurrentShader = shader;
-		i->mShader = shader;
-		i->mVertexBuffer = vb;
-		i->mVertexSize = vertSize;
-		mCurrentVertexBuffer = vb;
-		DXV(vb->Map(mContext, mVertZero));
-		mVertBase = mVertPointer = mVertZero;
-		mVertexSize = vertSize;
+			ShaderItem *i = Add<ShaderItem>();
+			mCurrentShader = shader;
+			i->mShader = shader;
+			i->mVertexBuffer = vb;
+			i->mVertexSize = vertSize;
+			mCurrentVertexBuffer = vb;
+			DXV(vb->Map(mContext, mVertZero));
+			mVertBase = mVertPointer = mVertZero;
+			mVertexSize = vertSize;
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -334,16 +345,16 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::End()
+	int DrawList::End()
 	{
 		DrawCallItem *d = (DrawCallItem *)mCurrentDrawCallItem;
-		if(d != null)
-		{
-			d->mBase = (uint32)((mVertBase - mVertZero) / mVertexSize);
-			d->mCount = (uint32)((mVertPointer - mVertBase) / mVertexSize);
-			mVertBase = mVertPointer;
-			mCurrentDrawCallItem = null;
-		}
+		assert(d != null);
+		d->mBase = (uint32)((mVertBase - mVertZero) / mVertexSize);
+		d->mCount = (uint32)((mVertPointer - mVertBase) / mVertexSize);
+		assert(d->mCount >= 0 && d->mCount < 16384);
+		mVertBase = mVertPointer;
+		mCurrentDrawCallItem = null;
+		return d->mCount;
 	}
 
 	//////////////////////////////////////////////////////////////////////

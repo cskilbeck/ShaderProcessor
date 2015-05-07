@@ -32,7 +32,10 @@ namespace
 	{
 		if(type != currentPrimType)
 		{
-			debugGraphicsDrawList.End();
+			if(debugGraphicsDrawList.IsDrawCallInProgress())
+			{
+				debugGraphicsDrawList.End();
+			}
 			switch(type)
 			{
 				case Lines:

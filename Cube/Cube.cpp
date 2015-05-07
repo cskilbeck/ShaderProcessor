@@ -27,23 +27,12 @@
 // When a ConstantBuffer needs to be Set, check if the currently bound CB Index is the same, if it is, skip the Set()
 // ^^^ allow this behaviour to be overridden (force CB set)
 
-// BUT:
-
-// the global list doesn't know what type it is because it's a list of TypelessBuffers
-
-// SO:
-
-// make an intermediate ConstBufferBase type which has an index?
-
-// TypelessBuffer -> Buffer<T>
-// TypelessBuffer -> ConstBufferBase -> ConstBuffer<T>
-
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
 
 
-
+// !! lighting const buffer
 // !! Arrays in Constant Buffers not being reflected correctly...
 // 2D UI Elements/SceneGraph
 // ?3D SceneGraph
@@ -135,83 +124,6 @@
 // * Test the AssetManager
 
 #include "stdafx.h"
-
-//////////////////////////////////////////////////////////////////////
-
-enum _Type: uint32
-{
-	_Float = 1,
-	_Int = 2,
-	_UInt = 3
-	//etc
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct _Field
-{
-	string			mName;
-	_Type			mType;
-	uint32			mOffset;
-	uint32			mSize;		// 1 for non-array fields
-
-	bool operator == (_Field &o)
-	{
-		return mName.compare(o.mName) == 0 &&
-			mType == o.mType &&
-			mOffset == o.mOffset &&
-			mSize == o.mSize;
-	}
-
-	bool operator != (_Field &o)
-	{
-		return !(*this == o);
-	}
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct _Definition
-{
-	string			mName;
-	vector<_Field>	mFields;
-
-	bool operator == (_Definition &o)
-	{
-		if(mName.compare(o.mName) != 0 ||
-		   mFields.size() != o.mFields.size())
-		{
-			return false;
-		}
-		for(size_t i = 0, l = mFields.size(); i < l; ++i)
-		{
-			if(mFields[i] != o.mFields[i])
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-};
-
-//////////////////////////////////////////////////////////////////////
-
-struct _ConstBuffer
-{
-	string			mName;
-	ShaderType		mShaderType;
-	uint32			mIndex;
-	uint32			mBindPoint;
-	_Definition *	mDefinition;
-
-	bool operator == (_ConstBuffer  &o)
-	{
-		return mName.compare(o.mName) == 0 &&
-			mShaderType == o.mShaderType &&
-			mBindPoint == o.mBindPoint &&
-			*mDefinition == *(o.mDefinition);
-	}
-};
 
 //////////////////////////////////////////////////////////////////////
 
@@ -563,19 +475,23 @@ void MyDXWindow::DrawSphere(Matrix const &m, Texture &texture)
 	vc->TransformMatrix = Transpose(camera->GetTransformMatrix(m));
 	vc->ModelMatrix = Transpose(m);
 	vc->Update(Context());
+
 	auto ps = sphereShader.ps.Camera;
 	ps->cameraPos = camera->position;
+	ps->Update(Context());
+
 	auto l = sphereShader.ps.Light;
 	l->lightPos = lightPos;
 	l->ambientColor = Float3(0.1f, 0.1f, 0.1f);
 	l->diffuseColor = Float3(1.7f, 1.7f, 1.7f);
 	l->specColor = Float3(2, 2, 2);
 	l->Update(Context());
-	ps->Update(Context());
+
 	sphereShader.ps.sphereTexture = &sphereTexture;
 	sphereShader.ps.tex1Sampler = &cubeSampler;
 	sphereShader.vs.SetVertexBuffers(Context(), 1, &sphereVerts);
 	sphereShader.Activate(Context());
+
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Context()->Draw(sphereVerts.Count(), 0);
 }
@@ -863,15 +779,15 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
-	clipRect.SetPivot(Vec2f::half);
-	clipRect.SetSize(Vec2f(200, 200));
-	root.AddChild(clipRect);
-
-	rectangle.SetColor(0x80ffffff).SetSize(Vec2f(2500, 2500)).SetPivot(Vec2f::half);
-	clipRect.AddChild(rectangle);
-
+	clipRect.SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
+	outlineRectangle.SetColor(0xffffffff).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
+	rectangle.SetColor(0x80000000).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
-	button.SetFont(font).SetText("Click Me !").SetPosition(clipRect.GetSize() / 10);
+	button.SetFont(font).SetText("Click Me !");
+
+	root.AddChild(outlineRectangle);
+	root.AddChild(rectangle);
+	root.AddChild(clipRect);
 	clipRect.AddChild(button);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
@@ -1238,6 +1154,7 @@ void MyDXWindow::OnFrame()
 
 	// Drawlist UI elements
 
+	if(false)
 	{
 		using vrt = Shaders::UI::InputVertex;
 		drawList.Reset(Context(), &uiShader, &UIVerts);
@@ -1286,7 +1203,8 @@ void MyDXWindow::OnFrame()
 	}
 
 	// Drawlist simple rectangle
-		
+
+	if(false)
 	{
 		using vrt = Shaders::Simple::InputVertex;
 		drawList.Reset(Context(), &simpleShader, &simpleVB);
@@ -1304,6 +1222,7 @@ void MyDXWindow::OnFrame()
 
 	// Drawlist some text
 
+	if(false)
 	{
 		Font i;
 		i.Init(bigFont.get(), &drawList, &bigFontVB);
@@ -1323,9 +1242,11 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetSize(FClientSize());
-	clipRect.SetPosition(root.GetSize() / 2);
-	clipRect.SetRotation(time / 8);
+	root.SetPosition(FClientSize() / 2);
+	root.SetRotation(time / 4);
+	button.SetRotation(time / 8);
+	//root.SetRotation(time);
+	//button.SetRotation(time * 4);
 //	clipRect.SetRotation(Mouse::Position.x / FClientWidth() * PI * 2);
 
 	UI::Update(&root, deltaTime);

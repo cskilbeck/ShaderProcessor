@@ -626,7 +626,10 @@ namespace DX
 				Texture *t = mTypeface->mPages[graphic.pageIndex];
 				if(mCurrentPageIndex != graphic.pageIndex)
 				{
-					mDrawList->End();
+					if(mDrawList->IsDrawCallInProgress())
+					{
+						mDrawList->End();
+					}
 					mDrawList->SetTexture(Pixel, *t);
 					mDrawList->BeginTriangleList();
 					mCurrentPageIndex = graphic.pageIndex;

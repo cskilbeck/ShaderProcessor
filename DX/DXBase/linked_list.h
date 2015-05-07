@@ -23,36 +23,36 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// base list node class, 2 pointers
 
-	template <typename T> struct list_node_base
+	struct list_node_base
 	{
-		T *next;
-		T *prev;
+		void *next;
+		void *prev;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 	// base node is wrapped so we can get the offset to it
 
-	template <typename T> struct list_node
+	struct list_node
 	{
-		list_node_base<T> node;
+		list_node_base node;
 	};
 
 	//////////////////////////////////////////////////////////////////////
 	// template base
 
-	template <typename T, list_node<T> T::*NODE, bool is_member> class list_base
+	template <typename T, list_node T::*NODE, bool is_member> class list_base
 	{
 	};
 
 	//////////////////////////////////////////////////////////////////////
 	// specialization for instances using list_node as member field
 
-	template <typename T, list_node<T> T::*NODE> class list_base<T, NODE, true> : protected list_node<T>
+	template <typename T, list_node T::*NODE> class list_base<T, NODE, true> : protected list_node
 	{
 	protected:
 		static size_t offset()
 		{
-			list_node<T> *b = &(((T *)0)->*NODE);
+			list_node *b = &(((T *)0)->*NODE);
 			return size_t(&b->node);
 		}
 
@@ -62,13 +62,13 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// specialization for instances deriving from list_node
 
-	template <typename T, list_node<T> T::*NODE> class list_base<T, NODE, false> : protected list_node<T>
+	template <typename T, list_node T::*NODE> class list_base<T, NODE, false> : protected list_node
 	{
-		static_assert(!std::is_polymorphic<T>::value, "polymorphic! use the member-node version");
+		//static_assert(!std::is_polymorphic<T>::value, "polymorphic! use the member-node version");
 	protected:
 		static size_t offset()
 		{
-			list_node_base<T> T::*n = static_cast<list_node_base<T> T::*>(&T::node);
+			list_node_base T::*n = static_cast<list_node_base T::*>(&T::node);
 			return (size_t)(&(((T *)0)->*n));
 		}
 		typedef list_base<T, NODE, false> list_type;
@@ -76,7 +76,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T, list_node<T> T::*NODE = nullptr> class linked_list: protected list_base<T, NODE, VC_WORKAROUND>
+	template <typename T, list_node T::*NODE = nullptr> class linked_list: protected list_base<T, NODE, VC_WORKAROUND>
 	{
 	public:
 
@@ -173,11 +173,11 @@ namespace DX
 			}
 			iterator &operator++()
 			{
-				p = get_node(p).next; return *this;
+				p = get_next(p); return *this;
 			}
 			iterator &operator--()
 			{
-				p = get_node(p).prev; return *this;
+				p = get_prev(p); return *this;
 			}
 			bool operator==(iterator const &o)
 			{
@@ -306,20 +306,20 @@ namespace DX
 
 		iterator                  begin()
 		{
-			return iterator(node.next);
+			return iterator((ptr)node.next);
 		}
 		const_iterator            begin() const
 		{
-			return const_iterator(node.next);
+			return const_iterator((const_ptr)node.next);
 		}
 
 		reverse_iterator          rbegin()
 		{
-			return reverse_iterator(node.prev);
+			return reverse_iterator((ptr)node.prev);
 		}
 		const_reverse_iterator    rbegin() const
 		{
-			return const_reverse_iterator(node.prev);
+			return const_reverse_iterator((const_ptr)node.prev);
 		}
 
 		iterator                  end()
@@ -362,10 +362,10 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		typedef list_node_base<T>        node_t;
+		typedef list_node_base           node_t;
 		typedef node_t *                 node_ptr;
 		typedef node_t &                 node_ref;
-		typedef list_node_base<T> const  const_node_t;
+		typedef list_node_base    const  const_node_t;
 		typedef const_node_t *           const_node_ptr;
 		typedef const_node_t &           const_node_ref;
 
@@ -432,14 +432,14 @@ namespace DX
 
 		static ptr get_next(ptr const o)
 		{
-			return get_node(o).next;
+			return (ptr)get_node(o).next;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		static ptr get_prev(ptr const o)
 		{
-			return get_node(o).prev;
+			return (ptr)get_node(o).prev;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -470,7 +470,7 @@ namespace DX
 
 		void insert_before(ptr obj_before, ptr obj)
 		{
-			ptr &p = get_node(obj_before).prev;
+			ptr &p = (ptr &)get_node(obj_before).prev;
 			node_ref n = get_node(obj);
 			get_node(p).next = obj;
 			n.prev = p;
@@ -482,9 +482,9 @@ namespace DX
 
 		void insert_after(ptr obj_after, ptr obj)
 		{
-			ptr &n = get_node(obj_after).next;
+			ptr &n = (ptr &)get_node(obj_after).next;
 			node_ref p = get_node(obj);
-			get_node(n).prev = obj;
+			set_prev(n, obj);
 			p.next = n;
 			n = obj;
 			p.prev = obj_after;
@@ -507,8 +507,8 @@ namespace DX
 		{
 			ptr op = prev(f);
 			ptr on = next(l);
-			get_node(op).next = on;
-			get_node(on).prev = op;
+			set_next(op, on);
+			set_prev(on, op);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -595,38 +595,38 @@ namespace DX
 
 		ptr       head()
 		{
-			return node.next;
+			return (ptr)node.next;
 		}
 		ptr       tail()
 		{
-			return node.prev;
+			return (ptr)node.prev;
 		}
 
 		const_ptr c_head() const
 		{
-			return node.next;
+			return (const_ptr)node.next;
 		}
 		const_ptr c_tail() const
 		{
-			return node.prev;
+			return (const_ptr)node.prev;
 		}
 
 		ptr       next(ptr obj)
 		{
-			return get_node(obj).next;
+			return (ptr)get_node(obj).next;
 		}
 		ptr       prev(ptr obj)
 		{
-			return get_node(obj).prev;
+			return (ptr)get_node(obj).prev;
 		}
 
 		const_ptr c_next(const_ptr obj) const
 		{
-			return get_node(obj).next;
+			return (const_ptr)get_node(obj).next;
 		}
 		const_ptr c_prev(const_ptr obj) const
 		{
-			return get_node(obj).prev;
+			return (const_ptr)get_node(obj).prev;
 		}
 
 		ptr       done()

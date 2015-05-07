@@ -84,25 +84,22 @@ namespace DX
 
 		void ClipRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			// the clip rectangle corners
+			// the corners
 			Vec4f topLeft = TransformPoint(Vec4(0, 0, 0, 0), matrix);
 			Vec4f topRight = TransformPoint(Vec4(mSize.x, 0, 0, 0), matrix);
 			Vec4f bottomLeft = TransformPoint(Vec4(0, mSize.y, 0, 0), matrix);
-			Vec4f bottomRight = TransformPoint(Vec4(mSize.x, mSize.y, 0, 0), matrix);
 
-			// get the edges
+			// the edges
 			Vec4f topEdge = topRight - topLeft;
 			Vec4f leftEdge = bottomLeft - topLeft;
-			Vec4f bottomEdge = bottomRight - bottomLeft;
-			Vec4f rightEdge = bottomRight - topRight;
 
-			// now work out the normals
+			// the normals
 			Vec4f left = Normalize(Vec4(-GetY(leftEdge), GetX(leftEdge), 0, 0));
-			Vec4f right = Normalize(Vec4(GetY(rightEdge), -GetX(rightEdge), 0, 0));
 			Vec4f top = Normalize(Vec4(GetY(topEdge), -GetX(topEdge), 0, 0));
-			Vec4f bottom = Normalize(Vec4(-GetY(bottomEdge), GetX(bottomEdge), 0, 0));
+			Vec4f right = -left;
+			Vec4f bottom = -top;
 
-			// now the planes
+			// the planes
 			Vec4f planes[4] =
 			{
 				SetW(left, Dot(left, topLeft)),
@@ -117,7 +114,23 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Rectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		void OutlineRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			drawList.Reset(context, &colorShader, &colorVB);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+			drawList.BeginLineStrip();
+			using Vert = DXShaders::Color2D::InputVertex;
+			drawList.AddVertex<Vert>({ { 0, 0 }, mColor });
+			drawList.AddVertex<Vert>({ { mSize.x, 0 }, mColor });
+			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, mColor });
+			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });
+			drawList.AddVertex<Vert>({ { 0, -1 }, mColor });
+			drawList.End();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void FilledRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
 			drawList.Reset(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);

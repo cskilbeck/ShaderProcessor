@@ -8,6 +8,12 @@
 // TODO (charlie): slider
 // TODO (charlie): etc
 
+// Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
+
+// TODO (charlie): event suppression/bubbling
+
+// NOTE: cliprects do not 'stack' or combine. Each cliprect sets the 4 clip planes independently of any parent clip plane...
+
 #pragma once
 
 //////////////////////////////////////////////////////////////////////
@@ -84,19 +90,32 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct ElementBase: Aligned16, list_node<ElementBase>
+		struct Element: Aligned16, list_node
 		{
-			Matrix			mMatrix;
-			Matrix			mTransformMatrix;
-			Matrix			mInverseMatrix;
-			ElementBase *	mParent;
-			int				mZIndex;
-			Flags32			mFlags;
-			Vec2f			mPosition;
-			Vec2f			mSize;
-			Vec2f			mScale;
-			Vec2f			mPivot;
-			float			mAngle;
+			Element *				mParent;
+			linked_list<Element>	mChildren;
+
+			Matrix					mMatrix;
+			Matrix					mTransformMatrix;
+			Matrix					mInverseMatrix;
+
+			int						mZIndex;
+			Flags32					mFlags;
+
+			Vec2f					mPosition;
+			Vec2f					mSize;
+			Vec2f					mScale;
+			Vec2f					mPivot;
+			float					mAngle;
+
+			Event<ClickedEvent>		Clicked;
+			Event<PressedEvent>		Pressed;
+			Event<ReleasedEvent>	Released;
+			Event<UIEvent>			Updating;
+			Event<UIEvent>			Updated;
+			Event<MouseEvent>		MouseEntered;
+			Event<MouseEvent>		MouseLeft;
+			Event<MouseEvent>		Hovering;
 
 			enum: uint32
 			{
@@ -111,12 +130,12 @@ namespace DX
 				ePressed = 256		// Mouse button is pressed down on the Element
 			};
 
-			bool operator < (ElementBase &o)
+			bool operator < (Element &o)
 			{
 				return mZIndex < o.mZIndex;
 			}
 
-			ElementBase()
+			Element()
 				: mParent(null)
 				, mZIndex(0)
 				, mFlags(0)
@@ -129,6 +148,13 @@ namespace DX
 				, mTransformMatrix(IdentityMatrix)
 				, mInverseMatrix(IdentityMatrix)
 			{
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			bool IsAnyOf(uint32 f) const
+			{
+				return mFlags.IsAnySet(f);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -168,7 +194,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetVisible(bool s)
+			Element &SetVisible(bool s)
 			{
 				SetFlag(eHidden, !s);
 				return *this;
@@ -197,7 +223,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetPosition(Vec2f pos)
+			Element &SetPosition(Vec2f pos)
 			{
 				mPosition = pos;
 				Set(eDirtyMatrix);
@@ -213,7 +239,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetSize(Vec2f size)
+			Element &SetSize(Vec2f size)
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
@@ -229,7 +255,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetPivot(Vec2f pivot)
+			Element &SetPivot(Vec2f pivot)
 			{
 				mPivot = pivot;
 				Set(eDirtyMatrix);
@@ -262,7 +288,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetScale(Vec2f scale)
+			Element &SetScale(Vec2f scale)
 			{
 				mScale = scale;
 				Set(eDirtyMatrix);
@@ -278,7 +304,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			ElementBase &SetRotation(float angle)
+			Element &SetRotation(float angle)
 			{
 				mAngle = angle;
 				Set(eDirtyMatrix);
@@ -314,35 +340,19 @@ namespace DX
 			{
 				return ContainsLocalPoint(ScreenToLocal(point));
 			}
-		};
-
-		//////////////////////////////////////////////////////////////////////
-
-		struct Element: ElementBase
-		{
-			linked_list<ElementBase>	mChildren;
-
-			Event<ClickedEvent>			Clicked;
-			Event<PressedEvent>			Pressed;
-			Event<ReleasedEvent>		Released;
-			Event<UIEvent>				Updating;
-			Event<UIEvent>				Updated;
-			Event<MouseEvent>			MouseEntered;
-			Event<MouseEvent>			MouseLeft;
-			Event<MouseEvent>			Hovering;
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element()
-				: ElementBase()
+			Element &AddChildAndCenter(Element &e)
 			{
+				return AddChild(e.SetPivot(Vec2f::half).SetPosition(GetSize() / 2));
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
 			Element &AddChild(Element &e)
 			{
-				mChildren.push_back((ElementBase &)e);
+				mChildren.push_back(e);
 				e.mParent = this;
 				Set(eReorder);
 				return *this;
@@ -352,7 +362,7 @@ namespace DX
 
 			void RemoveChild(Element &e)
 			{
-				mChildren.remove((ElementBase &)e);
+				mChildren.remove(e);
 				e.mParent = null;
 			}
 
@@ -396,9 +406,14 @@ namespace DX
 
 			void Update(float deltaTime, Matrix const &matrix, bool clip)
 			{
-				// matrices are always updated even if it's inactive
+				// matrices are always updated even if it's inactive because it might be visible
 				mTransformMatrix = GetMatrix() * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
+
+				// SOMEHOW: clip on the way down, but invoke messages on the way up
+				// -- set flags (eHovering, ePressed etc) on the way down
+				// -- use those flags on the way up to invoke messages
+				// -- build message list (only child-most gets each message), send to child-most, and parents until bubble = false
 
 				// clicking & onupdate only called if it's active (and not clipped)
 				if(!(Is(eInActive)))
@@ -442,8 +457,8 @@ namespace DX
 					OnUpdate(deltaTime);
 					Updated.Invoke(this);
 				}
-
 				// children processed always (to keep matrices up  to date)
+				// children processed first because they get 1st dibs on messages (can decide to bubble or not)
 				for(auto &r : mChildren)
 				{
 					((Element &)r).Update(deltaTime, mTransformMatrix, clip);
@@ -453,11 +468,31 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Rectangle: Element
+		struct OutlineRectangle: Element
 		{
 			Color mColor;
 
-			Rectangle &SetColor(Color c)
+			OutlineRectangle &SetColor(Color c)
+			{
+				mColor = c;
+				return *this;
+			}
+
+			Color GetColor() const
+			{
+				return mColor;
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct FilledRectangle: Element
+		{
+			Color mColor;
+
+			FilledRectangle &SetColor(Color c)
 			{
 				mColor = c;
 				return *this;
@@ -494,6 +529,13 @@ namespace DX
 				: Element()
 				, mTypeface(null)
 			{
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			float Baseline() const
+			{
+				return mTypeface->GetBaseline() / mTypeface->GetHeight();
 			}
 
 			//////////////////////////////////////////////////////////////////////

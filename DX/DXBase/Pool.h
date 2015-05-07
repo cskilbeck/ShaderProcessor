@@ -8,14 +8,14 @@ namespace DX
 {
 	template <typename T, uint alignment = 16> struct Pool
 	{
-		struct Dummy: list_node < Dummy >
+		struct Dummy: list_node
 		{
 		};
 
-		static_assert(sizeof(T) >= sizeof(list_node<Dummy>), "Pooled objects must be at least as big as list_node");
-		static_assert(sizeof(Dummy) == sizeof(list_node<Dummy>), "Compiler has inserted some data which isn't helping...");
+		static_assert(sizeof(T) >= sizeof(list_node), "Pooled objects must be at least as big as list_node");
+		static_assert(sizeof(Dummy) == sizeof(list_node), "Compiler has inserted some data which isn't helping...");
 
-		linked_list<Dummy>	mFreeList;
+		linked_list<Dummy>		mFreeList;
 		T *						mPool;
 
 		Pool(uint n)
