@@ -75,7 +75,7 @@ namespace DX
 		Shaders::Sprite						mShader;
 		Texture								mPage;
 		Sampler								mSampler;
-		VertexBuffer<Vert>					mVertexBuffer;
+		VertexBuilder<Vert>					mVertexBuffer;
 		Vert *								mCurrentVert;
 		tstring								mName;
 		uint32								mScreenWidth;
@@ -102,14 +102,13 @@ namespace DX
 
 		HRESULT BeginRun(ID3D11DeviceContext *context)
 		{
-			DXR(mVertexBuffer.Map(context, mVertBase));
-			mVertPointer = mVertBase;
+			DXR(mVertexBuffer.Map(context));
 			return S_OK;
 		}
 
 		void Add(Sprite *sprite)
 		{
-			*mVertPointer++ = *sprite;
+			mVertexBuffer.AddVertex(*sprite);
 		}
 
 		void Add(Sprite const &sprite,
@@ -121,42 +120,43 @@ namespace DX
 				 bool xflip = false,
 				 bool yflip = false)
 		{
-			Sprite *s = (Sprite *)mVertPointer++;
-			s->Position = pos;
-			s->Pivot = pivot;
-			s->Size = sprite.Size;
-			s->Scale = scale;
-			s->UVa = sprite.UVa;
-			s->UVb = sprite.UVb;
-			s->Rotation = rotation;
-			s->Color = color;
-			s->SetFlip(xflip, yflip);
+			Sprite &s = (Sprite &)mVertexBuffer.AddVertex();
+			s.Position = pos;
+			s.Pivot = pivot;
+			s.Size = sprite.Size;
+			s.Scale = scale;
+			s.UVa = sprite.UVa;
+			s.UVb = sprite.UVb;
+			s.Rotation = rotation;
+			s.Color = color;
+			s.SetFlip(xflip, yflip);
 		}
 
 		void ExecuteRun(ID3D11DeviceContext *context)
 		{
+			mVertexBuffer.UnMap(context);
 			uint count = (uint)(mVertPointer - mVertBase);
 			mShader.Activate(context);
-			mVertexBuffer.UnMap(context);
-			mVertexBuffer.Activate(context);
+			uint stride = sizeof(Sprite);
+			uint offset = 0;
+			context->IASetVertexBuffers(0, 1, mVertexBuffer.AddressOfHandle(), &stride, &offset);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			context->Draw(count, 0);
 		}
 
 		HRESULT SetupTransform(ID3D11DeviceContext *context, int width, int height)
 		{
-			Shaders::Sprite::GS::vConstants_t *v;
-			DXR(mShader.gs.vConstants->Map(context, v));
-			v->TransformMatrix = Transpose(OrthoProjection2D(width, height));
-			mShader.gs.vConstants->UnMap(context);
+			// TODO (charlie): MappedResource ctor can fail - breaks RTCB#n
+			mShader.gs.vConstants->Get()->TransformMatrix = Transpose(OrthoProjection2D(width, height));
 			return S_OK;
 		}
 
 		void SetupDrawlist(ID3D11DeviceContext *context, DrawList &d, int width, int height)
 		{
-			DXV(SetupTransform(context, width, height));
 			mDrawList = &d;
-			d.Reset(context, &mShader, &mVertexBuffer);
+			mVertexBuffer.Map(context);
+			d.SetShader(context, &mShader, &mVertexBuffer);
+			d.SetConstantData(Geometry, Transpose(OrthoProjection2D(width, height)), Shaders::Sprite::GS::vConstants_index);
 			d.BeginPointList();
 		}
 
@@ -170,7 +170,7 @@ namespace DX
 				bool xflip = false,
 				bool yflip = false)
 		{
-			Sprite &q = mDrawList->AddVertex<Sprite>();
+			auto &q = mVertexBuffer.AddVertex();
 			q.Position = pos;
 			q.Pivot = pivot;
 			q.Size = sprite.Size;
@@ -180,6 +180,12 @@ namespace DX
 			q.Rotation = rotation;
 			q.Color = color;
 			q.Flip = Sprite::Flips(xflip, yflip);
+		}
+
+		void Finished(ID3D11DeviceContext *context)
+		{
+			mDrawList->End();
+			mVertexBuffer.UnMap(Context);
 		}
 
 		virtual ~SpriteSheet()
@@ -200,7 +206,7 @@ namespace DX
 		{
 			DXR(mSampler.Create());
 			DXR(mShader.Create());
-			DXR(mVertexBuffer.Create(500, null, DynamicUsage, Writeable));
+			DXR(mVertexBuffer.Create(500));
 
 			wstring buffer;
 			xml_doc *doc = LoadUTF8XMLFile(filename, buffer);

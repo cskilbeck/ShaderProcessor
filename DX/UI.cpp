@@ -7,13 +7,13 @@
 
 namespace
 {
-	using UIShader = DXShaders::Image2D;
-	using Vert = UIShader::InputVertex;
 	Font::VB fontVB;
-	UIShader image2DShader;
-	UIShader::VertBuffer image2DVertBuffer;
+
+	DXShaders::Image2D image2DShader;
 	DXShaders::Color2D colorShader;
-	DXShaders::Color2D::VertBuffer colorVB;
+
+	VertexBuilder<DXShaders::Image2D::InputVertex> image2DVertBuffer;
+	VertexBuilder<DXShaders::Color2D::InputVertex> colorVB;
 }
 
 namespace DX
@@ -43,12 +43,18 @@ namespace DX
 		}
 
 		//////////////////////////////////////////////////////////////////////
+		// You better Execute() the DrawList after this before you draw any more UI with it...
 
 		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
 		{
+			image2DVertBuffer.Map(context);
+			colorVB.Map(context);
+			fontVB.Map(context);
 			rootElement->Draw(context, drawList, ortho);
-			Vec4f p[4] = { 0 };
-			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
+			drawList.End();
+			fontVB.UnMap(context);
+			image2DVertBuffer.UnMap(context);
+			colorVB.UnMap(context);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -70,6 +76,7 @@ namespace DX
 				{
 					((Element &)r).Draw(context, drawList, ortho);
 				}
+				OnDrawComplete(drawList);
 			}
 		}
 
@@ -78,6 +85,14 @@ namespace DX
 		bool ClipRectangle::IsClipper() const
 		{
 			return true;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void ClipRectangle::OnDrawComplete(DrawList &drawList)
+		{
+			Vec4f p[4] = { 0 };
+			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -108,23 +123,38 @@ namespace DX
 				SetW(bottom, Dot(bottom, bottomLeft)),
 			};
 
+			// This is fucked - the only reason to call it is to make the SetConstantData work
+			// There must be a better way...
+			drawList.SetShader(context, &colorShader, &colorVB);
+
 			// set clip planes into the constant buffer
 			drawList.SetConstantData(Vertex, planes, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
+		void Line::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			drawList.SetShader(context, &colorShader, &colorVB);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+			drawList.BeginLineList();
+			colorVB.AddVertex({ { 0, 0 }, mColor });
+			colorVB.AddVertex({ { mSize.x, mSize.y }, mColor });
+			drawList.End();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void OutlineRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			drawList.Reset(context, &colorShader, &colorVB);
+			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginLineStrip();
-			using Vert = DXShaders::Color2D::InputVertex;
-			drawList.AddVertex<Vert>({ { 0, 0 }, mColor });
-			drawList.AddVertex<Vert>({ { mSize.x, 0 }, mColor });
-			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, mColor });
-			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });
-			drawList.AddVertex<Vert>({ { 0, -1 }, mColor });
+			colorVB.AddVertex({ { 0, 0 }, mColor });
+			colorVB.AddVertex({ { mSize.x, 0 }, mColor });
+			colorVB.AddVertex({ { mSize.x, mSize.y }, mColor });
+			colorVB.AddVertex({ { 0, mSize.y }, mColor });
+			colorVB.AddVertex({ { 0, -1 }, mColor });
 			drawList.End();
 		}
 
@@ -132,14 +162,13 @@ namespace DX
 
 		void FilledRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			drawList.Reset(context, &colorShader, &colorVB);
+			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginTriangleStrip();
-			using Vert = DXShaders::Color2D::InputVertex;
-			drawList.AddVertex<Vert>({ { 0, mSize.y }, mColor });
-			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, mColor });
-			drawList.AddVertex<Vert>({ { 0, 0 }, mColor });
-			drawList.AddVertex<Vert>({ { mSize.x, 0 }, mColor });
+			colorVB.AddVertex({ { 0, mSize.y }, mColor });
+			colorVB.AddVertex ({ { mSize.x, mSize.y }, mColor });
+			colorVB.AddVertex({ { 0, 0 }, mColor });
+			colorVB.AddVertex({ { mSize.x, 0 }, mColor });
 			drawList.End();
 		}
 
@@ -147,25 +176,25 @@ namespace DX
 
 		void Label::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			mFont.Init(mTypeface, &drawList, &fontVB);
-			mFont.Begin(context, matrix);
-			mFont.DrawString(mText.c_str(), Vec2f(0, 0));
-			mFont.End();
+			Font f(mTypeface, &drawList, &fontVB);
+			f.Start(context, matrix);
+			f.DrawString(mText.c_str(), Vec2f(0, 0));
+			f.End();
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		void Image::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			drawList.Reset(context, &image2DShader, &image2DVertBuffer);
+			drawList.SetShader(context, &image2DShader, &image2DVertBuffer);
 			drawList.SetTexture(Pixel, *mGraphic);
 			drawList.SetSampler(Pixel, *mSampler);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::g_VertConstants2D_index);
 			drawList.BeginTriangleStrip();
-			drawList.AddVertex<Vert>({ { 0, mSize.y }, { 0, 1 }, 0xffffffff });
-			drawList.AddVertex<Vert>({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });
-			drawList.AddVertex<Vert>({ { 0, 0}, { 0, 0 }, 0xffffffff });
-			drawList.AddVertex<Vert>({ { mSize.x, 0}, { 1, 0 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { 0, mSize.y }, { 0, 1 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { 0, 0}, { 0, 0 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { mSize.x, 0}, { 1, 0 }, 0xffffffff });
 			drawList.End();
 		}
 	}

@@ -751,7 +751,7 @@ bool MyDXWindow::OnCreate()
 	DXB(bigFontVB.Create(8192));
 
 	DXB(simpleShader.Create());
-	DXB(simpleVB.Create(128, null, DynamicUsage, Writeable));
+	DXB(simpleVB.Create(128));
 
 	DXB(CreateGrid());
 	DXB(CreateOctahedron());
@@ -780,15 +780,15 @@ bool MyDXWindow::OnCreate()
 	DXB(buttonTexture.Load("button.png"));
 
 	clipRect.SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
-	outlineRectangle.SetColor(0xffffffff).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
-	rectangle.SetColor(0x80000000).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
+	outlineRectangle.SetColor(Color::BrightGreen).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
+	filledRectangle.SetColor(0x800000ff).SetSize(outlineRectangle.GetSize()).SetPivot(Vec2f::half);
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
 	button.SetFont(font).SetText("Click Me !");
 
 	root.AddChild(outlineRectangle);
-	root.AddChild(rectangle);
 	root.AddChild(clipRect);
 	clipRect.AddChild(button);
+	root.AddChild(filledRectangle);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -820,7 +820,7 @@ bool MyDXWindow::OnCreate()
 	DXB(l.Update(Context()));
 
 	DXB(uiShader.Create());
-	DXB(UIVerts.Create(12, null, DynamicUsage, Writeable));
+	DXB(UIVerts.Create(12));
 	DXB(uiTexture.Load(TEXT("temp.png")));
 	DXB(uiSampler.Create());
 	uiShader.ps.page = &uiTexture;
@@ -1156,8 +1156,7 @@ void MyDXWindow::OnFrame()
 
 	if(false)
 	{
-		using vrt = Shaders::UI::InputVertex;
-		drawList.Reset(Context(), &uiShader, &UIVerts);
+		drawList.SetShader(Context(), &uiShader, &UIVerts);
 		uiShader.ps.page = &uiTexture;
 		uiShader.ps.smplr = &uiSampler;
 
@@ -1175,12 +1174,12 @@ void MyDXWindow::OnFrame()
 		drawList.SetConstantData(Vertex, v, Shaders::UI::VS::vConstants_index);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
 		drawList.BeginTriangleList();
-		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y0, }, { 0, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y0 }, { 1, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y0, }, { 1, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y1 }, { 1, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
 		drawList.End();
 
 		w = 100 + sinf(time * 1.1f) * 30;
@@ -1193,12 +1192,12 @@ void MyDXWindow::OnFrame()
 		c.Color = Float4(1, 1, 1, 1);
 		drawList.SetConstantData(Pixel, c, Shaders::UI::PS::pConstants_index);
 		drawList.BeginTriangleList();
-		drawList.AddVertex<vrt>({ { x0, y0, }, { 0, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y0 }, { 1, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y0, }, { 1, 0 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x1, y1 }, { 1, 1 }, 0xffffffff });
-		drawList.AddVertex<vrt>({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y0, }, { 0, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y0 }, { 1, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y0, }, { 1, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { x1, y1 }, { 1, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
 		drawList.End();
 	}
 
@@ -1206,17 +1205,16 @@ void MyDXWindow::OnFrame()
 
 	if(false)
 	{
-		using vrt = Shaders::Simple::InputVertex;
-		drawList.Reset(Context(), &simpleShader, &simpleVB);
+		drawList.SetShader(Context(), &simpleShader, &simpleVB);
 
 		Shaders::Simple::VS::VertConstants_t v;
 		v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
 		drawList.SetConstantData(Vertex, v, 0);
 		drawList.BeginTriangleStrip();
-		drawList.AddVertex<vrt>({ { 0, 0, 0.5f }, 0x80000000 });
-		drawList.AddVertex<vrt>({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
-		drawList.AddVertex<vrt>({ { 0, 100, 0.5f }, 0x80000000 });
-		drawList.AddVertex<vrt>({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
+		simpleVB.AddVertex({ { 0, 0, 0.5f }, 0x80000000 });
+		simpleVB.AddVertex({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
+		simpleVB.AddVertex({ { 0, 100, 0.5f }, 0x80000000 });
+		simpleVB.AddVertex({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
 		drawList.End();
 	}
 
@@ -1294,21 +1292,20 @@ void MyDXWindow::OnFrame()
 
 		Sprite const &s = spriteSheet["temp.png"];
 		Sprite const &t = spriteSheet["temp.jpg"];
-		spriteSheet.SetupTransform(Context(), ClientWidth(), ClientHeight());
 
-		drawList.Reset(Context(), &spriteSheet.mShader, &spriteSheet.mVertexBuffer);
-		drawList.BeginPointList();
-		Sprite &q = drawList.AddVertex<Sprite>();
+		spriteSheet.SetupDrawlist(Context(), drawList, ClientWidth(), ClientHeight());
+		Sprite &q = (Sprite &)spriteSheet.mVertexBuffer.AddVertex();
 		q.Set(t, { 100, ClientHeight() - 100.0f });
 		q.Rotation = time * PI / 2;
-		drawList.End();
+		spriteSheet.Finished(Context());
 		drawList.Execute();
 
-		// Draw some SpriteSheet sprites
+		// Draw some SpriteSheet sprites in Immediate Mode
 
 		bool xflip = ((int)(time * 10) & 1) != 0;
 		bool yflip = ((int)(time * 5) & 1) != 0;
 
+		spriteSheet.SetupTransform(Context(), ClientWidth(), ClientHeight());
 		spriteSheet.BeginRun(Context());
 		spriteSheet.Add(s,
 						 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
@@ -1432,12 +1429,11 @@ void MyDXWindow::OnFrame()
 
 		float u0 = fpsScroll / (float)fpsWidth;
 		float u1 = u0 + 1;
-		Shaders::UI::InputVertex *v;
-		UIVerts.Map(Context(), v);
-		v[0] = { { fpsLeft, fpsTop }, { u0, 0 }, 0xffffffff };
-		v[1] = { { fpsLeft + fpsWidth, fpsTop }, { u1, 0 }, 0xffffffff };
-		v[2] = { { fpsLeft, fpsTop + fpsHeight }, { u0, 1 }, 0xffffffff };
-		v[3] = { { fpsLeft + fpsWidth, fpsTop + fpsHeight }, { u1, 1 }, 0xffffffff };
+		UIVerts.Map(Context());
+		UIVerts.AddVertex({ { fpsLeft, fpsTop }, { u0, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { fpsLeft + fpsWidth, fpsTop }, { u1, 0 }, 0xffffffff });
+		UIVerts.AddVertex({ { fpsLeft, fpsTop + fpsHeight }, { u0, 1 }, 0xffffffff });
+		UIVerts.AddVertex({ { fpsLeft + fpsWidth, fpsTop + fpsHeight }, { u1, 1 }, 0xffffffff });
 		UIVerts.UnMap(Context());
 
 		uiShader.vs.SetVertexBuffers(Context(), 1, &UIVerts);

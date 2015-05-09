@@ -2,10 +2,12 @@
 // TODO (charlie): fix how janky and lame this is
 // TODO (charlie): scrollbars
 // TODO (charlie): cliprectangles
+// TODO (charlie): horizontal/verticalline
 // TODO (charlie): listview
 // TODO (charlie): input
 // TODO (charlie): checkbox
 // TODO (charlie): slider
+// TODO (charlie): icons (X, _, etc) ?
 // TODO (charlie): etc
 
 // Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
@@ -112,7 +114,6 @@ namespace DX
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
 			Event<UIEvent>			Updating;
-			Event<UIEvent>			Updated;
 			Event<MouseEvent>		MouseEntered;
 			Event<MouseEvent>		MouseLeft;
 			Event<MouseEvent>		Hovering;
@@ -368,6 +369,25 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			Element &SetZIndex(int index)
+			{
+				mZIndex = index;
+				if(mParent != null)
+				{
+					mParent->Set(eReorder);
+				}
+				return *this;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			int GetZIndex() const
+			{
+				return mZIndex;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			void SortChildren()
 			{
 				if(Is(eReorder))
@@ -386,15 +406,15 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+			virtual void OnDrawComplete(DrawList &drawList)
 			{
-				// Empty UI Element doesn't draw anything, useful as a container for other elements
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual void OnUpdate(float deltaTime)
+			virtual void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 			{
+				// Empty UI Element doesn't draw anything, useful as a container for other elements
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -454,8 +474,6 @@ namespace DX
 						}
 					}
 					Updating.Invoke(this);
-					OnUpdate(deltaTime);
-					Updated.Invoke(this);
 				}
 				// children processed always (to keep matrices up  to date)
 				// children processed first because they get 1st dibs on messages (can decide to bubble or not)
@@ -512,6 +530,55 @@ namespace DX
 		{
 			bool IsClipper() const override;
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+			void OnDrawComplete(DrawList &drawList) override;
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct Rectangle: FilledRectangle
+		{
+			OutlineRectangle mOutlineRectangle;
+			
+			Rectangle()
+			{
+				AddChild(mOutlineRectangle);
+				mOutlineRectangle.SetColor(Color::White);
+				Updating += [this] (UIEvent const &e)
+				{
+					mOutlineRectangle.SetSize(GetSize());
+				};
+			}
+
+			Rectangle &SetLineColor(Color c)
+			{
+				mOutlineRectangle.SetColor(c);
+				return *this;
+			}
+
+			Color GetLineColor() const
+			{
+				return mOutlineRectangle.GetColor();
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct Line: Element
+		{
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+
+			Color	mColor;
+
+			Line &SetColor(Color c)
+			{
+				mColor = c;
+				return *this;
+			}
+
+			Color GetColor() const
+			{
+				return mColor;
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -521,7 +588,6 @@ namespace DX
 		{
 			string mText;	// UTF8
 			Typeface *mTypeface;
-			Font mFont;
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -623,13 +689,6 @@ namespace DX
 				: Image()
 			{
 				SetPivot(Vec2f(0.5f, 0.5f));
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			void OnUpdate(float deltaTime) override
-			{
-				Element::OnUpdate(deltaTime);
 			}
 		};
 

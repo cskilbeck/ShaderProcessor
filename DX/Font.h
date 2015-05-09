@@ -73,7 +73,7 @@ namespace DX
 
 	struct Font
 	{
-		using VB = DXShaders::Font::VertBuffer;
+		using VB = VertexBuilder<DXShaders::Font::InputVertex>;
 
 		enum HorizontalAlign
 		{
@@ -95,20 +95,22 @@ namespace DX
 		int				mCurrentPageIndex;	// which page was last used to draw a char
 		VB *			mVertexBuffer;		// where the verts get stashed
 
-		Font()
-			: mTypeface(null)
-			, mDrawList(null)
+		Font(Typeface *typeFace= null, DrawList *drawList = null, VB *vertexBuffer = null)
+			: mTypeface(typeFace)
+			, mDrawList(drawList)
 			, mCurrentPageIndex(-1)
-			, mVertexBuffer(null)
+			, mVertexBuffer(vertexBuffer)
 		{
 		}
 
 		void Init(Typeface *typeface, DrawList *drawList, VB *vertexBuffer);
+		void Start(ID3D11DeviceContext *context, Matrix const &matrix);
 		void Begin(ID3D11DeviceContext *context, Matrix const &matrix);
 		void Begin(ID3D11DeviceContext *context, Window const * const window);
 		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
 		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
 		void End();
+		void Finished(ID3D11DeviceContext *context);
 	};
 
 	//////////////////////////////////////////////////////////////////////

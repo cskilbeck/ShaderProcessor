@@ -34,7 +34,9 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	Shaders::Simple simpleShader;
 	Shaders::Simple::VertBuffer gridVB;
 	Shaders::Simple::VertBuffer octahedronVB;
-	Shaders::Simple::VertBuffer simpleVB;
+	
+	VertexBuilder<Shaders::Simple::InputVertex> simpleVB;
+	
 	IndexBuffer<uint16> octahedronIB;
 
 	Shaders::Instanced instancedShader;
@@ -53,9 +55,11 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	UI::Element root;
 	UI::LabelButton button;
-	UI::FilledRectangle rectangle;
+	UI::FilledRectangle filledRectangle;
 	UI::OutlineRectangle outlineRectangle;
 	UI::ClipRectangle clipRect;
+
+	UI::Rectangle rect;
 
 	float deltaTime;
 	float oldDeltaTime;
@@ -67,7 +71,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	DrawList drawList;
 
 	Shaders::UI uiShader;
-	Shaders::UI::VertBuffer UIVerts;
+	VertexBuilder<Shaders::UI::InputVertex> UIVerts;
 	Texture uiTexture;
 	Sampler uiSampler;
 

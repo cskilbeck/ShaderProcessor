@@ -40,8 +40,8 @@ void PhysicsDebug::Release()
 void PhysicsDebug::BeginScene(Camera *camera)
 {
 	mCamera = camera;
-
-	mDrawList.Reset(mWindow->Context(), &mShader, &mVertexBuffer);
+	mVertexBuffer.Map(mWindow->Context());
+	mDrawList.SetShader(mWindow->Context(), &mShader, &mVertexBuffer);
 	mDrawList.SetConstantData(DX::ShaderType::Vertex, Transpose(camera->GetTransformMatrix()), DXShaders::Color::VS::VertConstants_index);
 	mDrawList.BeginLineList();
 }
@@ -51,6 +51,7 @@ void PhysicsDebug::BeginScene(Camera *camera)
 void PhysicsDebug::EndScene()
 {
 	mDrawList.End();
+	mVertexBuffer.UnMap(mWindow->Context());
 	mDrawList.Execute();
 }
 
@@ -62,8 +63,8 @@ void PhysicsDebug::drawLine(const btVector3& from, const btVector3& to, const bt
 	DXShaders::Color::InputVertex vt = { to, (float *)&color };
 	vf.Color.SetAlpha(255);
 	vt.Color.SetAlpha(255);
-	mDrawList.AddVertex(vf);
-	mDrawList.AddVertex(vt);
+	mVertexBuffer.AddVertex(vf);
+	mVertexBuffer.AddVertex(vt);
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -24,6 +24,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Base action item
 
 	struct Item
 	{
@@ -36,6 +37,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Set a texture slot
 
 	struct TextureItem: Item
 	{
@@ -50,6 +52,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Set a sampler slot
 
 	struct SamplerItem: Item
 	{
@@ -64,6 +67,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Copy some data into a constbuffer
 
 	struct ConstBufferItem: Item
 	{
@@ -78,6 +82,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Set a new active ShaderState
 
 	struct ShaderItem: Item
 	{
@@ -87,8 +92,8 @@ namespace
 		};
 
 		ShaderState *mShader;
-		TypelessBuffer *mVertexBuffer;
 		uint32 mVertexSize;
+		VertexBuilderBase *mVertexBuilder;
 
 		void SetTexture(TextureItem *t)
 		{
@@ -115,7 +120,7 @@ namespace
 			mShader->Activate_V(context);
 			uint stride = mVertexSize;
 			uint offset = 0;
-			ID3D11Buffer *b = mVertexBuffer->Handle();
+			ID3D11Buffer *b = mVertexBuilder->Handle();
 
 			// have to do this here because we don't have the template info for the shader (vs)
 			// so... drawing things in a drawlist is limited to one vertex stream in stream slot 0
@@ -124,6 +129,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Set a Scissor rect
 
 	struct ScissorRectItem: Item
 	{
@@ -137,6 +143,7 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// remove Scissor rect
 
 	struct ResetScissorRectItem: Item
 	{
@@ -149,6 +156,8 @@ namespace
 	};
 
 	//////////////////////////////////////////////////////////////////////
+	// Actually draw something
+	// TODO (charlie): check mCount is valid wrt current vertexbuffer
 
 	struct DrawCallItem: Item
 	{
@@ -164,7 +173,6 @@ namespace
 		void Execute(ID3D11DeviceContext *context)
 		{
 			context->IASetPrimitiveTopology((D3D11_PRIMITIVE_TOPOLOGY)mTopology);
-			assert(mCount < 8192);
 			context->Draw(mCount, mBase);
 		}
 	};
@@ -183,12 +191,7 @@ namespace DX
 		, mCurrentDrawCallItem(null)
 		, mItemPointer(mItemBuffer)
 		, mContext(null)
-		, mVertexSize(0)
-		, mVertBase(null)
-		, mVertPointer(null)
-		, mVertZero(null)
 	{
-		memset(mTextures, 0, sizeof(mTextures));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -201,22 +204,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::UnMapCurrentVertexBuffer()
-	{
-		if(mCurrentVertexBuffer != null && mVertBase != null)
-		{
-			mCurrentVertexBuffer->UnMap(mContext);
-		}
-		mCurrentVertexBuffer = null;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
 	byte *DrawList::AddData(byte const *data, uint size)
 	{
 		memcpy(mItemPointer, data, size);
 		mItemPointer += size;
 		return mItemPointer;
+	}
+	
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::SetShader(ID3D11DeviceContext *context, ShaderState *shader, VertexBuilderBase *vb)
+	{
+		assert(mContext == null || context == mContext);
+
+		mContext = context;
+		if(shader != mCurrentShader)	// this is all mCurrentShader is used for - is there a better way?
+		{
+			ShaderItem *i = Add<ShaderItem>();
+			mCurrentShader = i->mShader = shader;
+			mCurrentVertexBuffer = i->mVertexBuilder = vb;
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -231,39 +238,6 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// what if it's the same vertexbuffeR?
-
-	void DrawList::SetShader(ID3D11DeviceContext *context, ShaderState *shader, TypelessBuffer *vb, uint vertSize)
-	{
-		if(mContext == null || shader != mCurrentShader || vb != mCurrentVertexBuffer)
-		{
-			UnMapCurrentVertexBuffer();
-
-			mContext = context;
-			mCurrentVertexBuffer = vb;
-			mCurrentDrawCallItem = null;
-			memset(mTextures, 0, sizeof(mTextures));
-
-			ShaderItem *i = Add<ShaderItem>();
-			mCurrentShader = shader;
-			i->mShader = shader;
-			i->mVertexBuffer = vb;
-			i->mVertexSize = vertSize;
-			mCurrentVertexBuffer = vb;
-			DXV(vb->Map(mContext, mVertZero));
-			mVertBase = mVertPointer = mVertZero;
-			mVertexSize = vertSize;
-		}
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	Texture *DrawList::GetCurrentTexture(uint index)
-	{
-		return mTextures[index];
-	}
-
-	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::SetTexture(ShaderType shaderType, Texture &t, uint index)
 	{
@@ -271,7 +245,6 @@ namespace DX
 		ti->mShaderType = shaderType;
 		ti->mTexture = &t;
 		ti->mIndex = index;
-		mTextures[index] = &t;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -303,9 +276,12 @@ namespace DX
 
 	void DrawList::BeginDrawCall(uint32 topology)
 	{
+		End();
 		DrawCallItem *i = Add<DrawCallItem>();
-		mCurrentDrawCallItem = (void *)i;
+		VertexBuilderBase *vb = mCurrentVertexBuffer;
+		mCurrentDrawCallItem = i;
 		i->mTopology = topology;
+		i->mBase = vb->Count();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -345,30 +321,23 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	int DrawList::End()
+	void DrawList::End()
 	{
 		DrawCallItem *d = (DrawCallItem *)mCurrentDrawCallItem;
-		assert(d != null);
-		d->mBase = (uint32)((mVertBase - mVertZero) / mVertexSize);
-		d->mCount = (uint32)((mVertPointer - mVertBase) / mVertexSize);
-		assert(d->mCount >= 0 && d->mCount < 16384);
-		mVertBase = mVertPointer;
-		mCurrentDrawCallItem = null;
-		return d->mCount;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	bool DrawList::IsDrawCallInProgress() const
-	{
-		return mCurrentDrawCallItem != null;
+		if(d != null)
+		{
+			VertexBuilderBase *vb = mCurrentVertexBuffer;
+			d->mCount = vb->Count() - d->mBase;
+			assert(d->mCount >= 0 && d->mCount < 16384);
+			mCurrentDrawCallItem = null;
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::Execute()
 	{
-		UnMapCurrentVertexBuffer();
+		End();
 
 		byte *end = mItemPointer;
 		byte *t = mItemBuffer;
@@ -445,7 +414,6 @@ namespace DX
 		}
 
 		mItemPointer = mItemBuffer;
-		mVertBase = null;
-		mVertPointer = null;
+		mCurrentShader = null;
 	}
 }

@@ -587,14 +587,22 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
+	void Font::Start(ID3D11DeviceContext *context, Matrix const &matrix)
 	{
 		using VS = DXShaders::Font::VS;
 		VS::g_VertConstants2D_t v;
 		v.TransformMatrix = Transpose(matrix);
-		mDrawList->Reset(context, &shader, mVertexBuffer);
+		mDrawList->SetShader(context, &shader, mVertexBuffer);
 		mDrawList->SetConstantData(Vertex, v, VS::g_VertConstants2D_index);
 		mCurrentPageIndex = -1;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Begin(ID3D11DeviceContext *context, Matrix const &matrix)
+	{
+		mVertexBuffer->Map(context);
+		Start(context, matrix);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -602,6 +610,14 @@ namespace DX
 	void Font::Begin(ID3D11DeviceContext *context, Window const * const window)
 	{
 		Begin(context, OrthoProjection2D(window->ClientWidth(), window->ClientHeight()));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Font::Finished(ID3D11DeviceContext *context)
+	{
+		End();
+		mVertexBuffer->UnMap(context);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -626,10 +642,7 @@ namespace DX
 				Texture *t = mTypeface->mPages[graphic.pageIndex];
 				if(mCurrentPageIndex != graphic.pageIndex)
 				{
-					if(mDrawList->IsDrawCallInProgress())
-					{
-						mDrawList->End();
-					}
+					mDrawList->End();
 					mDrawList->SetTexture(Pixel, *t);
 					mDrawList->BeginTriangleList();
 					mCurrentPageIndex = graphic.pageIndex;
@@ -639,13 +652,12 @@ namespace DX
 				v[1] = Vec2f(v[0].x + graphic.size.x, v[0].y);
 				v[2] = Vec2f(v[0].x, v[0].y + graphic.size.y );
 				v[3] = v[0] + graphic.size;
-				using Vert = DXShaders::Font::InputVertex;
-				mDrawList->AddVertex<Vert>({ v[0], graphic.uv[0], color });
-				mDrawList->AddVertex<Vert>({ v[1], graphic.uv[1], color });
-				mDrawList->AddVertex<Vert>({ v[2], graphic.uv[2], color });
-				mDrawList->AddVertex<Vert>({ v[1], graphic.uv[1], color });
-				mDrawList->AddVertex<Vert>({ v[3], graphic.uv[3], color });
-				mDrawList->AddVertex<Vert>({ v[2], graphic.uv[2], color });
+				mVertexBuffer->AddVertex({ v[0], graphic.uv[0], color });
+				mVertexBuffer->AddVertex({ v[1], graphic.uv[1], color });
+				mVertexBuffer->AddVertex({ v[2], graphic.uv[2], color });
+				mVertexBuffer->AddVertex({ v[1], graphic.uv[1], color });
+				mVertexBuffer->AddVertex({ v[3], graphic.uv[3], color });
+				mVertexBuffer->AddVertex({ v[2], graphic.uv[2], color });
 			}
 			cursor.x += glyph->advance;
 			rc = true;

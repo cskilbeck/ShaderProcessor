@@ -12,11 +12,11 @@ namespace
 {
 	DXPtr<Typeface> debugFont;
 	DXShaders::Debug lineShader;
-	DXShaders::Debug::VertBuffer lineVB;
 	DrawList debugTextDrawList;
 	DrawList debugGraphicsDrawList;
 	Font fontInstance;
-	DXShaders::Font::VertBuffer fontVB;
+	VertexBuilder<DXShaders::Font::InputVertex> fontVB;
+	VertexBuilder<DXShaders::Debug::InputVertex> lineVB;
 	DXWindow *mainWindow;
 	Vec4f cameraPos;
 	Vec2f cursorPos;
@@ -32,10 +32,7 @@ namespace
 	{
 		if(type != currentPrimType)
 		{
-			if(debugGraphicsDrawList.IsDrawCallInProgress())
-			{
-				debugGraphicsDrawList.End();
-			}
+			debugGraphicsDrawList.End();
 			switch(type)
 			{
 				case Lines:
@@ -87,7 +84,8 @@ namespace DX
 	{
 		cursorPos = Vec2f::zero;
 		fontInstance.Begin(mainWindow->Context(), mainWindow);
-		debugGraphicsDrawList.Reset(mainWindow->Context(), &lineShader, &lineVB);
+		lineVB.Map(mainWindow->Context());
+		debugGraphicsDrawList.SetShader(mainWindow->Context(), &lineShader, &lineVB);
 		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
 		cameraPos = camera.GetPosition();
 		currentPrimType = None;
@@ -98,7 +96,9 @@ namespace DX
 	void debug_end()
 	{
 		debugGraphicsDrawList.End();
-		fontInstance.End();
+		debugTextDrawList.End();
+		lineVB.UnMap(mainWindow->Context());
+		fontInstance.Finished(mainWindow->Context());
 		mainWindow->ResetRenderTargetView();
 		debugGraphicsDrawList.Execute();
 		debugTextDrawList.Execute();
@@ -149,8 +149,8 @@ namespace DX
 	void debug_line(CVec4f start, CVec4f end, Color color)
 	{
 		Begin(Lines);
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ start, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ end, color });
+		lineVB.AddVertex({ start, color });
+		lineVB.AddVertex({ end, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -158,9 +158,9 @@ namespace DX
 	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color)
 	{
 		Begin(Triangles);
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
+		lineVB.AddVertex({ a, color });
+		lineVB.AddVertex({ b, color });
+		lineVB.AddVertex({ c, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -168,12 +168,12 @@ namespace DX
 	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color)
 	{
 		Begin(Triangles);
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ b, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ c, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ d, color });
-		debugGraphicsDrawList.AddVertex<DXShaders::Debug::InputVertex>({ a, color });
+		lineVB.AddVertex({ a, color });
+		lineVB.AddVertex({ b, color });
+		lineVB.AddVertex({ c, color });
+		lineVB.AddVertex({ c, color });
+		lineVB.AddVertex({ d, color });
+		lineVB.AddVertex({ a, color });
 	}
 
 	//////////////////////////////////////////////////////////////////////

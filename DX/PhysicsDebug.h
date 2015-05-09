@@ -28,10 +28,10 @@ public:
 
 private:
 
-	DX::DXWindow *								mWindow;
-	DX::DrawList								mDrawList;
-	DXShaders::Color							mShader;
-	VertexBuffer<DXShaders::Color::InputVertex>	mVertexBuffer;
-	Camera *									mCamera;
-	int											mDebugModes;
+	DX::DXWindow *									mWindow;
+	DX::DrawList									mDrawList;
+	DXShaders::Color								mShader;
+	VertexBuilder<DXShaders::Color::InputVertex>	mVertexBuffer;
+	Camera *										mCamera;
+	int												mDebugModes;
 };
