@@ -92,10 +92,10 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Element: Aligned16, list_node
+		struct Element: Aligned16, chs::list_node
 		{
 			Element *				mParent;
-			linked_list<Element>	mChildren;
+			chs::linked_list<Element>	mChildren;
 
 			Matrix					mMatrix;
 			Matrix					mTransformMatrix;
@@ -131,9 +131,9 @@ namespace DX
 				ePressed = 256		// Mouse button is pressed down on the Element
 			};
 
-			bool operator < (Element &o)
+			bool operator > (Element &o)
 			{
-				return mZIndex < o.mZIndex;
+				return mZIndex > o.mZIndex;
 			}
 
 			Element()
@@ -404,7 +404,7 @@ namespace DX
 				if(Is(eReorder))
 				{
 //					ShowChildren();
-//					mChildren.sort();
+					mChildren.sort();
 //					ShowChildren();
 					Clear(eReorder);
 				}

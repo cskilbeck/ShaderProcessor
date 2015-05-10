@@ -45,7 +45,7 @@ namespace DX
 		template <typename T> HRESULT Map(ID3D11DeviceContext *context, T **ptr, D3D11_MAP mapType, MapWaitOption = WaitForGPU);
 		void UnMap(ID3D11DeviceContext *context);
 
-		list_node mListNode;
+		chs::list_node mListNode;
 
 		ID3D11ShaderResourceView *Handle() const
 		{

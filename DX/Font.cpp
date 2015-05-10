@@ -10,7 +10,7 @@ namespace
 {
 	using namespace DX;
 
-	linked_list<Typeface, &Typeface::mListNode> sAllFonts;
+	chs::linked_list<Typeface, &Typeface::mListNode> sAllFonts;
 	bool initialised = false;
 	DXShaders::Font shader;
 	Sampler sampler;

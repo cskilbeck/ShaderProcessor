@@ -10,14 +10,14 @@
 #if defined(_MSC_VER)
 #define VC_WORKAROUND NODE
 #else
-#define VC_WORKAROUND (list_node<T> T::*)nullptr != NODE
+#define VC_WORKAROUND (list_node T::*)nullptr != NODE
 #endif
 
 #include <functional>
 
 //////////////////////////////////////////////////////////////////////
 
-namespace DX
+namespace chs
 {
 
 	//////////////////////////////////////////////////////////////////////
@@ -76,7 +76,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T, list_node T::*NODE = nullptr> class linked_list: protected list_base<T, NODE, VC_WORKAROUND>
+	template <typename T, list_node T::*NODE = nullptr> class linked_list: protected list_base < T, NODE, VC_WORKAROUND >
 	{
 	public:
 
@@ -120,11 +120,11 @@ namespace DX
 			}
 			const_iterator &operator++()
 			{
-				p = get_node(p).next; return *this;
+				p = (const_ptr)get_node(p).next; return *this;
 			}
 			const_iterator &operator--()
 			{
-				p = get_node(p).prev; return *this;
+				p = (const_ptr)get_node(p).prev; return *this;
 			}
 			bool operator==(const_iterator const &o)
 			{
@@ -173,11 +173,11 @@ namespace DX
 			}
 			iterator &operator++()
 			{
-				p = get_next(p); return *this;
+				p = (ptr)get_node(p).next; return *this;
 			}
 			iterator &operator--()
 			{
-				p = get_prev(p); return *this;
+				p = (ptr)get_node(p).prev; return *this;
 			}
 			bool operator==(iterator const &o)
 			{
@@ -219,11 +219,11 @@ namespace DX
 			}
 			const_reverse_iterator &operator++()
 			{
-				p = get_node(p).prev; return *this;
+				p = (const_ptr)get_node(p).prev; return *this;
 			}
 			const_reverse_iterator &operator--()
 			{
-				p = get_node(p).next; return *this;
+				p = (const_ptr)get_node(p).next; return *this;
 			}
 			bool operator==(const_reverse_iterator const &o)
 			{
@@ -272,11 +272,11 @@ namespace DX
 			}
 			reverse_iterator &operator++()
 			{
-				p = get_node(p).prev; return *this;
+				p = (ptr)get_node(p).prev; return *this;
 			}
 			reverse_iterator &operator--()
 			{
-				p = get_node(p).next; return *this;
+				p = (ptr)get_node(p).next; return *this;
 			}
 			bool operator==(reverse_iterator const &o)
 			{
@@ -362,7 +362,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		typedef list_node_base           node_t;
+		typedef list_node_base	         node_t;
 		typedef node_t *                 node_ptr;
 		typedef node_t &                 node_ref;
 		typedef list_node_base    const  const_node_t;
@@ -377,13 +377,13 @@ namespace DX
 		{
 			if(!a.empty())
 			{
-				T *ot = a.tail();
-				T *oh = a.head();
-				T *rt = b.root();
-				get_node(ot).next = rt;
-				get_node(oh).prev = rt;
-				get_node(rt).prev = ot;
-				get_node(rt).next = oh;
+				ptr ot = a.tail();
+				ptr oh = a.head();
+				ptr rt = b.root();
+				set_next(ot, rt);
+				set_prev(oh, rt);
+				set_prev(rt, ot);
+				set_next(rt, oh);
 				a.clear();
 			}
 			else
@@ -397,35 +397,35 @@ namespace DX
 
 		static ptr get_object(node_ptr node)
 		{
-			return reinterpret_cast<ptr>(reinterpret_cast<char *>(node)-offset());
+			return (ptr)((char *)node - offset());
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		static node_ref get_node(ptr obj)
 		{
-			return *reinterpret_cast<node_ptr>(reinterpret_cast<char *>(obj)+offset());
+			return *((node_ptr)((char *)obj + offset()));
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		static const_node_ref get_node(const_ptr obj)
 		{
-			return *reinterpret_cast<const_node_ptr>(reinterpret_cast<char const *>(obj)+offset());
+			return *((const_node_ptr)((char const *)obj + offset()));
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		ptr root()
 		{
-			return reinterpret_cast<ptr>(reinterpret_cast<char *>(&node) - offset());
+			return (ptr)((char *)&node - offset());
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
 		const_ptr const_root() const
 		{
-			return reinterpret_cast<const_ptr>(reinterpret_cast<char const *>(&node) - offset());
+			return (const_ptr)((char const *)&node - offset());
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -444,16 +444,16 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		static void set_next(ptr o, ptr const p)
+		static void set_next(ptr o, const_ptr p)
 		{
-			get_node(o).next = p;
+			get_node(o).next = (void *)p;
 		}
 
 		//////////////////////////////////////////////////////////////////////
 
-		static void set_prev(ptr o, ptr const p)
+		static void set_prev(ptr o, const_ptr p)
 		{
-			get_node(o).prev = p;
+			get_node(o).prev = (void *)p;
 		}
 
 	public:
@@ -473,9 +473,9 @@ namespace DX
 			ptr &p = (ptr &)get_node(obj_before).prev;
 			node_ref n = get_node(obj);
 			get_node(p).next = obj;
-			n.prev = p;
+			n.prev = (void *)p;
+			n.next = (void *)obj_before;
 			p = obj;
-			n.next = obj_before;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -484,10 +484,10 @@ namespace DX
 		{
 			ptr &n = (ptr &)get_node(obj_after).next;
 			node_ref p = get_node(obj);
-			set_prev(n, obj);
-			p.next = n;
+			get_node(n).prev = obj;
+			p.next = (void *)n;
+			p.prev = (void *)obj_after;
 			n = obj;
-			p.prev = obj_after;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -517,10 +517,10 @@ namespace DX
 		{
 			other.remove_range(f, l);
 			ptr p = get_node(where).prev;
-			get_node(p).next = f;
-			get_node(f).prev = p;
-			get_node(where).prev = l;
-			get_node(l).next = where;
+			set_next(p, f);
+			set_prev(f, p);
+			set_prev(where, l);
+			set_next(l, where);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -529,10 +529,10 @@ namespace DX
 		{
 			other.remove_range(f, l);
 			ptr p = get_node(where).next;
-			get_node(p).prev = l;
-			get_node(l).next = p;
-			get_node(where).next = f;
-			get_node(f).prev = where;
+			set_prev(p, l);
+			set_next(l, p);
+			set_next(where, f);
+			set_prev(f, where);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -584,7 +584,7 @@ namespace DX
 		size_t size() const
 		{
 			size_t count = 0;
-			for(const_ptr i = c_head(); i != c_done(); i = c_next(i))
+			for(auto const &i : *this)
 			{
 				++count;
 			}
@@ -784,7 +784,7 @@ namespace DX
 				{
 					insert_point = get_next(insert_point);
 				}
-				while(insert_point != bd && *insert_point < *run_head);
+				while(insert_point != bd && !(*insert_point > *run_head));
 
 				// scanned off the end?
 				if(insert_point != bd)
@@ -797,7 +797,7 @@ namespace DX
 						run_end = run_head;
 						run_head = get_next(run_head);
 					}
-					while(run_head != ad && *run_head < *insert_point);
+					while(run_head != ad && !(*run_head > *insert_point));
 
 					// insert it
 					ptr p = get_prev(insert_point);
@@ -874,7 +874,7 @@ namespace DX
 				// dinky list of 2 entries, just fix it
 				ptr h = list.head();
 				ptr t = list.tail();
-				if(*t < *h)
+				if(*h > *t)
 				{
 					ptr r = list.root();
 					set_next(r, t);

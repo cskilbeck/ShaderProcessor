@@ -8,6 +8,9 @@ namespace DX
 {
 	template <typename T, uint alignment = 16> struct Pool
 	{
+		using list_node = chs::list_node;
+		template <typename T> using linked_list = chs::linked_list < T > ;
+
 		struct Dummy: list_node
 		{
 		};

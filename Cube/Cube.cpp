@@ -30,10 +30,7 @@
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-
-
-// !! linked_list sort bug (3 elements all returning false from operator <)
-// !! lighting const buffer
+// !! lighting const buffer not being setup correctly for all objects
 // !! Arrays in Constant Buffers not being reflected correctly...
 // 2D UI Elements/SceneGraph
 // ?3D SceneGraph
@@ -52,9 +49,9 @@
 //		convex hull for body
 //		wheelspin based on engine as well as speed
 // Shared constant buffers:
-//		if name begins with g_
+//		NOT: if name begins with g_
 //		and both names are the same
-//		and they have the same definition (hash it? or create a table of indices?)
+//		and they have the same definition (hash it? or create a table of indices? just compare them...)
 //		and both bindpoints are the same
 //			[? and map/unmap hasn't been called on the buffer] - does this matter? I don't think so... check it.
 //			then don't re-set it
@@ -123,6 +120,7 @@
 // * Fix Shader/ShaderBase constructor
 // * Bullet
 // * Test the AssetManager
+// * !! linked_list sort bug (3 elements all returning false from operator <)
 
 #include "stdafx.h"
 

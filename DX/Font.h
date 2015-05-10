@@ -37,7 +37,7 @@ namespace DX
 
 		tstring mName;
 
-		list_node mListNode;
+		chs::list_node mListNode;
 
 		~Typeface();
 
