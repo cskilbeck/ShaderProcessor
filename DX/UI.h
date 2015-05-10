@@ -388,11 +388,24 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			void ShowChildren()
+			{
+				TRACE("Children:\n");
+				for(auto &i : mChildren)
+				{
+					TRACE("%2d %s\n", i.mZIndex, i.Name());
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			void SortChildren()
 			{
 				if(Is(eReorder))
 				{
-					mChildren.sort();
+//					ShowChildren();
+//					mChildren.sort();
+//					ShowChildren();
 					Clear(eReorder);
 				}
 			}
@@ -415,6 +428,13 @@ namespace DX
 			virtual void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 			{
 				// Empty UI Element doesn't draw anything, useful as a container for other elements
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			virtual char const *Name() const
+			{
+				return "Element";
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -501,6 +521,11 @@ namespace DX
 				return mColor;
 			}
 
+			char const *Name() const override
+			{
+				return "OutlineRectangle";
+			}
+
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
@@ -521,6 +546,11 @@ namespace DX
 				return mColor;
 			}
 
+			char const *Name() const override
+			{
+				return "FilledRectangle";
+			}
+
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
@@ -531,6 +561,11 @@ namespace DX
 			bool IsClipper() const override;
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 			void OnDrawComplete(DrawList &drawList) override;
+
+			char const *Name() const override
+			{
+				return "ClipRectangle";
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -559,6 +594,11 @@ namespace DX
 			{
 				return mOutlineRectangle.GetColor();
 			}
+
+			char const *Name() const override
+			{
+				return "Rectangle";
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -579,6 +619,11 @@ namespace DX
 			{
 				return mColor;
 			}
+
+			char const *Name() const override
+			{
+				return "Line";
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -595,6 +640,11 @@ namespace DX
 				: Element()
 				, mTypeface(null)
 			{
+			}
+
+			char const *Name() const override
+			{
+				return "OutlineRectangle";
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -665,6 +715,11 @@ namespace DX
 				return *this;
 			}
 
+			char const *Name() const override
+			{
+				return "Image";
+			}
+
 			//////////////////////////////////////////////////////////////////////
 
 			Image &SetSampler(Sampler *s)
@@ -690,6 +745,12 @@ namespace DX
 			{
 				SetPivot(Vec2f(0.5f, 0.5f));
 			}
+
+			char const *Name() const override
+			{
+				return "Button";
+			}
+
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -706,11 +767,17 @@ namespace DX
 				AddChild(label);
 			}
 
+			char const *Name() const override
+			{
+				return "LabelButton";
+			}
+
 			//////////////////////////////////////////////////////////////////////
 
 			LabelButton &SetImage(Texture *t)
 			{
 				Button::SetImage(t);
+				label.SetPivot(Vec2f::half);
 				label.SetPosition(t->FSize() / 2);	// alignment option (topleft, bottomright etc)
 				return *this;
 			}

@@ -92,7 +92,6 @@ namespace
 		};
 
 		ShaderState *mShader;
-		uint32 mVertexSize;
 		VertexBuilderBase *mVertexBuilder;
 
 		void SetTexture(TextureItem *t)
@@ -118,7 +117,7 @@ namespace
 		void Activate(ID3D11DeviceContext *context)
 		{
 			mShader->Activate_V(context);
-			uint stride = mVertexSize;
+			uint stride = mVertexBuilder->mVertexSize;
 			uint offset = 0;
 			ID3D11Buffer *b = mVertexBuilder->Handle();
 

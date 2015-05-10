@@ -32,6 +32,7 @@
 
 
 
+// !! linked_list sort bug (3 elements all returning false from operator <)
 // !! lighting const buffer
 // !! Arrays in Constant Buffers not being reflected correctly...
 // 2D UI Elements/SceneGraph
@@ -779,16 +780,18 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
+	filledRectangle.SetColor(0x800000ff).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
+	root.AddChild(filledRectangle);
+
 	clipRect.SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
-	outlineRectangle.SetColor(Color::BrightGreen).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
-	filledRectangle.SetColor(0x800000ff).SetSize(outlineRectangle.GetSize()).SetPivot(Vec2f::half);
+	root.AddChild(clipRect);
+
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
 	button.SetFont(font).SetText("Click Me !");
-
-	root.AddChild(outlineRectangle);
-	root.AddChild(clipRect);
 	clipRect.AddChild(button);
-	root.AddChild(filledRectangle);
+
+	outlineRectangle.SetColor(Color::BrightGreen).SetSize(filledRectangle.GetSize()).SetPivot(Vec2f::half);
+	root.AddChild(outlineRectangle);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -1156,6 +1159,7 @@ void MyDXWindow::OnFrame()
 
 	if(false)
 	{
+		UIVerts.Map(Context());
 		drawList.SetShader(Context(), &uiShader, &UIVerts);
 		uiShader.ps.page = &uiTexture;
 		uiShader.ps.smplr = &uiSampler;
@@ -1198,35 +1202,31 @@ void MyDXWindow::OnFrame()
 		UIVerts.AddVertex({ { x1, y0, }, { 1, 0 }, 0xffffffff });
 		UIVerts.AddVertex({ { x1, y1 }, { 1, 1 }, 0xffffffff });
 		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
+
 		drawList.End();
-	}
 
-	// Drawlist simple rectangle
+		UIVerts.UnMap(Context());
 
-	if(false)
-	{
+		simpleVB.Map(Context());
 		drawList.SetShader(Context(), &simpleShader, &simpleVB);
 
-		Shaders::Simple::VS::VertConstants_t v;
-		v.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		drawList.SetConstantData(Vertex, v, 0);
+		Shaders::Simple::VS::VertConstants_t vc;
+		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		drawList.SetConstantData(Vertex, vc, Shaders::Simple::VS::VertConstants_index);
 		drawList.BeginTriangleStrip();
 		simpleVB.AddVertex({ { 0, 0, 0.5f }, 0x80000000 });
 		simpleVB.AddVertex({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
 		simpleVB.AddVertex({ { 0, 100, 0.5f }, 0x80000000 });
 		simpleVB.AddVertex({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
 		drawList.End();
-	}
+		simpleVB.UnMap(Context());
 
-	// Drawlist some text
-
-	if(false)
-	{
 		Font i;
 		i.Init(bigFont.get(), &drawList, &bigFontVB);
 		i.Begin(Context(), this);
 		i.DrawString("HELLOWORLD", Vec2f(400, 500));
 		i.End();
+		i.Finished(Context());
 	}
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
@@ -1242,10 +1242,7 @@ void MyDXWindow::OnFrame()
 
 	root.SetPosition(FClientSize() / 2);
 	root.SetRotation(time / 4);
-	button.SetRotation(time / 8);
-	//root.SetRotation(time);
-	//button.SetRotation(time * 4);
-//	clipRect.SetRotation(Mouse::Position.x / FClientWidth() * PI * 2);
+	button.SetRotation(time * 2);
 
 	UI::Update(&root, deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));

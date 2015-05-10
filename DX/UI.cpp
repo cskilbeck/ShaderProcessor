@@ -71,6 +71,7 @@ namespace DX
 			if(IsVisible())
 			{
 				SortChildren();
+				//TRACE("%s::OnDraw\n", Name());
 				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{
