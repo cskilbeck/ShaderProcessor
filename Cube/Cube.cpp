@@ -1155,8 +1155,21 @@ void MyDXWindow::OnFrame()
 
 	// Drawlist UI elements
 
-	if(false)
+	if(true)
 	{
+		simpleVB.Map(Context());
+		drawList.SetShader(Context(), &simpleShader, &simpleVB);
+		Shaders::Simple::VS::VertConstants_t vc;
+		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
+		drawList.SetConstantData(Vertex, vc);
+		drawList.BeginTriangleStrip();
+		simpleVB.AddVertex({ { 0, 0, 0 }, 0x80000000 });
+		simpleVB.AddVertex({ { FClientWidth(), 0, 0 }, 0x80000000 });
+		simpleVB.AddVertex({ { 0, 100, 0 }, 0x80000000 });
+		simpleVB.AddVertex({ { FClientWidth(), 100, 0 }, 0x80000000 });
+		drawList.End();
+		simpleVB.UnMap(Context());
+
 		UIVerts.Map(Context());
 		drawList.SetShader(Context(), &uiShader, &UIVerts);
 		uiShader.ps.page = &uiTexture;
@@ -1200,24 +1213,8 @@ void MyDXWindow::OnFrame()
 		UIVerts.AddVertex({ { x1, y0, }, { 1, 0 }, 0xffffffff });
 		UIVerts.AddVertex({ { x1, y1 }, { 1, 1 }, 0xffffffff });
 		UIVerts.AddVertex({ { x0, y1 }, { 0, 1 }, 0xffffffff });
-
 		drawList.End();
-
 		UIVerts.UnMap(Context());
-
-		simpleVB.Map(Context());
-		drawList.SetShader(Context(), &simpleShader, &simpleVB);
-
-		Shaders::Simple::VS::VertConstants_t vc;
-		vc.TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
-		drawList.SetConstantData(Vertex, vc, Shaders::Simple::VS::VertConstants_index);
-		drawList.BeginTriangleStrip();
-		simpleVB.AddVertex({ { 0, 0, 0.5f }, 0x80000000 });
-		simpleVB.AddVertex({ { FClientWidth(), 0, 0.5f }, 0x80000000 });
-		simpleVB.AddVertex({ { 0, 100, 0.5f }, 0x80000000 });
-		simpleVB.AddVertex({ { FClientWidth(), 100, 0.5f }, 0x80000000 });
-		drawList.End();
-		simpleVB.UnMap(Context());
 
 		Font i;
 		i.Init(bigFont.get(), &drawList, &bigFontVB);
@@ -1282,18 +1279,10 @@ void MyDXWindow::OnFrame()
 	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 	Context()->Draw(spriteVerts.Count(), 0);
 
+	// !!! One or the other !?
 	{
-		// Drawlist some sprites
-
 		Sprite const &s = spriteSheet["temp.png"];
 		Sprite const &t = spriteSheet["temp.jpg"];
-
-		spriteSheet.SetupDrawlist(Context(), drawList, ClientWidth(), ClientHeight());
-		Sprite &q = (Sprite &)spriteSheet.mVertexBuffer.AddVertex();
-		q.Set(t, { 100, ClientHeight() - 100.0f });
-		q.Rotation = time * PI / 2;
-		spriteSheet.Finished(Context());
-		drawList.Execute();
 
 		// Draw some SpriteSheet sprites in Immediate Mode
 
@@ -1302,14 +1291,21 @@ void MyDXWindow::OnFrame()
 
 		spriteSheet.SetupTransform(Context(), ClientWidth(), ClientHeight());
 		spriteSheet.BeginRun(Context());
-		spriteSheet.Add(s,
-						 { sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
-						 { sinf(time * 1.75f) * 0.1f + 0.2f, cosf(time * 1.9f) * 0.1f + 0.2f },
-						 { 0.5f, 0.5f },
-						 0,
-						 Color::White,
-						 xflip, yflip);
+		spriteSheet.Add(s,	{ sinf(time * 2) * 200 + 200, cosf(time * 1.5f) * 200 + 200 },
+							{ sinf(time * 1.75f) * 0.1f + 0.2f, cosf(time * 1.9f) * 0.1f + 0.2f },
+							{ 0.5f, 0.5f },
+							0,
+							Color::White,
+							xflip, yflip);
 		spriteSheet.ExecuteRun(Context());
+
+		// Drawlist some sprites
+
+		spriteSheet.SetupDrawlist(Context(), drawList, ClientWidth(), ClientHeight());
+		Sprite &q = (Sprite &)spriteSheet.mVertexBuffer.AddVertex();
+		q.Set(t, { 100, ClientHeight() - 100.0f });
+		q.Rotation = time * PI / 2;
+		spriteSheet.Finished(Context());
 	}
 
 	// Draw spinning cube into rendertarget

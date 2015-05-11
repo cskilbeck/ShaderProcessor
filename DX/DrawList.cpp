@@ -217,7 +217,7 @@ namespace DX
 		assert(mContext == null || context == mContext);
 
 		mContext = context;
-		if(shader != mCurrentShader)	// this is all mCurrentShader is used for - is there a better way?
+		if(shader != mCurrentShader || vb != mCurrentVertexBuffer)	// this is all mCurrentShader is used for - is there a better way?
 		{
 			ShaderItem *i = Add<ShaderItem>();
 			mCurrentShader = i->mShader = shader;

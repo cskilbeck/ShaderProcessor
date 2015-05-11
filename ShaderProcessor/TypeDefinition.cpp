@@ -216,6 +216,7 @@ void TypeDefinition::MemberOutput(string const &shaderName, uint bindPoint)
 		p->OutputDefinition();
 		OutputLine();
 	}
+	OutputLine("enum { Index = %d };", mIndex);
 	UnIndent("};");
 	OutputLine();
 	OutputLine("ConstBuffer<%s_t> *%s;", mDesc.Name, mDesc.Name);

@@ -8,7 +8,7 @@ namespace DX
 {
 	using Matrix = DirectX::XMMATRIX;
 	using MatrixArray = float[4][4];
-	using Float4x4 = DX::Matrix;
+	using Float4x4 = Matrix;
 
 	inline MatrixArray &MatrixAsArray(Matrix &m)
 	{

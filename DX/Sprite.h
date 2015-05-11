@@ -80,8 +80,7 @@ namespace DX
 		tstring								mName;
 		uint32								mScreenWidth;
 		uint32								mScreenHeight;
-		Shaders::Sprite::InputVertex *		mVertBase;
-		Shaders::Sprite::InputVertex *		mVertPointer;
+		uint32								mVertBase;
 		DrawList *							mDrawList;
 
 		SpriteSheet()
@@ -102,6 +101,7 @@ namespace DX
 
 		HRESULT BeginRun(ID3D11DeviceContext *context)
 		{
+			mVertBase = 0;	// for now
 			DXR(mVertexBuffer.Map(context));
 			return S_OK;
 		}
@@ -134,14 +134,14 @@ namespace DX
 
 		void ExecuteRun(ID3D11DeviceContext *context)
 		{
+			uint count = mVertexBuffer.Count() - mVertBase;
 			mVertexBuffer.UnMap(context);
-			uint count = (uint)(mVertPointer - mVertBase);
 			mShader.Activate(context);
 			uint stride = sizeof(Sprite);
 			uint offset = 0;
 			context->IASetVertexBuffers(0, 1, mVertexBuffer.AddressOfHandle(), &stride, &offset);
 			context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-			context->Draw(count, 0);
+			context->Draw(count, mVertBase);
 		}
 
 		HRESULT SetupTransform(ID3D11DeviceContext *context, int width, int height)
@@ -155,8 +155,11 @@ namespace DX
 		{
 			mDrawList = &d;
 			mVertexBuffer.Map(context);
+			mVertBase = 0;	// for now
 			d.SetShader(context, &mShader, &mVertexBuffer);
-			d.SetConstantData(Geometry, Transpose(OrthoProjection2D(width, height)), Shaders::Sprite::GS::vConstants_index);
+			Shaders::Sprite::GS::vConstants_t vc;
+			vc.TransformMatrix = Transpose(OrthoProjection2D(width, height));
+			d.SetConstantData(Geometry, vc);
 			d.BeginPointList();
 		}
 

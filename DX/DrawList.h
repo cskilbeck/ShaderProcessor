@@ -87,6 +87,7 @@ namespace DX
 		void SetScissorRect(Rect2D const &rect);
 		void ResetScissorRect();
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
+		template <typename T> void SetConstantData(ShaderType shaderType, T &data);
 		void BeginPointList();
 		void BeginTriangleList();
 		void BeginTriangleStrip();
@@ -130,6 +131,11 @@ namespace DX
 	template <typename T> inline void DrawList::SetConstantData(ShaderType shaderType, T &data, uint index)
 	{
 		SetConsts(shaderType, (byte *)&data, sizeof(T), index);
+	}
+
+	template <typename T> inline void DrawList::SetConstantData(ShaderType shaderType, T &data)
+	{
+		SetConsts(shaderType, (byte *)&data, sizeof(T), T::Index);
 	}
 
 }

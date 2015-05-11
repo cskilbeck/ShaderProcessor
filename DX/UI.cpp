@@ -61,7 +61,7 @@ namespace DX
 
 		void Update(Element *rootElement, float deltaTime)
 		{
-			rootElement->Update(deltaTime, IdentityMatrix, false);
+			rootElement->Update(deltaTime, IdentityMatrix, false, true);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -179,7 +179,7 @@ namespace DX
 		{
 			Font f(mTypeface, &drawList, &fontVB);
 			f.Start(context, matrix);
-			f.DrawString(mText.c_str(), Vec2f(0, 0));
+			f.DrawString(mText.c_str(), Vec2f(0, 0), Font::HorizontalAlign::HLeft, Font::VerticalAlign::VTop, mLayerMask);
 			f.End();
 		}
 

@@ -100,6 +100,7 @@ namespace DX
 			Matrix					mMatrix;
 			Matrix					mTransformMatrix;
 			Matrix					mInverseMatrix;
+			Matrix					mClientTransform;
 
 			int						mZIndex;
 			Flags32					mFlags;
@@ -148,6 +149,7 @@ namespace DX
 				, mMatrix(IdentityMatrix)
 				, mTransformMatrix(IdentityMatrix)
 				, mInverseMatrix(IdentityMatrix)
+				, mClientTransform(IdentityMatrix)
 			{
 			}
 
@@ -344,14 +346,14 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &AddChildAndCenter(Element &e)
+			virtual Element &AddChildAndCenter(Element &e)
 			{
 				return AddChild(e.SetPivot(Vec2f::half).SetPosition(GetSize() / 2));
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &AddChild(Element &e)
+			virtual Element &AddChild(Element &e)
 			{
 				mChildren.push_back(e);
 				e.mParent = this;
@@ -361,7 +363,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void RemoveChild(Element &e)
+			virtual void RemoveChild(Element &e)
 			{
 				mChildren.remove(e);
 				e.mParent = null;
@@ -388,24 +390,11 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void ShowChildren()
-			{
-				TRACE("Children:\n");
-				for(auto &i : mChildren)
-				{
-					TRACE("%2d %s\n", i.mZIndex, i.Name());
-				}
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
 			void SortChildren()
 			{
 				if(Is(eReorder))
 				{
-//					ShowChildren();
 					mChildren.sort();
-//					ShowChildren();
 					Clear(eReorder);
 				}
 			}
@@ -443,11 +432,15 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 			// TODO (charlie): modality
+			// TODO (charlie): make this private and UI::Update() a friend
 
-			void Update(float deltaTime, Matrix const &matrix, bool clip)
+			void Update(float deltaTime, Matrix const &matrix, bool clip, bool active)
 			{
+				// parent can transform its children through mClientTransform - blunt instrument, though
+				Matrix &cm = mParent != null ? mParent->mClientTransform : IdentityMatrix;
+
 				// matrices are always updated even if it's inactive because it might be visible
-				mTransformMatrix = GetMatrix() * matrix;
+				mTransformMatrix = GetMatrix() * cm * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
 				// SOMEHOW: clip on the way down, but invoke messages on the way up
@@ -455,8 +448,10 @@ namespace DX
 				// -- use those flags on the way up to invoke messages
 				// -- build message list (only child-most gets each message), send to child-most, and parents until bubble = false
 
+				active &= Is(eInActive);
+
 				// clicking & onupdate only called if it's active (and not clipped)
-				if(!(Is(eInActive)))
+				if(!active)
 				{
 					Vec2f local = ScreenToLocal(Mouse::Position);
 					if(ContainsLocalPoint(local) && !clip)
@@ -495,11 +490,10 @@ namespace DX
 					}
 					Updating.Invoke(this);
 				}
-				// children processed always (to keep matrices up  to date)
-				// children processed first because they get 1st dibs on messages (can decide to bubble or not)
+				// children always processed (to keep matrices up  to date)
 				for(auto &r : mChildren)
 				{
-					((Element &)r).Update(deltaTime, mTransformMatrix, clip);
+					((Element &)r).Update(deltaTime, mTransformMatrix, clip, active);
 				}
 			}
 		};
@@ -631,13 +625,15 @@ namespace DX
 
 		struct Label: Element
 		{
-			string mText;	// UTF8
-			Typeface *mTypeface;
+			string		mText;	// UTF8
+			uint32		mLayerMask;
+			Typeface *	mTypeface;
 
 			//////////////////////////////////////////////////////////////////////
 
 			Label()
 				: Element()
+				, mLayerMask(0xffffffff)
 				, mTypeface(null)
 			{
 			}
@@ -652,6 +648,19 @@ namespace DX
 			float Baseline() const
 			{
 				return mTypeface->GetBaseline() / mTypeface->GetHeight();
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Label &SetLayerMask(uint32 mask)
+			{
+				mLayerMask = mask;
+				return *this;
+			}
+
+			uint32 GetLayerMask() const
+			{
+				return mLayerMask;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -755,16 +764,64 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		// how to mess with the position of the client children?
+
+		struct Scrollable: Element
+		{
+			ClipRectangle		mClient;
+			FilledRectangle		mVerticalScrollBar;
+			FilledRectangle		mHorizontalScrollBar;
+
+			Scrollable()
+				: Element()
+			{
+				AddChild(mClient);
+				AddChild(mVerticalScrollBar);
+				AddChild(mHorizontalScrollBar);
+				mVerticalScrollBar.SetColor(Color::White);
+				mHorizontalScrollBar.SetColor(Color::White);
+
+				Updating += [this] (UIEvent const &e)
+				{
+					// work out extents of the children
+					Vec2f tl(FLT_MAX, FLT_MAX);
+					Vec2f br(-FLT_MAX, -FLT_MAX);
+					for(auto &c : mClient.mChildren)
+					{
+						Vec2f s = c.GetSize();
+						Vec2f corners[4] = { Vec2f::zero, s, Vec2f(0, s.y), Vec2f(s.x, 0) };
+						for(auto &corner : corners)
+						{
+							Vec2f cr = c.LocalToScreen(corner);
+							tl = Min(tl, cr);
+							br = Max(br, cr);
+						}
+					}
+					// work out scrollbar sizes
+					Vec2f mySize = GetSize();
+					Vec2f childrenSize = br - tl;						// eg 200
+					Vec2f ratio = mySize / childrenSize;				// eg 100 / 200 = 0.5
+					Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
+					sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
+
+					mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
+					mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
+				};
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		struct LabelButton: Button
 		{
-			Label label;
+			Label mLabel;
 
 			//////////////////////////////////////////////////////////////////////
 
 			LabelButton()
 				: Button()
 			{
-				AddChild(label);
+				AddChild(mLabel);
 			}
 
 			char const *Name() const override
@@ -774,11 +831,18 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			Label &GetLabel()
+			{
+				return mLabel;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			LabelButton &SetImage(Texture *t)
 			{
 				Button::SetImage(t);
-				label.SetPivot(Vec2f::half);
-				label.SetPosition(t->FSize() / 2);	// alignment option (topleft, bottomright etc)
+				mLabel.SetPivot(Vec2f::half);
+				mLabel.SetPosition(t->FSize() / 2);	// alignment option (topleft, bottomright etc)
 				return *this;
 			}
 
@@ -786,7 +850,7 @@ namespace DX
 
 			LabelButton &SetFont(Typeface *f)
 			{
-				label.SetFont(f);
+				mLabel.SetFont(f);
 				return *this;
 			}
 
@@ -794,7 +858,7 @@ namespace DX
 
 			LabelButton &SetText(char const *t)
 			{
-				label.SetText(t);
+				mLabel.SetText(t);
 				return *this;
 			}
 		};
