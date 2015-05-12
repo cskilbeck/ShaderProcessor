@@ -92,25 +92,21 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Element: Aligned16, chs::list_node
+		struct Element: Aligned16, list_node
 		{
-			Element *				mParent;
-			chs::linked_list<Element>	mChildren;
-
 			Matrix					mMatrix;
 			Matrix					mTransformMatrix;
 			Matrix					mInverseMatrix;
 			Matrix					mClientTransform;
-
-			int						mZIndex;
+			Element *				mParent;
+			linked_list<Element>	mChildren;
+			int32					mZIndex;
 			Flags32					mFlags;
-
 			Vec2f					mPosition;
 			Vec2f					mSize;
 			Vec2f					mScale;
 			Vec2f					mPivot;
 			float					mAngle;
-
 			Event<ClickedEvent>		Clicked;
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
@@ -238,6 +234,20 @@ namespace DX
 			Vec2f GetSize() const
 			{
 				return mSize;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			float Width() const
+			{
+				return mSize.x;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			float Height() const
+			{
+				return mSize.y;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -762,6 +772,14 @@ namespace DX
 
 		};
 
+		struct ScrollBar: FilledRectangle
+		{
+			ScrollBar()
+				: FilledRectangle()
+			{
+			}
+		};
+
 		//////////////////////////////////////////////////////////////////////
 
 		// how to mess with the position of the client children?
@@ -780,33 +798,56 @@ namespace DX
 				AddChild(mHorizontalScrollBar);
 				mVerticalScrollBar.SetColor(Color::White);
 				mHorizontalScrollBar.SetColor(Color::White);
+			}
 
-				Updating += [this] (UIEvent const &e)
+			Element &AddChild(Element &e) override
+			{
+				Element &f = mClient.AddChild(e);
+				ResizeClient();
+				return f;
+			}
+
+			Element &AddChildAndCenter(Element &e) override
+			{
+				Element &f = mClient.AddChildAndCenter(e);
+				ResizeClient();
+				return f;
+			}
+
+			void RemoveChild(Element &e) override
+			{
+				mClient.RemoveChild(e);
+				ResizeClient();
+			}
+
+			void ResizeClient()
+			{
+				// work out extents of the children
+				Vec2f tl(FLT_MAX, FLT_MAX);
+				Vec2f br(-FLT_MAX, -FLT_MAX);
+				for(auto &c : mClient.mChildren)
 				{
-					// work out extents of the children
-					Vec2f tl(FLT_MAX, FLT_MAX);
-					Vec2f br(-FLT_MAX, -FLT_MAX);
-					for(auto &c : mClient.mChildren)
+					Vec2f s = c.GetSize();
+					Vec2f corners[4] = { Vec2f::zero, s, Vec2f(0, s.y), Vec2f(s.x, 0) };
+					for(auto &corner : corners)
 					{
-						Vec2f s = c.GetSize();
-						Vec2f corners[4] = { Vec2f::zero, s, Vec2f(0, s.y), Vec2f(s.x, 0) };
-						for(auto &corner : corners)
-						{
-							Vec2f cr = c.LocalToScreen(corner);
-							tl = Min(tl, cr);
-							br = Max(br, cr);
-						}
+						Vec2f cr = c.LocalToScreen(corner);
+						tl = Min(tl, cr);
+						br = Max(br, cr);
 					}
-					// work out scrollbar sizes
-					Vec2f mySize = GetSize();
-					Vec2f childrenSize = br - tl;						// eg 200
-					Vec2f ratio = mySize / childrenSize;				// eg 100 / 200 = 0.5
-					Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
-					sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
+				}
+				// work out scrollbar sizes
+				Vec2f mySize = GetSize();
+				Vec2f childrenSize = br - tl;						// eg 200
+				Vec2f ratio = mySize / childrenSize;				// eg 100 / 200 = 0.5
+				Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
+				sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
 
-					mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
-					mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
-				};
+				mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
+				mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
+				mVerticalScrollBar.SetPosition(Vec2f(mySize.x - mVerticalScrollBar.Width(), 0));
+				mHorizontalScrollBar.SetPosition(Vec2f(0, mSize.y - mHorizontalScrollBar.Height()));
+				mClientTransform = IdentityMatrix;
 			}
 		};
 

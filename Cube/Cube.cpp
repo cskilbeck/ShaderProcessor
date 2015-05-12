@@ -32,9 +32,11 @@
 
 // !! lighting const buffer not being setup correctly for all objects
 // !! Arrays in Constant Buffers not being reflected correctly...
+
+// All input needs to be filtered through the UI namespace
+//		Fix mouse capture mess
 // 2D UI Elements/SceneGraph
 // ?3D SceneGraph
-// Fix mouse capture mess
 // sort out units (metres, right?)
 // Cartoon Car Physics
 //		\ wheelcasting
@@ -71,13 +73,13 @@
 // Proper logging instead of a janky handful of macros
 // Clean up the FileBase/DiskFile/MemoryFile/WinResource/FileResource/Resource/Blob mess
 // Pick a base aspect ratio and do the right thing when the window is resized
-// Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DX]
+// Fix where all the libs go (all in DX\) [DXBase, ShaderProcessor, DXGraphics, DXUI, DX]
 // Monitor resolution list/handle Alt-Enter
 // Fix the font utility for once and good and proper (rewrite? in DX? Mesh fonts, Distance fields)
 // Model hierarchy/Skinning shader/Anim player
 // SWF importer/converter/player!?
 // Assimp
-//		Default shader
+//		Default uber shader (PBR!?)
 //		Preprocessor / native loader
 //		Shared vert/index buffers across meshes
 //		Named shader support

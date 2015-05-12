@@ -63,6 +63,10 @@
 #include "Flags.h"
 #include "Win32.h"
 #include "linked_list.h"
+
+using chs::list_node;
+using chs::linked_list;
+
 #include "Pool.h"
 #include "RefCounted.h"
 #include "Half.h"

@@ -8,7 +8,7 @@ namespace DX
 {
 	//////////////////////////////////////////////////////////////////////
 
-	template<typename T> struct Delegate : chs::list_node
+	template<typename T> struct Delegate : list_node
 	{
 		template<typename T> using DelegateFunction = std::function<void(T const &event)>;
 
