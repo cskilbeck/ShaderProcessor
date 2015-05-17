@@ -30,7 +30,6 @@
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
-// !! lighting const buffer not being setup correctly for all objects
 // !! Arrays in Constant Buffers not being reflected correctly...
 
 // All input needs to be filtered through the UI namespace
@@ -697,10 +696,10 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	//KeyPressed += [this] (KeyboardEvent const &e)
-	//{
-	//	Trace("[%04x] : %c\n", e.key, e.key);
-	//};
+	KeyPressed += [this] (KeyboardEvent const &e)
+	{
+		Trace("[%04x] : %c\n", e.key, e.key);
+	};
 
 	cameras[0] = new FPSCamera(this);
 	cameras[1] = new FollowCamera(this);
@@ -726,12 +725,10 @@ bool MyDXWindow::OnCreate()
 	DXB(car.Create(carTransform));
 
 	mGroundShape = new btBoxShape(btVector3((float)gridSize, (float)gridSize, 1));
-	btDefaultMotionState *groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, -1)));
-	btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, mGroundShape, btVector3(0, 0, 0));
-	mGroundRigidBody = new btRigidBody(groundRigidBodyCI);
-	Physics::DynamicsWorld->addRigidBody(mGroundRigidBody, 1, -1);
+	mGroundRigidBody = Physics::CreateRigidBody(0, btTransform(btQuaternion::getIdentity(), btVector3(0, 0, -1)), mGroundShape);
 	mGroundRigidBody->setRestitution(1);
 	mGroundRigidBody->setFriction(1);
+	Physics::AddRigidBody(mGroundRigidBody, -1, -1);
 
 	// Create some boxes
 	SetupBoxes();

@@ -789,6 +789,8 @@ namespace DX
 			ClipRectangle		mClient;
 			FilledRectangle		mVerticalScrollBar;
 			FilledRectangle		mHorizontalScrollBar;
+			Vec2f				mClientSize;
+			Vec2f				mClientOffset;
 
 			Scrollable()
 				: Element()
@@ -820,6 +822,23 @@ namespace DX
 				ResizeClient();
 			}
 
+			void SetClientSize(Vec2f const &size)
+			{
+				mClientSize = size;
+				// set scrollbar sizes...
+				Vec2f mySize = GetSize();
+				Vec2f ratio = mySize / mClientSize;					// eg 100 / 200 = 0.5
+				Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
+				sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
+				mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
+				mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
+			}
+
+			Vec2f GetClientSize() const
+			{
+				return mClientSize;
+			}
+
 			void ResizeClient()
 			{
 				// work out extents of the children
@@ -836,18 +855,7 @@ namespace DX
 						br = Max(br, cr);
 					}
 				}
-				// work out scrollbar sizes
-				Vec2f mySize = GetSize();
-				Vec2f childrenSize = br - tl;						// eg 200
-				Vec2f ratio = mySize / childrenSize;				// eg 100 / 200 = 0.5
-				Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
-				sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
-
-				mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
-				mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
-				mVerticalScrollBar.SetPosition(Vec2f(mySize.x - mVerticalScrollBar.Width(), 0));
-				mHorizontalScrollBar.SetPosition(Vec2f(0, mSize.y - mHorizontalScrollBar.Height()));
-				mClientTransform = IdentityMatrix;
+				SetClientSize(br - tl);
 			}
 		};
 
