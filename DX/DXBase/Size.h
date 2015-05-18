@@ -51,6 +51,11 @@ namespace DX
 			cx = 0;
 			cy = 0;
 		}
+
+		bool operator < (Size2 const &o) const
+		{
+			return (cx == o.cx) ? (cy < o.cy) : (cx < o.cx);
+		}
 	};
 
 	//////////////////////////////////////////////////////////////////////

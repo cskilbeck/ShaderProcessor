@@ -28,6 +28,9 @@
 // ^^^ allow this behaviour to be overridden (force CB set)
 
 //////////////////////////////////////////////////////////////////////
+// Track sections join together at defined points
+// 8 across, 4 high, specific width
+// track should be heading straight forward at the join
 //////////////////////////////////////////////////////////////////////
 
 // !! Arrays in Constant Buffers not being reflected correctly...
@@ -89,6 +92,7 @@
 // Spock
 //		Make debug info default to on in Debug builds
 // ShaderProcessor
+//		!! Running cl.exe before ShaderProcessor means the line numbers don't match in the error messages
 //		Error check everything
 //		Structured Buffers/UAV support
 //		Hull/Domain/Compute shader support (Tesselate the duck to buggery! How do you calc the patches?)
@@ -812,13 +816,6 @@ bool MyDXWindow::OnCreate()
 
 	lightPos = Vec4(0, -15, 20, 0);
 
-	auto &l = *cubeShader.ps.Light;
-	l.lightPos = lightPos;
-	l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
-	l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
-	l.specColor = Float3(5, 5, 5);
-	DXB(l.Update(Context()));
-
 	DXB(uiShader.Create());
 	DXB(UIVerts.Create(12));
 	DXB(uiTexture.Load(TEXT("temp.png")));
@@ -1106,6 +1103,15 @@ void MyDXWindow::OnFrame()
 	DrawCylinder(RotationMatrix(Vec4(time, time * 0.3f, time * 0.27f)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, 20, 0)), cubeTexture);
 
 	DrawSphere(RotationMatrix(Vec4(time * 0.5f, PI / 2, PI / 2)) * ScaleMatrix(Vec4(10, 10, 10)) * TranslationMatrix(Vec4(-20, -20, 0)), cubeTexture);
+
+	{
+		auto &l = *cubeShader.ps.Light;
+		l.lightPos = lightPos;
+		l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
+		l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
+		l.specColor = Float3(5, 5, 5);
+		l.Update(Context());
+	}
 
 	Matrix bob = RotationMatrix(time * 1.0f, time * 1.2f, time * 1.3f) * ScaleMatrix(Vec4(0.1f, 0.1f, 0.1f)) * TranslationMatrix(Vec4(20, -20, 0));
 	scene.Render(Context(), bob, camera->GetTransformMatrix(bob), camera->position);

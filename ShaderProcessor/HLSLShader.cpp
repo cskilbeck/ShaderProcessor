@@ -1115,20 +1115,6 @@ void HLSLShader::OutputHeaderFile()
 }
 
 //////////////////////////////////////////////////////////////////////
-
-bool IsAllDigits(string const &str)
-{
-	for(auto c : str)
-	{
-		if(!isdigit(c))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-//////////////////////////////////////////////////////////////////////
 // Need to create a bindlist for the vertex streams...
 
 using std::regex;

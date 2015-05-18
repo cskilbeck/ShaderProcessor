@@ -82,19 +82,69 @@ namespace DX
 				swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 				swapChainDesc.Flags = 0;
 
-				DXR(D3D11CreateDeviceAndSwapChain(null,
-					D3D_DRIVER_TYPE_HARDWARE,
-					null,
-					flags,
-					levels,
-					_countof(levels),
-					D3D11_SDK_VERSION,
-					&swapChainDesc,
-					&mSwapChain,
-					&mDevice,
-					&mFeatureLevel,
-					&mContext));
+				//DXR(D3D11CreateDeviceAndSwapChain(null,
+				//	D3D_DRIVER_TYPE_HARDWARE,
+				//	null,
+				//	flags,
+				//	levels,
+				//	_countof(levels),
+				//	D3D11_SDK_VERSION,
+				//	&swapChainDesc,
+				//	&mSwapChain,
+				//	&mDevice,
+				//	&mFeatureLevel,
+				//	&mContext));
 
+				// get a DXGIFactory
+				DXPtr<IDXGIFactory1> pFactory;
+				DXR(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory));
+
+				// Get the default video card
+				DXPtr<IDXGIAdapter1> adapter;
+				DXR(pFactory->EnumAdapters1(0, &adapter));
+
+				// have a look
+				DXGI_ADAPTER_DESC1 desc;
+				DXR(adapter->GetDesc1(&desc));
+				TRACE(L"Default Adapter: %s\n Video RAM: %p\nSystem RAM: %p\nShared RAM: %p\n\n", desc.Description, desc.DedicatedVideoMemory, desc.DedicatedSystemMemory, desc.SharedSystemMemory);
+
+				// Get the default output (monitor)
+				DXPtr<IDXGIOutput> output;
+				DXR(adapter->EnumOutputs(0, &output));
+
+				// have a look
+				DXGI_OUTPUT_DESC monitorDesc;
+				DXR(output->GetDesc(&monitorDesc));
+				TRACE(L"Default Monitor: %s\n", monitorDesc.DeviceName);
+				Rect2D &r = (Rect2D &)monitorDesc.DesktopCoordinates;
+				TRACE("%dx%d\n", r.Width(), r.Height());
+
+				// get the list of display modes that the default monitor supports
+				uint32 numModes;
+				DXR(output->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, null));
+				vector<DXGI_MODE_DESC> modes(numModes);
+				DXR(output->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, modes.data()));
+
+				// group them by resolution
+				std::map<Size2D, std::list<DXGI_MODE_DESC *>> modeMap;
+				for(auto &mode : modes)
+				{
+					modeMap[Size2D(mode.Width, mode.Height)].push_back(&mode);
+				}
+
+				// have a look
+				for(auto &l : modeMap)
+				{
+					TRACE("Resolution: %dx%d\n", l.first.Width(), l.first.Height());
+					for(auto &m : l.second)
+					{
+						TRACE(L"    %5.2fHz,  %s\n", (float)m->RefreshRate.Numerator / m->RefreshRate.Denominator, m->Scaling == DXGI_MODE_SCALING_CENTERED ? L"Centered" : L"Scaled");
+					}
+					TRACE("\n");
+				}
+
+				DXR(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, null, flags, levels, _countof(levels), D3D11_SDK_VERSION, &mDevice, &mFeatureLevel, &mContext));
+				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
 				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
 			}
