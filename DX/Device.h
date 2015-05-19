@@ -26,7 +26,7 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		D3DDevice(CreateSwapChainOption createSwapChainOption = WithSwapChain, BackBufferCount backBufferCount = BackBufferCount(2), DepthBufferOption depthBufferOption = DepthBufferDisabled, FullScreenOption fullScreenOption = Windowed)
+		D3DDevice(CreateSwapChainOption createSwapChainOption = WithSwapChain, BackBufferCount backBufferCount = BackBufferCount(2), DepthBufferOption depthBufferOption = DepthBufferDisabled, FullScreenOption fullScreenOption = FullScreen)
 			: mWindow(null)
 			, mWidth(0)
 			, mHeight(0)
@@ -46,6 +46,7 @@ namespace DX
 			GetClientRect(w, &r);
 			mWidth = r.Width();
 			mHeight = r.Height();
+			TRACE("Device::Open() %d,%d\n", mWidth, mHeight);
 
 			D3D_FEATURE_LEVEL levels[] =
 			{
@@ -80,7 +81,7 @@ namespace DX
 				swapChainDesc.OutputWindow = mWindow;
 				swapChainDesc.Windowed = mFullScreenOption == Windowed;
 				swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-				swapChainDesc.Flags = 0;
+				swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 				//DXR(D3D11CreateDeviceAndSwapChain(null,
 				//	D3D_DRIVER_TYPE_HARDWARE,
@@ -94,6 +95,11 @@ namespace DX
 				//	&mDevice,
 				//	&mFeatureLevel,
 				//	&mContext));
+
+				//	Adapter
+				//		Monitor
+				//			Resolution
+				//				Framerate/Scaling
 
 				// get a DXGIFactory
 				DXPtr<IDXGIFactory1> pFactory;
@@ -109,21 +115,19 @@ namespace DX
 				TRACE(L"Default Adapter: %s\n Video RAM: %p\nSystem RAM: %p\nShared RAM: %p\n\n", desc.Description, desc.DedicatedVideoMemory, desc.DedicatedSystemMemory, desc.SharedSystemMemory);
 
 				// Get the default output (monitor)
-				DXPtr<IDXGIOutput> output;
-				DXR(adapter->EnumOutputs(0, &output));
+				DXR(adapter->EnumOutputs(0, &mOutputMonitor));
 
 				// have a look
 				DXGI_OUTPUT_DESC monitorDesc;
-				DXR(output->GetDesc(&monitorDesc));
-				TRACE(L"Default Monitor: %s\n", monitorDesc.DeviceName);
+				DXR(mOutputMonitor->GetDesc(&monitorDesc));
 				Rect2D &r = (Rect2D &)monitorDesc.DesktopCoordinates;
-				TRACE("%dx%d\n", r.Width(), r.Height());
+				TRACE(L"Default Monitor: %s (%dx%d)\n", monitorDesc.DeviceName, r.Width(), r.Height());
 
 				// get the list of display modes that the default monitor supports
 				uint32 numModes;
-				DXR(output->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, null));
+				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, null));
 				vector<DXGI_MODE_DESC> modes(numModes);
-				DXR(output->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, modes.data()));
+				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, modes.data()));
 
 				// group them by resolution
 				std::map<Size2D, std::list<DXGI_MODE_DESC *>> modeMap;
@@ -132,16 +136,59 @@ namespace DX
 					modeMap[Size2D(mode.Width, mode.Height)].push_back(&mode);
 				}
 
-				// have a look
+
+				Rect2D windowRect;
+				GetClientRect(mWindow, &windowRect);
+				Size2D s = windowRect.Size();
+
+				DXGI_MODE_DESC *winner = null;
+
+				// find a good display mode
 				for(auto &l : modeMap)
 				{
 					TRACE("Resolution: %dx%d\n", l.first.Width(), l.first.Height());
+
+					// sort the modes (within each resolution) by Scaled/Centred and then refresh rate (descending)
+					l.second.sort([] (DXGI_MODE_DESC *a, DXGI_MODE_DESC *b)
+					{
+						int as = a->Scaling == DXGI_MODE_SCALING_CENTERED ? 0 : 1;
+						int bs = b->Scaling == DXGI_MODE_SCALING_CENTERED ? 0 : 1;
+						float ar = (float)a->RefreshRate.Numerator / a->RefreshRate.Denominator;
+						float br = (float)b->RefreshRate.Numerator / b->RefreshRate.Denominator;
+						return (as == bs) ? (ar > br): (as > bs);
+					});
+
 					for(auto &m : l.second)
 					{
 						TRACE(L"    %5.2fHz,  %s\n", (float)m->RefreshRate.Numerator / m->RefreshRate.Denominator, m->Scaling == DXGI_MODE_SCALING_CENTERED ? L"Centered" : L"Scaled");
 					}
+
+					// find the first mode which is at least as big as the window
+					for(auto &m : l.second)
+					{
+						if(winner == null && !(l.first < s))
+						{
+							winner = m;
+							TRACE("Winner!\n");
+						}
+					}
 					TRACE("\n");
 				}
+
+				// found a mode?
+				if(winner == null)
+				{
+					// no, stick with windowed mode
+					swapChainDesc.Windowed = TRUE;
+				}
+				else
+				{
+					// yes, allow fullscreen if requested
+					swapChainDesc.Windowed = mFullScreenOption == Windowed;
+					swapChainDesc.BufferDesc = *winner;
+				}
+
+				pFactory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_WINDOW_CHANGES);
 
 				DXR(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, null, flags, levels, _countof(levels), D3D11_SDK_VERSION, &mDevice, &mFeatureLevel, &mContext));
 				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
@@ -247,14 +294,21 @@ namespace DX
 
 		HRESULT Resize(uint width, uint height)
 		{
-			mWidth = width;
-			mHeight = height;
 			if(mContext != null)
 			{
 				DXR(ReleaseRenderTargets());
-				DXR(mSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
-				DXR(CreateDepthBuffer());
-				DXR(GetBackBuffer());
+				if(mSwapChain != null)
+				{
+					TRACE("D3D::Resize(%d,%d)\n", width, height);
+					mWidth = width;
+					mHeight = height;
+					DXR(mSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0));
+					DXGI_SWAP_CHAIN_DESC desc;
+					DXR(mSwapChain->GetDesc(&desc));
+					TRACE("SwapChain resized to %dx%d\n", desc.BufferDesc.Width, desc.BufferDesc.Height);
+					DXR(CreateDepthBuffer());
+					DXR(GetBackBuffer());
+				}
 
 			}
 			return S_OK;
@@ -264,6 +318,14 @@ namespace DX
 
 		void Close()
 		{
+			BOOL isFullScreen;
+			if(SUCCEEDED(mSwapChain->GetFullscreenState(&isFullScreen, null)))
+			{
+				if(isFullScreen)
+				{
+					mSwapChain->SetFullscreenState(false, null);
+				}
+			}
 			ReleaseRenderTargets();
 			mSwapChain.Release();
 			if(mContext != null)
@@ -309,6 +371,8 @@ namespace DX
 
 		DXPtr<ID3D11Device>				mDevice;
 		DXPtr<ID3D11DeviceContext>		mContext;
+
+		DXPtr<IDXGIOutput>				mOutputMonitor;
 
 		DXPtr<IDXGISwapChain>			mSwapChain;
 

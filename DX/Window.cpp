@@ -235,6 +235,7 @@ namespace DX
 	{
 		if(!mHWND && !Open() && !mCreated)
 		{
+			TRACE("Window::Update() - false!\n");
 			return false;
 		}
 
@@ -246,6 +247,7 @@ namespace DX
 
 		if(mHWND == null || mActive == false && WaitMessage() == 0)
 		{
+			TRACE("Window::Update()\\WaitMessage() - false!\n");
 			return false;
 		}
 
@@ -258,6 +260,7 @@ namespace DX
 
 		if(msg.message == WM_QUIT)
 		{
+			TRACE("Window::Update()\\WM_QUIT\n");
 			return false;
 		}
 
@@ -267,6 +270,10 @@ namespace DX
 		if(mActive && !mResizing)
 		{
 			CallOnUpdate();
+		}
+		else
+		{
+			TRACE("CallOnUpdate NOT called\n");
 		}
 		return !mClosed;
 	}
@@ -510,7 +517,11 @@ namespace DX
 
 	void Window::DoResize()
 	{
+		Rect2D r;
+		GetClientRect(mHWND, &r);
+		TRACE("DoResize(): %d,%d\n", r.Width(), r.Height());
 		GetWindowInfo(mHWND, &mWindowInfo);
+		TRACE("DoResize()2: %d,%d\n", ClientWidth(), ClientHeight());
 		OnResized();
 		Resized.Invoke(WindowSizedEvent(this, (Rect2D &)mWindowInfo.rcWindow, Size2D(ClientWidth(), ClientHeight())));
 	}

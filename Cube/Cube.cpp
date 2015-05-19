@@ -263,7 +263,7 @@ static uint16 indices[36] =
 //////////////////////////////////////////////////////////////////////
 
 MyDXWindow::MyDXWindow()
-	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
+	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, FullScreen)
 {
 }
 
