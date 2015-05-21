@@ -129,13 +129,45 @@ namespace DX
 				vector<DXGI_MODE_DESC> modes(numModes);
 				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, modes.data()));
 
+				using scalingModeMap = std::map<float, std::list<DXGI_MODE_DESC *>, std::greater<float>>;
+				using resolutionMap = std::map<Size2D, scalingModeMap>;	// mode[resolution][refreshrate].push_back();
+
 				// group them by resolution
-				std::map<Size2D, std::list<DXGI_MODE_DESC *>> modeMap;
+				resolutionMap modeMap;
 				for(auto &mode : modes)
 				{
-					modeMap[Size2D(mode.Width, mode.Height)].push_back(&mode);
+					float rate = (float)mode.RefreshRate.Numerator / mode.RefreshRate.Denominator;
+					modeMap[Size2D(mode.Width, mode.Height)][rate].push_back(&mode);
 				}
 
+				static char const *scalingModeNames[] =
+				{
+					"Unspecified",
+					"Centered",
+					"Stretched"
+				};
+
+				// prefer order: Stretched, Unspecified, Centered
+				static int scalingRequired[] =
+				{
+					1,	// unspecified (middle)
+					2,	// centered (worst)
+					0	// stretched (best)
+				};
+
+				// for each resolution
+				for(auto &resolution : modeMap)
+				{
+					// for each refreshrate at that resolution
+					for(auto &mode : resolution.second)
+					{
+						// sort the modes by scaling type preference
+						mode.second.sort([] (DXGI_MODE_DESC *a, DXGI_MODE_DESC *b)
+						{
+							return scalingRequired[a->Scaling] < scalingRequired[b->Scaling];
+						});
+					}
+				}
 
 				Rect2D windowRect;
 				GetClientRect(mWindow, &windowRect);
@@ -146,30 +178,19 @@ namespace DX
 				// find a good display mode
 				for(auto &l : modeMap)
 				{
-					TRACE("Resolution: %dx%d\n", l.first.Width(), l.first.Height());
-
-					// sort the modes (within each resolution) by Scaled/Centred and then refresh rate (descending)
-					l.second.sort([] (DXGI_MODE_DESC *a, DXGI_MODE_DESC *b)
-					{
-						int as = a->Scaling == DXGI_MODE_SCALING_CENTERED ? 0 : 1;
-						int bs = b->Scaling == DXGI_MODE_SCALING_CENTERED ? 0 : 1;
-						float ar = (float)a->RefreshRate.Numerator / a->RefreshRate.Denominator;
-						float br = (float)b->RefreshRate.Numerator / b->RefreshRate.Denominator;
-						return (as == bs) ? (ar > br): (as > bs);
-					});
-
+					TRACE("%dx%d\n", l.first.Width(), l.first.Height());
 					for(auto &m : l.second)
 					{
-						TRACE(L"    %5.2fHz,  %s\n", (float)m->RefreshRate.Numerator / m->RefreshRate.Denominator, m->Scaling == DXGI_MODE_SCALING_CENTERED ? L"Centered" : L"Scaled");
-					}
-
-					// find the first mode which is at least as big as the window
-					for(auto &m : l.second)
-					{
-						if(winner == null && !(l.first < s))
+						TRACE("  %5.2fHz\n", m.first);
+						for(auto &n : m.second)
 						{
-							winner = m;
-							TRACE("Winner!\n");
+							TRACE("    %s\n", scalingModeNames[n->Scaling]);
+
+							if(winner == null && !(l.first < s))
+							{
+								winner = n;
+								TRACE("                           Winner!\n");
+							}
 						}
 					}
 					TRACE("\n");
