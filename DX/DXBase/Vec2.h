@@ -49,6 +49,7 @@ namespace DX
 		}
 
 		explicit Vec2f(Point2<POINT> const &p);
+		explicit Vec2f(Point2<POINTS> const &p);
 		explicit Vec2f(Size2D const &s);
 
 		Vec2f const &operator = (Vec2f const &b)

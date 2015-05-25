@@ -20,6 +20,7 @@ namespace DX
 		void ClearDepth(DepthClearOption option, float z = 1.0f, byte stencil = 0);
 
 		void ResetRenderTargetView();
+		void ResetViewport();
 
 		virtual void OnFrame();
 

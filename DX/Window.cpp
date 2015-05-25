@@ -399,12 +399,22 @@ namespace DX
 			case WM_KEYDOWN:
 				Keyboard::LastKeyPressed = (int)wParam;
 				OnKeyDown((int)wParam, lParam);
-				KeyPressed.Invoke(KeyboardEvent(this, (int)wParam));
+				KeyPressed.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
 				break;
 
 			case WM_KEYUP:
 				OnKeyUp((int)wParam, lParam);
-				KeyReleased.Invoke(KeyboardEvent(this, (int)wParam));
+				KeyReleased.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
+				break;
+
+			case WM_SYSKEYDOWN:
+				OnSysKeyDown((int)wParam, lParam);
+				SysKeyPressed.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
+				break;
+
+			case WM_SYSKEYUP:
+				OnSysKeyUp((int)wParam, lParam);
+				SysKeyReleased.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
 				break;
 
 			case WM_MOUSEMOVE:
@@ -415,40 +425,40 @@ namespace DX
 
 			case WM_LBUTTONDBLCLK:
 				OnLeftMouseDoubleClick(GetMousePosFromParam(lParam));
-				MouseDoubleClicked.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseDoubleClicked.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDBLCLK:
 				OnRightMouseDoubleClick(GetMousePosFromParam(lParam));
-				MouseDoubleClicked.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseDoubleClicked.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
 				break;
 
 			case WM_LBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Left;
 				Mouse::Held |= Mouse::Button::Left;
 				OnLeftButtonDown(GetMousePosFromParam(lParam), wParam);
-				MouseButtonPressed.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseButtonPressed.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
 				break;
 
 			case WM_LBUTTONUP:
 				Mouse::Released |= Mouse::Button::Left;
 				Mouse::Held &= ~Mouse::Button::Left;
 				OnLeftButtonUp(GetMousePosFromParam(lParam), wParam);
-				MouseButtonReleased.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Left));
+				MouseButtonReleased.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
 				break;
 
 			case WM_RBUTTONDOWN:
 				Mouse::Pressed |= Mouse::Button::Right;
 				Mouse::Held |= Mouse::Button::Right;
 				OnRightButtonDown(GetMousePosFromParam(lParam), wParam);
-				MouseButtonPressed.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseButtonPressed.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
 				break;
 
 			case WM_RBUTTONUP:
 				Mouse::Released |= Mouse::Button::Right;
 				Mouse::Held &= ~Mouse::Button::Right;
 				OnRightButtonUp(GetMousePosFromParam(lParam), wParam);
-				MouseButtonReleased.Invoke(MouseButtonEvent(this, mousePos, MouseButtonEvent::Right));
+				MouseButtonReleased.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
 				break;
 
 			case WM_ACTIVATEAPP:
@@ -665,6 +675,18 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	void Window::OnKeyUp(int key, uintptr flags)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnSysKeyDown(int key, uintptr flags)
+	{
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void Window::OnSysKeyUp(int key, uintptr flags)
 	{
 	}
 

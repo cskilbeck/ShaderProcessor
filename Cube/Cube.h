@@ -58,13 +58,15 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	UI::FilledRectangle filledRectangle;
 	UI::OutlineRectangle outlineRectangle;
 	UI::ClipRectangle clipRect;
-
+	UI::ListBox listBox;
 	UI::Rectangle rect;
 
 	float deltaTime;
 	float oldDeltaTime;
 
 	bool debugPhysics;
+
+	bool mouseClicked;
 
 	Vehicle car;
 

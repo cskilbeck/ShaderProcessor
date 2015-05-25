@@ -45,6 +45,7 @@
 
 #include "DDSTextureLoader.h"
 
+#include "Viewport.h"
 #include "Device.h"
 #include "Event.h"
 #include "Keyboard.h"
@@ -56,7 +57,6 @@
 #include "Texture.h"
 #include "Sampler.h"
 #include "Shader.h"
-#include "Viewport.h"
 #include "LoadImage.h"
 #include "AssetManager.h"
 #include "Archive.h"
@@ -72,10 +72,10 @@
 #include "Font.h"
 #include "Debug.h"
 #include "Sprite.h"
+#include "UI.h"
 #include "Window.h"
 #include "DXWindow.h"
 #include "Shaders/Default.shader.h"
 #include "Mesh.h"
 #include "Physics.h"
 #include "PhysicsDebug.h"
-#include "UI.h"

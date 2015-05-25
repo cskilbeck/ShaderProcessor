@@ -6,6 +6,7 @@
 // TODO (charlie): listview
 // TODO (charlie): input
 // TODO (charlie): checkbox
+// TODO (charlie): roundedRectangle
 // TODO (charlie): slider
 // TODO (charlie): icons (X, _, etc) ?
 // TODO (charlie): etc
@@ -27,15 +28,64 @@ namespace DX
 	namespace UI
 	{
 		struct Element;
+		struct Message;
+		struct MouseMessage;
+		struct KeyboardMessage;
+
+		//////////////////////////////////////////////////////////////////////
+		// A Mouse or Keyboard (or whatever) message
+
+		struct Message: list_node
+		{
+			enum Type
+			{
+				MouseMove = 0,
+				MouseLeftButtonDown = 1,
+				MouseLeftButtonUp = 2,
+				MouseRightButtonDown = 3,
+				MouseRightButtonUp = 4,
+				KeyPress = 5,
+				KeyRelease = 6
+			};
+
+			Type		mType;
+
+			virtual bool Pick(Element const *e) const = 0;
+		};
+
+		// All mouse messages derive from this (or are this)
+
+		struct MouseMessage: Message
+		{
+			Vec2f		mPosition;
+
+			bool Pick(Element const *e) const override;
+		};
+
+		// All keyboard messages derive from this (or are this)
+
+		struct KeyboardMessage: Message
+		{
+			uint32		mKey;
+			uint32		mFlags;
+
+			bool Pick(Element const *e) const override
+			{
+				return false;
+			}
+		};
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Open();
+		void Open(Window *w);
+		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point);
+		KeyboardMessage *AddKeyboardMessage(Message::Type type, uint32 key, uint32 flags);
 		void Update(Element *rootElement, float deltaTime);
 		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
 		void Close();
 
 		//////////////////////////////////////////////////////////////////////
+		// These are for notifying Elements that something has happened
 
 		struct UIEvent
 		{
@@ -48,12 +98,13 @@ namespace DX
 		};
 
 		//////////////////////////////////////////////////////////////////////
+		// Mouse moved
 
 		struct MouseEvent: UIEvent
 		{
 			Vec2f mMousePosition;
 
-			MouseEvent(Element *element, Vec2f mousePosition)
+			MouseEvent(Element *element, Vec2f const &mousePosition)
 				: UIEvent(element)
 				, mMousePosition(mousePosition)
 			{
@@ -61,76 +112,95 @@ namespace DX
 		};
 
 		//////////////////////////////////////////////////////////////////////
+		// Mouse clicked
 
 		struct ClickedEvent: MouseEvent
 		{
-			ClickedEvent(Element *element, Vec2f mousePosition)
+			ClickedEvent(Element *element, Vec2f const &mousePosition)
 				: MouseEvent(element, mousePosition)
 			{
 			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
+		// Mouse down
 
 		struct PressedEvent: MouseEvent
 		{
-			PressedEvent(Element *element, Vec2f mousePosition)
+			PressedEvent(Element *element, Vec2f const &mousePosition)
 				: MouseEvent(element, mousePosition)
 			{
 			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
+		// Mouse up
 
 		struct ReleasedEvent: MouseEvent
 		{
-			ReleasedEvent(Element *element, Vec2f mousePosition)
+			ReleasedEvent(Element *element, Vec2f const &mousePosition)
 				: MouseEvent(element, mousePosition)
 			{
 			}
 		};
+
+		// TODO (charlie): add all the other UI Event types
 
 		//////////////////////////////////////////////////////////////////////
 
 		struct Element: Aligned16, list_node
 		{
-			Matrix					mMatrix;
-			Matrix					mTransformMatrix;
-			Matrix					mInverseMatrix;
-			Matrix					mClientTransform;
-			Element *				mParent;
-			linked_list<Element>	mChildren;
-			int32					mZIndex;
-			Flags32					mFlags;
-			Vec2f					mPosition;
-			Vec2f					mSize;
-			Vec2f					mScale;
-			Vec2f					mPivot;
-			float					mAngle;
+			Matrix					mMatrix;					// local matrix
+			Matrix					mTransformMatrix;			// matrix including parent transform
+			Matrix					mInverseMatrix;				// inverse of mTransformMatrix for picking
+			Matrix					mClientTransform;			// add this transform to all children (for scrolling etc)
+			Element *				mParent;					// Parent of this Element - only the root can have no parent (I think)
+			linked_list<Element>	mChildren;					// Children of this Element
+			int32					mZIndex;					// for sorting
+			Flags32					mFlags;						// See enum below
+			Vec2f					mPosition;					// Position in local coordinates
+			Vec2f					mSize;						// Size in pixels
+			Vec2f					mScale;						// Scale (1,1 = not scaled)
+			Vec2f					mPivot;						// Pivot point for scale/rotate (0.5,0.5f = centre)
+			float					mAngle;						// Rotation angle
+
+			// Events
+
 			Event<ClickedEvent>		Clicked;
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
 			Event<UIEvent>			Updating;
+			Event<MouseEvent>		MouseMoved;
 			Event<MouseEvent>		MouseEntered;
 			Event<MouseEvent>		MouseLeft;
 			Event<MouseEvent>		Hovering;
 
+			// Flags
+
 			enum: uint32
 			{
-				eHidden = 1,		// draw it or don't
-				eInActive = 2,		// call OnUpdate() or don't
-				eEnabled = 4,		// process input messages or don't
-				eClosed = 8,		// close requested, will happen at the end of the frame
-				eModal = 16,		// block parental input
-				eReorder = 32,		// child was added, sort children
-				eDirtyMatrix = 64,	// Matrix needs to be rebuilt
-				eHovering = 128,	// Mouse is currently hovering over the Element
-				ePressed = 256		// Mouse button is pressed down on the Element
+				eHidden = 1,			// draw it or don't
+				eInActive = 2,			// call OnUpdate() or don't
+				eEnabled = 4,			// process input messages or don't
+				eClosed = 8,			// close requested, will happen at the end of the frame
+				eModal = 16,			// block parental input
+				eReorderRequired = 32,	// child was added, sort children
+				eDirtyMatrix = 64,		// Matrix needs to be rebuilt
+				eHovering = 128,		// Mouse is currently hovering over the Element
+				ePressed = 256,			// Mouse button is pressed down on the Element
+				eTransparent = 512		// Mouse events pass through it
 			};
+			
+			// This is for sorting by ZIndex, but I think there should be a better way
 
 			bool operator > (Element &o)
 			{
 				return mZIndex > o.mZIndex;
+			}
+
+			virtual bool Bubble() const
+			{
+				return Is(eTransparent);
 			}
 
 			Element()
@@ -182,6 +252,13 @@ namespace DX
 			void SetFlag(uint32 f, bool v = true)
 			{
 				v ? Set(f) : Clear(f);
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			bool IsActive() const
+			{
+				return !Is(eInActive);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -252,7 +329,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetSize(Vec2f size)
+			virtual Element &SetSize(Vec2f size)
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
@@ -367,7 +444,7 @@ namespace DX
 			{
 				mChildren.push_back(e);
 				e.mParent = this;
-				Set(eReorder);
+				Set(eReorderRequired);
 				return *this;
 			}
 
@@ -386,7 +463,7 @@ namespace DX
 				mZIndex = index;
 				if(mParent != null)
 				{
-					mParent->Set(eReorder);
+					mParent->Set(eReorderRequired);
 				}
 				return *this;
 			}
@@ -402,10 +479,13 @@ namespace DX
 
 			void SortChildren()
 			{
-				if(Is(eReorder))
+				if(Is(eReorderRequired))
 				{
-					mChildren.sort();
-					Clear(eReorder);
+					mChildren.sort([] (Element const &a, Element const &b)
+					{
+						return a.mZIndex > b.mZIndex;
+					});
+					Clear(eReorderRequired);
 				}
 			}
 
@@ -437,22 +517,41 @@ namespace DX
 			}
 
 			//////////////////////////////////////////////////////////////////////
+			// make a list of all messages which have arrived this frame and
+			// process them on the root
 
 			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
+
+			// TODO (charlie): allow controls to SetCapture the mouse
+			// TODO (charlie): keyboard focus
+
+			// Process a message
+			// Only the root UI element should have this function called on it...
+
+			bool ProcessMessage(Message *m);
+
+			//////////////////////////////////////////////////////////////////////
+
+			void UpdateTransform(Matrix const &matrix)
+			{
+				// parent can transform its children through mClientTransform - blunt instrument, though
+				Matrix &cm = mParent != null ? mParent->mClientTransform : IdentityMatrix;
+				mTransformMatrix = GetMatrix() * cm * matrix;
+				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
+
+				for(auto &r : mChildren)
+				{
+					((Element &)r).UpdateTransform(mTransformMatrix);
+				}
+			}
 
 			//////////////////////////////////////////////////////////////////////
 			// TODO (charlie): modality
 			// TODO (charlie): make this private and UI::Update() a friend
 
-			void Update(float deltaTime, Matrix const &matrix, bool clip, bool active)
+			void Update(float deltaTime, bool clip, bool active)
 			{
-				// parent can transform its children through mClientTransform - blunt instrument, though
-				Matrix &cm = mParent != null ? mParent->mClientTransform : IdentityMatrix;
-
-				// matrices are always updated even if it's inactive because it might be visible
-				mTransformMatrix = GetMatrix() * cm * matrix;
-				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
-
+				return;
 				// SOMEHOW: clip on the way down, but invoke messages on the way up
 				// -- set flags (eHovering, ePressed etc) on the way down
 				// -- use those flags on the way up to invoke messages
@@ -503,7 +602,7 @@ namespace DX
 				// children always processed (to keep matrices up  to date)
 				for(auto &r : mChildren)
 				{
-					((Element &)r).Update(deltaTime, mTransformMatrix, clip, active);
+					((Element &)r).Update(deltaTime, clip, active);
 				}
 			}
 		};
@@ -513,6 +612,12 @@ namespace DX
 		struct OutlineRectangle: Element
 		{
 			Color mColor;
+
+			OutlineRectangle()
+				: Element()
+			{
+				Set(eTransparent);
+			}
 
 			OutlineRectangle &SetColor(Color c)
 			{
@@ -562,6 +667,12 @@ namespace DX
 
 		struct ClipRectangle: Element
 		{
+			ClipRectangle()
+				: Element()
+			{
+				Set(eTransparent);
+			}
+
 			bool IsClipper() const override;
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 			void OnDrawComplete(DrawList &drawList) override;
@@ -579,6 +690,7 @@ namespace DX
 			OutlineRectangle mOutlineRectangle;
 			
 			Rectangle()
+				: FilledRectangle()
 			{
 				AddChild(mOutlineRectangle);
 				mOutlineRectangle.SetColor(Color::White);
@@ -609,6 +721,12 @@ namespace DX
 
 		struct Line: Element
 		{
+			Line()
+				: Element()
+			{
+				Set(eTransparent);
+			}
+
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 
 			Color	mColor;
@@ -650,7 +768,7 @@ namespace DX
 
 			char const *Name() const override
 			{
-				return "OutlineRectangle";
+				return "Label";
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -769,94 +887,6 @@ namespace DX
 			{
 				return "Button";
 			}
-
-		};
-
-		struct ScrollBar: FilledRectangle
-		{
-			ScrollBar()
-				: FilledRectangle()
-			{
-			}
-		};
-
-		//////////////////////////////////////////////////////////////////////
-
-		// how to mess with the position of the client children?
-
-		struct Scrollable: Element
-		{
-			ClipRectangle		mClient;
-			FilledRectangle		mVerticalScrollBar;
-			FilledRectangle		mHorizontalScrollBar;
-			Vec2f				mClientSize;
-			Vec2f				mClientOffset;
-
-			Scrollable()
-				: Element()
-			{
-				AddChild(mClient);
-				AddChild(mVerticalScrollBar);
-				AddChild(mHorizontalScrollBar);
-				mVerticalScrollBar.SetColor(Color::White);
-				mHorizontalScrollBar.SetColor(Color::White);
-			}
-
-			Element &AddChild(Element &e) override
-			{
-				Element &f = mClient.AddChild(e);
-				ResizeClient();
-				return f;
-			}
-
-			Element &AddChildAndCenter(Element &e) override
-			{
-				Element &f = mClient.AddChildAndCenter(e);
-				ResizeClient();
-				return f;
-			}
-
-			void RemoveChild(Element &e) override
-			{
-				mClient.RemoveChild(e);
-				ResizeClient();
-			}
-
-			void SetClientSize(Vec2f const &size)
-			{
-				mClientSize = size;
-				// set scrollbar sizes...
-				Vec2f mySize = GetSize();
-				Vec2f ratio = mySize / mClientSize;					// eg 100 / 200 = 0.5
-				Vec2f sbSize = Max(mySize * ratio, Vec2f(16, 16));	// eg 100 * 0.5 = 50
-				sbSize = Min(GetSize(), sbSize);					// shrink if they don't fit in the window
-				mVerticalScrollBar.SetSize(Vec2f(16, sbSize.y));
-				mHorizontalScrollBar.SetSize(Vec2f(sbSize.x, 16));
-			}
-
-			Vec2f GetClientSize() const
-			{
-				return mClientSize;
-			}
-
-			void ResizeClient()
-			{
-				// work out extents of the children
-				Vec2f tl(FLT_MAX, FLT_MAX);
-				Vec2f br(-FLT_MAX, -FLT_MAX);
-				for(auto &c : mClient.mChildren)
-				{
-					Vec2f s = c.GetSize();
-					Vec2f corners[4] = { Vec2f::zero, s, Vec2f(0, s.y), Vec2f(s.x, 0) };
-					for(auto &corner : corners)
-					{
-						Vec2f cr = c.LocalToScreen(corner);
-						tl = Min(tl, cr);
-						br = Max(br, cr);
-					}
-				}
-				SetClientSize(br - tl);
-			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -911,5 +941,90 @@ namespace DX
 				return *this;
 			}
 		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct ListBox: Element
+		{
+			FilledRectangle		mFilledRectangle;
+			OutlineRectangle	mOutlineRectangle;
+			ClipRectangle		mClipRectangle;
+			int					mStringCount;
+			Typeface *			mTypeface;
+			FilledRectangle		mScrollBar;
+			FilledRectangle		mSelection;
+			float				mScrollPosition;
+
+			ListBox()
+				: Element()
+				, mStringCount(0)
+				, mTypeface(null)
+				, mScrollPosition(0)
+			{
+				AddChild(mFilledRectangle);
+				AddChild(mClipRectangle);
+				AddChild(mScrollBar);
+				AddChild(mOutlineRectangle);
+				mFilledRectangle.SetColor(0x80000000);
+				mOutlineRectangle.SetColor(Color::White);
+				mScrollBar.SetColor(0x80ffffff);
+				mScrollBar.SetSize({ 8, 12 });
+				mScrollBar.SetVisible(true);
+			}
+
+			char const *Name() const override
+			{
+				return "ListBox";
+			}
+
+			void UpdateScrollbar()
+			{
+				if(mStringCount == 0)
+				{
+					return;
+				}
+
+				float textHeight = (float)mStringCount * mTypeface->GetHeight();
+				float ratio = GetSize().y / textHeight;
+				float scrollBarHeight = GetSize().y * ratio;
+				mScrollBar.SetSize({ 8, scrollBarHeight });
+			}
+
+			ListBox &SetFont(Typeface *f)
+			{
+				mTypeface = f;
+				UpdateScrollbar();
+				return *this;
+			}
+
+			Element &SetSize(Vec2f size) override
+			{
+				Element::SetSize(size);
+				mClipRectangle.SetSize(size);
+				mOutlineRectangle.SetSize(size);
+				mFilledRectangle.SetSize(size);
+				mScrollBar.SetPosition({ size.x - mScrollBar.Width() - 2, 2 });
+				UpdateScrollbar();
+				return *this;
+			}
+
+			Element *AddString(char const *text)
+			{
+				Label *b = new Label();
+				b->SetText(text);
+				b->SetPosition({ 0, (float)mStringCount * mTypeface->GetHeight() });
+				b->SetFont(mTypeface);
+				b->SetPivot({ 0, 0 });	// override centering behaviour by setting pivot last
+				++mStringCount;
+				mClipRectangle.AddChild(*b);
+				UpdateScrollbar();
+				return b;
+			}
+		};
+
+		inline bool MouseMessage::Pick(Element const *e) const
+		{
+			return e->ContainsScreenPoint(mPosition);
+		}
 	}
 }

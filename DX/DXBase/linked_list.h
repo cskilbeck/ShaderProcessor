@@ -771,7 +771,7 @@ namespace chs
 
 		//////////////////////////////////////////////////////////////////////
 	private:
-		static void merge(list_t &left, list_t &right)
+		static void merge(list_t &left, list_t &right, std::function<bool(T const &a, T const &b)> const &compare)
 		{
 			ptr insert_point = right.root();
 			ptr run_head = left.head();
@@ -784,7 +784,7 @@ namespace chs
 				{
 					insert_point = get_next(insert_point);
 				}
-				while(insert_point != bd && !(*insert_point > *run_head));
+				while(insert_point != bd && !compare(*insert_point, *run_head));
 
 				// scanned off the end?
 				if(insert_point != bd)
@@ -797,7 +797,7 @@ namespace chs
 						run_end = run_head;
 						run_head = get_next(run_head);
 					}
-					while(run_head != ad && !(*run_head > *insert_point));
+					while(run_head != ad && !compare(*run_head, *insert_point));
 
 					// insert it
 					ptr p = get_prev(insert_point);
@@ -823,7 +823,7 @@ namespace chs
 		//////////////////////////////////////////////////////////////////////
 		// thanks to the putty guy
 
-		static void merge_sort(list_t &list, size_t size)
+		static void merge_sort(list_t &list, size_t size, std::function<bool(T const &a, T const &b)> const &compare)
 		{
 			if(size > 2)
 			{
@@ -854,11 +854,11 @@ namespace chs
 				set_next(ot, rr);
 
 				// sort them
-				merge_sort(left, left_size);
-				merge_sort(right, right_size);
+				merge_sort(left, left_size, compare);
+				merge_sort(right, right_size, compare);
 
 				// stitch them back together
-				merge(right, left);
+				merge(right, left, compare);
 
 				// move result back into list
 				ot = left.tail();
@@ -874,7 +874,7 @@ namespace chs
 				// dinky list of 2 entries, just fix it
 				ptr h = list.head();
 				ptr t = list.tail();
-				if(*h > *t)
+				if(compare(*h, *t))
 				{
 					ptr r = list.root();
 					set_next(r, t);
@@ -891,7 +891,14 @@ namespace chs
 	public:
 		void sort()
 		{
-			merge_sort(*this, size());
+			merge_sort(*this, size(), std::greater<T>());
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void sort(std::function<bool(T const &a, T const &b)> const &compare)
+		{
+			merge_sort(*this, size(), compare);
 		}
 
 		//////////////////////////////////////////////////////////////////////
