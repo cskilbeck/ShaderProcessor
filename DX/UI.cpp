@@ -14,6 +14,8 @@ namespace
 
 	VertexBuilder<DXShaders::Image2D::InputVertex> image2DVertBuffer;
 	VertexBuilder<DXShaders::Color2D::InputVertex> colorVB;
+
+	linked_list<UI::Message> messages;
 }
 
 namespace DX
@@ -22,13 +24,51 @@ namespace DX
 	{
 		//////////////////////////////////////////////////////////////////////
 
-		void Open()
+		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point)
+		{
+			MouseMessage *m = new MouseMessage();	// Hmm - need a pool allocator for these... but they're all different sizes...
+			m->mType = type;
+			m->mPosition = point;
+			messages.push_back(m);
+			return m;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		KeyboardMessage *AddKeyboardMessage(Message::Type type, uint32 key, uint32 flags)
+		{
+			KeyboardMessage *k = new KeyboardMessage();
+			k->mType = type;
+			k->mKey = key;
+			k->mFlags = flags;
+			messages.push_back(k);
+			return k;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Open(Window *w)
 		{
 			image2DShader.Create();
 			colorShader.Create();
 			image2DVertBuffer.Create(8192);
 			fontVB.Create(8192);
 			colorVB.Create(8192);
+
+			w->MouseMoved += [] (DX::MouseEvent const &m)
+			{
+				AddMouseMessage(Message::MouseMove, Vec2f(m.position));
+			};
+
+			w->MouseButtonPressed += [] (DX::MouseButtonEvent const &m)
+			{
+				AddMouseMessage(Message::MouseLeftButtonDown, Vec2f(m.position));
+			};
+
+			w->MouseButtonReleased += [] (DX::MouseButtonEvent const &m)
+			{
+				AddMouseMessage(Message::MouseLeftButtonUp, Vec2f(m.position));
+			};
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -61,7 +101,121 @@ namespace DX
 
 		void Update(Element *rootElement, float deltaTime)
 		{
-			rootElement->Update(deltaTime, IdentityMatrix, false, true);
+			// first make sure all the matrices are current
+			rootElement->UpdateTransform(IdentityMatrix);
+
+			if(Mouse::GetMode() == Mouse::Mode::Captured)
+			{
+				messages.delete_all();
+			}
+			else
+			{
+				debug_text("UI Events: %d\n", messages.size());
+
+				// then process all the input messages
+				while(!messages.empty())
+				{
+					Message *m = messages.pop_front();
+					rootElement->ProcessMessage(m);
+					delete m;
+				}
+			}
+
+			// then call Update() on the tree
+			rootElement->Update(deltaTime, false, true);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		bool Element::ProcessMessage(Message *m)
+		{
+			bool pick = false;
+			if(IsActive())
+			{
+				for(auto &c : reverse(mChildren))
+				{
+					if(!c.ProcessMessage(m))
+					{
+						return false;
+					}
+				}
+
+				pick = m->Pick(this);
+
+				if(pick && !Is(eTransparent))
+				{
+					debug_text("IN: %s (%s)\n", Name(), Is(eHovering) ? "HOVERING" : "NOT");
+				}
+
+				switch(m->mType)
+				{
+					case Message::MouseMove:
+					{
+						if(pick)
+						{
+							if(!Is(eHovering) && pick)
+							{
+								MouseEntered.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
+							}
+							MouseMoved.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
+							Set(eHovering);
+						}
+						else if(Is(eHovering))
+						{
+							MouseLeft.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
+							Clear(eHovering);
+						}
+					}
+					break;
+
+					case Message::MouseLeftButtonDown:
+					{
+						if(pick)
+						{
+							Pressed.Invoke(PressedEvent(this, ((MouseMessage *)m)->mPosition));
+						}
+						else
+						{
+							MouseMessage *n = (MouseMessage *)m;
+						}
+					}
+					break;
+
+					case Message::MouseLeftButtonUp:
+					{
+						if(pick)
+						{
+							Released.Invoke(ReleasedEvent(this, ((MouseMessage *)m)->mPosition));
+						}
+					}
+					break;
+
+					case Message::MouseRightButtonDown:
+					{
+
+					}
+					break;
+
+					case Message::MouseRightButtonUp:
+					{
+
+					}
+					break;
+
+					case Message::KeyPress:
+					{
+
+					}
+					break;
+
+					case Message::KeyRelease:
+					{
+
+					}
+					break;
+				}
+			}
+			return !pick || Bubble();	// true means I want to eat this message please (so parents don't get click-through messages)
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -71,7 +225,6 @@ namespace DX
 			if(IsVisible())
 			{
 				SortChildren();
-				//TRACE("%s::OnDraw\n", Name());
 				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{

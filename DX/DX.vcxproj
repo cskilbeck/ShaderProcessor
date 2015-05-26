@@ -84,6 +84,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Device.cpp" />
     <ClCompile Include="DrawList.cpp" />
     <ClCompile Include="DX.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -199,6 +199,9 @@
     <ClCompile Include="ConstBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <SPOCK Include="Shaders\Sprite.shader">

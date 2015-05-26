@@ -1,4 +1,5 @@
 //////////////////////////////////////////////////////////////////////
+// TODO (charlie): make a nice way to override new() for pooled objects so you can just new() them without worrying about alloc/free
 
 #pragma once
 

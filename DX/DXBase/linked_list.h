@@ -64,7 +64,18 @@ namespace chs
 
 	template <typename T, list_node T::*NODE> class list_base<T, NODE, false> : protected list_node
 	{
-		//static_assert(!std::is_polymorphic<T>::value, "polymorphic! use the member-node version");
+		// this static_assert can't work if you want this:
+		//
+		// struct X : list_node
+		// {
+		//     linked_list<X> l;	// static assert throws incomplete type error...
+		// };
+		
+		// static_assert(!std::is_polymorphic<T>::value, "polymorphic! use the member-node version");
+
+		// it's not the end of the world because you'll get a compiler error
+		// if the type is truly polymorphic but it will be very cryptic
+
 	protected:
 		static size_t offset()
 		{
@@ -116,15 +127,18 @@ namespace chs
 			}
 			const_iterator const &operator=(const_iterator const &o)
 			{
-				p = o.p; return *this;
+				p = o.p;
+				return *this;
 			}
 			const_iterator &operator++()
 			{
-				p = (const_ptr)get_node(p).next; return *this;
+				p = (const_ptr)get_node(p).next;
+				return *this;
 			}
 			const_iterator &operator--()
 			{
-				p = (const_ptr)get_node(p).prev; return *this;
+				p = (const_ptr)get_node(p).prev;
+				return *this;
 			}
 			bool operator==(const_iterator const &o)
 			{
@@ -165,19 +179,23 @@ namespace chs
 			}
 			iterator const &operator=(const_iterator const &o)
 			{
-				p = o.p; return *this;
+				p = o.p;
+				return *this;
 			}
 			iterator const &operator=(iterator const &o)
 			{
-				p = o.p; return *this;
+				p = o.p;
+				return *this;
 			}
 			iterator &operator++()
 			{
-				p = (ptr)get_node(p).next; return *this;
+				p = (ptr)get_node(p).next;
+				return *this;
 			}
 			iterator &operator--()
 			{
-				p = (ptr)get_node(p).prev; return *this;
+				p = (ptr)get_node(p).prev;
+				return *this;
 			}
 			bool operator==(iterator const &o)
 			{
@@ -215,15 +233,18 @@ namespace chs
 			}
 			const_reverse_iterator const &operator=(const_reverse_iterator const &o)
 			{
-				p = o.p; return o;
+				p = o.p;
+				return o;
 			}
 			const_reverse_iterator &operator++()
 			{
-				p = (const_ptr)get_node(p).prev; return *this;
+				p = (const_ptr)get_node(p).prev;
+				return *this;
 			}
 			const_reverse_iterator &operator--()
 			{
-				p = (const_ptr)get_node(p).next; return *this;
+				p = (const_ptr)get_node(p).next;
+				return *this;
 			}
 			bool operator==(const_reverse_iterator const &o)
 			{
@@ -264,19 +285,23 @@ namespace chs
 			}
 			reverse_iterator const &operator=(const_reverse_iterator const &o)
 			{
-				p = o.p; return *this;
+				p = o.p;
+				return *this;
 			}
 			reverse_iterator const &operator=(reverse_iterator const &o)
 			{
-				p = o.p; return *this;
+				p = o.p;
+				return *this;
 			}
 			reverse_iterator &operator++()
 			{
-				p = (ptr)get_node(p).prev; return *this;
+				p = (ptr)get_node(p).prev;
+				return *this;
 			}
 			reverse_iterator &operator--()
 			{
-				p = (ptr)get_node(p).next; return *this;
+				p = (ptr)get_node(p).next;
+				return *this;
 			}
 			bool operator==(reverse_iterator const &o)
 			{
@@ -304,56 +329,56 @@ namespace chs
 
 		//////////////////////////////////////////////////////////////////////
 
-		iterator                  begin()
+		iterator begin()
 		{
 			return iterator((ptr)node.next);
 		}
-		const_iterator            begin() const
+		const_iterator begin() const
 		{
 			return const_iterator((const_ptr)node.next);
 		}
 
-		reverse_iterator          rbegin()
+		reverse_iterator rbegin()
 		{
 			return reverse_iterator((ptr)node.prev);
 		}
-		const_reverse_iterator    rbegin() const
+		const_reverse_iterator rbegin() const
 		{
 			return const_reverse_iterator((const_ptr)node.prev);
 		}
 
-		iterator                  end()
+		iterator end()
 		{
 			return iterator(root());
 		}
-		const_iterator            end() const
+		const_iterator end() const
 		{
 			return const_iterator(const_root());
 		}
 
-		reverse_iterator          rend()
+		reverse_iterator rend()
 		{
 			return reverse_iterator(root());
 		}
-		const_reverse_iterator    rend() const
+		const_reverse_iterator rend() const
 		{
 			return const_reverse_iterator(const_root());
 		}
 
-		const_iterator            cbegin() const
+		const_iterator cbegin() const
 		{
 			return const_iterator(node.next);
 		}
-		const_iterator            cend() const
+		const_iterator cend() const
 		{
 			return const_iterator(const_root());
 		}
 
-		const_reverse_iterator    crbegin() const
+		const_reverse_iterator crbegin() const
 		{
 			return const_reverse_iterator(node.prev);
 		}
-		const_reverse_iterator    crend() const
+		const_reverse_iterator crend() const
 		{
 			return const_reverse_iterator(const_root());
 		}
@@ -593,11 +618,12 @@ namespace chs
 
 		//////////////////////////////////////////////////////////////////////
 
-		ptr       head()
+		ptr head()
 		{
 			return (ptr)node.next;
 		}
-		ptr       tail()
+
+		ptr tail()
 		{
 			return (ptr)node.prev;
 		}
@@ -606,16 +632,18 @@ namespace chs
 		{
 			return (const_ptr)node.next;
 		}
+
 		const_ptr c_tail() const
 		{
 			return (const_ptr)node.prev;
 		}
 
-		ptr       next(ptr obj)
+		ptr next(ptr obj)
 		{
 			return (ptr)get_node(obj).next;
 		}
-		ptr       prev(ptr obj)
+
+		ptr prev(ptr obj)
 		{
 			return (ptr)get_node(obj).prev;
 		}
@@ -624,15 +652,17 @@ namespace chs
 		{
 			return (const_ptr)get_node(obj).next;
 		}
+
 		const_ptr c_prev(const_ptr obj) const
 		{
 			return (const_ptr)get_node(obj).prev;
 		}
 
-		ptr       done()
+		ptr done()
 		{
 			return root();
 		}
+
 		const_ptr c_done() const
 		{
 			return const_root();
@@ -640,43 +670,47 @@ namespace chs
 
 		//////////////////////////////////////////////////////////////////////
 
-		ptr       remove(ref obj)
+		ptr remove(ref obj)
 		{
 			return remove(&obj);
 		}
 
-		void      push_back(ref obj)
+		void push_back(ref obj)
 		{
 			insert_before(*root(), obj);
 		}
-		void      push_back(ptr obj)
+
+		void push_back(ptr obj)
 		{
 			insert_before(root(), obj);
 		}
 
-		void      push_front(ref obj)
+		void push_front(ref obj)
 		{
 			insert_after(*root(), obj);
 		}
-		void      push_front(ptr obj)
+
+		void push_front(ptr obj)
 		{
 			insert_after(root(), obj);
 		}
 
-		ptr       pop_front()
+		ptr pop_front()
 		{
 			return empty() ? nullptr : remove(head());
 		}
-		ptr       pop_back()
+
+		ptr pop_back()
 		{
 			return empty() ? nullptr : remove(tail());
 		}
 
-		void      insert_before(ref bef, ref obj)
+		void insert_before(ref bef, ref obj)
 		{
 			insert_before(&bef, &obj);
 		}
-		void      insert_after(ref aft, ref obj)
+
+		void insert_after(ref aft, ref obj)
 		{
 			insert_after(&aft, &obj);
 		}
@@ -770,8 +804,10 @@ namespace chs
 		}
 
 		//////////////////////////////////////////////////////////////////////
+
 	private:
-		static void merge(list_t &left, list_t &right)
+
+		static void merge(list_t &left, list_t &right, std::function<bool(T const &a, T const &b)> const &compare)
 		{
 			ptr insert_point = right.root();
 			ptr run_head = left.head();
@@ -784,7 +820,7 @@ namespace chs
 				{
 					insert_point = get_next(insert_point);
 				}
-				while(insert_point != bd && !(*insert_point > *run_head));
+				while(insert_point != bd && !compare(*run_head, *insert_point));
 
 				// scanned off the end?
 				if(insert_point != bd)
@@ -797,7 +833,7 @@ namespace chs
 						run_end = run_head;
 						run_head = get_next(run_head);
 					}
-					while(run_head != ad && !(*run_head > *insert_point));
+					while(run_head != ad && !compare(*insert_point, *run_head));
 
 					// insert it
 					ptr p = get_prev(insert_point);
@@ -823,7 +859,7 @@ namespace chs
 		//////////////////////////////////////////////////////////////////////
 		// thanks to the putty guy
 
-		static void merge_sort(list_t &list, size_t size)
+		static void merge_sort(list_t &list, size_t size, std::function<bool(T const &a, T const &b)> const &compare)
 		{
 			if(size > 2)
 			{
@@ -854,11 +890,11 @@ namespace chs
 				set_next(ot, rr);
 
 				// sort them
-				merge_sort(left, left_size);
-				merge_sort(right, right_size);
+				merge_sort(left, left_size, compare);
+				merge_sort(right, right_size, compare);
 
 				// stitch them back together
-				merge(right, left);
+				merge(right, left, compare);
 
 				// move result back into list
 				ot = left.tail();
@@ -874,7 +910,7 @@ namespace chs
 				// dinky list of 2 entries, just fix it
 				ptr h = list.head();
 				ptr t = list.tail();
-				if(*h > *t)
+				if(compare(*t, *h))
 				{
 					ptr r = list.root();
 					set_next(r, t);
@@ -888,10 +924,23 @@ namespace chs
 		}
 
 		//////////////////////////////////////////////////////////////////////
+
 	public:
+
 		void sort()
 		{
-			merge_sort(*this, size());
+			auto less = [] (T const &a, T const &b)
+			{
+				return a < b;
+			};
+			merge_sort(*this, size(), less);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void sort(std::function<bool(T const &a, T const &b)> const &compare)
+		{
+			merge_sort(*this, size(), compare);
 		}
 
 		//////////////////////////////////////////////////////////////////////

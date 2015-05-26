@@ -51,10 +51,12 @@ namespace DX
 
 	struct KeyboardEvent: WindowEvent
 	{
+		uint32	flags;
 		wchar	key;
 
-		KeyboardEvent(Window *w, wchar key)
+		KeyboardEvent(Window *w, uint32 flags, wchar key)
 			: WindowEvent(w)
+			, flags(flags)
 			, key(key)
 		{
 		}
@@ -107,6 +109,8 @@ namespace DX
 		Event<WindowEvent> Destroyed;
 		Event<KeyboardEvent> KeyPressed;
 		Event<KeyboardEvent> KeyReleased;
+		Event<KeyboardEvent> SysKeyPressed;
+		Event<KeyboardEvent> SysKeyReleased;
 		Event<MouseEvent> MouseMoved;
 		Event<MouseButtonEvent> MouseButtonPressed;
 		Event<MouseButtonEvent> MouseButtonReleased;
@@ -128,6 +132,8 @@ namespace DX
 		virtual void OnRightButtonDown(MousePos pos, uintptr flags);
 		virtual void OnRightButtonUp(MousePos pos, uintptr flags);
 		virtual void OnChar(int key, uintptr flags);
+		virtual void OnSysKeyDown(int key, uintptr flags);
+		virtual void OnSysKeyUp(int key, uintptr flags);
 		virtual void OnKeyDown(int key, uintptr flags);
 		virtual void OnKeyUp(int key, uintptr flags);
 		virtual void OnActivate();

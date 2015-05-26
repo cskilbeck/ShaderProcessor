@@ -233,23 +233,24 @@ namespace DX
 	template<class T> struct in_reverse
 	{
 		T &l;
+
 		in_reverse(T &list) : l(list)
 		{
 		}
 
-		auto begin() ->         decltype(l.rbegin())
+		auto begin() -> decltype(l.rbegin())
 		{
 			return l.rbegin();
 		}
-		auto begin() const ->   decltype(l.crbegin())
+		auto begin() const -> decltype(l.crbegin())
 		{
 			return l.crbegin();
 		}
-		auto end() ->           decltype(l.rend())
+		auto end() -> decltype(l.rend())
 		{
 			return l.rend();
 		}
-		auto end() const ->     decltype(l.crend())
+		auto end() const -> decltype(l.crend())
 		{
 			return l.crend();
 		}

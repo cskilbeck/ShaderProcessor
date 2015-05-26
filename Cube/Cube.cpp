@@ -35,6 +35,9 @@
 
 // !! Arrays in Constant Buffers not being reflected correctly...
 
+// Debug
+//		2D Debug functions
+//		decouple it from the drawlist so it can be used anywhere
 // All input needs to be filtered through the UI namespace
 //		Fix mouse capture mess
 // 2D UI Elements/SceneGraph
@@ -263,8 +266,13 @@ static uint16 indices[36] =
 //////////////////////////////////////////////////////////////////////
 
 MyDXWindow::MyDXWindow()
+<<<<<<< HEAD
 	: DXWindow(800, 600, TEXT("Cube"), DepthBufferEnabled, FullScreen)
+=======
+	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
+>>>>>>> a55412d8da58d41e227c21fff786ab2135410571
 {
+	mouseClicked = false;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -703,6 +711,10 @@ bool MyDXWindow::OnCreate()
 	KeyPressed += [this] (KeyboardEvent const &e)
 	{
 		Trace("[%04x] : %c\n", e.key, e.key);
+		if(e.key == VK_F4)
+		{
+			mD3D.ToggleFullScreen();
+		}
 	};
 
 	cameras[0] = new FPSCamera(this);
@@ -717,7 +729,7 @@ bool MyDXWindow::OnCreate()
 	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
 
-	UI::Open();
+	UI::Open(this);
 
 	Physics::Open(this);
 
@@ -781,18 +793,51 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
-	filledRectangle.SetColor(0x800000ff).SetSize(Vec2f(200, 200)).SetPivot(Vec2f::half);
+	root.SetSize(FClientSize());
+
+	Resized += [this] (WindowSizedEvent const &s)
+	{
+		root.SetSize(FClientSize());
+	};
+
+	filledRectangle.SetColor(0x800000ff).SetSize({ 200, 200 }).SetPivot(Vec2f::half).SetPosition(FClientSize() / 2);
 	root.AddChild(filledRectangle);
 
-	clipRect.SetPivot(Vec2f::half).SetSize(Vec2f(200, 200));
+	clipRect.SetPivot(Vec2f::half).SetSize({ 200, 200 }).SetPosition(FClientSize() / 2);
 	root.AddChild(clipRect);
 
 	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
 	button.SetFont(font).SetText("Click Me !");
 	clipRect.AddChild(button);
 
-	outlineRectangle.SetColor(Color::BrightGreen).SetSize(filledRectangle.GetSize()).SetPivot(Vec2f::half);
+	outlineRectangle.SetColor(Color::BrightGreen).SetSize(filledRectangle.GetSize()).SetPivot(Vec2f::half).SetPosition(FClientSize() / 2);
 	root.AddChild(outlineRectangle);
+
+	root.Pressed += [this] (UI::MouseEvent const &m)
+	{
+		TRACE("Clicked!\n");
+		mouseClicked = true;
+	};
+
+	// this should never happen...
+	root.Released += [this] (UI::MouseEvent const &m)
+	{
+		TRACE("Released!\n");
+		mouseClicked = false;
+	};
+
+	listBox.SetFont(font);
+	listBox.AddString("Hello");
+	listBox.AddString("World");
+	listBox.AddString("Hello1");
+	listBox.AddString("World2");
+	listBox.AddString("Hello3");
+	listBox.AddString("World4");
+	listBox.AddString("Hello5");
+	listBox.AddString("World6");
+	listBox.SetPosition({ 200, 100 });
+	listBox.SetSize({ 100, 100 });
+	root.AddChild(listBox);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -944,6 +989,8 @@ void MyDXWindow::SweepTest()
 
 void MyDXWindow::OnFrame()
 {
+	debug_begin();
+
 	oldDeltaTime = deltaTime;
 	deltaTime = (float)mTimer.Delta();
 	float time = (float)mTimer.WallTime();
@@ -956,7 +1003,7 @@ void MyDXWindow::OnFrame()
 
 	camera->Process(deltaTime);
 
-	debug_begin(*camera);
+	debug_setCamera(*camera);
 
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 
@@ -1240,8 +1287,6 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	root.SetPosition(FClientSize() / 2);
-	root.SetRotation(time / 4);
 	button.SetRotation(time * 2);
 
 	UI::Update(&root, deltaTime);
@@ -1335,6 +1380,7 @@ void MyDXWindow::OnFrame()
 	Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
 
 	ResetRenderTargetView();
+	ResetViewport();
 
 	// Blit the rendertarget onto backbuffer
 
@@ -1422,6 +1468,7 @@ void MyDXWindow::OnFrame()
 		Context()->Draw(2, 0);
 
 		ResetRenderTargetView();
+		ResetViewport();
 
 		float u0 = fpsScroll / (float)fpsWidth;
 		float u1 = u0 + 1;
@@ -1545,14 +1592,22 @@ void FPSCamera::Process(float deltaTime)
 		LookAt(window->cubePos);
 	}
 
-	if(Mouse::Held & Mouse::Button::Left)
+	debug_text("MOUSE: %s\n", Mouse::GetMode() == Mouse::Mode::Captured ? "Captured" : "Free");
+
+	debug_text("%02d\n", Mouse::Held);
+
+	if(window->mouseClicked)
 	{
-		Mouse::SetMode(Mouse::Mode::Captured, *window);
-		Rotate(Mouse::Delta.x * 0.001f, Mouse::Delta.y * 0.001f);
-	}
-	else
-	{
-		Mouse::SetMode(Mouse::Mode::Free, *window);
+		if(Mouse::Held == 0)
+		{
+			window->mouseClicked = false;
+			Mouse::SetMode(Mouse::Mode::Free, *window);
+		}
+		else
+		{
+			Mouse::SetMode(Mouse::Mode::Captured, *window);
+			Rotate(Mouse::Delta.x * 0.001f, Mouse::Delta.y * 0.001f);
+		}
 	}
 
 	CalculatePerspectiveProjectionMatrix(0.5f, window->FClientWidth() / window->FClientHeight());

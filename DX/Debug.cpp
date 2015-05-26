@@ -80,15 +80,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void debug_begin(Camera &camera)
+	void debug_setCamera(Camera &camera)
+	{
+		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
+		cameraPos = camera.GetPosition();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_begin()
 	{
 		cursorPos = Vec2f::zero;
 		fontInstance.Begin(mainWindow->Context(), mainWindow);
 		lineVB.Map(mainWindow->Context());
-		debugGraphicsDrawList.SetShader(mainWindow->Context(), &lineShader, &lineVB);
-		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
-		cameraPos = camera.GetPosition();
 		currentPrimType = None;
+		debugGraphicsDrawList.SetShader(mainWindow->Context(), &lineShader, &lineVB);
 	}
 
 	//////////////////////////////////////////////////////////////////////

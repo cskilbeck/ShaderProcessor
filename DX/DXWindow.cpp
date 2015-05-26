@@ -16,6 +16,15 @@ namespace DX
 		mDXWindow = mHWND;
 		mMessageWait = false;
 		mBaseAspectRatio = (float)width / height;
+
+		// ALT-Enter toggles fullscreen...
+		SysKeyPressed += [this] (KeyboardEvent const &e)
+		{
+			if(e.key == VK_RETURN)
+			{
+				mD3D.ToggleFullScreen();
+			}
+		};
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -61,12 +70,20 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void DXWindow::ResetViewport()
+	{
+		mD3D.ResetViewport();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void DXWindow::OnResized()
 	{
 		if(mD3D.mContext != null)
 		{
 			mD3D.Resize(ClientWidth(), ClientHeight());
 			CallOnUpdate();
+			mMessageWait = false;
 		}
 	}
 

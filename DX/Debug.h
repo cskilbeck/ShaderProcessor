@@ -11,7 +11,8 @@ namespace DX
 	HRESULT debug_open(DXWindow *w);
 	void debug_close();
 
-	void debug_begin(Camera &camera);
+	void debug_begin();
+	void debug_setCamera(Camera &camera);
 	void debug_end();
 
 	void debug_text(char const *fmt, ...);
@@ -29,4 +30,7 @@ namespace DX
 
 	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color);
 	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color);
+
+	void debug_line2d();
+	void debug_rect2d();
 }
