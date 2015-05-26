@@ -83,24 +83,6 @@ namespace DX
 				swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 				swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-				//DXR(D3D11CreateDeviceAndSwapChain(null,
-				//	D3D_DRIVER_TYPE_HARDWARE,
-				//	null,
-				//	flags,
-				//	levels,
-				//	_countof(levels),
-				//	D3D11_SDK_VERSION,
-				//	&swapChainDesc,
-				//	&mSwapChain,
-				//	&mDevice,
-				//	&mFeatureLevel,
-				//	&mContext));
-
-				//	Adapter
-				//		Monitor
-				//			Resolution
-				//				Framerate/Scaling
-
 				// get a DXGIFactory
 				DXPtr<IDXGIFactory1> pFactory;
 				DXR(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory));
@@ -125,18 +107,17 @@ namespace DX
 
 				// get the list of display modes that the default monitor supports
 				uint32 numModes;
-				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, null));
+				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_SCALING, &numModes, null));
 				vector<DXGI_MODE_DESC> modes(numModes);
-				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_B8G8R8A8_UNORM, 0, &numModes, modes.data()));
+				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_SCALING, &numModes, modes.data()));
 
+				// group them by resolution, then refreshrate, then scaling mode
 				using scalingModeMap = std::map<float, std::list<DXGI_MODE_DESC *>, std::greater<float>>;
-				using resolutionMap = std::map<Size2D, scalingModeMap>;	// mode[resolution][refreshrate].push_back();
-
-				// group them by resolution
+				using resolutionMap = std::map<Size2D, scalingModeMap>;
 				resolutionMap modeMap;
 				for(auto &mode : modes)
 				{
-					float rate = (float)mode.RefreshRate.Numerator / mode.RefreshRate.Denominator;
+					float rate = (Rational &)mode.RefreshRate;
 					modeMap[Size2D(mode.Width, mode.Height)][rate].push_back(&mode);
 				}
 
@@ -169,13 +150,11 @@ namespace DX
 					}
 				}
 
+				// find a good display mode
 				Rect2D windowRect;
 				GetClientRect(mWindow, &windowRect);
 				Size2D s = windowRect.Size();
-
 				DXGI_MODE_DESC *winner = null;
-
-				// find a good display mode
 				for(auto &l : modeMap)
 				{
 					TRACE("%dx%d\n", l.first.Width(), l.first.Height());
@@ -209,10 +188,14 @@ namespace DX
 					swapChainDesc.BufferDesc = *winner;
 				}
 
-				pFactory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_WINDOW_CHANGES);
-
 				DXR(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, null, flags, levels, _countof(levels), D3D11_SDK_VERSION, &mDevice, &mFeatureLevel, &mContext));
 				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
+
+				// Disallow Alt-Enter to toggle fullscreen
+				//IDXGIFactory1 *f;
+				//DXR(mSwapChain->GetParent(__uuidof(IDXGIFactory1), (void**)&f));
+				//DXR(f->MakeWindowAssociation(mWindow, DXGI_MWA_NO_WINDOW_CHANGES));
+
 				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
 			}

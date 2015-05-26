@@ -507,5 +507,15 @@ namespace DX
 
 	////////////////////////////////////////////////////////////////////////
 
+	struct Rational: DXGI_RATIONAL
+	{
+		operator float() const
+		{
+			return (float)Numerator / Denominator;
+		}
+	};
+
+	////////////////////////////////////////////////////////////////////////
+
 	Vec4f GetPlane(CVec4f p1, CVec4f p2, CVec4f p3);
 }
