@@ -88,7 +88,7 @@ namespace DX
 			return scalingModeNames[ScalingMode()];
 		}
 
-		bool operator > (DisplayMode const &o) const
+		bool operator < (DisplayMode const &o) const
 		{
 			// prefer order: Stretched, Unspecified, Centered
 			static int scalingRequired[] =
@@ -98,7 +98,7 @@ namespace DX
 				0	// stretched (best)
 			};
 
-			return scalingRequired[ScalingMode()] > scalingRequired[o.ScalingMode()];
+			return scalingRequired[ScalingMode()] < scalingRequired[o.ScalingMode()];
 		}
 	};
 

@@ -191,13 +191,6 @@ namespace DX
 				eTransparent = 512		// Mouse events pass through it
 			};
 			
-			// This is for sorting by ZIndex, but I think there should be a better way
-
-			bool operator > (Element &o)
-			{
-				return mZIndex > o.mZIndex;
-			}
-
 			virtual bool Bubble() const
 			{
 				return Is(eTransparent);
@@ -235,23 +228,26 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Set(uint32 f)
+			Element &Set(uint32 f)
 			{
 				mFlags.Set(f);
+				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Clear(uint32 f)
+			Element &Clear(uint32 f)
 			{
 				mFlags.Clear(f);
+				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			void SetFlag(uint32 f, bool v = true)
+			Element &SetFlag(uint32 f, bool v = true)
 			{
 				v ? Set(f) : Clear(f);
+				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -483,7 +479,7 @@ namespace DX
 				{
 					mChildren.sort([] (Element const &a, Element const &b)
 					{
-						return a.mZIndex > b.mZIndex;
+						return a.mZIndex < b.mZIndex;
 					});
 					Clear(eReorderRequired);
 				}
@@ -900,6 +896,7 @@ namespace DX
 			LabelButton()
 				: Button()
 			{
+				mLabel.Set(eTransparent);
 				AddChild(mLabel);
 			}
 
@@ -965,6 +962,7 @@ namespace DX
 				AddChild(mClipRectangle);
 				AddChild(mScrollBar);
 				AddChild(mOutlineRectangle);
+				mFilledRectangle.Set(eTransparent);
 				mFilledRectangle.SetColor(0x80000000);
 				mOutlineRectangle.SetColor(Color::White);
 				mScrollBar.SetColor(0x80ffffff);
