@@ -31,6 +31,7 @@ namespace DX
 	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color);
 	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color);
 
-	void debug_line2d();
-	void debug_rect2d();
+	void debug_line2d(Vec2f const &a, Vec2f const &b, Color color);
+	void debug_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color color);
+	void debug_filled_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color fillColor, Color lineColor);
 }

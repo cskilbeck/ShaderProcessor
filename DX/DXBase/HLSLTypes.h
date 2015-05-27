@@ -127,7 +127,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <> struct HLSLVec4<float>: Aligned16
+	template <> struct HLSLVec4<float> : Aligned16
 	{
 		union
 		{

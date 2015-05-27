@@ -2,6 +2,7 @@
 
 #include "DX.h"
 #include "Shaders/Debug.shader.h"
+#include "Shaders/Debug2D.shader.h"
 #include "Shaders/Font.shader.h"
 
 //////////////////////////////////////////////////////////////////////
@@ -10,41 +11,108 @@ using namespace DX;
 
 namespace
 {
-	DXPtr<Typeface> debugFont;
-	DXShaders::Debug lineShader;
-	DrawList debugTextDrawList;
-	DrawList debugGraphicsDrawList;
-	Font fontInstance;
-	VertexBuilder<DXShaders::Font::InputVertex> fontVB;
-	VertexBuilder<DXShaders::Debug::InputVertex> lineVB;
-	DXWindow *mainWindow;
-	Vec4f cameraPos;
-	Vec2f cursorPos;
 	enum primType
 	{
 		None,
 		Lines,
 		Triangles
 	};
-	primType currentPrimType;
 
-	void Begin(primType type)
+	template <typename T, typename V> struct DebugContext
 	{
-		if(type != currentPrimType)
+		T										mShader;
+		DrawList								mDrawList;
+		VertexBuilder<typename T::InputVertex>	mVB;
+		primType								mPrimType;
+
+		HRESULT Create()
 		{
-			debugGraphicsDrawList.End();
-			switch(type)
-			{
-				case Lines:
-					debugGraphicsDrawList.BeginLineList();
-					break;
-				case Triangles:
-					debugGraphicsDrawList.BeginTriangleList();
-					break;
-			}
-			currentPrimType = type;
+			DXR(mShader.Create());
+			DXR(mVB.Create(32768));
+			return S_OK;
 		}
-	}
+
+		void Destroy()
+		{
+			mShader.Release();
+			mVB.Destroy();
+		}
+
+		void Begin(ID3D11DeviceContext *context)
+		{
+			mVB.Map(context);
+			mDrawList.SetShader(context, &mShader, &mVB);
+			mPrimType = None;
+		}
+
+		void End(ID3D11DeviceContext *context)
+		{
+			mDrawList.End();
+			mVB.UnMap(context);
+			mDrawList.Execute();
+		}
+
+		void SetTransform(Matrix const &m, uint index)
+		{
+			mDrawList.SetConstantData(Vertex, m, index);
+		}
+
+		void AddLine(V const &start, V const &end, Color color)
+		{
+			SetPrimType(Lines);
+			mVB.AddVertex({ start, color });
+			mVB.AddVertex({ end, color });
+		}
+
+		void AddTriangle(V const &a, V const &b, V const &c, Color color)
+		{
+			SetPrimType(Triangles);
+			mVB.AddVertex({ a, color });
+			mVB.AddVertex({ b, color });
+			mVB.AddVertex({ c, color });
+		}
+
+		void AddQuad(V const &a, V const &b, V const &c, V const &d, Color color)
+		{
+			SetPrimType(Triangles);
+			mVB.AddVertex({ a, color });
+			mVB.AddVertex({ b, color });
+			mVB.AddVertex({ c, color });
+			mVB.AddVertex({ c, color });
+			mVB.AddVertex({ d, color });
+			mVB.AddVertex({ a, color });
+		}
+
+		void SetPrimType(primType primType)
+		{
+			if(primType != mPrimType)
+			{
+				mDrawList.End();
+				switch(primType)
+				{
+					case Lines:
+						mDrawList.BeginLineList();
+						break;
+					case Triangles:
+						mDrawList.BeginTriangleList();
+						break;
+				}
+				mPrimType = primType;
+			}
+		}
+	};
+
+	DebugContext<DXShaders::Debug, Vec4f> debug3D;
+	DebugContext<DXShaders::Debug2D, Vec2f> debug2D;
+
+	DXPtr<Typeface> debugFont;
+	DrawList debugTextDrawList;
+	Font fontInstance;
+	VertexBuilder<DXShaders::Font::InputVertex> fontVB;
+	DXWindow *mainWindow;
+	Vec4f cameraPos;
+	Vec2f cursorPos;
+	primType currentPrimType;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -58,9 +126,8 @@ namespace DX
 		assert(FontManager::IsOpen());
 		DXR(FontManager::Load("debug", &debugFont));
 		DXR(fontVB.Create(8192));
-		DXR(lineShader.Create());
-		DXR(lineVB.Create(32768));
-
+		debug3D.Create();
+		debug2D.Create();
 		fontInstance.Init(debugFont, &debugTextDrawList, &fontVB);
 		mainWindow = w;
 		currentPrimType = None;
@@ -71,19 +138,11 @@ namespace DX
 
 	void debug_close()
 	{
+		debug3D.Destroy();
+		debug2D.Destroy();
 		fontVB.Destroy();
-		lineShader.Release();
-		lineVB.Destroy();
 		debugFont.Release();
 		mainWindow = null;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	void debug_setCamera(Camera &camera)
-	{
-		debugGraphicsDrawList.SetConstantData(Vertex, Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
-		cameraPos = camera.GetPosition();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -92,21 +151,28 @@ namespace DX
 	{
 		cursorPos = Vec2f::zero;
 		fontInstance.Begin(mainWindow->Context(), mainWindow);
-		lineVB.Map(mainWindow->Context());
-		currentPrimType = None;
-		debugGraphicsDrawList.SetShader(mainWindow->Context(), &lineShader, &lineVB);
+		debug3D.Begin(mainWindow->Context());
+		debug2D.Begin(mainWindow->Context());
+		debug2D.SetTransform(Transpose(OrthoProjection2D(mainWindow->ClientWidth(), mainWindow->ClientHeight())), DXShaders::Debug2D::VS::VertConstants_index);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_setCamera(Camera &camera)
+	{
+		debug3D.SetTransform(Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
+		cameraPos = camera.GetPosition();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void debug_end()
 	{
-		debugGraphicsDrawList.End();
+		debug2D.End(mainWindow->Context());
+		debug3D.End(mainWindow->Context());
 		debugTextDrawList.End();
-		lineVB.UnMap(mainWindow->Context());
 		fontInstance.Finished(mainWindow->Context());
 		mainWindow->ResetRenderTargetView();
-		debugGraphicsDrawList.Execute();
 		debugTextDrawList.Execute();
 	}
 
@@ -154,32 +220,21 @@ namespace DX
 
 	void debug_line(CVec4f start, CVec4f end, Color color)
 	{
-		Begin(Lines);
-		lineVB.AddVertex({ start, color });
-		lineVB.AddVertex({ end, color });
+		debug3D.AddLine(start, end, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void debug_triangle(CVec4f a, CVec4f b, CVec4f c, Color color)
 	{
-		Begin(Triangles);
-		lineVB.AddVertex({ a, color });
-		lineVB.AddVertex({ b, color });
-		lineVB.AddVertex({ c, color });
+		debug3D.AddTriangle(a, b, c, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void debug_quad(CVec4f a, CVec4f b, CVec4f c, CVec4f d, Color color)
 	{
-		Begin(Triangles);
-		lineVB.AddVertex({ a, color });
-		lineVB.AddVertex({ b, color });
-		lineVB.AddVertex({ c, color });
-		lineVB.AddVertex({ c, color });
-		lineVB.AddVertex({ d, color });
-		lineVB.AddVertex({ a, color });
+		debug3D.AddQuad(a, b, c, d, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -191,7 +246,7 @@ namespace DX
 		float l = Length(d) / 640;	// screenwidth / 2
 		Vec4f s = Normalize(Cross(d, Vec4(0, 0, 1))) * l;
 		Vec4f u = Normalize(Cross(d, s)) * l;
-		debug_quad(pos - s - u, pos + s - u, pos + s + u, pos - s + u, color);
+		debug3D.AddQuad(pos - s - u, pos + s - u, pos + s + u, pos - s + u, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -201,9 +256,9 @@ namespace DX
 		Vec4f Z = Vec4(0, 0, len);
 		Vec4f Y = Vec4(0, len, 0);
 		Vec4f X = Vec4(len, 0, 0);
-		debug_line(pos - Z, pos + Z, Color::BrightBlue);
-		debug_line(pos - Y, pos + Y, Color::BrightGreen);
-		debug_line(pos - Z, pos + Z, Color::BrightRed);
+		debug3D.AddLine(pos - Z, pos + Z, Color::BrightBlue);
+		debug3D.AddLine(pos - Y, pos + Y, Color::BrightGreen);
+		debug3D.AddLine(pos - Z, pos + Z, Color::BrightRed);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -216,23 +271,23 @@ namespace DX
 		Vec4f z = Vec4(0, 0, GetZ(d));
 
 		// bottom square
-		debug_line(bottomLeft, bottomLeft + x, color);
-		debug_line(bottomLeft, bottomLeft + y, color);
-		debug_line(bottomLeft + x, bottomLeft + x + y, color);
-		debug_line(bottomLeft + y, bottomLeft + x + y, color);
+		debug3D.AddLine(bottomLeft, bottomLeft + x, color);
+		debug3D.AddLine(bottomLeft, bottomLeft + y, color);
+		debug3D.AddLine(bottomLeft + x, bottomLeft + x + y, color);
+		debug3D.AddLine(bottomLeft + y, bottomLeft + x + y, color);
 
 		// verticals
-		debug_line(bottomLeft, bottomLeft + z, color);
-		debug_line(bottomLeft + x, bottomLeft + x + z, color);
-		debug_line(bottomLeft + y, bottomLeft + y + z, color);
-		debug_line(bottomLeft + x + y, topRight, color);
+		debug3D.AddLine(bottomLeft, bottomLeft + z, color);
+		debug3D.AddLine(bottomLeft + x, bottomLeft + x + z, color);
+		debug3D.AddLine(bottomLeft + y, bottomLeft + y + z, color);
+		debug3D.AddLine(bottomLeft + x + y, topRight, color);
 
 		// top square
 		Vec4f bl = bottomLeft + z;
-		debug_line(bl, bl + x, color);
-		debug_line(bl, bl + y, color);
-		debug_line(bl + x, bl + x + y, color);
-		debug_line(bl + y, topRight, color);
+		debug3D.AddLine(bl, bl + x, color);
+		debug3D.AddLine(bl, bl + y, color);
+		debug3D.AddLine(bl + x, bl + x + y, color);
+		debug3D.AddLine(bl + y, topRight, color);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -251,12 +306,12 @@ namespace DX
 			Vec4f b = TransformPoint(Vec4(s, c, -1), matrix);
 			if(i < steps)
 			{
-				debug_line(e, b, color);
+				debug3D.AddLine(e, b, color);
 			}
 			if(i > 0)
 			{
-				debug_line(oe, e, color);
-				debug_line(ob, b, color);
+				debug3D.AddLine(oe, e, color);
+				debug3D.AddLine(ob, b, color);
 			}
 			oe = e;
 			ob = b;
@@ -289,5 +344,26 @@ namespace DX
 			rotationMatrix *
 			TranslationMatrix(start)
 			, color);
+	}
+
+	void debug_line2d(Vec2f const &a, Vec2f const &b, Color color)
+	{
+		debug2D.AddLine(a, b, color);
+	}
+
+	void debug_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
+	{
+		debug2D.AddQuad(tl, { br.x, tl.y }, br, { tl.x, br.y }, color);
+	}
+
+	void debug_filled_rect2d(Vec2f const &tl, Vec2f const &br, Color fillColor, Color lineColor)
+	{
+		debug_rect2d(tl, br, fillColor);
+		Vec2f tr = { br.x, tl.y };
+		Vec2f bl = { tl.x, br.y };
+		debug_line2d(tl, tr, lineColor);
+		debug_line2d(tr, br, lineColor);
+		debug_line2d(br, bl, lineColor);
+		debug_line2d(bl, tl + Vec2f{ 0, -1 }, lineColor);
 	}
 }

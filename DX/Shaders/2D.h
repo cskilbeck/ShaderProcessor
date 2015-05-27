@@ -2,7 +2,7 @@
 
 cbuffer g_VertConstants2D : register(b0)
 {
-	matrix TransformMatrix;
+	matrix TransformMatrix;		// just an ortho projection to make pixels 1:1
 }
 
 cbuffer g_ClipPlanes2D : register(b4)

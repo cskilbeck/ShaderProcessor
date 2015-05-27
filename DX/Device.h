@@ -30,17 +30,6 @@ namespace DX
 	};
 
 	//////////////////////////////////////////////////////////////////////
-	// RefreshRate helper
-
-	struct Rational: DXGI_RATIONAL
-	{
-		operator float() const
-		{
-			return (float)Numerator / Denominator;
-		}
-	};
-
-	//////////////////////////////////////////////////////////////////////
 	// A DisplayMode
 
 	struct Monitor;
@@ -421,101 +410,8 @@ namespace DX
 				swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 				swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-<<<<<<< HEAD
-				// get a DXGIFactory
-				DXPtr<IDXGIFactory1> pFactory;
-				DXR(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pFactory));
 
-				// Get the default video card
-				DXPtr<IDXGIAdapter1> adapter;
-				DXR(pFactory->EnumAdapters1(0, &adapter));
-
-				// have a look
-				DXGI_ADAPTER_DESC1 desc;
-				DXR(adapter->GetDesc1(&desc));
-				TRACE(L"Default Adapter: %s\n Video RAM: %p\nSystem RAM: %p\nShared RAM: %p\n\n", desc.Description, desc.DedicatedVideoMemory, desc.DedicatedSystemMemory, desc.SharedSystemMemory);
-
-				// Get the default output (monitor)
-				DXR(adapter->EnumOutputs(0, &mOutputMonitor));
-
-				// have a look
-				DXGI_OUTPUT_DESC monitorDesc;
-				DXR(mOutputMonitor->GetDesc(&monitorDesc));
-				Rect2D &r = (Rect2D &)monitorDesc.DesktopCoordinates;
-				TRACE(L"Default Monitor: %s (%dx%d)\n", monitorDesc.DeviceName, r.Width(), r.Height());
-
-				// get the list of display modes that the default monitor supports
-				uint32 numModes;
-				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_SCALING, &numModes, null));
-				vector<DXGI_MODE_DESC> modes(numModes);
-				DXR(mOutputMonitor->GetDisplayModeList(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_ENUM_MODES_SCALING, &numModes, modes.data()));
-
-				// group them by resolution, then refreshrate, then scaling mode
-				using scalingModeMap = std::map<float, std::list<DXGI_MODE_DESC *>, std::greater<float>>;
-				using resolutionMap = std::map<Size2D, scalingModeMap>;
-				resolutionMap modeMap;
-				for(auto &mode : modes)
-				{
-					float rate = (Rational &)mode.RefreshRate;
-					modeMap[Size2D(mode.Width, mode.Height)][rate].push_back(&mode);
-				}
-
-				static char const *scalingModeNames[] =
-				{
-					"Unspecified",
-					"Centered",
-					"Stretched"
-				};
-
-				// prefer order: Stretched, Unspecified, Centered
-				static int scalingRequired[] =
-				{
-					1,	// unspecified (middle)
-					2,	// centered (worst)
-					0	// stretched (best)
-				};
-
-				// for each resolution
-				for(auto &resolution : modeMap)
-				{
-					// for each refreshrate at that resolution
-					for(auto &mode : resolution.second)
-					{
-						// sort the modes by scaling type preference
-						mode.second.sort([] (DXGI_MODE_DESC *a, DXGI_MODE_DESC *b)
-						{
-							return scalingRequired[a->Scaling] < scalingRequired[b->Scaling];
-						});
-					}
-				}
-
-				// find a good display mode
-				Rect2D windowRect;
-				GetClientRect(mWindow, &windowRect);
-				Size2D s = windowRect.Size();
-				DXGI_MODE_DESC *winner = null;
-				for(auto &l : modeMap)
-				{
-					TRACE("%dx%d\n", l.first.Width(), l.first.Height());
-					for(auto &m : l.second)
-					{
-						TRACE("  %5.2fHz\n", m.first);
-						for(auto &n : m.second)
-						{
-							TRACE("    %s\n", scalingModeNames[n->Scaling]);
-
-							if(winner == null && !(l.first < s))
-							{
-								winner = n;
-								TRACE("                           Winner!\n");
-							}
-						}
-					}
-					TRACE("\n");
-				}
-=======
 				DisplayMode const *winner = Adapter::FindDisplayMode(r.Size());
->>>>>>> a55412d8da58d41e227c21fff786ab2135410571
 
 				// found a mode?
 				if(winner == null)
@@ -542,7 +438,6 @@ namespace DX
 					swapChainDesc.BufferDesc.Scaling = m.Scaling;
 					swapChainDesc.BufferDesc.ScanlineOrdering = m.ScanlineOrdering;
 				}
-<<<<<<< HEAD
 
 				DXR(D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, null, flags, levels, _countof(levels), D3D11_SDK_VERSION, &mDevice, &mFeatureLevel, &mContext));
 				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
@@ -552,10 +447,8 @@ namespace DX
 				//DXR(mSwapChain->GetParent(__uuidof(IDXGIFactory1), (void**)&f));
 				//DXR(f->MakeWindowAssociation(mWindow, DXGI_MWA_NO_WINDOW_CHANGES));
 
-=======
 				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
 				DXR(pFactory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_ALT_ENTER));
->>>>>>> a55412d8da58d41e227c21fff786ab2135410571
 				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
 			}

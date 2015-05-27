@@ -225,5 +225,8 @@
     <SPOCK Include="Shaders\Color2D.shader">
       <Filter>Shaders</Filter>
     </SPOCK>
+    <SPOCK Include="Shaders\Debug2D.shader">
+      <Filter>Shaders</Filter>
+    </SPOCK>
   </ItemGroup>
 </Project>

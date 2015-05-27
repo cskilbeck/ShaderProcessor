@@ -43,7 +43,7 @@ namespace DX
 			y = o.y;
 		}
 
-		operator Float2()
+		operator Float2() const
 		{
 			return Float2(x, y);
 		}
@@ -268,5 +268,6 @@ namespace DX
 	{
 		return Vec2f(Max(a.x, b.x), Max(a.y, b.y));
 	}
+
 }
 

@@ -10,6 +10,7 @@
 // TODO (charlie): slider
 // TODO (charlie): icons (X, _, etc) ?
 // TODO (charlie): etc
+// TODO (charlie): changing transform might change whether the stationary mouse is over the control
 
 // Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
 
@@ -367,7 +368,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Vec2f GetScale() const
+			Vec2f const &GetScale() const
 			{
 				return mScale;
 			}

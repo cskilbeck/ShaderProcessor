@@ -35,6 +35,11 @@ namespace DX
 		{
 		}
 
+		operator bool() const
+		{
+			return mColor != 0;
+		}
+
 		operator uint32() const
 		{
 			return mColor;

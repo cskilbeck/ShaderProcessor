@@ -3,9 +3,6 @@
 // RTCB002: don't do anything that can fail in a constructor (unless you dig exceptions, in which case throw up all you like)
 // RTCB003: when declaring function parameters, prefer enum to bool
 // RTCB004: status flags should be off (0) in the default state (eg prefer Disabled = 0 to Enabled = 1, Hidden = 0 to Visible = 1)
-
-
-//////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 
 // Shared Constant Buffers:
@@ -266,11 +263,7 @@ static uint16 indices[36] =
 //////////////////////////////////////////////////////////////////////
 
 MyDXWindow::MyDXWindow()
-<<<<<<< HEAD
-	: DXWindow(800, 600, TEXT("Cube"), DepthBufferEnabled, FullScreen)
-=======
 	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
->>>>>>> a55412d8da58d41e227c21fff786ab2135410571
 {
 	mouseClicked = false;
 }
@@ -1006,6 +999,10 @@ void MyDXWindow::OnFrame()
 	debug_setCamera(*camera);
 
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
+
+	//debug_line2d({ 0, 0 }, FClientSize() * 0.6666f, Color::Random());
+	//debug_rect2d({ 100, 100 }, { 200, 200 }, Color::Random());
+	//debug_filled_rect2d({ 100, 100 }, { 600, 400 }, 0x80ff0000, 0xff00ff00);
 
 	car.Update(deltaTime);
 
