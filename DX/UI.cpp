@@ -116,7 +116,7 @@ namespace DX
 				while(!messages.empty())
 				{
 					Message *m = messages.pop_front();
-					rootElement->ProcessMessage(m);
+					rootElement->ProcessMessage(m, false);
 					delete m;
 				}
 			}
@@ -127,24 +127,33 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		bool Element::ProcessMessage(Message *m)
+		bool Element::ProcessMessage(Message *m, bool clip)
 		{
 			bool pick = false;
 			if(IsActive())
 			{
-				for(auto &c : reverse(mChildren))
-				{
-					if(!c.ProcessMessage(m))
-					{
-						return false;
-					}
-				}
-
+				// picking before processing children means a child cannot exceed the bounds of the parent (as far as input goes, not visually, unless parent is a cliprect)
+				// is this what we want? it's how Windows does it, bit still not sure...
 				pick = m->Pick(this);
 
 				if(pick && !Is(eTransparent))
 				{
 					debug_text("IN: %s (%s)\n", Name(), Is(eHovering) ? "HOVERING" : "NOT");
+				}
+
+				if(!pick)
+				{
+					clip |= IsClipper();
+				}
+
+				pick &= !clip;
+
+				for(auto &c : reverse(mChildren))
+				{
+					if(!c.ProcessMessage(m, clip))
+					{
+						return false;
+					}
 				}
 
 				switch(m->mType)

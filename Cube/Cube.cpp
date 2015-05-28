@@ -996,7 +996,7 @@ void MyDXWindow::OnFrame()
 
 	camera->Process(deltaTime);
 
-	debug_setCamera(*camera);
+	debug_set_camera(*camera);
 
 	debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 

@@ -525,7 +525,7 @@ namespace DX
 			// Process a message
 			// Only the root UI element should have this function called on it...
 
-			bool ProcessMessage(Message *m);
+			bool ProcessMessage(Message *m, bool clip);
 
 			//////////////////////////////////////////////////////////////////////
 

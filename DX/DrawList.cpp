@@ -327,7 +327,7 @@ namespace DX
 		{
 			VertexBuilderBase *vb = mCurrentVertexBuffer;
 			d->mCount = vb->Count() - d->mBase;
-			assert(d->mCount >= 0 && d->mCount < 16384);
+			assert(d->mCount >= 0 && d->mCount < 32768);
 			mCurrentDrawCallItem = null;
 		}
 	}

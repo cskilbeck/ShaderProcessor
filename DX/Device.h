@@ -95,13 +95,25 @@ namespace DX
 
 	struct Monitor: list_node
 	{
+		// each refresh rate has a list of display modes (which have different scaling modes)
 		using scalingModeMap = std::map < float, linked_list<DisplayMode>, std::greater<float> > ;
+
+		// each resolution has a map of <refreshRate, DisplayMode>
 		using resolutionMap = std::map < Size2D, scalingModeMap > ;
 
+		// the actual monitor object
 		DXPtr<IDXGIOutput1>		mOutput;
+
+		// descriptor
 		DXGI_OUTPUT_DESC		mDesc;
+
+		// map into the modes
 		resolutionMap			mModesMap;
+
+		// actual modes
 		vector<DXGI_MODE_DESC1>	mDisplayModes;
+
+		// which adapter this monitor is connected to
 		Adapter *				mAdapter;
 
 		operator IDXGIOutput1 **() const
@@ -123,6 +135,8 @@ namespace DX
 
 			// got a monitor, initialize it
 			DXR(output.QueryInterface(mOutput));
+			output.Release();
+
 			DXR(mOutput->GetDesc(&mDesc));
 
 			// scan the list of modes it supports
@@ -203,7 +217,7 @@ namespace DX
 
 		HRESULT Init(DXPtr<IDXGIAdapter1> &adapter)
 		{
-			// initialize a monitor
+			// initialize a GPU
 			mAdapter = adapter;
 			DXR(mAdapter->GetDesc1(&mDesc));
 
@@ -447,7 +461,6 @@ namespace DX
 				//DXR(mSwapChain->GetParent(__uuidof(IDXGIFactory1), (void**)&f));
 				//DXR(f->MakeWindowAssociation(mWindow, DXGI_MWA_NO_WINDOW_CHANGES));
 
-				DXR(pFactory->CreateSwapChain(mDevice, &swapChainDesc, &mSwapChain));
 				DXR(pFactory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_ALT_ENTER));
 				DXR(CreateDepthBuffer());
 				DXR(GetBackBuffer());
@@ -576,6 +589,7 @@ namespace DX
 
 		void Close()
 		{
+			TRACE("Device::Close()\n");
 			mSwapChain->SetFullscreenState(false, null);
 
 			ReleaseRenderTargets();

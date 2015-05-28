@@ -158,7 +158,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void debug_setCamera(Camera &camera)
+	void debug_set_camera(Camera const &camera)
 	{
 		debug3D.SetTransform(Transpose(camera.GetTransformMatrix()), DXShaders::Debug::VS::VertConstants_index);
 		cameraPos = camera.GetPosition();
@@ -351,19 +351,24 @@ namespace DX
 		debug2D.AddLine(a, b, color);
 	}
 
-	void debug_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
+	void debug_solid_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
 	{
 		debug2D.AddQuad(tl, { br.x, tl.y }, br, { tl.x, br.y }, color);
 	}
 
-	void debug_filled_rect2d(Vec2f const &tl, Vec2f const &br, Color fillColor, Color lineColor)
+	void debug_outline_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
 	{
-		debug_rect2d(tl, br, fillColor);
 		Vec2f tr = { br.x, tl.y };
 		Vec2f bl = { tl.x, br.y };
-		debug_line2d(tl, tr, lineColor);
-		debug_line2d(tr, br, lineColor);
-		debug_line2d(br, bl, lineColor);
-		debug_line2d(bl, tl + Vec2f{ 0, -1 }, lineColor);
+		debug_line2d(tl, tr, color);
+		debug_line2d(tr, br, color);
+		debug_line2d(br, bl, color);
+		debug_line2d(bl, tl + Vec2f { 0, -1 }, color);
+	}
+
+	void debug_outline_solid_rect2d(Vec2f const &tl, Vec2f const &br, Color fillColor, Color lineColor)
+	{
+		debug_solid_rect2d(tl, br, fillColor);
+		debug_outline_rect2d(tl, br, lineColor);
 	}
 }
