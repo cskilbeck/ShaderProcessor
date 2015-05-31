@@ -356,6 +356,19 @@ namespace DX
 		debug2D.AddQuad(tl, { br.x, tl.y }, br, { tl.x, br.y }, color);
 	}
 
+	void debug_solid_quad2d(Vec2f const *p, Color color)
+	{
+		debug2D.AddQuad(p[0], p[1], p[2], p[3], color);
+	}
+
+	void debug_outline_quad2d(Vec2f const *p, Color color)
+	{
+		debug_line2d(p[0], p[1], color);
+		debug_line2d(p[1], p[2], color);
+		debug_line2d(p[2], p[3], color);
+		debug_line2d(p[3], p[0], color);
+	}
+
 	void debug_outline_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
 	{
 		Vec2f tr = { br.x, tl.y };

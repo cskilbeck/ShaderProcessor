@@ -40,6 +40,8 @@ namespace DX
 	// 2D
 
 	void debug_line2d(Vec2f const &a, Vec2f const &b, Color color);
+	void debug_solid_quad2d(Vec2f const *p, Color color);
+	void debug_outline_quad2d(Vec2f const *p, Color color);
 	void debug_solid_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color color);
 	void debug_outline_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color color);
 	void debug_outline_solid_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color fillColor, Color lineColor);

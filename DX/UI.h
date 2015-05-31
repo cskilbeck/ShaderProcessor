@@ -46,7 +46,8 @@ namespace DX
 				MouseRightButtonDown = 3,
 				MouseRightButtonUp = 4,
 				KeyPress = 5,
-				KeyRelease = 6
+				KeyRelease = 6,
+				MouseDummy = 7
 			};
 
 			Type		mType;
@@ -247,8 +248,7 @@ namespace DX
 
 			Element &SetFlag(uint32 f, bool v = true)
 			{
-				v ? Set(f) : Clear(f);
-				return *this;
+				return v ? Set(f) : Clear(f);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -269,22 +269,21 @@ namespace DX
 
 			Element &SetVisible(bool s)
 			{
-				SetFlag(eHidden, !s);
-				return *this;
+				return SetFlag(eHidden, !s);
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Show()
+			Element &Show()
 			{
-				SetVisible(true);
+				return SetVisible(true);				
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			void Hide()
+			Element &Hide()
 			{
-				SetVisible(false);
+				return SetVisible(false);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -536,6 +535,17 @@ namespace DX
 				mTransformMatrix = GetMatrix() * cm * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
+				if(true)
+				{
+					Vec2f s = GetSize();
+					Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
+					for(uint i = 0; i < 4; ++i)
+					{
+						p[i] = LocalToScreen(p[i]);
+					}
+					debug_outline_quad2d(p, Is(eTransparent) ? Color::Magenta : Color::Cyan);
+				}
+
 				for(auto &r : mChildren)
 				{
 					((Element &)r).UpdateTransform(mTransformMatrix);
@@ -546,60 +556,16 @@ namespace DX
 			// TODO (charlie): modality
 			// TODO (charlie): make this private and UI::Update() a friend
 
-			void Update(float deltaTime, bool clip, bool active)
+			void Update()
 			{
-				return;
-				// SOMEHOW: clip on the way down, but invoke messages on the way up
-				// -- set flags (eHovering, ePressed etc) on the way down
-				// -- use those flags on the way up to invoke messages
-				// -- build message list (only child-most gets each message), send to child-most, and parents until bubble = false
-
-				active &= Is(eInActive);
-
-				// clicking & onupdate only called if it's active (and not clipped)
-				if(!active)
+				if(!Is(eInActive))
 				{
-					Vec2f local = ScreenToLocal(Mouse::Position);
-					if(ContainsLocalPoint(local) && !clip)
-					{
-						if(!Is(eHovering))
-						{
-							MouseEntered.Invoke(MouseEvent(this, local));
-							Set(eHovering);
-						}
-						Hovering.Invoke(MouseEvent(this, local));
-						if(Mouse::Pressed & Mouse::Button::Left)
-						{
-							Set(ePressed);
-							Pressed.Invoke(PressedEvent(this, local));
-						}
-						if(Mouse::Released & Mouse::Button::Left && Is(ePressed))
-						{
-							Clear(ePressed);
-							Released.Invoke(ReleasedEvent(this, local));
-						}
-					}
-					else
-					{
-						clip |= IsClipper();
-
-						if(Is(eHovering))
-						{
-							MouseLeft.Invoke(MouseEvent(this, local));
-							Clear(eHovering);
-						}
-						if(Is(ePressed))
-						{
-							Clear(ePressed);
-							Released.Invoke(ReleasedEvent(this, local));
-						}
-					}
 					Updating.Invoke(this);
-				}
-				// children always processed (to keep matrices up  to date)
-				for(auto &r : mChildren)
-				{
-					((Element &)r).Update(deltaTime, clip, active);
+
+					for(auto &r : mChildren)
+					{
+						((Element &)r).Update();
+					}
 				}
 			}
 		};

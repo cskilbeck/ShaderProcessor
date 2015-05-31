@@ -112,6 +112,12 @@ namespace DX
 			{
 				debug_text("UI Events: %d\n", messages.size());
 
+				// push a dummy mouse move message so animating controls get their hovering updated
+				MouseMessage *m = new MouseMessage();
+				m->mType = Message::MouseDummy;
+				m->mPosition = Mouse::Position;
+				messages.push_back(m);
+
 				// then process all the input messages
 				while(!messages.empty())
 				{
@@ -122,7 +128,7 @@ namespace DX
 			}
 
 			// then call Update() on the tree
-			rootElement->Update(deltaTime, false, true);
+			rootElement->Update();
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -136,11 +142,6 @@ namespace DX
 				// is this what we want? it's how Windows does it, bit still not sure...
 				pick = m->Pick(this);
 
-				if(pick && !Is(eTransparent))
-				{
-					debug_text("IN: %s (%s)\n", Name(), Is(eHovering) ? "HOVERING" : "NOT");
-				}
-
 				if(!pick)
 				{
 					clip |= IsClipper();
@@ -148,8 +149,22 @@ namespace DX
 
 				pick &= !clip;
 
+				if(pick && !Is(eTransparent))
+				{
+					//debug_text("IN: %s (%s)\n", Name(), Is(eHovering) ? "HOVERING" : "NOT");
+					Vec2f s = GetSize();
+					Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
+					for(uint i = 0; i < 4; ++i)
+					{
+						p[i] = LocalToScreen(p[i]);
+					}
+					debug_outline_quad2d(p, Is(eTransparent) ? Color::Black : Color::Yellow);
+				}
+
+				// process all children
 				for(auto &c : reverse(mChildren))
 				{
+					// if any return false (i.e. Don't Bubble please), then stop
 					if(!c.ProcessMessage(m, clip))
 					{
 						return false;
@@ -158,6 +173,24 @@ namespace DX
 
 				switch(m->mType)
 				{
+					case Message::MouseDummy:
+					{
+						if(pick)
+						{
+							if(!Is(eHovering) && pick)
+							{
+								MouseEntered.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
+							}
+							Set(eHovering);
+						}
+						else if(Is(eHovering))
+						{
+							MouseLeft.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
+							Clear(eHovering);
+						}
+					}
+					break;
+
 					case Message::MouseMove:
 					{
 						if(pick)
@@ -224,7 +257,11 @@ namespace DX
 					break;
 				}
 			}
-			return !pick || Bubble();	// true means I want to eat this message please (so parents don't get click-through messages)
+			if(!pick)
+			{
+				return true;
+			}
+			return Bubble();
 		}
 
 		//////////////////////////////////////////////////////////////////////
