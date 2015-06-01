@@ -265,19 +265,19 @@ namespace DX
 		{
 			for(auto const &gpu : sAdapters)
 			{
-				TRACE(L"%s\n", gpu.mDesc.Description);
+				TRACE(L"GPU: %s\n", gpu.mDesc.Description);
 				for(auto const &monitor : gpu.mMonitors)
 				{
-					TRACE(L"  %s\n", monitor.mDesc.DeviceName);
+					TRACE(L"  MONITOR:%s\n", monitor.mDesc.DeviceName);
 					for(auto const &resolution : monitor.mModesMap)
 					{
-						TRACE("    %dx%d\n", resolution.first.cx, resolution.first.cy);
+						TRACE("    RESOLUTION:%dx%d\n", resolution.first.cx, resolution.first.cy);
 						for(auto const &refreshRate : resolution.second)
 						{
-							TRACE("      %5.2fHz\n", refreshRate.first);
+							TRACE("      REFRESH RATE:%5.2fHz\n", refreshRate.first);
 							for(auto const &displayMode : refreshRate.second)
 							{
-								TRACE("        %s\n", displayMode.ScalingModeName());
+								TRACE("        SCALING MODE:%s\n", displayMode.ScalingModeName());
 							}
 						}
 						TRACE("\n");
@@ -353,6 +353,7 @@ namespace DX
 				}
 				++i;
 			}
+			ShowDisplayModes();
 			return S_OK;
 		}
 	};

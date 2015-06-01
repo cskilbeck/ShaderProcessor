@@ -651,16 +651,18 @@ namespace DX
 		struct Rectangle: FilledRectangle
 		{
 			OutlineRectangle mOutlineRectangle;
-			
+			Delegate<UIEvent> mUpdatingDelegate;
+
 			Rectangle()
 				: FilledRectangle()
+				, mUpdatingDelegate([this] (UIEvent const &e)
+				{
+					mOutlineRectangle.SetSize(GetSize());
+				})
 			{
 				AddChild(mOutlineRectangle);
 				mOutlineRectangle.SetColor(Color::White);
-				Updating += [this] (UIEvent const &e)
-				{
-					mOutlineRectangle.SetSize(GetSize());
-				};
+				Updating += mUpdatingDelegate;
 			}
 
 			Rectangle &SetLineColor(Color c)
@@ -929,12 +931,9 @@ namespace DX
 				AddChild(mClipRectangle);
 				AddChild(mScrollBar);
 				AddChild(mOutlineRectangle);
-				mFilledRectangle.Set(eTransparent);
-				mFilledRectangle.SetColor(0x80000000);
+				mFilledRectangle.SetColor(0x80000000).Set(eTransparent);
 				mOutlineRectangle.SetColor(Color::White);
-				mScrollBar.SetColor(0x80ffffff);
-				mScrollBar.SetSize({ 8, 12 });
-				mScrollBar.SetVisible(true);
+				mScrollBar.SetColor(0x80ffffff).SetSize({ 8, 12 }).SetVisible(true);
 			}
 
 			char const *Name() const override

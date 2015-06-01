@@ -63,6 +63,7 @@ namespace DX
 			if(d.mOwned)
 			{
 				// Huh? How did they get a pointer to the Delegate then?
+				// from += dummy
 			}
 		}
 
