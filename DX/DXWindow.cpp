@@ -18,13 +18,15 @@ namespace DX
 		mBaseAspectRatio = (float)width / height;
 
 		// ALT-Enter toggles fullscreen...
-		SysKeyPressed += [this] (KeyboardEvent const &e)
+
+		mSysKeyPressedDelegate = [this] (KeyboardEvent const &e)
 		{
 			if(e.key == VK_RETURN)
 			{
 				mD3D.ToggleFullScreen();
 			}
 		};
+		SysKeyPressed += mSysKeyPressedDelegate;
 	}
 
 	//////////////////////////////////////////////////////////////////////

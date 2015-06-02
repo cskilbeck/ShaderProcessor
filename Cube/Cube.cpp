@@ -682,13 +682,6 @@ int MyDXWindow::LoadTrack(btTransform &carTransform)
 	return S_OK;
 }
 
-//////////////////////////////////////////////////////////////////////
-
-const int fpsWidth = 256;
-const int fpsHeight = 128;
-const float fpsLeft = 200;
-const float fpsTop = 200;
-uint fpsScroll = 0;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -701,7 +694,7 @@ bool MyDXWindow::OnCreate()
 		return false;
 	}
 
-	KeyPressed += [this] (KeyboardEvent const &e)
+	mKeyPressed = [this] (KeyboardEvent const &e)
 	{
 		Trace("[%04x] : %c\n", e.key, e.key);
 		if(e.key == VK_F4)
@@ -710,12 +703,26 @@ bool MyDXWindow::OnCreate()
 		}
 	};
 
+	KeyPressed += mKeyPressed;
+
 	cameras[0] = new FPSCamera(this);
 	cameras[1] = new FollowCamera(this);
 	currentCamera = 0;
 	debugPhysics = true;
 
 	camera = cameras[currentCamera];
+
+	fpsWidth = 256;
+	fpsHeight = 128;
+	fpsLeft = 1000;
+	fpsTop = 320;
+	fpsScroll = 0;
+
+	Resized += [this] (WindowSizedEvent const &e)
+	{
+		fpsLeft = e.clientSize.Width() - fpsWidth - 32.0f;
+		fpsTop = (e.clientSize.Height() - fpsHeight) / 2.0f;
+	};
 
 	Load();
 
@@ -788,10 +795,12 @@ bool MyDXWindow::OnCreate()
 
 	root.SetSize(FClientSize());
 
-	Resized += [this] (WindowSizedEvent const &s)
+	mWindowSized = [this] (WindowSizedEvent const &s)
 	{
 		root.SetSize(FClientSize());
 	};
+
+	Resized += mWindowSized;
 
 	filledRectangle.SetColor(0x800000ff).SetSize({ 200, 200 }).SetPivot(Vec2f::half).SetPosition(FClientSize() / 2);
 	root.AddChild(filledRectangle);
@@ -823,10 +832,25 @@ bool MyDXWindow::OnCreate()
 	listBox.AddString("Hello");
 	listBox.AddString("World");
 	listBox.AddString("Hello1");
-	listBox.AddString("World2");
-	listBox.AddString("Hello3");
-	listBox.AddString("World4");
-	listBox.AddString("Hello5");
+	listBox.AddString("Worldrld2");
+	listBox.AddString("Hellollo3");
+	listBox.AddString("Worldrld4");
+	listBox.AddString("Hrlloldello5");
+	listBox.AddString("Wlrldloorld6");
+	listBox.AddString("Wrrldldorld2");
+	listBox.AddString("Hllloloello3");
+	listBox.AddString("Wrrldlrlddorld4");
+	listBox.AddString("Hrllolllodello5");
+	listBox.AddString("Wlrldlrldoorld6");
+	listBox.AddString("Wrrldlllodorld2");
+	listBox.AddString("Hlllolrldoello3");
+	listBox.AddString("Wrlrlddorld4");
+	listBox.AddString("Hrlllodello5");
+	listBox.AddString("Wllrldoorld6");
+	listBox.AddString("Worllold2");
+	listBox.AddString("Helrldlo3");
+	listBox.AddString("Worrldld4");
+	listBox.AddString("Helllolo5");
 	listBox.AddString("World6");
 	listBox.SetPosition({ 200, 100 });
 	listBox.SetSize({ 100, 100 });

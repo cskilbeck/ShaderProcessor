@@ -54,6 +54,8 @@ namespace DX
 		int			mFrame;
 		Timer		mTimer;
 		float		mBaseAspectRatio;
+
+		Delegate<KeyboardEvent>	mSysKeyPressedDelegate;
 	};
 
 }

@@ -16,6 +16,10 @@ namespace
 	VertexBuilder<DXShaders::Color2D::InputVertex> colorVB;
 
 	linked_list<UI::Message> messages;
+
+	Delegate<MouseEvent>		mouseMovedDelegate;
+	Delegate<MouseButtonEvent>	mouseLeftButtonDownDelegate;
+	Delegate<MouseButtonEvent>	mouseLeftButtonUpDelegate;
 }
 
 namespace DX
@@ -55,20 +59,26 @@ namespace DX
 			fontVB.Create(8192);
 			colorVB.Create(8192);
 
-			w->MouseMoved += [] (DX::MouseEvent const &m)
+			mouseMovedDelegate = [] (DX::MouseEvent const &m)
 			{
 				AddMouseMessage(Message::MouseMove, Vec2f(m.position));
 			};
 
-			w->MouseButtonPressed += [] (DX::MouseButtonEvent const &m)
+			w->MouseMoved += mouseMovedDelegate;
+
+			mouseLeftButtonDownDelegate = [] (DX::MouseButtonEvent const &m)
 			{
 				AddMouseMessage(Message::MouseLeftButtonDown, Vec2f(m.position));
 			};
 
-			w->MouseButtonReleased += [] (DX::MouseButtonEvent const &m)
+			w->MouseButtonPressed += mouseLeftButtonDownDelegate;
+
+			mouseLeftButtonUpDelegate = [] (DX::MouseButtonEvent const &m)
 			{
 				AddMouseMessage(Message::MouseLeftButtonUp, Vec2f(m.position));
 			};
+
+			w->MouseButtonReleased += mouseLeftButtonUpDelegate;
 		}
 
 		//////////////////////////////////////////////////////////////////////

@@ -71,7 +71,7 @@ namespace DX
 		{
 			for(auto &e : mHandlerList)
 			{
-				((Delegate<T> &)e).mHandler(event);
+				e.mHandler(event);
 			}
 		}
 

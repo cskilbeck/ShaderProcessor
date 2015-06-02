@@ -148,6 +148,15 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	Physics::World track;
 
+	Delegate<KeyboardEvent> mKeyPressed;
+	Delegate<WindowSizedEvent> mWindowSized;
+
+	int fpsWidth;
+	int fpsHeight;
+	float fpsLeft;
+	float fpsTop;
+	uint fpsScroll;
+
 	//////////////////////////////////////////////////////////////////////
 
 	MyDXWindow();
