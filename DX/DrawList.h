@@ -88,12 +88,13 @@ namespace DX
 		void ResetScissorRect();
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data);
+
+		void Begin(uint32 topology);
 		void BeginPointList();
 		void BeginTriangleList();
 		void BeginTriangleStrip();
 		void BeginLineList();
 		void BeginLineStrip();
-
 		void End();
 
 		// Remember to UnMap all your VertexBuilders before you call Execute...
@@ -103,7 +104,6 @@ namespace DX
 
 		template<typename T> T *Add();
 		byte *AddData(byte const *data, uint size);
-		void BeginDrawCall(uint32 topology);
 		void SetConsts(ShaderType shaderType, byte *data, uint size, uint index);
 		void UnMapCurrentVertexBuffer();
 

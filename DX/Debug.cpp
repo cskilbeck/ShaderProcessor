@@ -13,42 +13,44 @@ namespace
 {
 	enum primType
 	{
-		None,
-		Lines,
-		Triangles
+		None = D3D_PRIMITIVE_TOPOLOGY_UNDEFINED,
+		Lines = D3D10_PRIMITIVE_TOPOLOGY_LINELIST,
+		Triangles = D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 	};
 
 	template <typename T, typename V> struct DebugContext
 	{
-		T										mShader;
-		DrawList								mDrawList;
-		VertexBuilder<typename T::InputVertex>	mVB;
-		primType								mPrimType;
+		using VB = VertexBuilder<typename T::InputVertex>;
+
+		T			mShader;
+		DrawList	mDrawList;
+		VB			mVertexBuilder;
+		primType	mPrimType;
 
 		HRESULT Create()
 		{
 			DXR(mShader.Create());
-			DXR(mVB.Create(32768));
+			DXR(mVertexBuilder.Create(32768));
 			return S_OK;
 		}
 
 		void Destroy()
 		{
 			mShader.Release();
-			mVB.Destroy();
+			mVertexBuilder.Destroy();
 		}
 
 		void Begin(ID3D11DeviceContext *context)
 		{
-			mVB.Map(context);
-			mDrawList.SetShader(context, &mShader, &mVB);
+			mVertexBuilder.Map(context);
+			mDrawList.SetShader(context, &mShader, &mVertexBuilder);
 			mPrimType = None;
 		}
 
 		void End(ID3D11DeviceContext *context)
 		{
 			mDrawList.End();
-			mVB.UnMap(context);
+			mVertexBuilder.UnMap(context);
 			mDrawList.Execute();
 		}
 
@@ -60,27 +62,27 @@ namespace
 		void AddLine(V const &start, V const &end, Color color)
 		{
 			SetPrimType(Lines);
-			mVB.AddVertex({ start, color });
-			mVB.AddVertex({ end, color });
+			mVertexBuilder.AddVertex({ start, color });
+			mVertexBuilder.AddVertex({ end, color });
 		}
 
 		void AddTriangle(V const &a, V const &b, V const &c, Color color)
 		{
 			SetPrimType(Triangles);
-			mVB.AddVertex({ a, color });
-			mVB.AddVertex({ b, color });
-			mVB.AddVertex({ c, color });
+			mVertexBuilder.AddVertex({ a, color });
+			mVertexBuilder.AddVertex({ b, color });
+			mVertexBuilder.AddVertex({ c, color });
 		}
 
 		void AddQuad(V const &a, V const &b, V const &c, V const &d, Color color)
 		{
 			SetPrimType(Triangles);
-			mVB.AddVertex({ a, color });
-			mVB.AddVertex({ b, color });
-			mVB.AddVertex({ c, color });
-			mVB.AddVertex({ c, color });
-			mVB.AddVertex({ d, color });
-			mVB.AddVertex({ a, color });
+			mVertexBuilder.AddVertex({ a, color });
+			mVertexBuilder.AddVertex({ b, color });
+			mVertexBuilder.AddVertex({ c, color });
+			mVertexBuilder.AddVertex({ c, color });
+			mVertexBuilder.AddVertex({ d, color });
+			mVertexBuilder.AddVertex({ a, color });
 		}
 
 		void SetPrimType(primType primType)
@@ -88,15 +90,7 @@ namespace
 			if(primType != mPrimType)
 			{
 				mDrawList.End();
-				switch(primType)
-				{
-					case Lines:
-						mDrawList.BeginLineList();
-						break;
-					case Triangles:
-						mDrawList.BeginTriangleList();
-						break;
-				}
+				mDrawList.Begin(primType);
 				mPrimType = primType;
 			}
 		}
@@ -376,7 +370,7 @@ namespace DX
 		debug_line2d(tl, tr, color);
 		debug_line2d(tr, br, color);
 		debug_line2d(br, bl, color);
-		debug_line2d(bl, tl + Vec2f { 0, -1 }, color);
+		debug_line2d(bl, tl, color);
 	}
 
 	void debug_outline_solid_rect2d(Vec2f const &tl, Vec2f const &br, Color fillColor, Color lineColor)

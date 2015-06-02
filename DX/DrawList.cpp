@@ -273,7 +273,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void DrawList::BeginDrawCall(uint32 topology)
+	void DrawList::Begin(uint32 topology)
 	{
 		End();
 		DrawCallItem *i = Add<DrawCallItem>();
@@ -287,35 +287,35 @@ namespace DX
 
 	void DrawList::BeginPointList()
 	{
-		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
+		Begin(D3D10_PRIMITIVE_TOPOLOGY_POINTLIST);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::BeginTriangleList()
 	{
-		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		Begin(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::BeginTriangleStrip()
 	{
-		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		Begin(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::BeginLineList()
 	{
-		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
+		Begin(D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	void DrawList::BeginLineStrip()
 	{
-		BeginDrawCall(D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP);
+		Begin(D3D10_PRIMITIVE_TOPOLOGY_LINESTRIP);
 	}
 
 	//////////////////////////////////////////////////////////////////////
