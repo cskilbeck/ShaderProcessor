@@ -20,6 +20,35 @@ namespace
 	Delegate<MouseEvent>		mouseMovedDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonDownDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonUpDelegate;
+
+	// 0,1 = topleft, bottomright of 1st rectangle
+	// 2,3 = 2nd rectangle
+
+	bool IntersectRectangles(UI::Element const &a, UI::Element const &b)
+	{
+		Matrix c = a.mTransformMatrix * b.mTransformMatrix;
+		Vec4f v[4] =
+		{
+			Vec4(0, 0, 0),
+			Vec4(b.Width(), 0, 0),
+			Vec4(b.Width(), b.Height(), 0),
+			Vec4(0, b.Height(), 0)
+		};
+		Vec2f tb[4];
+		for(uint i = 0; i < 4; ++i)
+		{
+			Vec4f x = TransformPoint(v[i], c);
+			tb[i] = Vec2f(GetX(x), GetY(x));
+		}
+
+		// now b is in a's local coordinates, right? check it...
+
+
+
+		// Ho Hum
+		return false;
+	}
+
 }
 
 namespace DX
