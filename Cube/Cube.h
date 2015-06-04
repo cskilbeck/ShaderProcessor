@@ -61,6 +61,8 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	UI::ListBox listBox;
 	UI::Rectangle rect;
 
+	UI::Element boxa, boxb;
+
 	float deltaTime;
 	float oldDeltaTime;
 

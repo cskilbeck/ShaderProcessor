@@ -20,35 +20,6 @@ namespace
 	Delegate<MouseEvent>		mouseMovedDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonDownDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonUpDelegate;
-
-	// 0,1 = topleft, bottomright of 1st rectangle
-	// 2,3 = 2nd rectangle
-
-	bool IntersectRectangles(UI::Element const &a, UI::Element const &b)
-	{
-		Matrix c = a.mTransformMatrix * b.mTransformMatrix;
-		Vec4f v[4] =
-		{
-			Vec4(0, 0, 0),
-			Vec4(b.Width(), 0, 0),
-			Vec4(b.Width(), b.Height(), 0),
-			Vec4(0, b.Height(), 0)
-		};
-		Vec2f tb[4];
-		for(uint i = 0; i < 4; ++i)
-		{
-			Vec4f x = TransformPoint(v[i], c);
-			tb[i] = Vec2f(GetX(x), GetY(x));
-		}
-
-		// now b is in a's local coordinates, right? check it...
-
-
-
-		// Ho Hum
-		return false;
-	}
-
 }
 
 namespace DX
@@ -168,6 +139,18 @@ namespace DX
 
 			// then call Update() on the tree
 			rootElement->Update();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		bool Element::Overlaps(Element const &b)
+		{
+			if(b.mScreenMin.x > mScreenMax.x || b.mScreenMax.x < mScreenMin.x ||
+			   b.mScreenMin.y > mScreenMax.y || b.mScreenMax.y < mScreenMin.y)
+			{
+				return false;
+			}
+			return RectanglesOverlap(mScreenCoordinates, b.mScreenCoordinates);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -305,17 +288,26 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho)
+		void Element::Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho, Element *clipper)
 		{
 			if(IsVisible())
 			{
 				SortChildren();
-				OnDraw(mTransformMatrix * ortho, context, drawList);
-				for(auto &r : mChildren)
+
+				// is this fully clipped?
+				if(clipper == null || clipper->Overlaps(*this))
 				{
-					((Element &)r).Draw(context, drawList, ortho);
+					OnDraw(mTransformMatrix * ortho, context, drawList);
+					for(auto &r : mChildren)
+					{
+						((Element &)r).Draw(context, drawList, ortho, IsClipper() ? this : clipper);
+					}
+					OnDrawComplete(drawList);
 				}
-				OnDrawComplete(drawList);
+				else
+				{
+					debug_solid_quad2d(mScreenCoordinates, Color::Orange & (uint32)Color(0xff, 0xff, 0xff, 0x80));
+				}
 			}
 		}
 
@@ -342,6 +334,9 @@ namespace DX
 			Vec4f topLeft = TransformPoint(Vec4(0, 0, 0, 0), matrix);
 			Vec4f topRight = TransformPoint(Vec4(mSize.x, 0, 0, 0), matrix);
 			Vec4f bottomLeft = TransformPoint(Vec4(0, mSize.y, 0, 0), matrix);
+			//Vec4f topLeft = Vec4(mScreenCoordinates[0].x, mScreenCoordinates[0].y, 0, 0);
+			//Vec4f topRight = Vec4(mScreenCoordinates[1].x, mScreenCoordinates[1].y, 0, 0);
+			//Vec4f bottomLeft = Vec4(mScreenCoordinates[3].x, mScreenCoordinates[3].y, 0, 0);
 
 			// the edges
 			Vec4f topEdge = topRight - topLeft;

@@ -313,4 +313,81 @@ namespace DX
 		TRACE(Format(TEXT("%s\n"), s.c_str()).c_str());
 		//assert(false);
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	// colinear lines will never return true, even if they're
+	// both horizontal or vertical...
+
+	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3, Vec2f *intersectionPoint)
+	{
+		Vec2f s10 = p1 - p0;
+		Vec2f s32 = p3 - p2;
+		float d = s10.Cross(s32);
+		if(d == 0)
+		{
+			return false;
+		}
+		bool dp = d > 0;
+		Vec2f s02 = p0 - p2;
+		float s = s10.Cross(s02);
+		if((s < 0) == dp)
+		{
+			return false;
+		}
+		float t = s32.Cross(s02);
+		if((t < 0) == dp || (s > d) == dp || (t > d) == dp)
+		{
+			return false;
+		}
+		if(intersectionPoint != null)
+		{
+			*intersectionPoint = p0 + ((t / d) * s10);
+		}
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool PointInRectangle(Vec2f const &point, Vec2f const r[4])
+	{
+		for(uint i = 0; i < 4; ++i)
+		{
+			uint j = (i + 1) % 4;
+			if(((r[j] - r[i]).Dot(point - r[i])) < 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool RectanglesOverlap(Vec2f const a[4], Vec2f const b[4])
+	{
+		// any points inside the other?
+		for(uint i = 0; i < 4; ++i)
+		{
+			if(PointInRectangle(a[i], b) || PointInRectangle(b[i], a))
+			{
+				return true;
+			}
+		}
+		// so, do any of the lines of one intersect any of the lines of the other?
+		for(uint i = 0; i < 4; ++i)
+		{
+			uint j = (i + 1) % 4;
+			Vec2f sidea = a[j] - a[i];
+			for(uint k = 0; k < 4; ++k)
+			{
+				uint l = (k + 1) % 4;
+				Vec2f sideb = b[l] - b[k];
+				if(LineIntersect(a[i], a[j], b[k], b[l], null))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }

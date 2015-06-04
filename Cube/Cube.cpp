@@ -856,6 +856,10 @@ bool MyDXWindow::OnCreate()
 	listBox.SetSize({ 100, 100 });
 	root.AddChild(listBox);
 
+	boxa.SetSize({ 400, 10 }).SetPosition({ 600, 400 });
+	boxb.SetSize({ 20, 200 }).SetPosition({ 850, 250 });
+	root.AddChild(boxa).AddChild(boxb);
+
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
 		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
@@ -1082,6 +1086,39 @@ void MyDXWindow::OnFrame()
 	}
 
 	// do a bunch of raytests around the car
+
+	Vec2f p0 = { 100, 100 };
+	Vec2f p1 = { 200, 200 };
+	Vec2f p2 = { 50, 50 };
+	Vec2f p3 = Mouse::Position;
+	Vec2f ip;
+
+	debug_line2d(p0, p1, Color::BrightRed);
+	debug_line2d(p2, p3, Color::BrightGreen);
+
+	if(LineIntersect(p0, p1, p2, p3, &ip))
+	{
+		debug_solid_rect2d(ip - Vec2f(2, 2), ip + Vec2f(2, 2), Color::White);
+	}
+
+	boxa.SetRotation(Mouse::Position.x * 0.01f);
+
+	if(Keyboard::Held('O'))
+	{
+		DebugBreak();
+	}
+
+	if(boxb.Overlaps(boxa))
+	{
+		Vec2f p[4] =
+		{
+			boxb.LocalToScreen({ 0, 0 }),
+			boxb.LocalToScreen({ boxb.Width(), 0 }),
+			boxb.LocalToScreen(boxb.GetSize()),
+			boxb.LocalToScreen({ 0, boxb.Height() })
+		};
+		debug_solid_quad2d(p, Color::Cyan);
+	}
 
 	if(true)
 	{

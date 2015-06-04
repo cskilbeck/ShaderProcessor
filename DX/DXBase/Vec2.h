@@ -236,6 +236,13 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Vec2f operator * (float b, Vec2f const &a)
+	{
+		return Vec2f(a.x * b, a.y * b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline Vec2f operator / (Vec2f const &a, Vec2f const &b)
 	{
 		return Vec2f(a.x / b.x, a.y / b.y);

@@ -165,6 +165,9 @@ namespace DX
 			Vec2f					mScale;						// Scale (1,1 = not scaled)
 			Vec2f					mPivot;						// Pivot point for scale/rotate (0.5,0.5f = centre)
 			float					mAngle;						// Rotation angle
+			Vec2f					mScreenCoordinates[4];
+			Vec2f					mScreenMin;
+			Vec2f					mScreenMax;
 
 			// Events
 
@@ -516,7 +519,7 @@ namespace DX
 			// make a list of all messages which have arrived this frame and
 			// process them on the root
 
-			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
+			void Draw(ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho, Element *clipper = null);
 
 			// TODO (charlie): allow controls to SetCapture the mouse
 			// TODO (charlie): keyboard focus
@@ -528,6 +531,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			bool Overlaps(Element const &b);
+
+			//////////////////////////////////////////////////////////////////////
+
 			void UpdateTransform(Matrix const &matrix)
 			{
 				// parent can transform its children through mClientTransform - blunt instrument, though
@@ -535,15 +542,29 @@ namespace DX
 				mTransformMatrix = GetMatrix() * cm * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
+				Vec2f s = GetSize();
+				Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
+				for(uint i = 0; i < 4; ++i)
+				{
+					mScreenCoordinates[i] = LocalToScreen(p[i]);
+					if(i == 0)
+					{
+						mScreenMax = mScreenCoordinates[i];
+						mScreenMin = mScreenCoordinates[i];
+					}
+					else
+					{
+						mScreenMax = Max(mScreenMax, mScreenCoordinates[i]);
+						mScreenMin = Min(mScreenMin, mScreenCoordinates[i]);
+					}
+				}
 				if(true)
 				{
-					Vec2f s = GetSize();
-					Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
-					for(uint i = 0; i < 4; ++i)
-					{
-						p[i] = LocalToScreen(p[i]);
-					}
-					debug_outline_quad2d(p, Is(eTransparent) ? Color::Magenta : Color::Cyan);
+					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
+//					debug_line2d({ mScreenMin.x, 0 }, { mScreenMin.x, 1000 }, Color::Aquamarine);
+//					debug_line2d({ mScreenMax.x, 0 }, { mScreenMax.x, 1000 }, Color::Aquamarine);
+//					debug_line2d({ 0, mScreenMin.y }, { 1000, mScreenMin.y }, Color::Aquamarine);
+//					debug_line2d({ 0, mScreenMax.y }, { 1000, mScreenMax.y }, Color::Aquamarine);
 				}
 
 				for(auto &r : mChildren)

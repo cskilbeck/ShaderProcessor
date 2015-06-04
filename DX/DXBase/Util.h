@@ -51,6 +51,12 @@ namespace DX
 	tstring GetExtension(tchar const *path);
 	tstring SetExtension(tchar const *path, tchar const *ext);
 
+	struct Vec2f;
+
+	bool LineIntersect(Vec2f const &a1, Vec2f const &a2, Vec2f const &b1, Vec2f const &b2, Vec2f *intersectionPoint);
+	bool PointInRectangle(Vec2f const &point, Vec2f const r[4]);
+	bool RectanglesOverlap(Vec2f const a[4], Vec2f const b[4]);
+
 #ifndef PI
 #	define PI 3.14159265f
 #	define PI_2 (PI/2)
