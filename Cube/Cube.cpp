@@ -1088,7 +1088,7 @@ void MyDXWindow::OnFrame()
 	// do a bunch of raytests around the car
 
 	Vec2f p0 = { 100, 100 };
-	Vec2f p1 = { 200, 200 };
+	Vec2f p1 = { 900, 200 };
 	Vec2f p2 = { 50, 50 };
 	Vec2f p3 = Mouse::Position;
 	Vec2f ip;
@@ -1101,7 +1101,7 @@ void MyDXWindow::OnFrame()
 		debug_solid_rect2d(ip - Vec2f(2, 2), ip + Vec2f(2, 2), Color::White);
 	}
 
-	boxa.SetRotation(Mouse::Position.x * 0.01f);
+	boxa.SetPivot({ 0.5f, 0.5f }).SetRotation(Mouse::Position.x * 0.01f).SetPosition(Mouse::Position);
 
 	if(Keyboard::Held('O'))
 	{

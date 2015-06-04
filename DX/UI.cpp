@@ -304,10 +304,10 @@ namespace DX
 					}
 					OnDrawComplete(drawList);
 				}
-				else
-				{
-					debug_solid_quad2d(mScreenCoordinates, Color::Orange & (uint32)Color(0xff, 0xff, 0xff, 0x80));
-				}
+				//else
+				//{
+				//	debug_solid_quad2d(mScreenCoordinates, Color::Orange & (uint32)Color(0xff, 0xff, 0xff, 0x80));
+				//}
 			}
 		}
 
@@ -334,9 +334,6 @@ namespace DX
 			Vec4f topLeft = TransformPoint(Vec4(0, 0, 0, 0), matrix);
 			Vec4f topRight = TransformPoint(Vec4(mSize.x, 0, 0, 0), matrix);
 			Vec4f bottomLeft = TransformPoint(Vec4(0, mSize.y, 0, 0), matrix);
-			//Vec4f topLeft = Vec4(mScreenCoordinates[0].x, mScreenCoordinates[0].y, 0, 0);
-			//Vec4f topRight = Vec4(mScreenCoordinates[1].x, mScreenCoordinates[1].y, 0, 0);
-			//Vec4f bottomLeft = Vec4(mScreenCoordinates[3].x, mScreenCoordinates[3].y, 0, 0);
 
 			// the edges
 			Vec4f topEdge = topRight - topLeft;

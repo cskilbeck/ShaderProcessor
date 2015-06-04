@@ -315,7 +315,7 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// colinear lines will never return true, even if they're
+	// parallel lines will never return true, even if they're
 	// both horizontal or vertical...
 
 	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3, Vec2f *intersectionPoint)
@@ -350,15 +350,11 @@ namespace DX
 
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4])
 	{
-		for(uint i = 0; i < 4; ++i)
-		{
-			uint j = (i + 1) % 4;
-			if(((r[j] - r[i]).Dot(point - r[i])) < 0)
-			{
-				return false;
-			}
-		}
-		return true;
+		return
+			((r[1] - r[0]).Dot(point - r[0]) >= 0) &&
+			((r[2] - r[1]).Dot(point - r[1]) >= 0) &&
+			((r[3] - r[2]).Dot(point - r[2]) >= 0) &&
+			((r[0] - r[3]).Dot(point - r[3]) >= 0);
 	}
 
 	//////////////////////////////////////////////////////////////////////
