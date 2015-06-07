@@ -220,7 +220,7 @@ static Shaders::Phong::InputVertex diceVerts[24] =
 
 //////////////////////////////////////////////////////////////////////
 
-static Shaders::Instanced::InputVertex0 iCube[24] =
+static Shaders::Instanced::InputVertex iCube[24] =
 {
 	{ { -1, +1, +1 } },// 00
 	{ { +1, +1, +1 } },// 01
@@ -793,8 +793,6 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
-	root.SetSize(FClientSize());
-
 	mWindowSized = [this] (WindowSizedEvent const &s)
 	{
 		root.SetSize(FClientSize());
@@ -829,36 +827,14 @@ bool MyDXWindow::OnCreate()
 	};
 
 	listBox.SetFont(font);
-	listBox.AddString("Hello");
-	listBox.AddString("World");
-	listBox.AddString("Hello1");
-	listBox.AddString("Worldrld2");
-	listBox.AddString("Hellollo3");
-	listBox.AddString("Worldrld4");
-	listBox.AddString("Hrlloldello5");
-	listBox.AddString("Wlrldloorld6");
-	listBox.AddString("Wrrldldorld2");
-	listBox.AddString("Hllloloello3");
-	listBox.AddString("Wrrldlrlddorld4");
-	listBox.AddString("Hrllolllodello5");
-	listBox.AddString("Wlrldlrldoorld6");
-	listBox.AddString("Wrrldlllodorld2");
-	listBox.AddString("Hlllolrldoello3");
-	listBox.AddString("Wrlrlddorld4");
-	listBox.AddString("Hrlllodello5");
-	listBox.AddString("Wllrldoorld6");
-	listBox.AddString("Worllold2");
-	listBox.AddString("Helrldlo3");
-	listBox.AddString("Worrldld4");
-	listBox.AddString("Helllolo5");
-	listBox.AddString("World6");
 	listBox.SetPosition({ 200, 100 });
-	listBox.SetSize({ 100, 100 });
-	root.AddChild(listBox);
+	listBox.SetSize({ 200, 400 });
 
-	boxa.SetSize({ 400, 10 }).SetPosition({ 600, 400 });
-	boxb.SetSize({ 20, 200 }).SetPosition({ 850, 250 });
-	root.AddChild(boxa).AddChild(boxb);
+	KeyPressed += [this] (KeyboardEvent const &k)
+	{
+		listBox.AddString(Format("Hello %d", Random::UInt32()).c_str());
+	};
+	root.AddChild(listBox);
 
 	button.MouseEntered += [] (UI::MouseEvent e)
 	{
@@ -1086,40 +1062,6 @@ void MyDXWindow::OnFrame()
 	}
 
 	// do a bunch of raytests around the car
-
-	Vec2f p0 = { 100, 100 };
-	Vec2f p1 = { 900, 200 };
-	Vec2f p2 = { 50, 50 };
-	Vec2f p3 = Mouse::Position;
-	Vec2f ip;
-
-	debug_line2d(p0, p1, Color::BrightRed);
-	debug_line2d(p2, p3, Color::BrightGreen);
-
-	if(LineIntersect(p0, p1, p2, p3, &ip))
-	{
-		debug_solid_rect2d(ip - Vec2f(2, 2), ip + Vec2f(2, 2), Color::White);
-	}
-
-	boxa.SetPivot({ 0.5f, 0.5f }).SetRotation(Mouse::Position.x * 0.01f).SetPosition(Mouse::Position);
-
-	if(Keyboard::Held('O'))
-	{
-		DebugBreak();
-	}
-
-	if(boxb.Overlaps(boxa))
-	{
-		Vec2f p[4] =
-		{
-			boxb.LocalToScreen({ 0, 0 }),
-			boxb.LocalToScreen({ boxb.Width(), 0 }),
-			boxb.LocalToScreen(boxb.GetSize()),
-			boxb.LocalToScreen({ 0, boxb.Height() })
-		};
-		debug_solid_quad2d(p, Color::Cyan);
-	}
-
 	if(true)
 	{
 		static bool fail = false;
@@ -1649,10 +1591,6 @@ void FPSCamera::Process(float deltaTime)
 	{
 		LookAt(window->cubePos);
 	}
-
-	debug_text("MOUSE: %s\n", Mouse::GetMode() == Mouse::Mode::Captured ? "Captured" : "Free");
-
-	debug_text("%02d\n", Mouse::Held);
 
 	if(window->mouseClicked)
 	{

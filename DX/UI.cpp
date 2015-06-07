@@ -20,12 +20,18 @@ namespace
 	Delegate<MouseEvent>		mouseMovedDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonDownDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonUpDelegate;
+
+	UI::Element *currentHover = null;
 }
 
 namespace DX
 {
 	namespace UI
 	{
+		//////////////////////////////////////////////////////////////////////
+
+		Element *Element::sCapturedElement = null;
+
 		//////////////////////////////////////////////////////////////////////
 
 		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point)
@@ -122,18 +128,35 @@ namespace DX
 			{
 				debug_text("UI Events: %d\n", messages.size());
 
-				// push a dummy mouse move message so animating controls get their hovering updated
-				MouseMessage *m = new MouseMessage();
-				m->mType = Message::MouseDummy;
-				m->mPosition = Mouse::Position;
-				messages.push_back(m);
+				bool gotMouse = false;
+
+				Element *oldHover = currentHover;
 
 				// then process all the input messages
 				while(!messages.empty())
 				{
 					Message *m = messages.pop_front();
+					if(m->mType == Message::Type::MouseMove)
+					{
+						gotMouse = true;
+					}
 					rootElement->ProcessMessage(m, false);
 					delete m;
+				}
+
+				// if there was no mouse move message, shove a dummy one in so animating controls get their hovering updated
+				if(!gotMouse)
+				{
+					MouseMessage m;
+					m.mType = Message::MouseDummy;
+					m.mPosition = Mouse::Position;
+					rootElement->ProcessMessage(&m, false);
+				}
+
+				if(currentHover != oldHover && oldHover != null)
+				{
+					oldHover->Clear(Element::eHovering);
+					oldHover->MouseLeft.Invoke(MouseEvent(oldHover, { 0, 0 }));
 				}
 			}
 
@@ -164,6 +187,15 @@ namespace DX
 				// is this what we want? it's how Windows does it, bit still not sure...
 				pick = m->Pick(this);
 
+				if(this == sCapturedElement)
+				{
+					pick = true;
+				}
+				else if(sCapturedElement != null)
+				{
+					pick = false;
+				}
+
 				if(!pick)
 				{
 					clip |= IsClipper();
@@ -171,17 +203,10 @@ namespace DX
 
 				pick &= !clip;
 
-				if(pick && !Is(eTransparent))
-				{
-					//debug_text("IN: %s (%s)\n", Name(), Is(eHovering) ? "HOVERING" : "NOT");
-					Vec2f s = GetSize();
-					Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
-					for(uint i = 0; i < 4; ++i)
-					{
-						p[i] = LocalToScreen(p[i]);
-					}
-					debug_outline_quad2d(p, Is(eTransparent) ? Color::Black : Color::Yellow);
-				}
+				//if(pick)
+				//{
+				//	debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Black : Color::Yellow);
+				//}
 
 				// process all children
 				for(auto &c : reverse(mChildren))
@@ -199,16 +224,12 @@ namespace DX
 					{
 						if(pick)
 						{
-							if(!Is(eHovering) && pick)
+							currentHover = this;
+							if(!Is(eHovering))
 							{
 								MouseEntered.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
 							}
 							Set(eHovering);
-						}
-						else if(Is(eHovering))
-						{
-							MouseLeft.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
-							Clear(eHovering);
 						}
 					}
 					break;
@@ -217,17 +238,13 @@ namespace DX
 					{
 						if(pick)
 						{
-							if(!Is(eHovering) && pick)
+							currentHover = this;
+							if(!Is(eHovering))
 							{
 								MouseEntered.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
 							}
 							MouseMoved.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
 							Set(eHovering);
-						}
-						else if(Is(eHovering))
-						{
-							MouseLeft.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
-							Clear(eHovering);
 						}
 					}
 					break;
@@ -256,25 +273,21 @@ namespace DX
 
 					case Message::MouseRightButtonDown:
 					{
-
 					}
 					break;
 
 					case Message::MouseRightButtonUp:
 					{
-
 					}
 					break;
 
 					case Message::KeyPress:
 					{
-
 					}
 					break;
 
 					case Message::KeyRelease:
 					{
-
 					}
 					break;
 				}
@@ -295,19 +308,17 @@ namespace DX
 				SortChildren();
 
 				// is this fully clipped?
-				if(clipper == null || clipper->Overlaps(*this))
+				if(clipper != null && !clipper->Overlaps(*this))
 				{
-					OnDraw(mTransformMatrix * ortho, context, drawList);
-					for(auto &r : mChildren)
-					{
-						((Element &)r).Draw(context, drawList, ortho, IsClipper() ? this : clipper);
-					}
-					OnDrawComplete(drawList);
+					debug_solid_quad2d(mScreenCoordinates, Color::Orange & 0x80ffffff);
+					return;
 				}
-				//else
-				//{
-				//	debug_solid_quad2d(mScreenCoordinates, Color::Orange & (uint32)Color(0xff, 0xff, 0xff, 0x80));
-				//}
+				OnDraw(mTransformMatrix * ortho, context, drawList);
+				for(auto &r : mChildren)
+				{
+					r.Draw(context, drawList, ortho, IsClipper() ? this : clipper);
+				}
+				OnDrawComplete(drawList);
 			}
 		}
 

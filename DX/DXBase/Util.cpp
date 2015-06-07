@@ -352,8 +352,8 @@ namespace DX
 	{
 		return
 			((r[1] - r[0]).Dot(point - r[0]) >= 0) &&
-			((r[2] - r[1]).Dot(point - r[1]) >= 0) &&
-			((r[3] - r[2]).Dot(point - r[2]) >= 0) &&
+			((r[2] - r[1]).Dot(point - r[1]) > 0) &&
+			((r[3] - r[2]).Dot(point - r[2]) > 0) &&
 			((r[0] - r[3]).Dot(point - r[3]) >= 0);
 	}
 

@@ -742,6 +742,20 @@ namespace DX
 
 	void Window::Close()
 	{
+		// trash all the event handlers
+		Created.Clear();
+		Activated.Clear();
+		Deactivated.Clear();
+		KeyPressed.Clear();
+		KeyReleased.Clear();
+		SysKeyPressed.Clear();
+		SysKeyReleased.Clear();
+		MouseMoved.Clear();
+		MouseButtonPressed.Clear();
+		MouseButtonReleased.Clear();
+		MouseDoubleClicked.Clear();
+		Resized.Clear();
+
 		mClosed = true;
 		DestroyWindow(mHWND);
 	}

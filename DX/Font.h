@@ -8,7 +8,6 @@
 
 namespace DX
 {
-	// rename this to TypeFace
 	struct Typeface: RefCounted
 	{
 		struct Glyph;

@@ -34,6 +34,11 @@ namespace DX
 	{
 		~Event()
 		{
+			Clear();
+		}
+
+		void Clear()
+		{
 			while(!mHandlerList.empty())
 			{
 				Delegate<T> *h = mHandlerList.pop_front();

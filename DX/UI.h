@@ -11,12 +11,15 @@
 // TODO (charlie): icons (X, _, etc) ?
 // TODO (charlie): etc
 // TODO (charlie): changing transform might change whether the stationary mouse is over the control
+// TODO (charlie): rounded rectangle? Can't do a roundedClipRect in just 8 clip planes... perhaps a stencil based clip mask thingy?
 
 // Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
 
 // TODO (charlie): event suppression/bubbling
 
 // NOTE: cliprects do not 'stack' or combine. Each cliprect sets the 4 clip planes independently of any parent clip plane...
+
+// Need a basic sort of RTTI /OR/ a generic message passing system
 
 #pragma once
 
@@ -32,6 +35,7 @@ namespace DX
 		struct Message;
 		struct MouseMessage;
 		struct KeyboardMessage;
+		struct Message;
 
 		//////////////////////////////////////////////////////////////////////
 		// A Mouse or Keyboard (or whatever) message
@@ -47,7 +51,8 @@ namespace DX
 				MouseRightButtonUp = 4,
 				KeyPress = 5,
 				KeyRelease = 6,
-				MouseDummy = 7
+				MouseDummy = 7,
+				Messenger = 8
 			};
 
 			Type		mType;
@@ -146,6 +151,25 @@ namespace DX
 			}
 		};
 
+		//////////////////////////////////////////////////////////////////////
+
+		enum
+		{
+			eScrolled = 1
+		};
+
+		struct MessengerEvent: UIEvent
+		{
+			void *data;
+			uint32 msg;
+			MessengerEvent(Element *element, uint message, void *messageData)
+				: UIEvent(element)
+				, data(messageData)
+				, msg(message)
+			{
+			}
+		};
+
 		// TODO (charlie): add all the other UI Event types
 
 		//////////////////////////////////////////////////////////////////////
@@ -175,10 +199,14 @@ namespace DX
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
 			Event<UIEvent>			Updating;
+			Event<UIEvent>			Resized;
 			Event<MouseEvent>		MouseMoved;
 			Event<MouseEvent>		MouseEntered;
 			Event<MouseEvent>		MouseLeft;
 			Event<MouseEvent>		Hovering;
+			Event<MessengerEvent>	Messenger;
+
+			static Element *		sCapturedElement;
 
 			// Flags
 
@@ -332,6 +360,7 @@ namespace DX
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
+				Resized.Invoke(UIEvent(this));
 				return *this;
 			}
 
@@ -349,6 +378,22 @@ namespace DX
 				mPivot = pivot;
 				Set(eDirtyMatrix);
 				return *this;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+			// All mouse messages go to this control until ReleaseCapture() is called
+			// or some other control calls SetCapture()
+
+			void SetCapture()
+			{
+				sCapturedElement = this;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void ReleaseCapture()
+			{
+				sCapturedElement = null;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -427,7 +472,7 @@ namespace DX
 
 			bool ContainsScreenPoint(Vec2f point) const
 			{
-				return ContainsLocalPoint(ScreenToLocal(point));
+				return PointInRectangle(point, mScreenCoordinates);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -560,7 +605,7 @@ namespace DX
 				}
 				if(true)
 				{
-					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
+//					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
 //					debug_line2d({ mScreenMin.x, 0 }, { mScreenMin.x, 1000 }, Color::Aquamarine);
 //					debug_line2d({ mScreenMax.x, 0 }, { mScreenMax.x, 1000 }, Color::Aquamarine);
 //					debug_line2d({ 0, mScreenMin.y }, { 1000, mScreenMin.y }, Color::Aquamarine);
@@ -931,16 +976,95 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct ScrollBar: FilledRectangle
+		{
+			Delegate<MouseEvent>	mMouseMovedDelegate;
+			Delegate<PressedEvent>	mMouseClickedDelegate;
+			Delegate<ReleasedEvent>	mMouseReleasedDelgate;
+			Delegate<MouseEvent>	mMouseEnteredDelegate;
+			Delegate<MouseEvent>	mMouseLeftDelegate;
+
+			bool	mDrag;
+			Vec2f	mDragOffset;
+
+			ScrollBar()
+				: FilledRectangle()
+				, mDrag(false)
+			{
+				SetColor(0xc0c0c0c0);
+				mMouseEnteredDelegate = [this] (MouseEvent const &e)
+				{
+					SetColor(Color::LightCyan);
+				};
+
+				mMouseLeftDelegate = [this] (MouseEvent const &e)
+				{
+					SetColor(0xc0c0c0c0);
+				};
+
+				mMouseMovedDelegate = [this] (MouseEvent const &e)
+				{
+					if(mDrag)
+					{
+						if((mScreenCoordinates[0].x - e.mMousePosition.x) > 64 ||
+						   (mScreenCoordinates[0].y - e.mMousePosition.y) > 64 ||
+						   (mScreenCoordinates[1].x - e.mMousePosition.x) < -64 ||
+						   (mScreenCoordinates[2].y - e.mMousePosition.y) < -64)
+						{
+							ReleaseCapture();
+							mDrag = false;
+						}
+						else
+						{
+							Element *p = mParent;
+							float total = p->Height() - Height() - 1;
+							SetPosition({ mPosition.x, Max(0.0f, Min(total, e.mMousePosition.y - mDragOffset.y)) });
+							float ratio = mPosition.y / total;
+							p->Messenger.Invoke(MessengerEvent(this, eScrolled, &ratio)); // notify the parent that they should scroll
+						}
+					}
+				};
+
+
+				mMouseClickedDelegate = [this] (PressedEvent const &e)
+				{
+					mDrag = true;
+					mDragOffset = e.mMousePosition - mPosition;
+					SetCapture();
+				};
+
+				mMouseReleasedDelgate = [this] (ReleasedEvent const &e)
+				{
+					mDrag = false;
+					ReleaseCapture();
+				};
+
+				MouseEntered += mMouseEnteredDelegate;
+				MouseLeft += mMouseLeftDelegate;
+				MouseMoved += mMouseMovedDelegate;
+				Pressed += mMouseClickedDelegate;
+				Released += mMouseReleasedDelgate;
+			}
+
+			char const *Name() const override
+			{
+				return "LabelButton";
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		struct ListBox: Element
 		{
-			FilledRectangle		mFilledRectangle;
-			OutlineRectangle	mOutlineRectangle;
-			ClipRectangle		mClipRectangle;
-			int					mStringCount;
-			Typeface *			mTypeface;
-			FilledRectangle		mScrollBar;
-			FilledRectangle		mSelection;
-			float				mScrollPosition;
+			FilledRectangle				mFilledRectangle;
+			OutlineRectangle			mOutlineRectangle;
+			ClipRectangle				mClipRectangle;
+			int							mStringCount;
+			Typeface *					mTypeface;
+			ScrollBar					mScrollBar;
+			FilledRectangle				mSelection;
+			float						mScrollPosition;
+			Delegate<MessengerEvent>	mMessengerDelegate;
 
 			ListBox()
 				: Element()
@@ -954,7 +1078,26 @@ namespace DX
 				AddChild(mOutlineRectangle);
 				mFilledRectangle.SetColor(0x80000000).Set(eTransparent);
 				mOutlineRectangle.SetColor(Color::White);
-				mScrollBar.SetColor(0x80ffffff).SetSize({ 8, 12 }).SetVisible(true);
+				mScrollBar.SetSize({ 8, 12 }).SetVisible(true).SetZIndex(1);
+
+				mMessengerDelegate = [this] (MessengerEvent const &e)
+				{
+					switch(e.msg)
+					{
+						case eScrolled:
+						{
+							float ch = ClientHeight() - Height();
+							if(ch > 0)
+							{
+								float f = *((float *)e.data);
+								mClipRectangle.mClientTransform = TranslationMatrix(Vec4(0, floorf(-ch * f), 0));
+							}
+						}
+						break;
+					}
+				};
+
+				Messenger += mMessengerDelegate;
 			}
 
 			char const *Name() const override
@@ -962,17 +1105,30 @@ namespace DX
 				return "ListBox";
 			}
 
+			float ClientHeight() const
+			{
+				if(mTypeface == null)
+				{
+					return 0;
+				}
+				return (mTypeface->GetHeight() + 2.0f) * mStringCount;
+			}
+
 			void UpdateScrollbar()
 			{
-				if(mStringCount == 0)
+				float ch = ClientHeight();
+				if(ch > 0)
 				{
-					return;
+					float ratio = Height() / ch;				// eg 100 / 200 = 0.5
+					if(ratio < 1)
+					{
+						float scrollBarHeight = Min(Height(), Max(8.0f, Height() * ratio));		// eg half the height of the window
+						mScrollBar.SetSize({ 8, scrollBarHeight });
+						mScrollBar.Show();
+						return;
+					}
 				}
-
-				float textHeight = (float)mStringCount * mTypeface->GetHeight();
-				float ratio = GetSize().y / textHeight;
-				float scrollBarHeight = GetSize().y * ratio;
-				mScrollBar.SetSize({ 8, scrollBarHeight });
+				mScrollBar.Hide();
 			}
 
 			ListBox &SetFont(Typeface *f)
@@ -988,20 +1144,45 @@ namespace DX
 				mClipRectangle.SetSize(size);
 				mOutlineRectangle.SetSize(size);
 				mFilledRectangle.SetSize(size);
-				mScrollBar.SetPosition({ size.x - mScrollBar.Width() - 2, 2 });
+				mScrollBar.SetPosition({ size.x - mScrollBar.Width(), 0 });
 				UpdateScrollbar();
 				return *this;
 			}
 
 			Element *AddString(char const *text)
 			{
+				float tfh = (float)mTypeface->GetHeight() + 2.0f;
+				FilledRectangle *r = new FilledRectangle();
+				r->SetColor(Color::DarkGreen);
+				r->SetPosition({ 0, (float)mStringCount * tfh });
+				r->SetSize({ mClipRectangle.Width(), tfh });
+
+				r->MouseEntered += [] (MouseEvent const &m)
+				{
+					FilledRectangle *f = (FilledRectangle *)m.mElement;
+					f->SetColor(Color::White);
+				};
+
+				r->MouseLeft += [] (MouseEvent const &m)
+				{
+					FilledRectangle *f = (FilledRectangle *)m.mElement;
+					f->SetColor(Color::DarkGreen);
+				};
+
+				r->Updating += [r] (UIEvent const &e)
+				{
+					FilledRectangle *f = (FilledRectangle *)e.mElement;
+				};
+
+				mClipRectangle.AddChild(*r);
 				Label *b = new Label();
 				b->SetText(text);
-				b->SetPosition({ 0, (float)mStringCount * mTypeface->GetHeight() });
 				b->SetFont(mTypeface);
 				b->SetPivot({ 0, 0 });	// override centering behaviour by setting pivot last
+				b->SetPosition({ 1, 1 });
+				b->Set(eTransparent);
 				++mStringCount;
-				mClipRectangle.AddChild(*b);
+				r->AddChild(*b);
 				UpdateScrollbar();
 				return b;
 			}
