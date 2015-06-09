@@ -22,6 +22,7 @@ namespace
 	Delegate<MouseEvent>		mouseMovedDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonDownDelegate;
 	Delegate<MouseButtonEvent>	mouseLeftButtonUpDelegate;
+	Delegate<MouseWheelEvent>	mouseWheelDelegate;
 
 	UI::Element *currentHover = null;
 }
@@ -41,6 +42,18 @@ namespace DX
 			MouseMessage *m = new MouseMessage();	// Hmm - need a pool allocator for these... but they're all different sizes...
 			m->mType = type;
 			m->mPosition = point;
+			messages.push_back(m);
+			return m;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		MouseWheelMessage *AddMouseWheelMessage(Vec2f const &point, float delta)
+		{
+			MouseWheelMessage *m = new MouseWheelMessage();
+			m->mType = Message::Type::MouseWheel;
+			m->mPosition = point;
+			m->delta = delta;
 			messages.push_back(m);
 			return m;
 		}
@@ -93,7 +106,13 @@ namespace DX
 				AddMouseMessage(Message::MouseLeftButtonUp, Vec2f(m.position));
 			};
 
+			mouseWheelDelegate = [] (DX::MouseWheelEvent const &m)
+			{
+				AddMouseWheelMessage(Vec2f(m.position), m.wheelDelta);
+			};
+
 			w->MouseButtonReleased += mouseLeftButtonUpDelegate;
+			w->MouseWheeled += mouseWheelDelegate;
 			return S_OK;
 		}
 
@@ -286,8 +305,10 @@ namespace DX
 					}
 					break;
 
-					case Message::MouseRightButtonUp:
+					case Message::MouseWheel:
 					{
+						MouseWheelMessage *mw = (MouseWheelMessage *)m;
+						MouseWheeled.Invoke(MouseWheelEvent(this, mw->mPosition, mw->delta));
 					}
 					break;
 
@@ -320,7 +341,7 @@ namespace DX
 				// is this fully clipped?
 				if(clipper != null && !clipper->Overlaps(*this))
 				{
-					debug_solid_quad2d(mScreenCoordinates, Color::Orange & 0x80ffffff);
+					//debug_solid_quad2d(mScreenCoordinates, Color::Orange & 0x80ffffff);
 					return;
 				}
 				OnDraw(mTransformMatrix * ortho, context, drawList);

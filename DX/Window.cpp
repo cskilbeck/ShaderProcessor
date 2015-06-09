@@ -328,11 +328,14 @@ namespace DX
 		switch(msg)
 		{
 			case WM_GETMINMAXINFO:
+			{
 				mminfo = (MINMAXINFO *)lParam;
 				mminfo->ptMinTrackSize.y = 16 + GetSystemMetrics(SM_CYMINTRACK) + (HasMenu() ? GetSystemMetrics(SM_CYMENU) : 0);
-				break;
+			}
+			break;
 
 			case WM_CREATE:
+			{
 				if(!OnCreate())
 				{
 					Close();
@@ -342,156 +345,214 @@ namespace DX
 					Created.Invoke(WindowEvent(this));
 					mCreated = true;
 				}
-				break;
+			}
+			break;
 
 			case WM_DESTROY:
+			{
 				Destroying.Invoke(WindowEvent(this));
 				OnDestroy();
 				Destroyed.Invoke(WindowEvent(this));
 				PostQuitMessage(0);
-				break;
+			}
+			break;
 
 			case WM_ERASEBKGND:
+			{
 				return true;
+			}
 
 			case WM_SIZE:
+			{
 				DoResize();
-				break;
+			}
+			break;
 
 			case WM_MOVE:
+			{
 				DoMove();
-				break;
+			}
+			break;
 
 			case WM_SIZING:
+			{
 				DoResize();
-				break;
-
-			case WM_MOUSEWHEEL:
-				Mouse::WheelDelta = (float)(HIWORD(wParam)) / WHEEL_DELTA;
-				mouseScreenPos = GetPoint2DFromParam(lParam);
-				ScreenToClient(hWnd, &mouseScreenPos);
-				mousePos.x = (int16)mouseScreenPos.x;
-				mousePos.y = (int16)mouseScreenPos.y;
-				OnMouseWheel(mousePos, (int16)HIWORD(wParam), wParam);
-				break;
+			}
+			break;
 
 			case WM_PAINT:
+			{
 				BeginPaint(mHWND, &ps);
 				OnPaint(ps);
 				EndPaint(mHWND, &ps);
-				break;
+			}
+			break;
 
 			case WM_ENTERSIZEMOVE:
+			{
 				mResizing = true;
 				OnEnterSizeLoop();
-				break;
+			}
+			break;
 
 			case WM_EXITSIZEMOVE:
+			{
 				mResizing = false;
 				OnExitSizeLoop();
-				break;
+			}
+			break;
 
 			case WM_CHAR:
+			{
 				Keyboard::LastCharPressed = (int)wParam;
 				OnChar((int)wParam, lParam);
-				break;
+			}
+			break;
 
 			case WM_KEYDOWN:
+			{
 				Keyboard::LastKeyPressed = (int)wParam;
 				OnKeyDown((int)wParam, lParam);
 				KeyPressed.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
-				break;
+			}
+			break;
 
 			case WM_KEYUP:
+			{
 				OnKeyUp((int)wParam, lParam);
 				KeyReleased.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
-				break;
+			}
+			break;
 
 			case WM_SYSKEYDOWN:
+			{
 				OnSysKeyDown((int)wParam, lParam);
 				SysKeyPressed.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
-				break;
+			}
+			break;
 
 			case WM_SYSKEYUP:
+			{
 				OnSysKeyUp((int)wParam, lParam);
 				SysKeyReleased.Invoke(KeyboardEvent(this, (uint32)lParam, (int)wParam));
-				break;
+			}
+			break;
 
 			case WM_MOUSEMOVE:
+			{
 				mousePos = GetMousePosFromParam(lParam);
 				OnMouseMove(mousePos, wParam);
 				MouseMoved.Invoke(MouseEvent(this, mousePos));
-				break;
+			}
+			break;
 
 			case WM_LBUTTONDBLCLK:
+			{
 				OnLeftMouseDoubleClick(GetMousePosFromParam(lParam));
 				MouseDoubleClicked.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
-				break;
+			}
+			break;
 
 			case WM_RBUTTONDBLCLK:
+			{
 				OnRightMouseDoubleClick(GetMousePosFromParam(lParam));
 				MouseDoubleClicked.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
-				break;
+			}
+			break;
 
 			case WM_LBUTTONDOWN:
+			{
 				Mouse::Pressed |= Mouse::Button::Left;
 				Mouse::Held |= Mouse::Button::Left;
 				OnLeftButtonDown(GetMousePosFromParam(lParam), wParam);
 				MouseButtonPressed.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
-				break;
+			}
+			break;
 
 			case WM_LBUTTONUP:
+			{
 				Mouse::Released |= Mouse::Button::Left;
 				Mouse::Held &= ~Mouse::Button::Left;
 				OnLeftButtonUp(GetMousePosFromParam(lParam), wParam);
 				MouseButtonReleased.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Left));
-				break;
+			}
+			break;
 
 			case WM_RBUTTONDOWN:
+			{
 				Mouse::Pressed |= Mouse::Button::Right;
 				Mouse::Held |= Mouse::Button::Right;
 				OnRightButtonDown(GetMousePosFromParam(lParam), wParam);
 				MouseButtonPressed.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
-				break;
+			}
+			break;
 
 			case WM_RBUTTONUP:
+			{
 				Mouse::Released |= Mouse::Button::Right;
 				Mouse::Held &= ~Mouse::Button::Right;
 				OnRightButtonUp(GetMousePosFromParam(lParam), wParam);
 				MouseButtonReleased.Invoke(MouseButtonEvent(this, GetMousePosFromParam(lParam), MouseButtonEvent::Right));
-				break;
+			}
+			break;
+
+			case WM_MOUSEWHEEL:
+			{
+				int delta = (int16)HIWORD(wParam);
+				Mouse::WheelDelta = (float)delta / WHEEL_DELTA;
+				MousePos mousePos = GetMousePosFromParam(lParam);
+				OnMouseWheel(mousePos, delta, wParam);
+				MouseWheeled.Invoke(MouseWheelEvent(this, mousePos, Mouse::WheelDelta));
+			}
+			break;
 
 			case WM_ACTIVATEAPP:
+			{
 				SetActive(wParam == TRUE);
-				break;
+			}
+			break;
 
 			case WM_ACTIVATE:
+			{
 				SetActive(wParam != WA_INACTIVE);
-				break;
+			}
+			break;
 
 			case WM_CLOSE:
+			{
 				Close();
-				break;
+			}
+			break;
 
 			case WM_NCMOUSEMOVE:
+			{
 				OnNCMouseMove(GetMousePosFromParam(lParam), wParam);
 				return DefWindowProc(hWnd, msg, wParam, lParam);
+			}
 
 			case WM_NCLBUTTONDOWN:
+			{
 				OnNCLButtonDown(GetMousePosFromParam(lParam), wParam);
 				return DefWindowProc(hWnd, msg, wParam, lParam);
+			}
 
 			case WM_NCLBUTTONUP:
+			{
 				OnNCLButtonUp(GetMousePosFromParam(lParam), wParam);
 				return DefWindowProc(hWnd, msg, wParam, lParam);
+			}
 
 			case WM_WINDOWPOSCHANGED:
+			{
 				OnWindowPosChanged((WINDOWPOS *)lParam);
 				return DefWindowProc(hWnd, msg, wParam, lParam);
+			}
 
 			case WM_WINDOWPOSCHANGING:
+			{
 				OnWindowPosChanging((WINDOWPOS *)lParam);
-				break;
+			}
+			break;
 
 			default:
 				return DefWindowProc(hWnd, msg, wParam, lParam);

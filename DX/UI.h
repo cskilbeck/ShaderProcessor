@@ -44,15 +44,16 @@ namespace DX
 		{
 			enum Type
 			{
-				MouseMove = 0,
-				MouseLeftButtonDown = 1,
-				MouseLeftButtonUp = 2,
-				MouseRightButtonDown = 3,
+				MouseMove,
+				MouseWheel,
+				MouseLeftButtonDown,
+				MouseLeftButtonUp,
+				MouseRightButtonDown,
 				MouseRightButtonUp = 4,
-				KeyPress = 5,
-				KeyRelease = 6,
-				MouseDummy = 7,
-				Messenger = 8
+				KeyPress,
+				KeyRelease,
+				MouseDummy,
+				Messager
 			};
 
 			Type		mType;
@@ -67,6 +68,11 @@ namespace DX
 			Vec2f		mPosition;
 
 			bool Pick(Element const *e) const override;
+		};
+
+		struct MouseWheelMessage: MouseMessage
+		{
+			float delta;
 		};
 
 		// All keyboard messages derive from this (or are this)
@@ -86,6 +92,7 @@ namespace DX
 
 		HRESULT Open(Window *w);
 		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point);
+		MouseWheelMessage *AddMouseWheelMessage(Vec2f const &point, int delta);
 		KeyboardMessage *AddKeyboardMessage(Message::Type type, uint32 key, uint32 flags);
 		void Update(Element *rootElement, float deltaTime);
 		void Draw(Element *rootElement, ID3D11DeviceContext *context, DrawList &drawList, Matrix const &ortho);
@@ -114,6 +121,19 @@ namespace DX
 			MouseEvent(Element *element, Vec2f const &mousePosition)
 				: UIEvent(element)
 				, mMousePosition(mousePosition)
+			{
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct MouseWheelEvent: MouseEvent
+		{
+			float wheelDelta;
+
+			MouseWheelEvent(Element *element, Vec2f const &pos, float delta)
+				: MouseEvent(element, pos)
+				, wheelDelta(delta)
 			{
 			}
 		};
@@ -162,6 +182,7 @@ namespace DX
 		{
 			void *data;
 			uint32 msg;
+
 			MessengerEvent(Element *element, uint message, void *messageData)
 				: UIEvent(element)
 				, data(messageData)
@@ -200,6 +221,7 @@ namespace DX
 			Event<ReleasedEvent>	Released;
 			Event<UIEvent>			Updating;
 			Event<UIEvent>			Resized;
+			Event<MouseWheelEvent>	MouseWheeled;
 			Event<MouseEvent>		MouseMoved;
 			Event<MouseEvent>		MouseEntered;
 			Event<MouseEvent>		MouseLeft;
@@ -1016,15 +1038,10 @@ namespace DX
 						}
 						else
 						{
-							Element *p = mParent;
-							float total = p->Height() - Height() - 1;
-							SetPosition({ mPosition.x, Max(0.0f, Min(total, e.mMousePosition.y - mDragOffset.y)) });
-							float ratio = mPosition.y / total;
-							p->Messenger.Invoke(MessengerEvent(this, eScrolled, &ratio)); // notify the parent that they should scroll
+							MoveTo(e.mMousePosition.y - mDragOffset.y);
 						}
 					}
 				};
-
 
 				mMouseClickedDelegate = [this] (PressedEvent const &e)
 				{
@@ -1046,6 +1063,20 @@ namespace DX
 				Released += mMouseReleasedDelgate;
 			}
 
+			void MoveTo(float position)
+			{
+				Element *p = mParent;
+				float total = p->Height() - Height() - 1;
+				SetPosition({ mPosition.x, Max(0.0f, Min(total, position)) });
+				float ratio = mPosition.y / total;
+				p->Messenger.Invoke(MessengerEvent(this, eScrolled, &ratio)); // notify the parent that they should scroll
+			};
+
+			void Move(float delta)
+			{
+				MoveTo(mPosition.y + delta);
+			}
+
 			char const *Name() const override
 			{
 				return "LabelButton";
@@ -1065,6 +1096,9 @@ namespace DX
 			FilledRectangle				mSelection;
 			float						mScrollPosition;
 			Delegate<MessengerEvent>	mMessengerDelegate;
+			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
+			float						mScrollVelocity;
+			float						mScrollOffset;
 
 			ListBox()
 				: Element()
@@ -1080,7 +1114,7 @@ namespace DX
 				mOutlineRectangle.SetColor(Color::White);
 				mScrollBar.SetSize({ 8, 12 }).SetVisible(true).SetZIndex(1);
 
-				mMessengerDelegate = [this] (MessengerEvent const &e)
+				Messenger += mMessengerDelegate = [this] (MessengerEvent const &e)
 				{
 					switch(e.msg)
 					{
@@ -1097,7 +1131,17 @@ namespace DX
 					}
 				};
 
-				Messenger += mMessengerDelegate;
+				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
+				{
+					Scroll(-e.wheelDelta * RowHeight());
+				};
+			}
+
+			void Scroll(float amount)
+			{
+				// change client offset by amount
+				// update scrollbar position
+				mScrollBar.Move(amount);
 			}
 
 			char const *Name() const override
@@ -1105,13 +1149,14 @@ namespace DX
 				return "ListBox";
 			}
 
+			float RowHeight() const
+			{
+				return (mTypeface == null) ? 0 : (mTypeface->GetHeight() + 2.0f);
+			}
+
 			float ClientHeight() const
 			{
-				if(mTypeface == null)
-				{
-					return 0;
-				}
-				return (mTypeface->GetHeight() + 2.0f) * mStringCount;
+				return RowHeight() * mStringCount;
 			}
 
 			void UpdateScrollbar()

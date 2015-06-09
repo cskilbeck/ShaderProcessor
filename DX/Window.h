@@ -77,6 +77,19 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	struct MouseWheelEvent: MouseEvent
+	{
+		float wheelDelta;
+
+		MouseWheelEvent(Window *w, MousePos pos, float delta)
+			: MouseEvent(w, pos)
+			, wheelDelta(delta)
+		{
+		}
+	};
+
+	//////////////////////////////////////////////////////////////////////
+
 	struct MouseButtonEvent: MouseEvent
 	{
 		enum Buttons
@@ -114,6 +127,7 @@ namespace DX
 		Event<MouseEvent> MouseMoved;
 		Event<MouseButtonEvent> MouseButtonPressed;
 		Event<MouseButtonEvent> MouseButtonReleased;
+		Event<MouseWheelEvent> MouseWheeled;
 		Event<MouseButtonEvent> MouseDoubleClicked;
 		Event<WindowSizedEvent> Resized;
 
