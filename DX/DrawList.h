@@ -86,6 +86,7 @@ namespace DX
 		void SetSampler(ShaderType shaderType, Sampler &s, uint index = 0);
 		void SetScissorRect(Rect2D const &rect);
 		void ResetScissorRect();
+		template <typename T> void SetConstantData(ShaderType shaderType, TypelessBuffer *buffer, T &data);
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data, uint index);
 		template <typename T> void SetConstantData(ShaderType shaderType, T &data);
 
@@ -105,25 +106,40 @@ namespace DX
 		template<typename T> T *Add();
 		byte *AddData(byte const *data, uint size);
 		void SetConsts(ShaderType shaderType, byte *data, uint size, uint index);
+		void SetConsts(ShaderType shaderType, TypelessBuffer *buffer, byte *data, uint32 size);
 		void UnMapCurrentVertexBuffer();
 
 		byte *					mItemBuffer;			// base of Items buffer
 		byte *					mItemPointer;			// current Item
-		uint32					mVertexSize;			// size of a vert for current drawcall
 		VertexBuilderBase *		mCurrentVertexBuffer;	// current VertexBuilder
 		void *					mCurrentDrawCallItem;	// current DrawCall item
 		ID3D11DeviceContext *	mContext;				// current Context
 		ShaderState *			mCurrentShader;			// current Shader
+		uint32					mVertexSize;			// size of a vert for current drawcall
+		uint32					mCommandBufferSize;		// room for the commands
 	};
 
 	//////////////////////////////////////////////////////////////////////
 
 	template<typename T> inline T *DrawList::Add()
 	{
+		uint current = (uint)(mItemPointer - mItemBuffer) + sizeof(T);
+		if(current >= mCommandBufferSize)
+		{
+			assert(false);
+		}
 		T *p = (T *)mItemPointer;
 		mItemPointer += sizeof(T);
 		p->mType = (uint)T::eType;
 		return p;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// set constant data regardless of shaderstate association
+
+	template <typename T> inline void DrawList::SetConstantData(ShaderType shaderType, TypelessBuffer *buffer, T &data)
+	{
+		SetConsts(Vertex, buffer, (byte *)&data, sizeof(data));
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -137,5 +153,4 @@ namespace DX
 	{
 		SetConsts(shaderType, (byte *)&data, sizeof(T), T::Index);
 	}
-
 }

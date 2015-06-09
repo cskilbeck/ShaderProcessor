@@ -60,6 +60,20 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		TypelessBuffer *FindConstBuffer(char const *name)
+		{
+			for(uint i = 0; i < mNumConstBuffers; ++i)
+			{
+				if(strcmp(mConstBufferNames[i], name) == 0)
+				{
+					return mConstBuffers[i];
+				}
+			}
+			return null;
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		Shader(uint32 numConstBuffers, char const **constBufferNames,
 			   uint32 numSamplers, char const **samplerNames,
 			   uint32 numTextures, char const **textureNames,

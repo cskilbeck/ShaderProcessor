@@ -15,6 +15,7 @@ namespace
 		it_Sampler,
 		it_Shader,
 		it_Constants,
+		it_ConstantData,
 		it_RenderTarget,
 		it_Clear,
 		it_ClearDepth,
@@ -79,6 +80,30 @@ namespace
 		ShaderType mShaderType;
 		uint32 mIndex;
 		uint32 mSize;
+	};
+
+	//////////////////////////////////////////////////////////////////////
+	// For setting data in a const buffer regardless of which shader(s)
+	// it is associated with...
+
+	struct ConstBufferDataItem: Item
+	{
+		enum
+		{
+			eType = it_ConstantData
+		};
+
+		TypelessBuffer *mBuffer;
+		uint32 mSize;
+
+		HRESULT Execute(ID3D11DeviceContext *context)
+		{
+			byte *d;
+			DXR(mBuffer->Map(context, d));
+			memcpy(d, (byte *)this + sizeof(*this), mSize);
+			mBuffer->UnMap(context);
+			return S_OK;
+		}
 	};
 
 	//////////////////////////////////////////////////////////////////////
@@ -184,7 +209,8 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 
 	DrawList::DrawList()
-		: mItemBuffer(new byte[8192]) // TODO
+		: mItemBuffer(new byte[16384]) // TODO
+		, mCommandBufferSize(16384)
 		, mCurrentVertexBuffer(null)
 		, mCurrentShader(null)
 		, mCurrentDrawCallItem(null)
@@ -205,6 +231,11 @@ namespace DX
 
 	byte *DrawList::AddData(byte const *data, uint size)
 	{
+		uint current = (uint)(mItemPointer - mItemBuffer) + size;
+		if(current >= mCommandBufferSize)
+		{
+			assert(false);
+		}
 		memcpy(mItemPointer, data, size);
 		mItemPointer += size;
 		return mItemPointer;
@@ -234,6 +265,16 @@ namespace DX
 		i->mShaderType = shaderType;
 		i->mIndex = index;
 		i->mSize = size;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void DrawList::SetConsts(ShaderType shaderType, TypelessBuffer *buffer, byte *data, uint32 size)
+	{
+		ConstBufferDataItem *i = Add<ConstBufferDataItem>();
+		i->mBuffer = buffer;
+		i->mSize = size;
+		AddData(data, size);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -343,6 +384,8 @@ namespace DX
 
 		ShaderItem *csi = null;
 
+		// TODO (charlie): decide whether to use virtual functions for all these instead...
+
 		while(t < end)
 		{
 			switch(((Item *)t)->mType)
@@ -367,6 +410,14 @@ namespace DX
 				{
 					csi = (ShaderItem *)t;
 					t += sizeof(ShaderItem);
+				}
+				break;
+
+				case it_ConstantData:
+				{
+					ConstBufferDataItem *c = (ConstBufferDataItem *)t;
+					c->Execute(mContext);
+					t += sizeof(ConstBufferDataItem) + c->mSize;
 				}
 				break;
 

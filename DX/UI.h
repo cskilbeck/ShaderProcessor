@@ -84,7 +84,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Open(Window *w);
+		HRESULT Open(Window *w);
 		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point);
 		KeyboardMessage *AddKeyboardMessage(Message::Type type, uint32 key, uint32 flags);
 		void Update(Element *rootElement, float deltaTime);
@@ -1153,9 +1153,7 @@ namespace DX
 			{
 				float tfh = (float)mTypeface->GetHeight() + 2.0f;
 				FilledRectangle *r = new FilledRectangle();
-				r->SetColor(Color::DarkGreen);
-				r->SetPosition({ 0, (float)mStringCount * tfh });
-				r->SetSize({ mClipRectangle.Width(), tfh });
+				r->SetColor(Color::DarkGreen).SetPosition({ 0, (float)mStringCount * tfh }).SetSize({ mClipRectangle.Width(), tfh });
 
 				r->MouseEntered += [] (MouseEvent const &m)
 				{
@@ -1176,13 +1174,10 @@ namespace DX
 
 				mClipRectangle.AddChild(*r);
 				Label *b = new Label();
-				b->SetText(text);
-				b->SetFont(mTypeface);
-				b->SetPivot({ 0, 0 });	// override centering behaviour by setting pivot last
-				b->SetPosition({ 1, 1 });
-				b->Set(eTransparent);
-				++mStringCount;
+				b->SetText(text).SetFont(mTypeface).SetPivot({ 0, 0 }).SetPosition({ 1, 1 }).Set(eTransparent);
 				r->AddChild(*b);
+
+				++mStringCount;
 				UpdateScrollbar();
 				return b;
 			}

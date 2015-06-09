@@ -15,6 +15,8 @@ namespace
 	VertexBuilder<DXShaders::Image2D::InputVertex> image2DVertBuffer;
 	VertexBuilder<DXShaders::Color2D::InputVertex> colorVB;
 
+	TypelessBuffer *clipPlanesBuffer;
+
 	linked_list<UI::Message> messages;
 
 	Delegate<MouseEvent>		mouseMovedDelegate;
@@ -57,13 +59,20 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void Open(Window *w)
+		HRESULT Open(Window *w)
 		{
-			image2DShader.Create();
-			colorShader.Create();
-			image2DVertBuffer.Create(8192);
-			fontVB.Create(8192);
-			colorVB.Create(8192);
+			DXR(image2DShader.Create());
+			DXR(colorShader.Create());
+			DXR(image2DVertBuffer.Create(8192));
+			DXR(fontVB.Create(8192));
+			DXR(colorVB.Create(8192));
+
+			clipPlanesBuffer = colorShader.vs.FindConstBuffer("g_ClipPlanes2D");
+
+			if(clipPlanesBuffer == null)
+			{
+				return ERROR_NOT_FOUND;
+			}
 
 			mouseMovedDelegate = [] (DX::MouseEvent const &m)
 			{
@@ -85,6 +94,7 @@ namespace DX
 			};
 
 			w->MouseButtonReleased += mouseLeftButtonUpDelegate;
+			return S_OK;
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -334,7 +344,7 @@ namespace DX
 		void ClipRectangle::OnDrawComplete(DrawList &drawList)
 		{
 			Vec4f p[4] = { 0 };
-			drawList.SetConstantData(Vertex, p, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
+			drawList.SetConstantData(Vertex, clipPlanesBuffer, p);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -362,15 +372,11 @@ namespace DX
 				SetW(left, Dot(left, topLeft)),
 				SetW(right, Dot(right, topRight)),
 				SetW(top, Dot(top, topLeft)),
-				SetW(bottom, Dot(bottom, bottomLeft)),
+				SetW(bottom, Dot(bottom, bottomLeft))
 			};
 
-			// This is fucked - the only reason to call it is to make the SetConstantData work
-			// There must be a better way...
-			drawList.SetShader(context, &colorShader, &colorVB);
-
 			// set clip planes into the constant buffer
-			drawList.SetConstantData(Vertex, planes, DXShaders::Color2D::VS::g_ClipPlanes2D_index);
+			drawList.SetConstantData(Vertex, clipPlanesBuffer, planes);
 		}
 
 		//////////////////////////////////////////////////////////////////////

@@ -826,9 +826,7 @@ bool MyDXWindow::OnCreate()
 		mouseClicked = false;
 	};
 
-	listBox.SetFont(font);
-	listBox.SetPosition({ 200, 100 });
-	listBox.SetSize({ 200, 400 });
+	listBox.SetFont(font).SetPosition({ 200, 200 }).SetSize({ 200, 300 });
 
 	KeyPressed += [this] (KeyboardEvent const &k)
 	{
