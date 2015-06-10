@@ -1005,26 +1005,26 @@ namespace DX
 			Delegate<ReleasedEvent>	mMouseReleasedDelgate;
 			Delegate<MouseEvent>	mMouseEnteredDelegate;
 			Delegate<MouseEvent>	mMouseLeftDelegate;
-
-			bool	mDrag;
-			Vec2f	mDragOffset;
+			bool					mDrag;
+			Vec2f					mDragOffset;
 
 			ScrollBar()
 				: FilledRectangle()
 				, mDrag(false)
 			{
 				SetColor(0xc0c0c0c0);
-				mMouseEnteredDelegate = [this] (MouseEvent const &e)
+
+				MouseEntered += mMouseEnteredDelegate = [this] (MouseEvent const &e)
 				{
 					SetColor(Color::LightCyan);
 				};
 
-				mMouseLeftDelegate = [this] (MouseEvent const &e)
+				MouseLeft += mMouseLeftDelegate = [this] (MouseEvent const &e)
 				{
 					SetColor(0xc0c0c0c0);
 				};
 
-				mMouseMovedDelegate = [this] (MouseEvent const &e)
+				MouseMoved += mMouseMovedDelegate = [this] (MouseEvent const &e)
 				{
 					if(mDrag)
 					{
@@ -1043,24 +1043,18 @@ namespace DX
 					}
 				};
 
-				mMouseClickedDelegate = [this] (PressedEvent const &e)
+				Pressed += mMouseClickedDelegate = [this] (PressedEvent const &e)
 				{
 					mDrag = true;
 					mDragOffset = e.mMousePosition - mPosition;
 					SetCapture();
 				};
 
-				mMouseReleasedDelgate = [this] (ReleasedEvent const &e)
+				Released += mMouseReleasedDelgate = [this] (ReleasedEvent const &e)
 				{
 					mDrag = false;
 					ReleaseCapture();
 				};
-
-				MouseEntered += mMouseEnteredDelegate;
-				MouseLeft += mMouseLeftDelegate;
-				MouseMoved += mMouseMovedDelegate;
-				Pressed += mMouseClickedDelegate;
-				Released += mMouseReleasedDelgate;
 			}
 
 			void MoveTo(float position)
@@ -1098,13 +1092,15 @@ namespace DX
 			Delegate<MessengerEvent>	mMessengerDelegate;
 			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
 			float						mScrollVelocity;
-			float						mScrollOffset;
+			Vec2f						mOrigin;
+			Vec2f						mClientSize;
 
 			ListBox()
 				: Element()
 				, mStringCount(0)
 				, mTypeface(null)
 				, mScrollPosition(0)
+				, mOrigin(Vec2f::zero)
 			{
 				AddChild(mFilledRectangle);
 				AddChild(mClipRectangle);
@@ -1120,11 +1116,11 @@ namespace DX
 					{
 						case eScrolled:
 						{
-							float ch = ClientHeight() - Height();
-							if(ch > 0)
+							float spill = ClientHeight() - Height();
+							if(spill > 0)
 							{
-								float f = *((float *)e.data);
-								mClipRectangle.mClientTransform = TranslationMatrix(Vec4(0, floorf(-ch * f), 0));
+								mOrigin.y = floorf(spill * *((float *)e.data));
+								mClipRectangle.mClientTransform = TranslationMatrix(Vec4(0, -mOrigin.y, 0));
 							}
 						}
 						break;
@@ -1141,7 +1137,15 @@ namespace DX
 			{
 				// change client offset by amount
 				// update scrollbar position
-				mScrollBar.Move(amount);
+				float spill = ClientHeight() - Height();
+				if(spill > 0)
+				{
+					mOrigin.y = Min(spill, Max(0.0f, mOrigin.y + amount));
+					float ratio = mOrigin.y / spill;	// relative offset
+					float total = Height() - mScrollBar.Height() - 1;
+					mScrollBar.SetPosition({ mScrollBar.mPosition.x, total * ratio });
+					mClipRectangle.mClientTransform = TranslationMatrix(Vec4(0, -mOrigin.y, 0));
+				}
 			}
 
 			char const *Name() const override
@@ -1156,7 +1160,28 @@ namespace DX
 
 			float ClientHeight() const
 			{
-				return RowHeight() * mStringCount;
+				return mClientSize.y;
+			}
+
+			float ClientWidth() const
+			{
+				return mClientSize.x;
+			}
+
+			Vec2f const &ClientSize() const
+			{
+				return mClientSize;
+			}
+
+			void SetClientWidth(float w)
+			{
+				mClientSize.x = w;
+			}
+
+			void SetClientHeight(float h)
+			{
+				mClientSize.y = h;
+				UpdateScrollbar();
 			}
 
 			void UpdateScrollbar()
@@ -1179,7 +1204,7 @@ namespace DX
 			ListBox &SetFont(Typeface *f)
 			{
 				mTypeface = f;
-				UpdateScrollbar();
+				SetClientHeight(mStringCount * RowHeight());
 				return *this;
 			}
 
@@ -1223,6 +1248,7 @@ namespace DX
 				r->AddChild(*b);
 
 				++mStringCount;
+				SetClientHeight(RowHeight() * mStringCount);
 				UpdateScrollbar();
 				return b;
 			}

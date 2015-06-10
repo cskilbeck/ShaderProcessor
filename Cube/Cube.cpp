@@ -827,6 +827,10 @@ bool MyDXWindow::OnCreate()
 	};
 
 	listBox.SetFont(font).SetPosition({ 200, 200 }).SetSize({ 200, 300 });
+	for(int i = 0; i < 30; ++i)
+	{
+		listBox.AddString(Format("Hello %d", Random::UInt32()).c_str());
+	}
 
 	KeyPressed += [this] (KeyboardEvent const &k)
 	{
