@@ -793,24 +793,37 @@ bool MyDXWindow::OnCreate()
 
 	DXB(buttonTexture.Load("button.png"));
 
-	mWindowSized = [this] (WindowSizedEvent const &s)
+	Resized += mWindowSized = [this] (WindowSizedEvent const &s)
 	{
 		root.SetSize(FClientSize());
 	};
 
-	Resized += mWindowSized;
-
-	filledRectangle.SetColor(0x800000ff).SetSize({ 200, 200 }).SetPivot(Vec2f::half).SetPosition(FClientSize() / 2);
+	filledRectangle
+		.SetColor(0x800000ff)
+		.SetSize({ 200, 200 })
+		.SetPivot(Vec2f::half)
+		.SetPosition(FClientSize() / 2);
 	root.AddChild(filledRectangle);
 
-	clipRect.SetPivot(Vec2f::half).SetSize({ 200, 200 }).SetPosition(FClientSize() / 2);
+	clipRect
+		.SetPivot(Vec2f::half)
+		.SetSize({ 200, 200 })
+		.SetPosition(FClientSize() / 2);
 	root.AddChild(clipRect);
 
-	button.SetImage(&buttonTexture).SetSampler(&cubeSampler);
-	button.SetFont(font).SetText("Click Me !");
+	button
+		.SetFont(font)
+		.SetText("Click Me !")
+		.SetImage(&buttonTexture).SetSampler(&cubeSampler)
+		.SetPosition({ 100, 100 });
 	clipRect.AddChild(button);
 
-	outlineRectangle.SetColor(Color::BrightGreen).SetSize(filledRectangle.GetSize()).SetPivot(Vec2f::half).SetPosition(FClientSize() / 2);
+	outlineRectangle
+		.SetColor(Color::BrightGreen)
+		.SetSize(filledRectangle.GetSize())
+		.SetPivot(Vec2f::half)
+		.SetPosition(FClientSize() / 2);
+
 	root.AddChild(outlineRectangle);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
@@ -826,15 +839,26 @@ bool MyDXWindow::OnCreate()
 		mouseClicked = false;
 	};
 
-	listBox.SetFont(font).SetPosition({ 200, 200 }).SetSize({ 200, 300 });
+	auto remover = [] (UI::ClickedEvent const &e)
+	{
+		UI::ListRow *row = (UI::ListRow *)e.mElement;
+		row->Remove();
+	};
+
+	listBox
+		.SetFont(font)
+		.SetPosition({ 200, 200 })
+		.SetSize({ 200, 300 });
+
 	for(int i = 0; i < 30; ++i)
 	{
-		listBox.AddString(Format("Hello %d", Random::UInt32()).c_str());
+		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str());
+		e->Clicked += remover;
 	}
 
-	KeyPressed += [this] (KeyboardEvent const &k)
+	KeyPressed += [this, &remover] (KeyboardEvent const &k)
 	{
-		listBox.AddString(Format("Hello %d", Random::UInt32()).c_str());
+		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str());
 	};
 	root.AddChild(listBox);
 
@@ -1289,7 +1313,7 @@ void MyDXWindow::OnFrame()
 	//debug_text(500, 520, "%f,%f", l1.x, l1.y);
 	//debug_text(500, 540, "%f,%f", l2.x, l2.y);
 
-	button.SetRotation(time * 2);
+	//button.SetRotation(time * 2);
 
 	UI::Update(&root, deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));

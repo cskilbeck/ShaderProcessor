@@ -173,9 +173,11 @@ namespace DX
 
 		void Center();
 
+		Size2D WindowSize() const;
 		int WindowWidth() const;
 		int WindowHeight() const;
 
+		Size2D ClientSize() const;
 		int ClientWidth() const;
 		int ClientHeight() const;
 
@@ -188,8 +190,8 @@ namespace DX
 		Vec2f FWindowSize() const;
 		Vec2f FClientSize() const;
 
-		Rect2D WindowRect() const;
-		Rect2D ClientRect() const;
+		Rect2D const &WindowRect() const;
+		Rect2D const &ClientRect() const;
 
 		bool SetMessageWait(bool wait);
 		bool GetMessageWait() const;
@@ -242,65 +244,58 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	inline Rect2D const &Window::ClientRect() const
+	{
+		return (Rect2D const &)mWindowInfo.rcClient;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Rect2D const &Window::WindowRect() const
+	{
+		return (Rect2D const &)mWindowInfo.rcWindow;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D Window::WindowSize() const
+	{
+		return WindowRect().Size();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	inline int Window::WindowWidth() const
 	{
-		return ((Rect2D &)mWindowInfo.rcWindow).Width();
+		return WindowRect().Width();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline int Window::WindowHeight() const
 	{
-		return ((Rect2D &)mWindowInfo.rcWindow).Height();
+		return WindowRect().Height();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Size2D Window::ClientSize() const
+	{
+		return ClientRect().Size();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline int Window::ClientWidth() const
 	{
-		return ((Rect2D &)mWindowInfo.rcClient).Width();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline float Window::FClientHeight() const
-	{
-		return (float)((Rect2D &)mWindowInfo.rcClient).Height();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline float  Window::FClientWidth() const
-	{
-		return (float)((Rect2D &)mWindowInfo.rcClient).Width();
+		return ClientSize().Width();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
 	inline int Window::ClientHeight() const
 	{
-		return ((Rect2D &)mWindowInfo.rcClient).Height();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline float Window::FWindowWidth() const
-	{
-		return (float)((Rect2D &)mWindowInfo.rcWindow).Width();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline float Window::FWindowHeight() const
-	{
-		return (float)((Rect2D &)mWindowInfo.rcWindow).Height();
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	inline Vec2f Window::FWindowSize() const
-	{
-		return Vec2f(FWindowWidth(), FWindowHeight());
+		return ClientSize().Height();
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -312,16 +307,37 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Rect2D Window::ClientRect() const
+	inline float  Window::FClientWidth() const
 	{
-		return (Rect2D &)mWindowInfo.rcClient;
+		return (float)ClientWidth();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	inline Rect2D Window::WindowRect() const
+	inline float Window::FClientHeight() const
 	{
-		return (Rect2D &)mWindowInfo.rcWindow;
+		return (float)ClientHeight();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec2f Window::FWindowSize() const
+	{
+		return Vec2f(FWindowWidth(), FWindowHeight());
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline float Window::FWindowWidth() const
+	{
+		return (float)WindowWidth();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline float Window::FWindowHeight() const
+	{
+		return (float)WindowHeight();
 	}
 
 	//////////////////////////////////////////////////////////////////////

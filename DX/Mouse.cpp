@@ -9,16 +9,24 @@ using namespace DX;
 static POINT mouseSavedPos;
 static Vec2f oldMousePos;
 static Mouse::Mode mouseMode = Mouse::Mode::Free;
-static bool mouseVisible = true;
+
+//////////////////////////////////////////////////////////////////////
+
+static bool IsMouseVisible()
+{
+	CURSORINFO ci;
+	ci.cbSize = sizeof(ci);
+	GetCursorInfo(&ci);
+	return ci.flags == CURSOR_SHOWING;
+}
 
 //////////////////////////////////////////////////////////////////////
 
 static void ShowMouse()
 {
-	if(!mouseVisible)
+	if(!IsMouseVisible())
 	{
 		ShowCursor(true);
-		mouseVisible = true;
 	}
 }
 
@@ -26,10 +34,9 @@ static void ShowMouse()
 
 static void HideMouse()
 {
-	if(mouseVisible)
+	if(IsMouseVisible())
 	{
 		ShowCursor(false);
-		mouseVisible = false;
 	}
 }
 
@@ -107,9 +114,7 @@ namespace DX
 					GetCursorPos(&mouseSavedPos);
 					HideMouse();
 					SetCapture(w.Handle());
-					POINT p;
-					p.x = w.WindowWidth() / 2;
-					p.y = w.WindowHeight() / 2;
+					Point2D p = (Point2D)w.ClientSize() / 2;
 					ClientToScreen(w.Handle(), &p);
 					SetCursorPos(p.x, p.y);
 				}

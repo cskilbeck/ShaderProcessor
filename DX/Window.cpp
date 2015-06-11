@@ -501,6 +501,10 @@ namespace DX
 				int delta = (int16)HIWORD(wParam);
 				Mouse::WheelDelta = (float)delta / WHEEL_DELTA;
 				MousePos mousePos = GetMousePosFromParam(lParam);
+				Point2D pos(mousePos.x, mousePos.y);
+				ScreenToClient(hWnd, &pos);
+				mousePos.x = (short)pos.x;
+				mousePos.y = (short)pos.y;
 				OnMouseWheel(mousePos, delta, wParam);
 				MouseWheeled.Invoke(MouseWheelEvent(this, mousePos, Mouse::WheelDelta));
 			}

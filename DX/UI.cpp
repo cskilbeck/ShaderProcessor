@@ -87,32 +87,26 @@ namespace DX
 				return ERROR_NOT_FOUND;
 			}
 
-			mouseMovedDelegate = [] (DX::MouseEvent const &m)
+			w->MouseMoved += mouseMovedDelegate = [] (DX::MouseEvent const &m)
 			{
 				AddMouseMessage(Message::MouseMove, Vec2f(m.position));
 			};
 
-			w->MouseMoved += mouseMovedDelegate;
-
-			mouseLeftButtonDownDelegate = [] (DX::MouseButtonEvent const &m)
+			w->MouseButtonPressed += mouseLeftButtonDownDelegate = [] (DX::MouseButtonEvent const &m)
 			{
 				AddMouseMessage(Message::MouseLeftButtonDown, Vec2f(m.position));
 			};
 
-			w->MouseButtonPressed += mouseLeftButtonDownDelegate;
-
-			mouseLeftButtonUpDelegate = [] (DX::MouseButtonEvent const &m)
+			w->MouseButtonReleased += mouseLeftButtonUpDelegate = [] (DX::MouseButtonEvent const &m)
 			{
 				AddMouseMessage(Message::MouseLeftButtonUp, Vec2f(m.position));
 			};
 
-			mouseWheelDelegate = [] (DX::MouseWheelEvent const &m)
+			w->MouseWheeled += mouseWheelDelegate = [] (DX::MouseWheelEvent const &m)
 			{
 				AddMouseWheelMessage(Vec2f(m.position), m.wheelDelta);
 			};
 
-			w->MouseButtonReleased += mouseLeftButtonUpDelegate;
-			w->MouseWheeled += mouseWheelDelegate;
 			return S_OK;
 		}
 
@@ -155,8 +149,6 @@ namespace DX
 			}
 			else
 			{
-				debug_text("UI Events: %d\n", messages.size());
-
 				bool gotMouse = false;
 
 				Element *oldHover = currentHover;
@@ -260,6 +252,11 @@ namespace DX
 							}
 							Set(eHovering);
 						}
+						else
+						{
+							Clear(eHovering);
+							DeSelect();
+						}
 					}
 					break;
 
@@ -274,6 +271,12 @@ namespace DX
 							}
 							MouseMoved.Invoke(MouseEvent(this, ((MouseMessage *)m)->mPosition));
 							Set(eHovering);
+							// are they re-entering the control with the mouse still down having pressed it earlier?
+						}
+						else
+						{
+							Clear(eHovering);
+							DeSelect();
 						}
 					}
 					break;
@@ -283,10 +286,11 @@ namespace DX
 						if(pick)
 						{
 							Pressed.Invoke(PressedEvent(this, ((MouseMessage *)m)->mPosition));
+							Select();
 						}
 						else
 						{
-							MouseMessage *n = (MouseMessage *)m;
+							DeSelect();
 						}
 					}
 					break;
@@ -296,6 +300,11 @@ namespace DX
 						if(pick)
 						{
 							Released.Invoke(ReleasedEvent(this, ((MouseMessage *)m)->mPosition));
+							if(Is(eSelected))
+							{
+								Clicked.Invoke(ClickedEvent(this, ((MouseMessage *)m)->mPosition));
+								DeSelect();
+							}
 						}
 					}
 					break;
@@ -466,5 +475,131 @@ namespace DX
 			image2DVertBuffer.AddVertex({ { mSize.x, 0}, { 1, 0 }, 0xffffffff });
 			drawList.End();
 		}
+
+
+		//////////////////////////////////////////////////////////////////////
+
+		ScrollBar::ScrollBar(Orientation orientation)
+			: FilledRectangle()
+			, mDrag(false)
+			, mOrientation(orientation)
+		{
+			SetColor(0xc0c0c0c0);
+
+			MouseEntered += mMouseEnteredDelegate = [this] (MouseEvent const &e)
+			{
+				SetColor(Color::LightCyan);
+			};
+
+			MouseLeft += mMouseLeftDelegate = [this] (MouseEvent const &e)
+			{
+				SetColor(0xc0c0c0c0);
+			};
+
+			MouseMoved += mMouseMovedDelegate = [this] (MouseEvent const &e)
+			{
+				if(mDrag)
+				{
+					if((mScreenCoordinates[0].x - e.mMousePosition.x) > 64 ||
+						(mScreenCoordinates[0].y - e.mMousePosition.y) > 64 ||
+						(mScreenCoordinates[1].x - e.mMousePosition.x) < -64 ||
+						(mScreenCoordinates[2].y - e.mMousePosition.y) < -64)
+					{
+						ReleaseCapture();
+						mDrag = false;
+					}
+					else
+					{
+						switch(mOrientation)
+						{
+							case Vertical:
+							{
+								MoveTo({ mPosition.x, e.mMousePosition.y - mDragOffset.y });
+							}
+							break;
+
+							case Horizontal:
+							{
+								MoveTo({ e.mMousePosition.x - mDragOffset.x, mPosition.y });
+							}
+							break;
+						}
+					}
+				}
+			};
+
+			Pressed += mMouseClickedDelegate = [this] (PressedEvent const &e)
+			{
+				mDrag = true;
+				mDragOffset = e.mMousePosition - mPosition;
+				SetCapture();
+			};
+
+			Released += mMouseReleasedDelgate = [this] (ReleasedEvent const &e)
+			{
+				mDrag = false;
+				ReleaseCapture();
+			};
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void ListRow::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			// if it's selected, draw a filled rectangle wide enough
+			// to deal with being scrolled horizontally a lot
+			if(Is(eHovering))
+			{
+				ListBox *p = (ListBox *)mParent;
+				float w = p->Width();
+				drawList.SetShader(context, &colorShader, &colorVB);
+				drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+				drawList.BeginTriangleStrip();
+				Color c = 0xffffffff;
+				float l = 32768.0f;
+				colorVB.AddVertex({ { -l, mSize.y + 1 }, c });
+				colorVB.AddVertex({ { w, mSize.y + 1 }, c });
+				colorVB.AddVertex({ { -l, -1 }, c });
+				colorVB.AddVertex({ { l, -1 }, c });
+				drawList.End();
+			}
+			Label::OnDraw(matrix, context, drawList);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void ScrollBar::MoveTo(Vec2f const &position)
+		{
+			ListBox *p = (ListBox *)mParent;
+			switch(mOrientation)
+			{
+				case Vertical:
+				{
+					p->SetOrigin({ p->mOrigin.x, (position.y / (p->Height() - Height() - 1)) * (p->ClientHeight() - p->Height()) });
+				}
+				break;
+
+				case Horizontal:
+				{
+					p->SetOrigin({ (position.x / (p->Width() - Width() - 1)) * (p->ClientWidth() - p->Width()), p->mOrigin.y });
+				}
+				break;
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		void ScrollBar::Move(Vec2f const &delta)
+		{
+			MoveTo(mPosition + delta);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void ListRow::Remove()
+		{
+			((ListBox *)mParent->mParent)->RemoveString(this);
+		}
+
 	}
 }
