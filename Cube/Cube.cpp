@@ -859,6 +859,7 @@ bool MyDXWindow::OnCreate()
 	KeyPressed += [this, &remover] (KeyboardEvent const &k)
 	{
 		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str());
+		e->Clicked += remover;
 	};
 	root.AddChild(listBox);
 

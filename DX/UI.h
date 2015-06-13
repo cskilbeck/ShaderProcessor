@@ -216,6 +216,8 @@ namespace DX
 
 			// Events
 
+			Event<UIEvent>			Closing;
+			Event<UIEvent>			Closed;
 			Event<ClickedEvent>		Clicked;
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
@@ -314,6 +316,19 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			void Close()
+			{
+				if(!Is(eClosed))
+				{
+					TRACE("Close\n");
+					Set(eClosed);
+					TRACE("Closing.Invoke\n");
+					Closing.Invoke(UIEvent(this));
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			Element &Clear(uint32 f)
 			{
 				mFlags.Clear(f);
@@ -364,9 +379,23 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Vec2f GetPosition() const
+			Vec2f const &GetPosition() const
 			{
 				return mPosition;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element &SetX(float x)
+			{
+				return SetPosition({ x, mPosition.y });
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element &SetY(float y)
+			{
+				return SetPosition({ mPosition.x, y });
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -380,7 +409,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Vec2f GetSize() const
+			Vec2f const &GetSize() const
 			{
 				return mSize;
 			}
@@ -397,6 +426,20 @@ namespace DX
 			float Height() const
 			{
 				return mSize.y;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element &SetWidth(float width)
+			{
+				return SetSize({width, mSize.y });
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Element &SetHeight(float height)
+			{
+				return SetSize({ mSize.x, height });
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -669,7 +712,12 @@ namespace DX
 
 			void Update()
 			{
-				if(!Is(eInActive))
+				if(Is(eClosed))
+				{
+					mParent->RemoveChild(*this);
+					Closed.Invoke(UIEvent(this));
+				}
+				else if(!Is(eInActive))
 				{
 					Updating.Invoke(this);
 
@@ -832,6 +880,7 @@ namespace DX
 			string		mText;	// UTF8
 			uint32		mLayerMask;
 			Typeface *	mTypeface;
+			Vec2f		mTextDimensions;
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -845,6 +894,17 @@ namespace DX
 			char const *Name() const override
 			{
 				return "Label";
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Vec2f const &GetTextSize() const
+			{
+				if(mTypeface != null && !mText.empty())
+				{
+					return mTextDimensions;
+				}
+				return Vec2f::zero;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -873,7 +933,7 @@ namespace DX
 			{
 				if(!mText.empty() && mTypeface != null)
 				{
-					mSize = mTypeface->MeasureString(mText.c_str());
+					mSize = mTextDimensions = mTypeface->MeasureString(mText.c_str());
 					float hb = mTypeface->GetBaseline() / mTypeface->GetHeight() / 2;
 					SetPivot(Vec2f(0.5f, hb));
 				}
@@ -1021,26 +1081,16 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct ListBox;
+
 		struct ListRow: Label
 		{
 			Delegate<MouseEvent>	mMouseEntered;
 			Delegate<MouseEvent>	mMouseLeft;
+			Delegate<UIEvent>		mClosed;
+			ListBox *				mListBox;
 
-			ListRow(char const *text, Typeface *font)
-				: Label()
-			{
-				MouseEntered += mMouseEntered = [] (MouseEvent const &m)
-				{
-					m.mElement->Set(eSelected);
-				};
-
-				MouseLeft += mMouseLeft = [] (MouseEvent const &m)
-				{
-					m.mElement->Clear(eSelected);
-				};
-
-				SetText(text).SetFont(font).SetPivot({ 0, 0 }).SetPosition({ 1, 1 }).Set(eTransparent);
-			}
+			ListRow(ListBox *listBox, char const *text, Typeface *font);
 
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 
@@ -1116,15 +1166,8 @@ namespace DX
 
 				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
 				{
-					Scroll(-e.wheelDelta * RowHeight());
+					Scroll({ 0, -e.wheelDelta * RowHeight() });
 				};
-			}
-
-			void Scroll(float amount)
-			{
-				// change client offset by amount
-				// update scrollbar position
-				SetOrigin({ mOrigin.x, mOrigin.y + amount });
 			}
 
 			char const *Name() const override
@@ -1137,30 +1180,56 @@ namespace DX
 				return (mTypeface == null) ? 0 : (mTypeface->GetHeight() + 2.0f);
 			}
 
-			void SetOrigin(Vec2f const &o)
+			void Scroll(Vec2f const &amount)
 			{
-				float spill = ClientHeight() - Height();
-				if(spill > 0)
+				// change client offset by amount update scrollbar position
+				ScrollTo(mOrigin + amount);
+			}
+
+			void ScrollTo(Vec2f const &o)
+			{
+				Vec2f s(ClientSize() - GetSize());
+				Vec2f sp = Max(Vec2f::zero, Min(o, s));
+				mOrigin = sp;
+				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
+				UpdateScrollbars();
+			}
+
+			void SetClientSize(Vec2f const &s)
+			{
+				mClientSize = s;
+				ScrollTo(mOrigin);
+
+				// force all the rows to have the client width
+				for(auto &r : mClipRectangle.mChildren)
 				{
-					mOrigin.y = Max(0.0f, Min(o.y, spill));
-					mVerticalScrollBar.SetPosition({ mVerticalScrollBar.mPosition.x, (Height() - mVerticalScrollBar.Height() - 1) * (mOrigin.y / spill) });
+					r.mSize.x = s.x;
+				}
+			}
+
+			void UpdateScrollbars()
+			{
+				Vec2f s = ClientSize() - GetSize();
+				if(s.y > 0)
+				{
+					float h = Min(Height(), Max(8.0f, Height() / (ClientHeight() / Height())));
+					mVerticalScrollBar.SetY((Height() - h) * (mOrigin.y / s.y)).SetHeight(h).Show();
 				}
 				else
 				{
-					mOrigin.y = 0;
+					mVerticalScrollBar.Hide();
 				}
 
-				float spillx = ClientWidth() - Width();
-				if(spillx > 0)
+				if(s.x > 0)
 				{
-					mOrigin.x = Max(0.0f, Min(o.x, spillx));
-					mHorizontalScrollBar.SetPosition({ (Width() - mHorizontalScrollBar.Width() - 1) * (mOrigin.x / spillx), mHorizontalScrollBar.mPosition.y });
+					float w = Min(Width(), Max(8.0f, Width() / (ClientWidth() / Width())));
+					mHorizontalScrollBar.SetX((Width() - w) * (mOrigin.x / s.x)).SetWidth(w).Show();
 				}
 				else
 				{
-					mOrigin.x = 0;
+					mHorizontalScrollBar.Hide();
 				}
-				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
+
 			}
 
 			float ClientHeight() const
@@ -1180,50 +1249,18 @@ namespace DX
 
 			void SetClientWidth(float w)
 			{
-				mClientSize.x = w;
-				UpdateScrollbar();
-				for(auto &r : mClipRectangle.mChildren)
-				{
-					r.mSize.x = w;
-				}
+				SetClientSize({ w, mClientSize.y });
 			}
 
 			void SetClientHeight(float h)
 			{
-				mClientSize.y = h;
-				UpdateScrollbar();
-			}
-
-			void UpdateScrollbar()
-			{
-				float ch = ClientHeight();
-				if(ch > Height())
-				{
-					float scrollBarHeight = Min(Height(), Max(8.0f, Height() / (ch / Height())));		// eg half the height of the window
-					mVerticalScrollBar.SetSize({ 8, scrollBarHeight }).Show();
-				}
-				else
-				{
-					mVerticalScrollBar.Hide();
-				}
-
-				ch = ClientWidth();
-				if(ch > Width())
-				{
-					float scrollBarWidth = Min(Width(), Max(8.0f, Width() / (ch / Width())));		// eg half the height of the window
-					mHorizontalScrollBar.SetSize({ scrollBarWidth, 8 }).Show();
-				}
-				else
-				{
-					mHorizontalScrollBar.Hide();
-				}
-
+				SetClientSize({ mClientSize.x, h });
 			}
 
 			ListBox &SetFont(Typeface *f)
 			{
 				mTypeface = f;
-				SetClientHeight(mStringCount * RowHeight());
+				UpdateRows();
 				return *this;
 			}
 
@@ -1233,54 +1270,43 @@ namespace DX
 				mClipRectangle.SetSize(size);
 				mOutlineRectangle.SetSize(size);
 				mFilledRectangle.SetSize(size);
-				mVerticalScrollBar.SetPosition({ size.x - mVerticalScrollBar.Width(), 0 });
-				mHorizontalScrollBar.SetPosition({ 0, size.y - mHorizontalScrollBar.Height() });
-				UpdateScrollbar();
+				mHorizontalScrollBar.SetPosition({ 0, Height() - 8 });
+				mVerticalScrollBar.SetPosition({ Width() - 8, 0 });
+				UpdateScrollbars();
 				return *this;
 			}
 
-			void RemoveString(ListRow *e)
+			void UpdateRows()
 			{
-				mClipRectangle.RemoveChild(*e);
 				--mStringCount;
-				// update all the other children positions
-				float y = 0;
-				float w = 0;
+				Vec2f cs(0, 0);
 				for(auto &row : mClipRectangle.mChildren)
 				{
 					ListRow &r = (ListRow &)row;
-					Vec2f pos = row.GetPosition();
-					float width = r.mSize.x;
-					w = Max(w, width);
-					pos.y = y;
-					row.SetPosition(pos);
-					y += RowHeight();
+					Vec2f const &pos = row.GetPosition();
+					cs.x = Max(cs.x, r.mTextDimensions.x);
+					row.SetY(cs.y);
+					cs.y += RowHeight();
 				}
-				SetClientWidth(w);
-				SetClientHeight(y);
-				UpdateScrollbar();
+				SetClientSize(cs);
 			}
 
 			ListRow *AddString(char const *text)
 			{
-				Vec2f size = mTypeface->MeasureString(text);
-				float w = Max(mClientSize.x, size.x);
-				float tfh = RowHeight() * mStringCount;
-				ListRow *row = new ListRow(text, mTypeface);
+				++mStringCount;
+				ListRow *row = new ListRow(this, text, mTypeface);
+				float tfh = ClientHeight();
 				row->SetPosition({ 0, tfh });
 				row->mSize.x = mClientSize.x;
 				mClipRectangle.AddChild(*row);
-				++mStringCount;
-				SetClientHeight(tfh);
-				SetClientWidth(w);
-				UpdateScrollbar();
+				tfh += RowHeight();
+				SetClientSize({ Max(mClientSize.x, row->mTextDimensions.x), tfh });
 				return row;
 			}
 		};
 
 		inline bool MouseMessage::Pick(Element const *e) const
 		{
-			//return !e->Is(Element::eTransparent) && e->ContainsScreenPoint(mPosition);
 			return e->ContainsScreenPoint(mPosition);
 		}
 	}

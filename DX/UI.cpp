@@ -140,7 +140,10 @@ namespace DX
 
 		void Update(Element *rootElement, float deltaTime)
 		{
-			// first make sure all the matrices are current
+			// remove any closed ones, and call onupdate()
+			rootElement->Update();
+
+			// setup transforms
 			rootElement->UpdateTransform(IdentityMatrix);
 
 			if(Mouse::GetMode() == Mouse::Mode::Captured)
@@ -150,7 +153,6 @@ namespace DX
 			else
 			{
 				bool gotMouse = false;
-
 				Element *oldHover = currentHover;
 
 				// then process all the input messages
@@ -180,9 +182,6 @@ namespace DX
 					oldHover->MouseLeft.Invoke(MouseEvent(oldHover, { 0, 0 }));
 				}
 			}
-
-			// then call Update() on the tree
-			rootElement->Update();
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -575,17 +574,39 @@ namespace DX
 			{
 				case Vertical:
 				{
-					p->SetOrigin({ p->mOrigin.x, (position.y / (p->Height() - Height() - 1)) * (p->ClientHeight() - p->Height()) });
+					p->ScrollTo({ p->mOrigin.x, (position.y / (p->Height() - Height() - 1)) * (p->ClientHeight() - p->Height()) });
 				}
 				break;
 
 				case Horizontal:
 				{
-					p->SetOrigin({ (position.x / (p->Width() - Width() - 1)) * (p->ClientWidth() - p->Width()), p->mOrigin.y });
+					p->ScrollTo({ (position.x / (p->Width() - Width() - 1)) * (p->ClientWidth() - p->Width()), p->mOrigin.y });
 				}
 				break;
 			}
 		};
+
+		ListRow::ListRow(ListBox *listBox, char const *text, Typeface *font)
+			: Label()
+			, mListBox(listBox)
+		{
+			MouseEntered += mMouseEntered = [] (MouseEvent const &m)
+			{
+				m.mElement->Set(eSelected);
+			};
+
+			MouseLeft += mMouseLeft = [] (MouseEvent const &m)
+			{
+				m.mElement->Clear(eSelected);
+			};
+
+			Closed += mClosed = [this] (UIEvent const &e)
+			{
+				TRACE("Closed callback\n");
+				mListBox->UpdateRows();
+			};
+			SetText(text).SetFont(font).SetPivot({ 0, 0 }).SetPosition({ 1, 1 }).Set(eTransparent);
+		}
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -598,7 +619,7 @@ namespace DX
 
 		void ListRow::Remove()
 		{
-			((ListBox *)mParent->mParent)->RemoveString(this);
+			Close();
 		}
 
 	}
