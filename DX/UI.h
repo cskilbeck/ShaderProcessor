@@ -1081,24 +1081,6 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct ListBox;
-
-		struct ListRow: Label
-		{
-			Delegate<MouseEvent>	mMouseEntered;
-			Delegate<MouseEvent>	mMouseLeft;
-			Delegate<UIEvent>		mClosed;
-			ListBox *				mListBox;
-
-			ListRow(ListBox *listBox, char const *text, Typeface *font);
-
-			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
-
-			void Remove();
-		};
-
-		//////////////////////////////////////////////////////////////////////
-
 		struct ScrollBar: FilledRectangle
 		{
 			enum Orientation
@@ -1128,28 +1110,20 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct ListBox: Element
+		struct Window: Element
 		{
-			FilledRectangle				mFilledRectangle;
-			OutlineRectangle			mOutlineRectangle;
-			ClipRectangle				mClipRectangle;
-			int							mStringCount;
-			Typeface *					mTypeface;
-			ScrollBar					mVerticalScrollBar;
+			FilledRectangle				mFilledRectangle;		// background
+			ClipRectangle				mClipRectangle;			// clipper
+			ScrollBar					mVerticalScrollBar;		// scrollbars
 			ScrollBar					mHorizontalScrollBar;
-			FilledRectangle				mSelection;
-			float						mScrollPosition;
-			Delegate<MessengerEvent>	mMessengerDelegate;
-			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
-			float						mScrollVelocity;
-			Vec2f						mOrigin;
-			Vec2f						mClientSize;
+			Vec2f						mOrigin;				// client view offset
+			Vec2f						mClientSize;			// client area
 
-			ListBox()
+
+			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
+
+			Window()
 				: Element()
-				, mStringCount(0)
-				, mTypeface(null)
-				, mScrollPosition(0)
 				, mOrigin(Vec2f::zero)
 				, mVerticalScrollBar(ScrollBar::Vertical)
 				, mHorizontalScrollBar(ScrollBar::Horizontal)
@@ -1158,16 +1132,9 @@ namespace DX
 				AddChild(mClipRectangle);
 				AddChild(mVerticalScrollBar);
 				AddChild(mHorizontalScrollBar);
-				AddChild(mOutlineRectangle);
 				mFilledRectangle.SetColor(0x80000000).Set(eTransparent);
-				mOutlineRectangle.SetColor(Color::White);
 				mVerticalScrollBar.SetSize({ 8, 12 }).Hide().SetZIndex(1);
 				mHorizontalScrollBar.SetSize({ 12, 8 }).Hide().SetZIndex(1);
-
-				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
-				{
-					Scroll({ 0, -e.wheelDelta * RowHeight() });
-				};
 			}
 
 			char const *Name() const override
@@ -1175,15 +1142,13 @@ namespace DX
 				return "ListBox";
 			}
 
-			float RowHeight() const
-			{
-				return (mTypeface == null) ? 0 : (mTypeface->GetHeight() + 2.0f);
-			}
-
-			void Scroll(Vec2f const &amount)
+			// returns the amount that was added - 0 means it was already at an edge
+			Vec2f Scroll(Vec2f const &amount)
 			{
 				// change client offset by amount update scrollbar position
+				Vec2f cur = mOrigin;
 				ScrollTo(mOrigin + amount);
+				return mOrigin - cur;
 			}
 
 			void ScrollTo(Vec2f const &o)
@@ -1257,18 +1222,10 @@ namespace DX
 				SetClientSize({ mClientSize.x, h });
 			}
 
-			ListBox &SetFont(Typeface *f)
-			{
-				mTypeface = f;
-				UpdateRows();
-				return *this;
-			}
-
 			Element &SetSize(Vec2f size) override
 			{
 				Element::SetSize(size);
 				mClipRectangle.SetSize(size);
-				mOutlineRectangle.SetSize(size);
 				mFilledRectangle.SetSize(size);
 				mHorizontalScrollBar.SetPosition({ 0, Height() - 8 });
 				mVerticalScrollBar.SetPosition({ Width() - 8, 0 });
@@ -1276,9 +1233,61 @@ namespace DX
 				return *this;
 			}
 
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct ListBox;
+
+		struct ListRow: Label
+		{
+			Delegate<MouseEvent>	mMouseEntered;
+			Delegate<MouseEvent>	mMouseLeft;
+			Delegate<UIEvent>		mClosed;
+			ListBox *				mListBox;
+
+			ListRow(ListBox *listBox, char const *text, Typeface *font);
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+
+			void Remove();
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct ListBox: Window
+		{
+			Typeface *					mTypeface;				// font
+
+			ListBox()
+				: Window()
+				, mTypeface(null)
+			{
+				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
+				{
+					Scroll({ 0, -e.wheelDelta * RowHeight() });
+				};
+			}
+
+			char const *Name() const override
+			{
+				return "ListBox";
+			}
+
+			float RowHeight() const
+			{
+				return (mTypeface == null) ? 0 : (mTypeface->GetHeight() + 2.0f);
+			}
+
+			ListBox &SetFont(Typeface *f)
+			{
+				mTypeface = f;
+				UpdateRows();
+				return *this;
+			}
+
 			void UpdateRows()
 			{
-				--mStringCount;
 				Vec2f cs(0, 0);
 				for(auto &row : mClipRectangle.mChildren)
 				{
@@ -1293,7 +1302,6 @@ namespace DX
 
 			ListRow *AddString(char const *text)
 			{
-				++mStringCount;
 				ListRow *row = new ListRow(this, text, mTypeface);
 				float tfh = ClientHeight();
 				row->SetPosition({ 0, tfh });
@@ -1304,6 +1312,8 @@ namespace DX
 				return row;
 			}
 		};
+
+		//////////////////////////////////////////////////////////////////////
 
 		inline bool MouseMessage::Pick(Element const *e) const
 		{

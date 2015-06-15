@@ -72,7 +72,7 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		HRESULT Open(Window *w)
+		HRESULT Open(DX::Window *w)
 		{
 			DXR(image2DShader.Create());
 			DXR(colorShader.Create());
@@ -549,7 +549,7 @@ namespace DX
 			// to deal with being scrolled horizontally a lot
 			if(Is(eHovering))
 			{
-				ListBox *p = (ListBox *)mParent;
+				Window *p = (Window *)mParent;
 				float w = p->Width();
 				drawList.SetShader(context, &colorShader, &colorVB);
 				drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
@@ -569,7 +569,7 @@ namespace DX
 
 		void ScrollBar::MoveTo(Vec2f const &position)
 		{
-			ListBox *p = (ListBox *)mParent;
+			Window *p = (Window *)mParent;
 			switch(mOrientation)
 			{
 				case Vertical:
