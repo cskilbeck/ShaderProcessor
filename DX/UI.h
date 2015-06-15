@@ -1,9 +1,9 @@
 //////////////////////////////////////////////////////////////////////
 // TODO (charlie): fix how janky and lame this is
-// TODO (charlie): scrollbars
-// TODO (charlie): cliprectangles
+// DONE (charlie): scrollbars
+// DONE (charlie): cliprectangles
 // TODO (charlie): horizontal/verticalline
-// TODO (charlie): listview
+// DONE (charlie): listview
 // TODO (charlie): input
 // TODO (charlie): checkbox
 // TODO (charlie): roundedRectangle
@@ -444,7 +444,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual Element &SetSize(Vec2f size)
+			virtual Element &SetSize(Vec2f const &size)
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
@@ -643,6 +643,18 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			virtual void OnUpdate(float deltaTime)
+			{
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			virtual void OnUpdated(float deltaTime)
+			{
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			virtual char const *Name() const
 			{
 				return "Element";
@@ -710,7 +722,7 @@ namespace DX
 			// TODO (charlie): modality
 			// TODO (charlie): make this private and UI::Update() a friend
 
-			void Update()
+			void Update(float deltaTime)
 			{
 				if(Is(eClosed))
 				{
@@ -720,11 +732,13 @@ namespace DX
 				else if(!Is(eInActive))
 				{
 					Updating.Invoke(this);
+					OnUpdate(deltaTime);
 
 					for(auto &r : mChildren)
 					{
-						((Element &)r).Update();
+						((Element &)r).Update(deltaTime);
 					}
+					OnUpdated(deltaTime);
 				}
 			}
 		};
@@ -881,6 +895,7 @@ namespace DX
 			uint32		mLayerMask;
 			Typeface *	mTypeface;
 			Vec2f		mTextDimensions;
+			Vec2f		mOffset;
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -888,8 +903,11 @@ namespace DX
 				: Element()
 				, mLayerMask(0xffffffff)
 				, mTypeface(null)
+				, mOffset(0,0)
 			{
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			char const *Name() const override
 			{
@@ -1118,7 +1136,7 @@ namespace DX
 			ScrollBar					mHorizontalScrollBar;
 			Vec2f						mOrigin;				// client view offset
 			Vec2f						mClientSize;			// client area
-
+			Vec2f						mScrollTarget;
 
 			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
 
@@ -1135,6 +1153,47 @@ namespace DX
 				mFilledRectangle.SetColor(0x80000000).Set(eTransparent);
 				mVerticalScrollBar.SetSize({ 8, 12 }).Hide().SetZIndex(1);
 				mHorizontalScrollBar.SetSize({ 12, 8 }).Hide().SetZIndex(1);
+			}
+
+			Vec2f SetScrollTarget(Vec2f const &t)
+			{
+				mScrollTarget = t;// Max(Vec2f::zero, Min(ClientSize() - GetSize(), t));
+				return mScrollTarget;
+			}
+
+			Vec2f AddToScrollTarget(Vec2f const &t)
+			{
+				Vec2f o = mScrollTarget;
+				SetScrollTarget(mScrollTarget + t);
+				return mScrollTarget - o;
+			}
+
+			void OnUpdate(float deltaTime)
+			{
+				Vec2f d = mScrollTarget - mOrigin;
+				float f = Min(1.0f, deltaTime * 4);
+				Vec2f o = mOrigin + d * f;
+				Vec2f s(ClientSize() - GetSize());
+				Vec2f sp = Max(Vec2f::zero, Min(o, s));
+				mOrigin = sp;
+				if(mOrigin.y == 0 && mScrollTarget.y < 0)
+				{
+					mScrollTarget.y = 0;
+				}
+				else if(mOrigin.y >= s.y && mScrollTarget.y >= s.y)
+				{
+					mScrollTarget.y = s.y-1;
+				}
+				if(mOrigin.x == 0 && mScrollTarget.x < 0)
+				{
+					mScrollTarget.x = 0;
+				}
+				else if(mOrigin.x >= s.x && mScrollTarget.x >= s.x)
+				{
+					mScrollTarget.x = s.x - 1;
+				}
+				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
+				UpdateScrollbars();
 			}
 
 			char const *Name() const override
@@ -1155,7 +1214,7 @@ namespace DX
 			{
 				Vec2f s(ClientSize() - GetSize());
 				Vec2f sp = Max(Vec2f::zero, Min(o, s));
-				mOrigin = sp;
+				mScrollTarget = mOrigin = sp;
 				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
 				UpdateScrollbars();
 			}
@@ -1222,7 +1281,7 @@ namespace DX
 				SetClientSize({ mClientSize.x, h });
 			}
 
-			Element &SetSize(Vec2f size) override
+			Element &SetSize(Vec2f const &size) override
 			{
 				Element::SetSize(size);
 				mClipRectangle.SetSize(size);
@@ -1265,7 +1324,7 @@ namespace DX
 			{
 				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
 				{
-					Scroll({ 0, -e.wheelDelta * RowHeight() });
+					AddToScrollTarget({0, e.wheelDelta * RowHeight() * -3 });
 				};
 			}
 
@@ -1294,8 +1353,8 @@ namespace DX
 					ListRow &r = (ListRow &)row;
 					Vec2f const &pos = row.GetPosition();
 					cs.x = Max(cs.x, r.mTextDimensions.x);
-					row.SetY(cs.y);
-					cs.y += RowHeight();
+					row.SetPosition({ 0, cs.y });
+					cs.y += row.Height();
 				}
 				SetClientSize(cs);
 			}
@@ -1305,7 +1364,8 @@ namespace DX
 				ListRow *row = new ListRow(this, text, mTypeface);
 				float tfh = ClientHeight();
 				row->SetPosition({ 0, tfh });
-				row->mSize.x = mClientSize.x;
+				row->SetSize({ ClientWidth(), mTypeface->GetHeight() + 2.0f });
+				row->mOffset = Vec2f(2, 1);
 				mClipRectangle.AddChild(*row);
 				tfh += RowHeight();
 				SetClientSize({ Max(mClientSize.x, row->mTextDimensions.x), tfh });

@@ -141,7 +141,7 @@ namespace DX
 		void Update(Element *rootElement, float deltaTime)
 		{
 			// remove any closed ones, and call onupdate()
-			rootElement->Update();
+			rootElement->Update(deltaTime);
 
 			// setup transforms
 			rootElement->UpdateTransform(IdentityMatrix);
@@ -455,7 +455,8 @@ namespace DX
 		{
 			Font f(mTypeface, &drawList, &fontVB);
 			f.Start(context, matrix);
-			f.DrawString(mText.c_str(), Vec2f(0, 0), Font::HorizontalAlign::HLeft, Font::VerticalAlign::VTop, mLayerMask);
+			Vec2f o = mOffset;
+			f.DrawString(mText.c_str(), o, Font::HorizontalAlign::HLeft, Font::VerticalAlign::VTop, mLayerMask);
 			f.End();
 		}
 
