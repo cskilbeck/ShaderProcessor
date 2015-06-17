@@ -315,8 +315,7 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// parallel lines will never return true, even if they're
-	// both horizontal or vertical...
+	// parallel lines never return true, even if horizontal or vertical...
 
 	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3, Vec2f *intersectionPoint)
 	{
@@ -348,13 +347,38 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	float UnitDistanceFromLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		return Vec2f(b.y - a.y, a.x - b.x).Normalize().Dot(p - a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	float UnscaledDistanceFromLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		return Vec2f(b.y - a.y, a.x - b.x).Dot(p - a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool PointInRectangle(Vec2f const &point, Vec2f const r[4], float const margins[4])
+	{
+		return
+			UnitDistanceFromLine(r[1], r[0], point) >= -margins[1] &&
+			UnitDistanceFromLine(r[2], r[1], point) > -margins[2] &&
+			UnitDistanceFromLine(r[3], r[2], point) > -margins[3] &&
+			UnitDistanceFromLine(r[0], r[3], point) >= -margins[0];
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4])
 	{
 		return
-			((r[1] - r[0]).Dot(point - r[0]) >= 0) &&
-			((r[2] - r[1]).Dot(point - r[1]) > 0) &&
-			((r[3] - r[2]).Dot(point - r[2]) > 0) &&
-			((r[0] - r[3]).Dot(point - r[3]) >= 0);
+			UnscaledDistanceFromLine(r[1], r[0], point) >= 0 &&
+			UnscaledDistanceFromLine(r[2], r[1], point) > 0 &&
+			UnscaledDistanceFromLine(r[3], r[2], point) > 0 &&
+			UnscaledDistanceFromLine(r[0], r[3], point) >= 0;
 	}
 
 	//////////////////////////////////////////////////////////////////////

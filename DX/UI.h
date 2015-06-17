@@ -1,24 +1,23 @@
 //////////////////////////////////////////////////////////////////////
 // TODO (charlie): fix how janky and lame this is
-// DONE (charlie): scrollbars
-// DONE (charlie): cliprectangles
 // TODO (charlie): horizontal/verticalline
-// DONE (charlie): listview
 // TODO (charlie): input
 // TODO (charlie): checkbox
 // TODO (charlie): roundedRectangle
 // TODO (charlie): slider
 // TODO (charlie): icons (X, _, etc) ?
-// TODO (charlie): etc
-// TODO (charlie): changing transform might change whether the stationary mouse is over the control
-// TODO (charlie): rounded rectangle? Can't do a roundedClipRect in just 8 clip planes... perhaps a stencil based clip mask thingy?
-
-// Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
 
 // TODO (charlie): event suppression/bubbling
 
-// NOTE: cliprects do not 'stack' or combine. Each cliprect sets the 4 clip planes independently of any parent clip plane...
+// DONE (charlie): changing transform might change whether the stationary mouse is over the control
+// DONE (charlie): scrollbars
+// DONE (charlie): cliprectangles
+// DONE (charlie): listview
 
+// DROP (charlie): rounded rectangle? Can't do a roundedClipRect in just 8 clip planes... perhaps a stencil based clip mask thingy?
+
+// Window: ClipRectangle, [ScrollBars], {ClientSize, ClientPos}
+// NOTE: cliprects do not 'stack' or combine. Each cliprect sets the 4 clip planes independently of any parent clip plane...
 // Need a basic sort of RTTI /OR/ a generic message passing system
 
 #pragma once
@@ -107,6 +106,29 @@ namespace DX
 
 			UIEvent(Element *element)
 				: mElement(element)
+			{
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct ControlEvent: UIEvent
+		{
+			Element *mChild;
+
+			ControlEvent(Element *element, Element *child)
+				: UIEvent(element)
+				, mChild(child)
+			{
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct DrawEvent: UIEvent
+		{
+			DrawEvent(Element *e)
+				: UIEvent(e)
 			{
 			}
 		};
@@ -211,11 +233,13 @@ namespace DX
 			Vec2f					mPivot;						// Pivot point for scale/rotate (0.5,0.5f = centre)
 			float					mAngle;						// Rotation angle
 			Vec2f					mScreenCoordinates[4];
+			float					mPickMargins[4];
 			Vec2f					mScreenMin;
 			Vec2f					mScreenMax;
 
 			// Events
 
+			Event<DrawEvent>		Drawing;
 			Event<UIEvent>			Closing;
 			Event<UIEvent>			Closed;
 			Event<ClickedEvent>		Clicked;
@@ -229,6 +253,8 @@ namespace DX
 			Event<MouseEvent>		MouseLeft;
 			Event<MouseEvent>		Hovering;
 			Event<MessengerEvent>	Messenger;
+			Event<ControlEvent>		ChildAdded;
+			Event<ControlEvent>		ChildRemoved;
 
 			static Element *		sCapturedElement;
 
@@ -268,6 +294,7 @@ namespace DX
 				, mInverseMatrix(IdentityMatrix)
 				, mClientTransform(IdentityMatrix)
 			{
+				memset(mPickMargins, 0, sizeof(mPickMargins));
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -286,10 +313,9 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &Set(uint32 f)
+			void Set(uint32 f)
 			{
 				mFlags.Set(f);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -320,26 +346,23 @@ namespace DX
 			{
 				if(!Is(eClosed))
 				{
-					TRACE("Close\n");
 					Set(eClosed);
-					TRACE("Closing.Invoke\n");
 					Closing.Invoke(UIEvent(this));
 				}
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &Clear(uint32 f)
+			void Clear(uint32 f)
 			{
 				mFlags.Clear(f);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetFlag(uint32 f, bool v = true)
+			void SetFlag(uint32 f, bool v = true)
 			{
-				return v ? Set(f) : Clear(f);
+				v ? Set(f) : Clear(f);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -358,23 +381,40 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetVisible(bool s)
+			void SetVisible(bool s)
 			{
-				return SetFlag(eHidden, !s);
+				SetFlag(eHidden, !s);
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &Show()
+			void Show()
 			{
-				return SetVisible(true);				
+				SetVisible(true);				
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &Hide()
+			void Hide()
 			{
-				return SetVisible(false);
+				SetVisible(false);
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void SetPickMargins(float left, float top, float right, float bottom)
+			{
+				mPickMargins[0] = left;
+				mPickMargins[1] = top;
+				mPickMargins[2] = right;
+				mPickMargins[3] = bottom;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			float const *GetMargins() const
+			{
+				return mPickMargins;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -386,25 +426,24 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetX(float x)
+			void SetX(float x)
 			{
-				return SetPosition({ x, mPosition.y });
+				SetPosition({ x, mPosition.y });
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetY(float y)
+			void SetY(float y)
 			{
-				return SetPosition({ mPosition.x, y });
+				SetPosition({ mPosition.x, y });
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetPosition(Vec2f pos)
+			void SetPosition(Vec2f pos)
 			{
 				mPosition = pos;
 				Set(eDirtyMatrix);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -430,26 +469,25 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetWidth(float width)
+			void SetWidth(float width)
 			{
-				return SetSize({width, mSize.y });
+				SetSize({ width, mSize.y });
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetHeight(float height)
+			void SetHeight(float height)
 			{
-				return SetSize({ mSize.x, height });
+				SetSize({ mSize.x, height });
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual Element &SetSize(Vec2f const &size)
+			virtual void SetSize(Vec2f const &size)
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
 				Resized.Invoke(UIEvent(this));
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -461,11 +499,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetPivot(Vec2f pivot)
+			void SetPivot(Vec2f pivot)
 			{
 				mPivot = pivot;
 				Set(eDirtyMatrix);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -510,11 +547,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetScale(Vec2f scale)
+			void SetScale(Vec2f scale)
 			{
 				mScale = scale;
 				Set(eDirtyMatrix);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -526,11 +562,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetRotation(float angle)
+			void SetRotation(float angle)
 			{
 				mAngle = angle;
 				Set(eDirtyMatrix);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -560,24 +595,26 @@ namespace DX
 
 			bool ContainsScreenPoint(Vec2f point) const
 			{
-				return PointInRectangle(point, mScreenCoordinates);
+				return PointInRectangle(point, mScreenCoordinates, mPickMargins);
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual Element &AddChildAndCenter(Element &e)
+			virtual void AddChildAndCenter(Element &e)
 			{
-				return AddChild(e.SetPivot(Vec2f::half).SetPosition(GetSize() / 2));
+				e.SetPosition(GetSize() / 2);
+				e.SetPivot(Vec2f::half);
+				AddChild(e);
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			virtual Element &AddChild(Element &e)
+			virtual void AddChild(Element &e)
 			{
 				mChildren.push_back(e);
 				e.mParent = this;
 				Set(eReorderRequired);
-				return *this;
+				ChildAdded.Invoke(ControlEvent(this, &e));
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -586,18 +623,18 @@ namespace DX
 			{
 				mChildren.remove(e);
 				e.mParent = null;
+				ChildRemoved.Invoke(ControlEvent(this, &e));
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Element &SetZIndex(int index)
+			void SetZIndex(int index)
 			{
 				mZIndex = index;
 				if(mParent != null)
 				{
 					mParent->Set(eReorderRequired);
 				}
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -705,11 +742,11 @@ namespace DX
 				}
 				if(true)
 				{
-//					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
-//					debug_line2d({ mScreenMin.x, 0 }, { mScreenMin.x, 1000 }, Color::Aquamarine);
-//					debug_line2d({ mScreenMax.x, 0 }, { mScreenMax.x, 1000 }, Color::Aquamarine);
-//					debug_line2d({ 0, mScreenMin.y }, { 1000, mScreenMin.y }, Color::Aquamarine);
-//					debug_line2d({ 0, mScreenMax.y }, { 1000, mScreenMax.y }, Color::Aquamarine);
+					//					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
+					//					debug_line2d({ mScreenMin.x, 0 }, { mScreenMin.x, 1000 }, Color::Aquamarine);
+					//					debug_line2d({ mScreenMax.x, 0 }, { mScreenMax.x, 1000 }, Color::Aquamarine);
+					//					debug_line2d({ 0, mScreenMin.y }, { 1000, mScreenMin.y }, Color::Aquamarine);
+					//					debug_line2d({ 0, mScreenMax.y }, { 1000, mScreenMax.y }, Color::Aquamarine);
 				}
 
 				for(auto &r : mChildren)
@@ -755,10 +792,9 @@ namespace DX
 				Set(eTransparent);
 			}
 
-			OutlineRectangle &SetColor(Color c)
+			void SetColor(Color c)
 			{
 				mColor = c;
-				return *this;
 			}
 
 			Color GetColor() const
@@ -780,10 +816,9 @@ namespace DX
 		{
 			Color mColor;
 
-			FilledRectangle &SetColor(Color c)
+			void SetColor(Color c)
 			{
 				mColor = c;
-				return *this;
 			}
 
 			Color GetColor() const
@@ -824,24 +859,24 @@ namespace DX
 		struct Rectangle: FilledRectangle
 		{
 			OutlineRectangle mOutlineRectangle;
-			Delegate<UIEvent> mUpdatingDelegate;
+			Delegate<UIEvent> mResizedDelegate;
 
 			Rectangle()
 				: FilledRectangle()
-				, mUpdatingDelegate([this] (UIEvent const &e)
-				{
-					mOutlineRectangle.SetSize(GetSize());
-				})
 			{
 				AddChild(mOutlineRectangle);
 				mOutlineRectangle.SetColor(Color::White);
-				Updating += mUpdatingDelegate;
+
+				mResizedDelegate = [this] (UIEvent const &e)
+				{
+					mOutlineRectangle.SetSize(GetSize());
+				};
+				Resized += mResizedDelegate;
 			}
 
-			Rectangle &SetLineColor(Color c)
+			void SetLineColor(Color c)
 			{
 				mOutlineRectangle.SetColor(c);
-				return *this;
 			}
 
 			Color GetLineColor() const
@@ -869,10 +904,9 @@ namespace DX
 
 			Color	mColor;
 
-			Line &SetColor(Color c)
+			void SetColor(Color c)
 			{
 				mColor = c;
-				return *this;
 			}
 
 			Color GetColor() const
@@ -889,7 +923,7 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 		// need a font instance and vertexbuffer
 
-		struct Label: Element
+		struct Label: FilledRectangle
 		{
 			string		mText;	// UTF8
 			uint32		mLayerMask;
@@ -900,11 +934,26 @@ namespace DX
 			//////////////////////////////////////////////////////////////////////
 
 			Label()
-				: Element()
+				: FilledRectangle()
 				, mLayerMask(0xffffffff)
 				, mTypeface(null)
 				, mOffset(0,0)
 			{
+				mColor = 0;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void SetOffset(Vec2f const &o)
+			{
+				mOffset = o;
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			Vec2f const &GetOffset() const
+			{
+				return mOffset;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -934,10 +983,9 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Label &SetLayerMask(uint32 mask)
+			void SetLayerMask(uint32 mask)
 			{
 				mLayerMask = mask;
-				return *this;
 			}
 
 			uint32 GetLayerMask() const
@@ -959,20 +1007,18 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Label &SetFont(Typeface *font)
+			void SetFont(Typeface *font)
 			{
 				mTypeface = font;
 				Measure();
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			Label &SetText(char const *text)
+			void SetText(char const *text)
 			{
 				mText = text;
 				Measure();
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -999,11 +1045,10 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Image &SetImage(Texture *t)
+			void SetImage(Texture *t)
 			{
 				mGraphic = t;
 				mSize = t->FSize();
-				return *this;
 			}
 
 			char const *Name() const override
@@ -1013,10 +1058,9 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			Image &SetSampler(Sampler *s)
+			void SetSampler(Sampler *s)
 			{
 				mSampler = s;
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1072,28 +1116,25 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			LabelButton &SetImage(Texture *t)
+			void SetImage(Texture *t)
 			{
 				Button::SetImage(t);
 				mLabel.SetPivot(Vec2f::half);
 				mLabel.SetPosition(t->FSize() / 2);	// alignment option (topleft, bottomright etc)
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			LabelButton &SetFont(Typeface *f)
+			void SetFont(Typeface *f)
 			{
 				mLabel.SetFont(f);
-				return *this;
 			}
 
 			//////////////////////////////////////////////////////////////////////
 
-			LabelButton &SetText(char const *t)
+			void SetText(char const *t)
 			{
 				mLabel.SetText(t);
-				return *this;
 			}
 		};
 
@@ -1128,9 +1169,8 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Window: Element
+		struct Window: FilledRectangle
 		{
-			FilledRectangle				mFilledRectangle;		// background
 			ClipRectangle				mClipRectangle;			// clipper
 			ScrollBar					mVerticalScrollBar;		// scrollbars
 			ScrollBar					mHorizontalScrollBar;
@@ -1141,18 +1181,22 @@ namespace DX
 			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
 
 			Window()
-				: Element()
+				: FilledRectangle()
 				, mOrigin(Vec2f::zero)
+				, mClientSize(Vec2f::zero)
 				, mVerticalScrollBar(ScrollBar::Vertical)
 				, mHorizontalScrollBar(ScrollBar::Horizontal)
 			{
-				AddChild(mFilledRectangle);
 				AddChild(mClipRectangle);
 				AddChild(mVerticalScrollBar);
 				AddChild(mHorizontalScrollBar);
-				mFilledRectangle.SetColor(0x80000000).Set(eTransparent);
-				mVerticalScrollBar.SetSize({ 8, 12 }).Hide().SetZIndex(1);
-				mHorizontalScrollBar.SetSize({ 12, 8 }).Hide().SetZIndex(1);
+				SetColor(0x80000000);
+				mVerticalScrollBar.SetSize({ 8, 12 });
+				mVerticalScrollBar.Hide();
+				mVerticalScrollBar.SetZIndex(1);
+				mHorizontalScrollBar.SetSize({ 12, 8 });
+				mVerticalScrollBar.Hide();
+				mVerticalScrollBar.SetZIndex(1);
 			}
 
 			Vec2f SetScrollTarget(Vec2f const &t)
@@ -1170,9 +1214,7 @@ namespace DX
 
 			void OnUpdate(float deltaTime)
 			{
-				Vec2f d = mScrollTarget - mOrigin;
-				float f = Min(1.0f, deltaTime * 4);
-				Vec2f o = mOrigin + d * f;
+				Vec2f o = mOrigin + (mScrollTarget - mOrigin) * Min(1.0f, deltaTime * 8);
 				Vec2f s(ClientSize() - GetSize());
 				Vec2f sp = Max(Vec2f::zero, Min(o, s));
 				mOrigin = sp;
@@ -1182,7 +1224,7 @@ namespace DX
 				}
 				else if(mOrigin.y >= s.y && mScrollTarget.y >= s.y)
 				{
-					mScrollTarget.y = s.y-1;
+					mScrollTarget.y = s.y - 1;
 				}
 				if(mOrigin.x == 0 && mScrollTarget.x < 0)
 				{
@@ -1198,7 +1240,7 @@ namespace DX
 
 			char const *Name() const override
 			{
-				return "ListBox";
+				return "Window";
 			}
 
 			// returns the amount that was added - 0 means it was already at an edge
@@ -1237,7 +1279,9 @@ namespace DX
 				if(s.y > 0)
 				{
 					float h = Min(Height(), Max(8.0f, Height() / (ClientHeight() / Height())));
-					mVerticalScrollBar.SetY((Height() - h) * (mOrigin.y / s.y)).SetHeight(h).Show();
+					mVerticalScrollBar.SetY((Height() - h) * (mOrigin.y / s.y));
+					mVerticalScrollBar.SetHeight(h);
+					mVerticalScrollBar.Show();
 				}
 				else
 				{
@@ -1247,7 +1291,9 @@ namespace DX
 				if(s.x > 0)
 				{
 					float w = Min(Width(), Max(8.0f, Width() / (ClientWidth() / Width())));
-					mHorizontalScrollBar.SetX((Width() - w) * (mOrigin.x / s.x)).SetWidth(w).Show();
+					mHorizontalScrollBar.SetX((Width() - w) * (mOrigin.x / s.x));
+					mHorizontalScrollBar.SetWidth(w);
+					mHorizontalScrollBar.Show();
 				}
 				else
 				{
@@ -1281,94 +1327,100 @@ namespace DX
 				SetClientSize({ mClientSize.x, h });
 			}
 
-			Element &SetSize(Vec2f const &size) override
+			void SetSize(Vec2f const &size) override
 			{
 				Element::SetSize(size);
 				mClipRectangle.SetSize(size);
-				mFilledRectangle.SetSize(size);
 				mHorizontalScrollBar.SetPosition({ 0, Height() - 8 });
 				mVerticalScrollBar.SetPosition({ Width() - 8, 0 });
 				UpdateScrollbars();
-				return *this;
 			}
 
-		};
-
-		//////////////////////////////////////////////////////////////////////
-
-		struct ListBox;
-
-		struct ListRow: Label
-		{
-			Delegate<MouseEvent>	mMouseEntered;
-			Delegate<MouseEvent>	mMouseLeft;
-			Delegate<UIEvent>		mClosed;
-			ListBox *				mListBox;
-
-			ListRow(ListBox *listBox, char const *text, Typeface *font);
-
-			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
-
-			void Remove();
+			void AppendControl(Element &e)
+			{
+				float tfh = ClientHeight();
+				e.SetPosition({ 0, tfh });
+				mClipRectangle.AddChild(e);
+				tfh += e.Height();
+				SetClientSize({ Max(mClientSize.x, e.Width()), tfh });
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
 
 		struct ListBox: Window
 		{
-			Typeface *					mTypeface;				// font
+			Delegate<ControlEvent>		mRowRemoved;
+
+			//////////////////////////////////////////////////////////////////////
 
 			ListBox()
 				: Window()
-				, mTypeface(null)
 			{
 				MouseWheeled += mMouseWheelDelegate = [this] (MouseWheelEvent const &e)
 				{
-					AddToScrollTarget({0, e.wheelDelta * RowHeight() * -3 });
+					AddToScrollTarget({0, Height() * -0.15f * e.wheelDelta });
 				};
+
+				mRowRemoved = [this] (ControlEvent const &e)
+				{
+					UpdateRows();
+				};
+
+				mClipRectangle.ChildRemoved += mRowRemoved;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			char const *Name() const override
 			{
 				return "ListBox";
 			}
 
-			float RowHeight() const
-			{
-				return (mTypeface == null) ? 0 : (mTypeface->GetHeight() + 2.0f);
-			}
-
-			ListBox &SetFont(Typeface *f)
-			{
-				mTypeface = f;
-				UpdateRows();
-				return *this;
-			}
+			//////////////////////////////////////////////////////////////////////
 
 			void UpdateRows()
 			{
 				Vec2f cs(0, 0);
 				for(auto &row : mClipRectangle.mChildren)
 				{
-					ListRow &r = (ListRow &)row;
+					Label &r = (Label &)row;
 					Vec2f const &pos = row.GetPosition();
 					cs.x = Max(cs.x, r.mTextDimensions.x);
-					row.SetPosition({ 0, cs.y });
-					cs.y += row.Height();
+					r.SetPosition({ 0, cs.y });
+					cs.y = Max(cs.y, cs.y + r.Height());
 				}
-				SetClientSize(cs);
+				SetClientSize(Max(ClientSize(), cs));
 			}
 
-			ListRow *AddString(char const *text)
+			//////////////////////////////////////////////////////////////////////
+
+			Label *AddString(char const *text, Typeface *font)
 			{
-				ListRow *row = new ListRow(this, text, mTypeface);
-				float tfh = ClientHeight();
-				row->SetPosition({ 0, tfh });
-				row->SetSize({ ClientWidth(), mTypeface->GetHeight() + 2.0f });
-				row->mOffset = Vec2f(2, 1);
-				mClipRectangle.AddChild(*row);
-				tfh += RowHeight();
-				SetClientSize({ Max(mClientSize.x, row->mTextDimensions.x), tfh });
+				Label *row = new Label();
+				row->MouseEntered += [] (MouseEvent const &m)
+				{
+					m.mElement->Set(eSelected);
+				};
+
+				row->MouseLeft += [] (MouseEvent const &m)
+				{
+					m.mElement->Clear(eSelected);
+				};
+
+				row->Drawing += [] (DrawEvent const &d)
+				{
+					Label *r = (Label *)d.mElement;
+					r->mColor = r->Is(eHovering) ? Color::White : 0;
+				};
+
+				row->SetText(text);
+				row->SetFont(font);
+				row->SetPivot({ 0, 0 });
+				row->Set(eTransparent);
+				row->SetOffset({ 3, 1 });
+				row->SetSize({ Max(row->GetTextSize().x + 8, ClientWidth()), row->GetTextSize().y + 2 });
+				AppendControl(*row);
 				return row;
 			}
 		};

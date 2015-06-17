@@ -107,7 +107,7 @@ namespace DX
 		void Begin(ID3D11DeviceContext *context, Matrix const &matrix);
 		void Begin(ID3D11DeviceContext *context, Window const * const window);
 		bool DrawChar(int layer, Vec2f &cursor, wchar c, Color color);
-		void DrawString(char const *text, Vec2f &pos, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
+		void DrawString(char const *text, Vec2f const &pos, Vec2f *newPos = null, HorizontalAlign horizAlign = HLeft, VerticalAlign vertAlign = VTop, uint layerMask = 0xffffffff);
 		void End();
 		void Finished(ID3D11DeviceContext *context);
 	};

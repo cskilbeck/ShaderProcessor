@@ -27,6 +27,8 @@ namespace
 	UI::Element *currentHover = null;
 }
 
+//////////////////////////////////////////////////////////////////////
+
 namespace DX
 {
 	namespace UI
@@ -352,6 +354,7 @@ namespace DX
 					//debug_solid_quad2d(mScreenCoordinates, Color::Orange & 0x80ffffff);
 					return;
 				}
+				Drawing.Invoke(this);
 				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{
@@ -380,10 +383,12 @@ namespace DX
 
 		void ClipRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f br = tl + mSize;
 			// the corners
-			Vec4f topLeft = TransformPoint(Vec4(0, 0, 0, 0), matrix);
-			Vec4f topRight = TransformPoint(Vec4(mSize.x, 0, 0, 0), matrix);
-			Vec4f bottomLeft = TransformPoint(Vec4(0, mSize.y, 0, 0), matrix);
+			Vec4f topLeft = TransformPoint(Vec4(tl.x, tl.y, 0, 0), matrix);
+			Vec4f topRight = TransformPoint(Vec4(br.x, tl.y, 0, 0), matrix);
+			Vec4f bottomLeft = TransformPoint(Vec4(tl.x, br.y, 0, 0), matrix);
 
 			// the edges
 			Vec4f topEdge = topRight - topLeft;
@@ -412,11 +417,13 @@ namespace DX
 
 		void Line::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginLineList();
-			colorVB.AddVertex({ { 0, 0 }, mColor });
-			colorVB.AddVertex({ { mSize.x, mSize.y }, mColor });
+			colorVB.AddVertex({ tl, mColor });
+			colorVB.AddVertex({ br, mColor });
 			drawList.End();
 		}
 
@@ -424,14 +431,16 @@ namespace DX
 
 		void OutlineRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginLineStrip();
-			colorVB.AddVertex({ { 0, 0 }, mColor });
-			colorVB.AddVertex({ { mSize.x, 0 }, mColor });
-			colorVB.AddVertex({ { mSize.x, mSize.y }, mColor });
-			colorVB.AddVertex({ { 0, mSize.y }, mColor });
-			colorVB.AddVertex({ { 0, -1 }, mColor });
+			colorVB.AddVertex({ tl, mColor });
+			colorVB.AddVertex({ { br.x, tl.x }, mColor });
+			colorVB.AddVertex({ br, mColor });
+			colorVB.AddVertex({ { tl.x, br.y }, mColor });
+			colorVB.AddVertex({ tl, mColor });
 			drawList.End();
 		}
 
@@ -439,13 +448,15 @@ namespace DX
 
 		void FilledRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginTriangleStrip();
-			colorVB.AddVertex({ { 0, mSize.y }, mColor });
-			colorVB.AddVertex ({ { mSize.x, mSize.y }, mColor });
-			colorVB.AddVertex({ { 0, 0 }, mColor });
-			colorVB.AddVertex({ { mSize.x, 0 }, mColor });
+			colorVB.AddVertex({ { tl.x, br.y }, mColor });
+			colorVB.AddVertex({ br, mColor });
+			colorVB.AddVertex({ tl, mColor });
+			colorVB.AddVertex({ { br.x, tl.x }, mColor });
 			drawList.End();
 		}
 
@@ -453,10 +464,13 @@ namespace DX
 
 		void Label::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			if(mColor)
+			{
+				FilledRectangle::OnDraw(matrix, context, drawList);
+			}
 			Font f(mTypeface, &drawList, &fontVB);
 			f.Start(context, matrix);
-			Vec2f o = mOffset;
-			f.DrawString(mText.c_str(), o, Font::HorizontalAlign::HLeft, Font::VerticalAlign::VTop, mLayerMask);
+			f.DrawString(mText.c_str(), mOffset, null, Font::HorizontalAlign::HLeft, Font::VerticalAlign::VTop, mLayerMask);
 			f.End();
 		}
 
@@ -464,18 +478,19 @@ namespace DX
 
 		void Image::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
+			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &image2DShader, &image2DVertBuffer);
 			drawList.SetTexture(Pixel, *mGraphic);
 			drawList.SetSampler(Pixel, *mSampler);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Image2D::VS::g_VertConstants2D_index);
 			drawList.BeginTriangleStrip();
-			image2DVertBuffer.AddVertex({ { 0, mSize.y }, { 0, 1 }, 0xffffffff });
-			image2DVertBuffer.AddVertex({ { mSize.x, mSize.y }, { 1, 1 }, 0xffffffff });
-			image2DVertBuffer.AddVertex({ { 0, 0}, { 0, 0 }, 0xffffffff });
-			image2DVertBuffer.AddVertex({ { mSize.x, 0}, { 1, 0 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { tl.x, br.y }, { 0, 1 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ br, { 1, 1 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ tl, { 0, 0 }, 0xffffffff });
+			image2DVertBuffer.AddVertex({ { br.x, tl.y}, { 1, 0 }, 0xffffffff });
 			drawList.End();
 		}
-
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -544,30 +559,6 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		void ListRow::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
-		{
-			// if it's selected, draw a filled rectangle wide enough
-			// to deal with being scrolled horizontally a lot
-			if(Is(eHovering))
-			{
-				Window *p = (Window *)mParent;
-				float w = p->Width();
-				drawList.SetShader(context, &colorShader, &colorVB);
-				drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
-				drawList.BeginTriangleStrip();
-				Color c = 0xffffffff;
-				float l = 32768.0f;
-				colorVB.AddVertex({ { -l, mSize.y + 1 }, c });
-				colorVB.AddVertex({ { w, mSize.y + 1 }, c });
-				colorVB.AddVertex({ { -l, -1 }, c });
-				colorVB.AddVertex({ { l, -1 }, c });
-				drawList.End();
-			}
-			Label::OnDraw(matrix, context, drawList);
-		}
-
-		//////////////////////////////////////////////////////////////////////
-
 		void ScrollBar::MoveTo(Vec2f const &position)
 		{
 			Window *p = (Window *)mParent;
@@ -575,39 +566,19 @@ namespace DX
 			{
 				case Vertical:
 				{
-					p->ScrollTo({ p->mOrigin.x, (position.y / (p->Height() - Height() - 1)) * (p->ClientHeight() - p->Height()) });
+					p->ScrollTo({ p->mOrigin.x, (position.y / (p->Height() - Height())) * (p->ClientHeight() - p->Height()) });
 				}
 				break;
 
 				case Horizontal:
 				{
-					p->ScrollTo({ (position.x / (p->Width() - Width() - 1)) * (p->ClientWidth() - p->Width()), p->mOrigin.y });
+					float sd = p->Width() - Width();
+					float sp = p->ClientWidth() - p->Width();
+					p->ScrollTo({ position.x / sd * sp, p->mOrigin.y });
 				}
 				break;
 			}
 		};
-
-		ListRow::ListRow(ListBox *listBox, char const *text, Typeface *font)
-			: Label()
-			, mListBox(listBox)
-		{
-			MouseEntered += mMouseEntered = [] (MouseEvent const &m)
-			{
-				m.mElement->Set(eSelected);
-			};
-
-			MouseLeft += mMouseLeft = [] (MouseEvent const &m)
-			{
-				m.mElement->Clear(eSelected);
-			};
-
-			Closed += mClosed = [this] (UIEvent const &e)
-			{
-				TRACE("Closed callback\n");
-				mListBox->UpdateRows();
-			};
-			SetText(text).SetFont(font).SetPivot({ 0, 0 }).SetPosition({ 1, 1 }).Set(eTransparent);
-		}
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -617,11 +588,5 @@ namespace DX
 		}
 
 		//////////////////////////////////////////////////////////////////////
-
-		void ListRow::Remove()
-		{
-			Close();
-		}
-
 	}
 }

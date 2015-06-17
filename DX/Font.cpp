@@ -667,7 +667,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	void Font::DrawString(char const *text, Vec2f &pos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
+	void Font::DrawString(char const *text, Vec2f const &pos, Vec2f *newPos, Font::HorizontalAlign horizAlign, Font::VerticalAlign vertAlign, uint layerMask)
 	{
 		Vec2f drawOffset;
 		Vec2f offset;
@@ -825,6 +825,9 @@ namespace DX
 				}
 			}
 		}
-		pos = cursor;
+		if(newPos != null)
+		{
+			*newPos = cursor;
+		}
 	}
 }

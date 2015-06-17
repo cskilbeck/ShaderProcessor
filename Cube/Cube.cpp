@@ -798,67 +798,59 @@ bool MyDXWindow::OnCreate()
 		root.SetSize(FClientSize());
 	};
 
-	filledRectangle
-		.SetColor(0x800000ff)
-		.SetSize({ 200, 200 })
-		.SetPivot(Vec2f::half)
-		.SetPosition(FClientSize() / 2);
+	filledRectangle.SetColor(0x800000ff);
+	filledRectangle.SetSize({ 200, 200 });
+	filledRectangle.SetPivot(Vec2f::half);
+	filledRectangle.SetPosition(FClientSize() / 2);
 	root.AddChild(filledRectangle);
 
-	clipRect
-		.SetPivot(Vec2f::half)
-		.SetSize({ 200, 200 })
-		.SetPosition(FClientSize() / 2);
+	clipRect.SetPivot(Vec2f::half);
+	clipRect.SetSize({ 200, 200 });
+	clipRect.SetPosition(FClientSize() / 2);
 	root.AddChild(clipRect);
 
-	button
-		.SetFont(font)
-		.SetText("Click Me !")
-		.SetImage(&buttonTexture).SetSampler(&cubeSampler)
-		.SetPosition({ 100, 100 });
+	button.SetFont(font);
+	button.SetText("Click Me !");
+	button.SetImage(&buttonTexture);
+	button.SetSampler(&cubeSampler);
+	button.SetPosition({ 100, 100 });
 	clipRect.AddChild(button);
 
-	outlineRectangle
-		.SetColor(Color::BrightGreen)
-		.SetSize(filledRectangle.GetSize())
-		.SetPivot(Vec2f::half)
-		.SetPosition(FClientSize() / 2);
+	outlineRectangle.SetColor(Color::BrightGreen);
+	outlineRectangle.SetSize(filledRectangle.GetSize());
+	outlineRectangle.SetPivot(Vec2f::half);
+	outlineRectangle.SetPosition(FClientSize() / 2);
 
 	root.AddChild(outlineRectangle);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
 	{
-		TRACE("Clicked!\n");
 		mouseClicked = true;
 	};
 
 	// this should never happen...
 	root.Released += [this] (UI::MouseEvent const &m)
 	{
-		TRACE("Released!\n");
 		mouseClicked = false;
 	};
 
 	auto remover = [] (UI::ClickedEvent const &e)
 	{
-		UI::ListRow *row = (UI::ListRow *)e.mElement;
-		row->Remove();
+		e.mElement->Close();
 	};
 
-	listBox
-		.SetFont(font)
-		.SetPosition({ 200, 200 })
-		.SetSize({ 200, 300 });
+	listBox.SetPosition({ 200, 200 });
+	listBox.SetSize({ 200, 300 });
 
 	for(int i = 0; i < 30; ++i)
 	{
-		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str());
+		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
 		e->Clicked += remover;
 	}
 
 	KeyPressed += [this, &remover] (KeyboardEvent const &k)
 	{
-		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str());
+		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
 		e->Clicked += remover;
 	};
 	root.AddChild(listBox);
@@ -1301,6 +1293,53 @@ void MyDXWindow::OnFrame()
 		i.DrawString("HELLOWORLD", Vec2f(400, 500));
 		i.End();
 		i.Finished(Context());
+	}
+
+	{
+		float l = 600;
+		float r = 800;
+		float t = 450;
+		float b = 550;
+		Vec2f p = Mouse::Position;
+		Vec2f q[4] =
+		{
+			{ l, t },
+			{ r, t },
+			{ r, b },
+			{ l, b }
+		};
+
+		debug_line2d(q[0], q[1], Color::BrightRed);
+		debug_line2d(q[1], q[2], Color::BrightGreen);
+		debug_line2d(q[2], q[3], Color::BrightBlue);
+		debug_line2d(q[3], q[0], Color::Yellow);
+
+		float d[4] =
+		{
+			(q[2] - q[1]).Dot(p - q[1]),	//T
+			(q[3] - q[2]).Dot(p - q[2]),	//R
+			(q[0] - q[3]).Dot(p - q[3]),	//B
+			(q[1] - q[0]).Dot(p - q[0])		//L
+		};
+
+		int x1 = (int)l - 20;
+		int y1 = (int)t - 20;
+		int x2 = (int)(r + l) / 2;
+		int y2 = (int)(b + t) / 2;
+		int x3 = (int)r + 20;
+		int y3 = (int)b + 20;
+
+		debug_text(x2, y1, "0:%f", d[0]);
+		debug_text(x3, y2, "1:%f", d[1]);
+		debug_text(x2, y3, "2:%f", d[2]);
+		debug_text(x1, y2, "3:%f", d[3]);
+
+		Vec2f n(q[1] - q[0]);
+		n = Vec2f { n.y, -n.x };
+		n = n.Normalize();
+
+		debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
+
 	}
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
