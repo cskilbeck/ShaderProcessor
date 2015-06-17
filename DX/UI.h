@@ -1390,7 +1390,7 @@ namespace DX
 					r.SetPosition({ 0, cs.y });
 					cs.y = Max(cs.y, cs.y + r.Height());
 				}
-				SetClientSize(Max(ClientSize(), cs));
+				SetClientSize(cs);
 			}
 			
 			//////////////////////////////////////////////////////////////////////
