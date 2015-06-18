@@ -566,7 +566,9 @@ namespace DX
 			{
 				case Vertical:
 				{
-					p->ScrollTo({ p->mOrigin.x, (position.y / (p->Height() - Height())) * (p->ClientHeight() - p->Height()) });
+					float sd = p->Height() - Height();
+					float sp = p->ClientHeight() - p->Height();
+					p->ScrollTo({ p->mOrigin.x, position.y / sd * sp });
 				}
 				break;
 

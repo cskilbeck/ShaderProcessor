@@ -724,31 +724,16 @@ namespace DX
 				mTransformMatrix = GetMatrix() * cm * matrix;
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
-				Vec2f s = GetSize();
+				Vec2f const &s = GetSize();
 				Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
+				mScreenMin = Vec2f(FLT_MAX, FLT_MAX);
+				mScreenMax = -mScreenMin;
 				for(uint i = 0; i < 4; ++i)
 				{
 					mScreenCoordinates[i] = LocalToScreen(p[i]);
-					if(i == 0)
-					{
-						mScreenMax = mScreenCoordinates[i];
-						mScreenMin = mScreenCoordinates[i];
-					}
-					else
-					{
-						mScreenMax = Max(mScreenMax, mScreenCoordinates[i]);
-						mScreenMin = Min(mScreenMin, mScreenCoordinates[i]);
-					}
+					mScreenMax = Max(mScreenMax, mScreenCoordinates[i]);
+					mScreenMin = Min(mScreenMin, mScreenCoordinates[i]);
 				}
-				if(true)
-				{
-					//					debug_outline_quad2d(mScreenCoordinates, Is(eTransparent) ? Color::Magenta : Color::Cyan);
-					//					debug_line2d({ mScreenMin.x, 0 }, { mScreenMin.x, 1000 }, Color::Aquamarine);
-					//					debug_line2d({ mScreenMax.x, 0 }, { mScreenMax.x, 1000 }, Color::Aquamarine);
-					//					debug_line2d({ 0, mScreenMin.y }, { 1000, mScreenMin.y }, Color::Aquamarine);
-					//					debug_line2d({ 0, mScreenMax.y }, { 1000, mScreenMax.y }, Color::Aquamarine);
-				}
-
 				for(auto &r : mChildren)
 				{
 					((Element &)r).UpdateTransform(mTransformMatrix);
@@ -1191,17 +1176,15 @@ namespace DX
 				AddChild(mVerticalScrollBar);
 				AddChild(mHorizontalScrollBar);
 				SetColor(0x80000000);
-				mVerticalScrollBar.SetSize({ 8, 12 });
+				mVerticalScrollBar.SetSize({ 8, 8 });
+				mHorizontalScrollBar.SetSize({ 8, 8 });
 				mVerticalScrollBar.Hide();
-				mVerticalScrollBar.SetZIndex(1);
-				mHorizontalScrollBar.SetSize({ 12, 8 });
 				mVerticalScrollBar.Hide();
-				mVerticalScrollBar.SetZIndex(1);
 			}
 
 			Vec2f SetScrollTarget(Vec2f const &t)
 			{
-				mScrollTarget = t;// Max(Vec2f::zero, Min(ClientSize() - GetSize(), t));
+				mScrollTarget = t;
 				return mScrollTarget;
 			}
 
@@ -1214,28 +1197,32 @@ namespace DX
 
 			void OnUpdate(float deltaTime)
 			{
-				Vec2f o = mOrigin + (mScrollTarget - mOrigin) * Min(1.0f, deltaTime * 8);
-				Vec2f s(ClientSize() - GetSize());
-				Vec2f sp = Max(Vec2f::zero, Min(o, s));
-				mOrigin = sp;
-				if(mOrigin.y == 0 && mScrollTarget.y < 0)
+				Vec2f d(mScrollTarget - mOrigin);
+				if(d.x != 0 || d.y != 0)
 				{
-					mScrollTarget.y = 0;
+					if(d.Length() < 2)
+					{
+						mOrigin = mScrollTarget;
+					}
+					else
+					{
+						Vec2f o = mOrigin + d * Min(1.0f, deltaTime * 8);
+						Vec2f s(ClientSize() - GetSize());
+						Vec2f p = mOrigin;
+						mOrigin = Max(Vec2f::zero, Min(o, s));
+						Vec2f delta = p - mOrigin;
+						if(delta.y == 0)
+						{
+							mScrollTarget.y = mOrigin.y;
+						}
+						if(delta.x == 0)
+						{
+							mScrollTarget.x = mOrigin.x;
+						}
+					}
+					mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
+					UpdateScrollbars();
 				}
-				else if(mOrigin.y >= s.y && mScrollTarget.y >= s.y)
-				{
-					mScrollTarget.y = s.y - 1;
-				}
-				if(mOrigin.x == 0 && mScrollTarget.x < 0)
-				{
-					mScrollTarget.x = 0;
-				}
-				else if(mOrigin.x >= s.x && mScrollTarget.x >= s.x)
-				{
-					mScrollTarget.x = s.x - 1;
-				}
-				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
-				UpdateScrollbars();
 			}
 
 			char const *Name() const override
@@ -1299,7 +1286,6 @@ namespace DX
 				{
 					mHorizontalScrollBar.Hide();
 				}
-
 			}
 
 			float ClientHeight() const
@@ -1331,8 +1317,8 @@ namespace DX
 			{
 				Element::SetSize(size);
 				mClipRectangle.SetSize(size);
-				mHorizontalScrollBar.SetPosition({ 0, Height() - 8 });
-				mVerticalScrollBar.SetPosition({ Width() - 8, 0 });
+				mHorizontalScrollBar.SetPosition({ 0, Height() - mHorizontalScrollBar.Height() });
+				mVerticalScrollBar.SetPosition({ Width() - mVerticalScrollBar.Width(), 0 });
 				UpdateScrollbars();
 			}
 
