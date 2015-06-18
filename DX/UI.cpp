@@ -383,7 +383,7 @@ namespace DX
 
 		void ClipRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f tl { 0, 0 };
 			Vec2f br = tl + mSize;
 			// the corners
 			Vec4f topLeft = TransformPoint(Vec4(tl.x, tl.y, 0, 0), matrix);
@@ -417,7 +417,7 @@ namespace DX
 
 		void Line::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f tl { 0, 0 };
 			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
@@ -431,7 +431,7 @@ namespace DX
 
 		void OutlineRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f tl { 0, 0 };
 			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
@@ -448,7 +448,7 @@ namespace DX
 
 		void FilledRectangle::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f tl { 0, 0 };
 			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
@@ -478,7 +478,7 @@ namespace DX
 
 		void Image::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
-			Vec2f tl { mPickMargins[0], mPickMargins[1] };
+			Vec2f tl { 0, 0 };
 			Vec2f br = tl + mSize;
 			drawList.SetShader(context, &image2DShader, &image2DVertBuffer);
 			drawList.SetTexture(Pixel, *mGraphic);
@@ -499,6 +499,7 @@ namespace DX
 			, mDrag(false)
 			, mOrientation(orientation)
 		{
+			SetPickMargins(64, 64, 64, 64);
 			SetColor(0xc0c0c0c0);
 
 			MouseEntered += mMouseEnteredDelegate = [this] (MouseEvent const &e)

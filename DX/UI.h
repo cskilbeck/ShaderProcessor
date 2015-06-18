@@ -1165,6 +1165,8 @@ namespace DX
 
 			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
 
+			//////////////////////////////////////////////////////////////////////
+
 			Window()
 				: FilledRectangle()
 				, mOrigin(Vec2f::zero)
@@ -1182,11 +1184,15 @@ namespace DX
 				mVerticalScrollBar.Hide();
 			}
 
+			//////////////////////////////////////////////////////////////////////
+
 			Vec2f SetScrollTarget(Vec2f const &t)
 			{
 				mScrollTarget = t;
 				return mScrollTarget;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			Vec2f AddToScrollTarget(Vec2f const &t)
 			{
@@ -1194,6 +1200,8 @@ namespace DX
 				SetScrollTarget(mScrollTarget + t);
 				return mScrollTarget - o;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void OnUpdate(float deltaTime)
 			{
@@ -1225,12 +1233,16 @@ namespace DX
 				}
 			}
 
+			//////////////////////////////////////////////////////////////////////
+
 			char const *Name() const override
 			{
 				return "Window";
 			}
 
+			//////////////////////////////////////////////////////////////////////
 			// returns the amount that was added - 0 means it was already at an edge
+
 			Vec2f Scroll(Vec2f const &amount)
 			{
 				// change client offset by amount update scrollbar position
@@ -1238,6 +1250,8 @@ namespace DX
 				ScrollTo(mOrigin + amount);
 				return mOrigin - cur;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void ScrollTo(Vec2f const &o)
 			{
@@ -1247,6 +1261,8 @@ namespace DX
 				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
 				UpdateScrollbars();
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void SetClientSize(Vec2f const &s)
 			{
@@ -1259,6 +1275,8 @@ namespace DX
 					r.mSize.x = s.x;
 				}
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void UpdateScrollbars()
 			{
@@ -1274,7 +1292,7 @@ namespace DX
 				{
 					mVerticalScrollBar.Hide();
 				}
-
+				
 				if(s.x > 0)
 				{
 					float w = Min(Width(), Max(8.0f, Width() / (ClientWidth() / Width())));
@@ -1288,30 +1306,42 @@ namespace DX
 				}
 			}
 
+			//////////////////////////////////////////////////////////////////////
+
 			float ClientHeight() const
 			{
 				return mClientSize.y;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			float ClientWidth() const
 			{
 				return mClientSize.x;
 			}
 
+			//////////////////////////////////////////////////////////////////////
+
 			Vec2f const &ClientSize() const
 			{
 				return mClientSize;
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void SetClientWidth(float w)
 			{
 				SetClientSize({ w, mClientSize.y });
 			}
 
+			//////////////////////////////////////////////////////////////////////
+
 			void SetClientHeight(float h)
 			{
 				SetClientSize({ mClientSize.x, h });
 			}
+
+			//////////////////////////////////////////////////////////////////////
 
 			void SetSize(Vec2f const &size) override
 			{
@@ -1322,13 +1352,24 @@ namespace DX
 				UpdateScrollbars();
 			}
 
-			void AppendControl(Element &e)
+			//////////////////////////////////////////////////////////////////////
+
+			virtual void MeasureClientSize()
 			{
-				float tfh = ClientHeight();
-				e.SetPosition({ 0, tfh });
+				Vec2f cs(0, 0);
+				for(auto &row : mClipRectangle.mChildren)
+				{
+					cs = Max(cs, row.GetPosition() + row.GetSize());
+				}
+				SetClientSize(cs);
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			virtual void AppendControl(Element &e)
+			{
 				mClipRectangle.AddChild(e);
-				tfh += e.Height();
-				SetClientSize({ Max(mClientSize.x, e.Width()), tfh });
+				SetClientSize(Max(ClientSize(), e.GetPosition() + e.GetSize()));
 			}
 		};
 
@@ -1350,11 +1391,11 @@ namespace DX
 
 				mRowRemoved = [this] (ControlEvent const &e)
 				{
-					UpdateRows();
+					MeasureClientSize();
 				};
 
 				mClipRectangle.ChildRemoved += mRowRemoved;
-			}
+			} 
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -1365,7 +1406,7 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void UpdateRows()
+			void MeasureClientSize() override
 			{
 				Vec2f cs(0, 0);
 				for(auto &row : mClipRectangle.mChildren)
@@ -1405,7 +1446,8 @@ namespace DX
 				row->SetPivot({ 0, 0 });
 				row->Set(eTransparent);
 				row->SetOffset({ 3, 1 });
-				row->SetSize({ Max(row->GetTextSize().x + 8, ClientWidth()), row->GetTextSize().y + 2 });
+				row->SetPosition({ 0, ClientHeight() });
+				row->SetSize({ Max(row->GetTextSize().x + 16, ClientWidth()), row->GetTextSize().y + 2 });
 				AppendControl(*row);
 				return row;
 			}
