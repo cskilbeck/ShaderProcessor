@@ -19,11 +19,9 @@ namespace DX
 			return string(buffer);
 		}
 		l = _vscprintf(fmt, v);
-		char *buf = new char[l + 1];
-		l = _vsnprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
-		string s(buf, buf + l);
-		delete(buf);
-		return s;
+		Ptr<char> buf(new char[l + 1]);
+		l = _vsnprintf_s(buf.get(), l + 1, _TRUNCATE, fmt, v);
+		return string(buf.get(), buf.get() + l);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -37,11 +35,9 @@ namespace DX
 			return wstring(buffer);
 		}
 		l = _vscwprintf(fmt, v);
-		wchar *buf = new wchar[l + 1];
-		l = _vsnwprintf_s(buf, l + 1, _TRUNCATE, fmt, v);
-		wstring s(buf, buf + l);
-		delete(buf);
-		return s;
+		Ptr<wchar> buf(new wchar[l + 1]);
+		l = _vsnwprintf_s(buf.get(), l + 1, _TRUNCATE, fmt, v);
+		return wstring(buf.get(), buf.get() + l);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -235,9 +231,9 @@ namespace DX
 		DWORD l = GetCurrentDirectory(0, NULL);
 		assert(l != 0);
 		s.resize((size_t)l + 1);
-		GetCurrentDirectory(l, &s[0]);
+		GetCurrentDirectory(l, s.data());
 		s[l] = 0;
-		return Format(TEXT("%s"), &s[0]);
+		return string(s.data());
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -347,14 +343,14 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	float UnitDistanceFromLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
 		return Vec2f(b.y - a.y, a.x - b.x).Normalize().Dot(p - a);
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	float UnscaledDistanceFromLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	float UnscaledDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
 		return Vec2f(b.y - a.y, a.x - b.x).Dot(p - a);
 	}
@@ -364,10 +360,10 @@ namespace DX
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4], float const margins[4])
 	{
 		return
-			UnitDistanceFromLine(r[1], r[0], point) >= -margins[1] &&
-			UnitDistanceFromLine(r[2], r[1], point) > -margins[2] &&
-			UnitDistanceFromLine(r[3], r[2], point) > -margins[3] &&
-			UnitDistanceFromLine(r[0], r[3], point) >= -margins[0];
+			UnitDistanceToLine(r[1], r[0], point) >= -margins[1] &&
+			UnitDistanceToLine(r[2], r[1], point) > -margins[2] &&
+			UnitDistanceToLine(r[3], r[2], point) > -margins[3] &&
+			UnitDistanceToLine(r[0], r[3], point) >= -margins[0];
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -375,10 +371,28 @@ namespace DX
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4])
 	{
 		return
-			UnscaledDistanceFromLine(r[1], r[0], point) >= 0 &&
-			UnscaledDistanceFromLine(r[2], r[1], point) > 0 &&
-			UnscaledDistanceFromLine(r[3], r[2], point) > 0 &&
-			UnscaledDistanceFromLine(r[0], r[3], point) >= 0;
+			UnscaledDistanceToLine(r[1], r[0], point) >= 0 &&
+			UnscaledDistanceToLine(r[2], r[1], point) > 0 &&
+			UnscaledDistanceToLine(r[3], r[2], point) > 0 &&
+			UnscaledDistanceToLine(r[0], r[3], point) >= 0;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Return minimum distance between line segment ab and point p
+
+	float DistanceToLineSegmentSquared(Vec2f const &v, Vec2f const &w, Vec2f const &c)
+	{
+		Vec2f vw(w - v);
+		float t = (c - v).Dot(vw) / vw.LengthSquared();
+		return (((t <= 0) ? v : (t >= 1) ? w : (v + t * vw)) - c).LengthSquared();
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Return minimum distance between line segment ab and point p
+
+	float DistanceToLineSegment(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		return sqrtf(DistanceToLineSegmentSquared(a, b, p));
 	}
 
 	//////////////////////////////////////////////////////////////////////

@@ -33,6 +33,8 @@ namespace DX
 		struct Element;
 		struct Message;
 		struct MouseMessage;
+		struct MouseButtonMessage;
+		struct MouseMoveMessage;
 		struct KeyboardMessage;
 		struct Message;
 
@@ -48,16 +50,20 @@ namespace DX
 				MouseLeftButtonDown,
 				MouseLeftButtonUp,
 				MouseRightButtonDown,
-				MouseRightButtonUp = 4,
+				MouseRightButtonUp,
+				MouseDummy,
+
 				KeyPress,
 				KeyRelease,
-				MouseDummy,
 				Messager
 			};
 
 			Type		mType;
 
-			virtual bool Pick(Element const *e) const = 0;
+			virtual bool IsMouseMessage() const
+			{
+				return false;
+			}
 		};
 
 		// All mouse messages derive from this (or are this)
@@ -66,7 +72,10 @@ namespace DX
 		{
 			Vec2f		mPosition;
 
-			bool Pick(Element const *e) const override;
+			bool IsMouseMessage() const override
+			{
+				return true;
+			}
 		};
 
 		struct MouseWheelMessage: MouseMessage
@@ -80,11 +89,6 @@ namespace DX
 		{
 			uint32		mKey;
 			uint32		mFlags;
-
-			bool Pick(Element const *e) const override
-			{
-				return false;
-			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -412,6 +416,21 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
+			virtual bool Pick(Message const *m) const
+			{
+				MouseMessage const *mm = dynamic_cast<MouseMessage const *>(m);
+				if(mm != null)
+				{
+					return ContainsScreenPoint(mm->mPosition);
+				}
+				else
+				{
+					return false;
+				}
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
 			float const *GetMargins() const
 			{
 				return mPickMargins;
@@ -593,9 +612,16 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			bool ContainsScreenPoint(Vec2f point) const
+			bool ContainsScreenPointWithMargins(Vec2f point) const
 			{
 				return PointInRectangle(point, mScreenCoordinates, mPickMargins);
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			bool ContainsScreenPoint(Vec2f point) const
+			{
+				return PointInRectangle(point, mScreenCoordinates);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1453,11 +1479,18 @@ namespace DX
 			}
 		};
 
-		//////////////////////////////////////////////////////////////////////
+		////////////////////////////////////////////////////////////////////////
 
-		inline bool MouseMessage::Pick(Element const *e) const
-		{
-			return e->ContainsScreenPoint(mPosition);
-		}
+		//inline bool MouseMessage::Pick(Element const *e) const
+		//{
+		//	return e->ContainsScreenPointWithMargins(mPosition);
+		//}
+
+		////////////////////////////////////////////////////////////////////////
+
+		//inline bool MouseButtonMessage::Pick(Element const *e) const
+		//{
+		//	return e->ContainsScreenPoint(mPosition);
+		//}
 	}
 }

@@ -1295,51 +1295,74 @@ void MyDXWindow::OnFrame()
 		i.Finished(Context());
 	}
 
+	//{
+	//	float l = 600;
+	//	float r = 800;
+	//	float t = 450;
+	//	float b = 550;
+	//	Vec2f p = Mouse::Position;
+	//	Vec2f q[4] =
+	//	{
+	//		{ l, t },
+	//		{ r, t },
+	//		{ r, b },
+	//		{ l, b }
+	//	};
+
+	//	debug_line2d(q[0], q[1], Color::BrightRed);
+	//	debug_line2d(q[1], q[2], Color::BrightGreen);
+	//	debug_line2d(q[2], q[3], Color::BrightBlue);
+	//	debug_line2d(q[3], q[0], Color::Yellow);
+
+	//	float d[4] =
+	//	{
+	//		(q[2] - q[1]).Dot(p - q[1]),	//T
+	//		(q[3] - q[2]).Dot(p - q[2]),	//R
+	//		(q[0] - q[3]).Dot(p - q[3]),	//B
+	//		(q[1] - q[0]).Dot(p - q[0])		//L
+	//	};
+
+	//	int x1 = (int)l - 20;
+	//	int y1 = (int)t - 20;
+	//	int x2 = (int)(r + l) / 2;
+	//	int y2 = (int)(b + t) / 2;
+	//	int x3 = (int)r + 20;
+	//	int y3 = (int)b + 20;
+
+	//	debug_text(x2, y1, "0:%f", d[0]);
+	//	debug_text(x3, y2, "1:%f", d[1]);
+	//	debug_text(x2, y3, "2:%f", d[2]);
+	//	debug_text(x1, y2, "3:%f", d[3]);
+
+	//	Vec2f n(q[1] - q[0]);
+	//	n = Vec2f { n.y, -n.x };
+	//	n = n.Normalize();
+
+	//	debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
+	//}
+
 	{
-		float l = 600;
-		float r = 800;
-		float t = 450;
-		float b = 550;
-		Vec2f p = Mouse::Position;
-		Vec2f q[4] =
+		Vec2f a(500, 100);
+		Vec2f b(600, 700);
+		Vec2f c(550, 50);
+		Vec2f d(Mouse::Position);
+		Vec2f i;
+		bool x = LineIntersect(a, b, c, d, &i);
+		debug_line2d(a, b, Color::Yellow);
+		debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
+		if(x)
 		{
-			{ l, t },
-			{ r, t },
-			{ r, b },
-			{ l, b }
-		};
+			debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
+		}
+	}
 
-		debug_line2d(q[0], q[1], Color::BrightRed);
-		debug_line2d(q[1], q[2], Color::BrightGreen);
-		debug_line2d(q[2], q[3], Color::BrightBlue);
-		debug_line2d(q[3], q[0], Color::Yellow);
-
-		float d[4] =
-		{
-			(q[2] - q[1]).Dot(p - q[1]),	//T
-			(q[3] - q[2]).Dot(p - q[2]),	//R
-			(q[0] - q[3]).Dot(p - q[3]),	//B
-			(q[1] - q[0]).Dot(p - q[0])		//L
-		};
-
-		int x1 = (int)l - 20;
-		int y1 = (int)t - 20;
-		int x2 = (int)(r + l) / 2;
-		int y2 = (int)(b + t) / 2;
-		int x3 = (int)r + 20;
-		int y3 = (int)b + 20;
-
-		debug_text(x2, y1, "0:%f", d[0]);
-		debug_text(x3, y2, "1:%f", d[1]);
-		debug_text(x2, y3, "2:%f", d[2]);
-		debug_text(x1, y2, "3:%f", d[3]);
-
-		Vec2f n(q[1] - q[0]);
-		n = Vec2f { n.y, -n.x };
-		n = n.Normalize();
-
-		debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
-
+	{
+		Vec2f a(300, 300);
+		Vec2f b(800, 500);
+		Vec2f c = Mouse::Position;
+		float d = DistanceToLineSegment(a, b, c);
+		debug_line2d(a, b, Color::White);
+		debug_text((int)c.x, (int)c.y - 20, "%f", d);
 	}
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
@@ -1643,13 +1666,13 @@ void FPSCamera::Process(float deltaTime)
 		strafeSpeed *= 0.1f;
 	}
 
-	Vec4f move(Vec4(0, 0, 0));
-	if(Keyboard::Held('A')) { move += SetX(move, -strafeSpeed); }
-	if(Keyboard::Held('D')) { move += SetX(move, strafeSpeed); }
-	if(Keyboard::Held('W')) { move += SetY(move, moveSpeed); }
-	if(Keyboard::Held('S')) { move += SetY(move, -moveSpeed); }
-	if(Keyboard::Held('R')) { move += SetZ(move, strafeSpeed); }
-	if(Keyboard::Held('F')) { move += SetZ(move, -strafeSpeed); }
+	v4 move = v4::zero();
+	if(Keyboard::Held('A')) { move.x += -strafeSpeed; }
+	if(Keyboard::Held('D')) { move.x += strafeSpeed; }
+	if(Keyboard::Held('W')) { move.y += moveSpeed; }
+	if(Keyboard::Held('S')) { move.y += -moveSpeed; }
+	if(Keyboard::Held('R')) { move.z += strafeSpeed; }
+	if(Keyboard::Held('F')) { move.z += -strafeSpeed; }
 
 	Move(move);
 

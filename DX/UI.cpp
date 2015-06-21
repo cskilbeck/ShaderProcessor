@@ -207,7 +207,7 @@ namespace DX
 			{
 				// picking before processing children means a child cannot exceed the bounds of the parent (as far as input goes, not visually, unless parent is a cliprect)
 				// is this what we want? it's how Windows does it, bit still not sure...
-				pick = m->Pick(this);
+				pick = Pick(m);
 
 				if(this == sCapturedElement)
 				{
@@ -499,7 +499,7 @@ namespace DX
 			, mDrag(false)
 			, mOrientation(orientation)
 		{
-			SetPickMargins(64, 64, 64, 64);
+			//SetPickMargins(64, 64, 64, 64);
 			SetColor(0xc0c0c0c0);
 
 			MouseEntered += mMouseEnteredDelegate = [this] (MouseEvent const &e)

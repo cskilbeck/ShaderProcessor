@@ -2,7 +2,6 @@
 
 namespace DX
 {
-
 #pragma push_macro("Permute")
 #pragma push_macro("Permute2")
 #undef Permute
@@ -36,6 +35,27 @@ namespace DX
 	inline Vec4f Vec4(float x, float y, float z, float w)
 	{
 		return _mm_set_ps(w, z, y, x);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec4f Vec4(Vec2f const &v)
+	{
+		return _mm_loadl_pi(_mm_setzero_ps(), (const __m64 *)&v);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec4f V4Add(CVec4f a, CVec4f b)
+	{
+		return _mm_add_ps(a, b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline Vec4f V4Sub(CVec4f a, CVec4f b)
+	{
+		return _mm_sub_ps(a, b);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -232,12 +252,13 @@ namespace DX
 
 	inline float Dot(CVec4f a, CVec4f b)
 	{
-		Vec4f dot = _mm_mul_ps(a, b);
-		Vec4f temp = Permute(2, 1, 2, 1, dot);
-		dot = _mm_add_ss(dot, temp);
-		temp = Permute(1, 1, 1, 1, temp);
-		dot = _mm_add_ss(dot, temp);
-		return GetX(dot);
+		return GetX(_mm_dp_ps(a, b, 0xff));
+		//Vec4f dot = _mm_mul_ps(a, b);
+		//Vec4f temp = Permute(2, 1, 2, 1, dot);
+		//dot = _mm_add_ss(dot, temp);
+		//temp = Permute(1, 1, 1, 1, temp);
+		//dot = _mm_add_ss(dot, temp);
+		//return GetX(dot);
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -251,11 +272,7 @@ namespace DX
 
 	inline float Length(CVec4f v)
 	{
-		Vec4f l = _mm_mul_ps(v, v);
-		Vec4f t = Permute(2, 1, 2, 1, l);
-		l = _mm_add_ss(l, t);
-		t = Permute(1, 1, 1, 1, t);
-		l = _mm_add_ss(l, t);
+		Vec4f l = _mm_dp_ps(v, v, 0xff);
 		return GetX(_mm_sqrt_ps(l));
 	}
 
@@ -400,6 +417,115 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+
+	inline v4::v4(Vec2f const &a)
+	{
+		v = Vec4(a.x, a.y, 0, 0);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator - (v4c a, v4c b)
+	{
+		return _mm_sub_ps(a, b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator + (v4c a, v4c b)
+	{
+		return _mm_add_ps(a, b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator * (v4c a, v4c b)
+	{
+		return _mm_mul_ps(a, b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator / (v4c a, v4c b)
+	{
+		return _mm_div_ps(a, b);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator - (v4c a)
+	{
+		return _mm_sub_ps(_mm_set_ss(0), a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator * (v4c a, float b)
+	{
+		return _mm_mul_ps(a, _mm_set_ps(b, b, b, b));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator / (v4c a, float b)
+	{
+		return _mm_div_ps(a, _mm_set_ps(b, b, b, b));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 operator * (float b, v4c a)
+	{
+		return _mm_mul_ps(a, _mm_set_ps(b, b, b, b));
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator += (v4 &a, v4 &b)
+	{
+		a.v = _mm_add_ps(a.v, b.v);
+		return a;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator -= (v4 &a, v4 &b)
+	{
+		a.v = _mm_sub_ps(a.v, b.v);
+		return a;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator *= (v4 &a, v4 &b)
+	{
+		a.v = _mm_mul_ps(a.v, b.v);
+		return a;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator *= (v4 &a, float b)
+	{
+		a.v = _mm_mul_ps(a.v, _mm_set_ps(b, b, b, b));
+		return a;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator /= (v4 &a, v4 &b)
+	{
+		a.v = _mm_div_ps(a.v, b.v);
+		return a;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	inline v4 &operator /= (v4 &a, float b)
+	{
+		a.v = _mm_div_ps(a.v, _mm_set_ps(b, b, b, b));
+		return a;
+	}
 
 #pragma pop_macro("Permute")
 #pragma pop_macro("Permute2")

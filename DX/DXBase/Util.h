@@ -57,6 +57,8 @@ namespace DX
 
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4]);
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4], float const margins[4]);
+	float DistanceToLineSegmentSquared(Vec2f const &a, Vec2f const &b, Vec2f const &p);
+	float DistanceToLineSegment(Vec2f const &a, Vec2f const &b, Vec2f const &point);
 
 	bool RectanglesOverlap(Vec2f const a[4], Vec2f const b[4]);
 
@@ -129,28 +131,6 @@ namespace DX
 			ptr->Release();
 			ptr = null;
 		}
-	}
-
-	//////////////////////////////////////////////////////////////////////
-	// !! BY VALUE
-
-	template <typename T> T Max(T a, T b)
-	{
-		return a > b ? a : b;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	template <typename T> T Min(T a, T b)
-	{
-		return a < b ? a : b;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	template <typename T> T Constrain(T a, T lower, T upper)
-	{
-		return Min(Max(a, lower), upper);
 	}
 
 	//////////////////////////////////////////////////////////////////////

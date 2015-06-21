@@ -38,10 +38,16 @@ namespace DX
 	template<typename T> struct HLSLVec3;
 	template<typename T> struct HLSLVec4;
 
+	struct Vec2f;
+
 	Vec4f		Vec4(float x, float y, float z);
 	Vec4f		Vec4(float x, float y, float z, float w);
 	Vec4f		Vec4(HLSLVec3<float> const &f3);
 	Vec4f		Vec4(HLSLVec4<float> const &f4);
+	Vec4f		Vec4(Vec2f const &v);
+
+	Vec4f		V4Add(CVec4f a, CVec4f b);
+	Vec4f		V4Sub(CVec4f a, CVec4f b);
 
 	Vec4f		SetX(CVec4f a, float x);
 	Vec4f		SetY(CVec4f a, float y);
@@ -97,5 +103,124 @@ namespace DX
 	Vec4f &		operator /= (Vec4f &a, float b);
 
 	//////////////////////////////////////////////////////////////////////
+
+#pragma push_macro("Permute")
+#pragma push_macro("Permute2")
+#pragma push_macro("X")
+#pragma push_macro("Y")
+#pragma push_macro("Z")
+#pragma push_macro("W")
+#undef Permute
+#undef Permute2
+#define Permute(d, c, b, a, v) _mm_shuffle_ps(v, v, ((d) << 6) | ((c) << 4) | ((b) << 2) | (a))
+#define Permute2(d, c, b, a, v1, v2) _mm_shuffle_ps(v1, v2, ((d) << 6) | ((c) << 4) | ((b) << 2) | (a))
+#define X 0
+#define Y 1
+#define Z 2
+#define W 3
+
+	//////////////////////////////////////////////////////////////////////
+
+	struct v4;
+	using v4c = v4 const &;
+
+	__declspec(align(16)) struct v4
+	{
+		union
+		{
+			struct
+			{
+				float x, y, z, w;
+			};
+			Vec4f v;
+		};
+
+		v4()
+		{
+		}
+
+		v4(Vec2f const &a);
+
+		v4(CVec4f c)
+			: v(c)
+		{
+		}
+
+		v4(float x, float y, float z)
+		{
+			v = Vec4(x, y, z);
+		}
+
+		v4(float x, float y, float z, float w)
+		{
+			v = Vec4(x, y, z, w);
+		}
+
+		operator Vec4f const () const
+		{
+			return v;
+		}
+
+		operator Vec4f()
+		{
+			return v;
+		}
+
+		float Dot(v4c a) const
+		{
+			return _mm_cvtss_f32(_mm_dp_ps(v, a.v, 0xff));
+		}
+
+		v4 Cross(v4c a)
+		{
+			v4 t1 = Permute(W, X, Z, Y, v);
+			v4 t2 = Permute(W, Y, X, Z, a.v);
+			v4 r = _mm_mul_ps(t1, t2);
+			t1 = Permute(W, X, Z, Y, t1);
+			t2 = Permute(W, Y, X, Z, t2);
+			t1 = _mm_mul_ps(t1, t2);
+			r = _mm_sub_ps(r, t1);
+			return _mm_and_ps(r, gMMaskXYZ);
+		}
+
+		v4 Normalized() const
+		{
+			v4 ls = _mm_mul_ps(v, v);
+			v4 t = Permute(Z, Y, Z, Y, ls);
+			ls = _mm_add_ss(ls, t);
+			t = Permute(Y, Y, Y, Y, t);
+			ls = _mm_add_ss(ls, t);
+			ls = Permute(X, X, X, X, ls);
+			return _mm_div_ps(v, _mm_sqrt_ps(ls));
+		}
+
+		v4 &Normalize()
+		{
+			*this = Normalized();
+			return *this;
+		}
+
+		float LengthSquared() const
+		{
+			return Dot(*this);
+		}
+
+		float Length() const
+		{
+			return sqrtf(LengthSquared());
+		}
+
+		static inline v4 zero()
+		{
+			return _mm_setzero_ps();
+		}
+	};
+
+#pragma pop_macro("Permute")
+#pragma pop_macro("Permute2")
+#pragma pop_macro("X")
+#pragma pop_macro("Y")
+#pragma pop_macro("Z")
+#pragma pop_macro("W")
 
 }

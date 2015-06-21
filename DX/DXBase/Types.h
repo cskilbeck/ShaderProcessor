@@ -29,6 +29,38 @@ namespace DX
 	using tstring = std::basic_string < tchar > ;
 
 	template <typename T> using Ptr = std::unique_ptr < T > ;
+
+
+	//////////////////////////////////////////////////////////////////////
+	// !! BY VALUE
+
+	template <typename T> T Max(T a, T b)
+	{
+		return a > b ? a : b;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	template <typename T> T Min(T a, T b)
+	{
+		return a < b ? a : b;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	template <typename T> T Constrain(T a, T lower, T upper)
+	{
+		return Min(Max(a, lower), upper);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// AKA Constrain
+
+	template <typename T> T Clamp(T a, T lower, T upper)
+	{
+		return Min(Max(a, lower), upper);
+	}
+
 }
 
 #define WEAKSYM __declspec(selectany)
