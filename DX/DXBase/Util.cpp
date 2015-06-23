@@ -343,6 +343,41 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		if(a.y == b.y)
+		{
+			if(p.y != a.y)
+			{
+				return false;
+			}
+			return p.x >= a.x && p.x < b.x || p.x >= b.x && p.x < a.x;
+		}
+		Vec2f const *x;
+		Vec2f const *y;
+		if(a.y < b.y)
+		{
+			x = &a;
+			y = &b;
+		}
+		else
+		{
+			x = &b;
+			y = &a;
+		}
+		if(p.y < x->y || p.y > y->y)
+		{
+			return false;
+		}
+		Vec2f d = *x - *y;
+		float slope = d.x / d.y;
+		float offsetX = p.x - x->x;
+		float intersectY = x->x + offsetX / slope;
+		return intersectY < p.y;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
 		return Vec2f(b.y - a.y, a.x - b.x).Normalize().Dot(p - a);

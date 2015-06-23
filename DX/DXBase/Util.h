@@ -13,7 +13,7 @@ namespace DX
 	void Trace(char const *strMsg, ...);
 
 #define TRACE_ON Trace
-#define TRACE_OFF(...) if (false) {} else (__VA_ARGS__);
+#define TRACE_OFF(...) {if (false) (__VA_ARGS__);}
 
 #if defined(_DEBUG)
 #	define ERR(...)		TRACE_ON(__VA_ARGS__)
@@ -61,6 +61,11 @@ namespace DX
 	float DistanceToLineSegment(Vec2f const &a, Vec2f const &b, Vec2f const &point);
 
 	bool RectanglesOverlap(Vec2f const a[4], Vec2f const b[4]);
+
+	float UnscaledDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
+	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
+
+	bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
 
 #ifndef PI
 #	define PI 3.14159265f

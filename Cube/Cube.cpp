@@ -288,8 +288,7 @@ void MyDXWindow::Box::Create(Vec4f pos)
 {
 	Destroy();
 	btTransform bodyTransform(btQuaternion::getIdentity(), pos);
-	Vec4f boxSize = Vec4(4, 4, 4);
-	mShape = new btBoxShape(boxSize);
+	mShape = new btBoxShape(btVector3(4,4,4));
 	mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape);
 	Physics::AddRigidBody(mBody, Physics::GroundMask, -1);
 	mBody->setFriction(0.5);
@@ -1341,28 +1340,86 @@ void MyDXWindow::OnFrame()
 	//	debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
 	//}
 
-	{
-		Vec2f a(500, 100);
-		Vec2f b(600, 700);
-		Vec2f c(550, 50);
-		Vec2f d(Mouse::Position);
-		Vec2f i;
-		bool x = LineIntersect(a, b, c, d, &i);
-		debug_line2d(a, b, Color::Yellow);
-		debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
-		if(x)
-		{
-			debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
-		}
-	}
+	//{
+	//	Vec2f a(500, 100);
+	//	Vec2f b(600, 700);
+	//	Vec2f c(550, 50);
+	//	Vec2f d(Mouse::Position);
+	//	Vec2f i;
+	//	bool x = LineIntersect(a, b, c, d, &i);
+	//	debug_line2d(a, b, Color::Yellow);
+	//	debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
+	//	if(x)
+	//	{
+	//		debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
+	//	}
+	//}
+
+	//{
+	//	Vec2f a(300, 300);
+	//	Vec2f b(800, 500);
+	//	Vec2f c = Mouse::Position;
+	//	float d = DistanceToLineSegment(a, b, c);
+	//	debug_line2d(a, b, Color::White);
+	//	debug_text((int)c.x, (int)c.y - 20, "%f", d);
+	//}
 
 	{
-		Vec2f a(300, 300);
-		Vec2f b(800, 500);
-		Vec2f c = Mouse::Position;
-		float d = DistanceToLineSegment(a, b, c);
-		debug_line2d(a, b, Color::White);
-		debug_text((int)c.x, (int)c.y - 20, "%f", d);
+		static Vec2f a(300, 300);
+		static Vec2f b(500, 500);
+		static Vec2f p(300, 400);
+		if(Keyboard::Held('H'))
+		{
+			a = Mouse::Position;
+		}
+		else if(Keyboard::Held('J'))
+		{
+			b = Mouse::Position;
+		}
+		else if(Keyboard::Held('N'))
+		{
+			p = Mouse::Position;
+		}
+		debug_line2d(a, b, Color::Yellow);
+		debug_line2d(p, p + Vec2f { 2000, 0 }, Color::BrightGreen);
+
+		Vec2f intersect;
+
+		bool f = [&] ()
+		{
+			if(a.y == b.y)
+			{
+				if(p.y != a.y)
+				{
+					return false;
+				}
+				return p.x >= a.x && p.x < b.x || p.x >= b.x && p.x < a.x;
+			}
+			Vec2f const *x;
+			Vec2f const *y;
+			if(a.y < b.y)
+			{
+				x = &a;
+				y = &b;
+			}
+			else
+			{
+				x = &b;
+				y = &a;
+			}
+			if(p.y < x->y || p.y > y->y)
+			{
+				return false;
+			}
+			Vec2f d = *x - *y;
+			float slope = d.x / d.y;
+			float offsetX = p.y - x->y;
+			float intersectX = x->x + offsetX * slope;
+			intersect = Vec2f { intersectX, p.y };
+			bool rc = intersectX > p.x;
+			debug_solid_rect2d(intersect - Vec2f(2, 2), intersect + Vec2f(2, 2), rc ? Color::Random() : Color::Black);
+			return rc;
+		}();
 	}
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
@@ -1712,17 +1769,17 @@ void FollowCamera::Process(float deltaTime)
 	if(Keyboard::Held(VK_INSERT)) { targetHeight += d; }
 	if(Keyboard::Held(VK_DELETE)) { targetHeight -= d; }
 
+	v4 pos(position);
 	btTransform const &carTransform = window->car.mBody->getWorldTransform();
-	Vec4f carPos = carTransform.getOrigin().get128();
-	Vec4f cameraOffset = SetZ(carTransform.getBasis().getColumn(1).get128(), 0);
-	Vec4f bcp = carPos - Normalize(cameraOffset) * distance;
-	Vec4f diff = carPos - position;
-	diff = Normalize(diff) * (Length(diff) - distance);
-	position += (bcp - position) * 0.1f + diff * 0.5f;
-	Vec4f target = carPos + Vec4(0, 0, targetHeight);
-	Vec4f pos = position + Vec4(0, 0, height);
+	v4 carPos = carTransform.getOrigin().get128();
+	v4 cameraOffset = SetZ(carTransform.getBasis().getColumn(1).get128(), 0);
+	v4 bcp = carPos - cameraOffset.Normalized() * distance;
+	v4 diff = carPos - pos;
+	float l = diff.Normalize();
+	diff *= l - distance;
+	position += (bcp - pos) * 0.1f + diff * 0.5f;
 
-	CalculateViewMatrix(target, pos, Vec4(0, 0, 1));
+	CalculateViewMatrix(carPos + v4(0, 0, targetHeight), position + Vec4(0, 0, height), Vec4(0, 0, 1));
 	CalculatePerspectiveProjectionMatrix(0.5f, window->FClientWidth() / window->FClientHeight());
 	CalculateViewProjectionMatrix();
 }

@@ -494,6 +494,17 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void ListRow::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			// TODO (charlie): make this less fragile and crappy
+			ListBox *l = (ListBox *)(mParent->mParent);	// parent is ClipRect, parent->parent is ListBox
+			SetWidth(Max(l->Width(), l->ClientWidth()));
+			mColor = Is(eHovering) ? Color::White : 0;
+			Label::OnDraw(matrix, context, drawList);
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		ScrollBar::ScrollBar(Orientation orientation)
 			: FilledRectangle()
 			, mDrag(false)

@@ -120,6 +120,7 @@ namespace DX
 #define W 3
 
 	//////////////////////////////////////////////////////////////////////
+	// This one with member functions and field access
 
 	struct v4;
 	using v4c = v4 const &;
@@ -148,12 +149,12 @@ namespace DX
 
 		v4(float x, float y, float z)
 		{
-			v = Vec4(x, y, z);
+			v = _mm_set_ps(0.0f, z, y, x);
 		}
 
 		v4(float x, float y, float z, float w)
 		{
-			v = Vec4(x, y, z, w);
+			v = _mm_set_ps(w, z, y, x);
 		}
 
 		operator Vec4f const () const
@@ -194,20 +195,27 @@ namespace DX
 			return _mm_div_ps(v, _mm_sqrt_ps(ls));
 		}
 
-		v4 &Normalize()
+		float Normalize()
 		{
-			*this = Normalized();
-			return *this;
+			v4 ls = _mm_mul_ps(v, v);
+			v4 t = Permute(Z, Y, Z, Y, ls);
+			ls = _mm_add_ss(ls, t);
+			t = Permute(Y, Y, Y, Y, t);
+			ls = _mm_add_ss(ls, t);
+			ls = Permute(X, X, X, X, ls);
+			v4 l = _mm_sqrt_ps(ls);
+			v = _mm_div_ps(v, l);
+			return GetX(l);
 		}
 
 		float LengthSquared() const
 		{
-			return Dot(*this);
+			return _mm_cvtss_f32(_mm_dp_ps(v, v, 0xff));
 		}
 
 		float Length() const
 		{
-			return sqrtf(LengthSquared());
+			return sqrtf(_mm_cvtss_f32(_mm_dp_ps(v, v, 0xff)));
 		}
 
 		static inline v4 zero()

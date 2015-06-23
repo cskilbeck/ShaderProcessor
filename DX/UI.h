@@ -418,9 +418,9 @@ namespace DX
 
 			virtual bool Pick(Message const *m) const
 			{
-				MouseMessage const *mm = dynamic_cast<MouseMessage const *>(m);
-				if(mm != null)
+				if(m->IsMouseMessage())
 				{
+					MouseMessage *mm = (MouseMessage *)m;
 					return ContainsScreenPoint(mm->mPosition);
 				}
 				else
@@ -746,20 +746,28 @@ namespace DX
 			void UpdateTransform(Matrix const &matrix)
 			{
 				// parent can transform its children through mClientTransform - blunt instrument, though
-				Matrix &cm = mParent != null ? mParent->mClientTransform : IdentityMatrix;
-				mTransformMatrix = GetMatrix() * cm * matrix;
+				if(mParent != null)
+				{
+					mTransformMatrix = GetMatrix() * mParent->mClientTransform * matrix;
+				}
+				else
+				{
+					mTransformMatrix = GetMatrix() * matrix;
+				}
 				mInverseMatrix = DirectX::XMMatrixInverse(null, mTransformMatrix);
 
 				Vec2f const &s = GetSize();
 				Vec2f p[4] = { Vec2f::zero, { s.x, 0 }, s, { 0, s.y } };
-				mScreenMin = Vec2f(FLT_MAX, FLT_MAX);
-				mScreenMax = -mScreenMin;
-				for(uint i = 0; i < 4; ++i)
+
+				mScreenMin = mScreenMax = mScreenCoordinates[0] = LocalToScreen(p[0]);
+
+				for(uint i = 1; i < 4; ++i)
 				{
 					mScreenCoordinates[i] = LocalToScreen(p[i]);
 					mScreenMax = Max(mScreenMax, mScreenCoordinates[i]);
 					mScreenMin = Min(mScreenMin, mScreenCoordinates[i]);
 				}
+
 				for(auto &r : mChildren)
 				{
 					((Element &)r).UpdateTransform(mTransformMatrix);
@@ -899,6 +907,106 @@ namespace DX
 			{
 				return "Rectangle";
 			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct Shape: Element
+		{
+			vector<Vec2f>	mPoints;
+			Color			mColor;
+
+			void AddPoint(Vec2f const &p)
+			{
+				mPoints.push_back(p);
+			}
+
+			uint NumPoints() const
+			{
+				return (uint)mPoints.size();
+			}
+
+			void ClearPoints()
+			{
+				mPoints.clear();
+			}
+
+			bool Pick(Message const *m)
+			{
+				if(m->IsMouseMessage())
+				{
+					MouseMessage const *mm = (MouseMessage const *)m;
+					for(int i = 0, l = NumPoints(); i <= l; ++i)
+					{
+						int n = (i + 1) % l;
+						Vec2f const &a = mPoints[i];
+						Vec2f const &b = mPoints[n];
+						if(UnscaledDistanceToLine(a, b, mm->mPosition) < 0)
+						{
+							return false;
+						}
+					}
+				}
+				else
+				{
+					return false;
+				}
+			}
+		};
+
+		struct FilledShape: Shape
+		{
+			Color mColor;
+
+			void SetColor(Color c)
+			{
+				mColor = c;
+			}
+
+			Color GetColor() const
+			{
+				return mColor;
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+		};
+
+		struct OutlineShape: Shape
+		{
+			OutlineShape()
+				: Shape()
+			{
+				Set(eTransparent);
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+		};
+
+		struct Triangle: FilledShape
+		{
+			Color		mOutlineColor;
+
+			Triangle()
+				: FilledShape()
+			{
+				float f = sqrtf(2);
+				AddPoint({ 0, 0 });
+				AddPoint({ f, f });
+				AddPoint({ 0, 1 });
+				AddPoint({ 0, 0 });
+			}
+
+			void SetLineColor(Color c)
+			{
+				mOutlineColor = c;
+			}
+
+			Color GetLineColor() const
+			{
+				return mOutlineColor;
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -1189,8 +1297,6 @@ namespace DX
 			Vec2f						mClientSize;			// client area
 			Vec2f						mScrollTarget;
 
-			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
-
 			//////////////////////////////////////////////////////////////////////
 
 			Window()
@@ -1294,12 +1400,6 @@ namespace DX
 			{
 				mClientSize = s;
 				ScrollTo(mOrigin);
-
-				// force all the rows to have the client width
-				for(auto &r : mClipRectangle.mChildren)
-				{
-					r.mSize.x = s.x;
-				}
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1401,9 +1501,39 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct ListRow: Label
+		{
+			char const *Name() const override
+			{
+				return "ListRow";
+			}
+
+			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
+
+			// only check top and bottom of rectangle (infinite width)
+			bool Pick(Message const *m) const override
+			{
+				if(m->IsMouseMessage())
+				{
+					MouseMessage const *mm = (MouseMessage const *)m;
+					Vec2f const &point = mm->mPosition;
+					Vec2f const *r = mScreenCoordinates;
+					return UnscaledDistanceToLine(r[1], r[0], point) >= 0 &&
+						UnscaledDistanceToLine(r[3], r[2], point) > 0;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		struct ListBox: Window
 		{
 			Delegate<ControlEvent>		mRowRemoved;
+			Delegate<MouseWheelEvent>	mMouseWheelDelegate;
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -1415,12 +1545,10 @@ namespace DX
 					AddToScrollTarget({0, Height() * -0.15f * e.wheelDelta });
 				};
 
-				mRowRemoved = [this] (ControlEvent const &e)
+				mClipRectangle.ChildRemoved += mRowRemoved = [this] (ControlEvent const &e)
 				{
 					MeasureClientSize();
-				};
-
-				mClipRectangle.ChildRemoved += mRowRemoved;
+				};;
 			} 
 
 			//////////////////////////////////////////////////////////////////////
@@ -1437,10 +1565,10 @@ namespace DX
 				Vec2f cs(0, 0);
 				for(auto &row : mClipRectangle.mChildren)
 				{
-					Label &r = (Label &)row;
+					ListRow &r = (ListRow &)row;
 					Vec2f const &pos = row.GetPosition();
 					cs.x = Max(cs.x, r.mTextDimensions.x);
-					r.SetPosition({ 0, cs.y });
+					r.SetY(cs.y);
 					cs.y = Max(cs.y, cs.y + r.Height());
 				}
 				SetClientSize(cs);
@@ -1448,9 +1576,9 @@ namespace DX
 			
 			//////////////////////////////////////////////////////////////////////
 
-			Label *AddString(char const *text, Typeface *font)
+			ListRow *AddString(char const *text, Typeface *font)
 			{
-				Label *row = new Label();
+				ListRow *row = new ListRow();
 				row->MouseEntered += [] (MouseEvent const &m)
 				{
 					m.mElement->Set(eSelected);
@@ -1461,36 +1589,16 @@ namespace DX
 					m.mElement->Clear(eSelected);
 				};
 
-				row->Drawing += [] (DrawEvent const &d)
-				{
-					Label *r = (Label *)d.mElement;
-					r->mColor = r->Is(eHovering) ? Color::White : 0;
-				};
-
 				row->SetText(text);
 				row->SetFont(font);
 				row->SetPivot({ 0, 0 });
 				row->Set(eTransparent);
 				row->SetOffset({ 3, 1 });
 				row->SetPosition({ 0, ClientHeight() });
-				row->SetSize({ Max(row->GetTextSize().x + 16, ClientWidth()), row->GetTextSize().y + 2 });
+				row->SetHeight(row->GetTextSize().y + 2);
 				AppendControl(*row);
 				return row;
 			}
 		};
-
-		////////////////////////////////////////////////////////////////////////
-
-		//inline bool MouseMessage::Pick(Element const *e) const
-		//{
-		//	return e->ContainsScreenPointWithMargins(mPosition);
-		//}
-
-		////////////////////////////////////////////////////////////////////////
-
-		//inline bool MouseButtonMessage::Pick(Element const *e) const
-		//{
-		//	return e->ContainsScreenPoint(mPosition);
-		//}
 	}
 }
