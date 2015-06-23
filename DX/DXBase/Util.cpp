@@ -345,35 +345,39 @@ namespace DX
 
 	bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
-		if(a.y == b.y)
-		{
-			if(p.y != a.y)
-			{
-				return false;
-			}
-			return p.x >= a.x && p.x < b.x || p.x >= b.x && p.x < a.x;
-		}
-		Vec2f const *x;
-		Vec2f const *y;
-		if(a.y < b.y)
-		{
-			x = &a;
-			y = &b;
-		}
-		else
+		// work out which way up the lines go
+		Vec2f const *x = &a;
+		Vec2f const *y = &b;
+		if(a.y > b.y)
 		{
 			x = &b;
 			y = &a;
 		}
-		if(p.y < x->y || p.y > y->y)
+		// can it intersect?
+		if(p.y < x->y || p.y >= y->y)
 		{
 			return false;
 		}
+		// is intersection to the right of the point?
 		Vec2f d = *x - *y;
 		float slope = d.x / d.y;
-		float offsetX = p.x - x->x;
-		float intersectY = x->x + offsetX / slope;
-		return intersectY < p.y;
+		float offsetX = p.y - x->y;
+		return (x->x + offsetX * slope) > p.x;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool PointInConcaveShape(Vec2f const *points, uint numPoints, Vec2f const &point)
+	{
+		bool c = false;
+		Vec2f const *j = points + numPoints - 1;
+		for(uint i = 0; i < numPoints; ++i)
+		{
+			Vec2f const *k = points + i;
+			c ^= LineSegmentIntersectWithHorizonalLine(*j, *k, point);
+			j = k;
+		}
+		return c;
 	}
 
 	//////////////////////////////////////////////////////////////////////

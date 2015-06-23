@@ -1365,61 +1365,37 @@ void MyDXWindow::OnFrame()
 	//}
 
 	{
-		static Vec2f a(300, 300);
-		static Vec2f b(500, 500);
-		static Vec2f p(300, 400);
-		if(Keyboard::Held('H'))
+		static vector<Vec2f> p;
+		uint n = (uint)p.size();
+		if(Keyboard::Pressed('N'))
 		{
-			a = Mouse::Position;
+			p.push_back(Mouse::Position);
 		}
-		else if(Keyboard::Held('J'))
+		if(Keyboard::Held('N'))
 		{
-			b = Mouse::Position;
+			p[p.size() - 1] = Mouse::Position;
 		}
-		else if(Keyboard::Held('N'))
+		if(Keyboard::Pressed('M'))
 		{
-			p = Mouse::Position;
+			p.clear();
 		}
-		debug_line2d(a, b, Color::Yellow);
-		debug_line2d(p, p + Vec2f { 2000, 0 }, Color::BrightGreen);
+		if(n > 2)
+		{
+			Vec2f const *j = p.data() + n - 1;
+			for(uint i = 0; i < n; ++i)
+			{
+				Vec2f const *k = p.data() + i;
+				debug_line2d(*j, *k, Color::White);
+				j = k;
+			}
 
-		Vec2f intersect;
-
-		bool f = [&] ()
-		{
-			if(a.y == b.y)
+			Color c = Color::BrightGreen;
+			if(PointInConcaveShape(p.data(), n, Mouse::Position))
 			{
-				if(p.y != a.y)
-				{
-					return false;
-				}
-				return p.x >= a.x && p.x < b.x || p.x >= b.x && p.x < a.x;
+				c = Color::BrightRed;
 			}
-			Vec2f const *x;
-			Vec2f const *y;
-			if(a.y < b.y)
-			{
-				x = &a;
-				y = &b;
-			}
-			else
-			{
-				x = &b;
-				y = &a;
-			}
-			if(p.y < x->y || p.y > y->y)
-			{
-				return false;
-			}
-			Vec2f d = *x - *y;
-			float slope = d.x / d.y;
-			float offsetX = p.y - x->y;
-			float intersectX = x->x + offsetX * slope;
-			intersect = Vec2f { intersectX, p.y };
-			bool rc = intersectX > p.x;
-			debug_solid_rect2d(intersect - Vec2f(2, 2), intersect + Vec2f(2, 2), rc ? Color::Random() : Color::Black);
-			return rc;
-		}();
+			debug_solid_rect2d(Mouse::Position - Vec2f { 4, 4 }, Mouse::Position + Vec2f { 4, 4 }, c);
+		}
 	}
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
