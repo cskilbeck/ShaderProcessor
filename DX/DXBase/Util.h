@@ -65,8 +65,9 @@ namespace DX
 	float UnscaledDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
 	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
 
-	bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p);
+	bool IsShapeConvex(Vec2f const *points, uint numPoints);
 	bool PointInConcaveShape(Vec2f const *points, uint numPoints, Vec2f const &point);
+	bool PointInConvexShape(Vec2f const *points, uint numPoints, Vec2f const &point);
 
 #ifndef PI
 #	define PI 3.14159265f

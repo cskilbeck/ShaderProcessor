@@ -343,7 +343,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	static bool LineSegmentIntersectWithHorizonalLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
 		// work out which way up the lines go
 		Vec2f const *x = &a;
@@ -367,6 +367,55 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		return Vec2f(b.y - a.y, a.x - b.x).Normalize().Dot(p - a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	float UnscaledDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
+	{
+		return Vec2f(b.y - a.y, a.x - b.x).Dot(p - a);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool IsShapeConvex(Vec2f const *points, uint numPoints)
+	{
+		Vec2f const *j = points + numPoints - 2;
+		Vec2f const *k = points + numPoints - 1;
+		Vec2f dj = (*k - *j).Normalize();
+		float a = 0;
+		for(uint i = 0; i < numPoints; ++i)
+		{
+			Vec2f const *l = points + i;
+			Vec2f dl = (*l - *k).Normalize();
+			a += acosf(dj.Dot(dl)) - PI;
+			k = l;
+			dj = dl;
+		}
+		return fabsf(a / (numPoints - 2) + PI) < 0.0001f;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	bool PointInConvexShape(Vec2f const *points, uint numPoints, Vec2f const &point)
+	{
+		Vec2f const *j = points + numPoints - 1;
+		for(uint i = 0; i < numPoints; ++i)
+		{
+			Vec2f const *k = points + i;
+			if(UnscaledDistanceToLine(*j, *k, point) < 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	bool PointInConcaveShape(Vec2f const *points, uint numPoints, Vec2f const &point)
 	{
 		bool c = false;
@@ -378,20 +427,6 @@ namespace DX
 			j = k;
 		}
 		return c;
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	float UnitDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
-	{
-		return Vec2f(b.y - a.y, a.x - b.x).Normalize().Dot(p - a);
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	float UnscaledDistanceToLine(Vec2f const &a, Vec2f const &b, Vec2f const &p)
-	{
-		return Vec2f(b.y - a.y, a.x - b.x).Dot(p - a);
 	}
 
 	//////////////////////////////////////////////////////////////////////

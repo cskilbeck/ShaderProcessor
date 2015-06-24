@@ -1366,7 +1366,6 @@ void MyDXWindow::OnFrame()
 
 	{
 		static vector<Vec2f> p;
-		uint n = (uint)p.size();
 		if(Keyboard::Pressed('N'))
 		{
 			p.push_back(Mouse::Position);
@@ -1379,22 +1378,29 @@ void MyDXWindow::OnFrame()
 		{
 			p.clear();
 		}
-		if(n > 2)
+		uint n = (uint)p.size();
+		if(n > 1)
 		{
+			bool isConvex = true;
+			if(n > 2)
+			{
+				isConvex = IsShapeConvex(p.data(), n);
+			}
 			Vec2f const *j = p.data() + n - 1;
 			for(uint i = 0; i < n; ++i)
 			{
 				Vec2f const *k = p.data() + i;
-				debug_line2d(*j, *k, Color::White);
+				debug_line2d(*j, *k, isConvex ? Color::BrightGreen : Color::BrightRed);
 				j = k;
 			}
 
-			Color c = Color::BrightGreen;
+			Color c = Color::BrightBlue;
 			if(PointInConcaveShape(p.data(), n, Mouse::Position))
 			{
-				c = Color::BrightRed;
+				c = Color::White;
 			}
-			debug_solid_rect2d(Mouse::Position - Vec2f { 4, 4 }, Mouse::Position + Vec2f { 4, 4 }, c);
+			Vec2f s(5, 5);
+			debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
 		}
 	}
 
