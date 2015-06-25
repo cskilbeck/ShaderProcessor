@@ -24,6 +24,8 @@ namespace DX
 	void debug_text(wchar const *fmt, ...);
 	void debug_text(int x, int y, char const *fmt, ...);
 	void debug_text(int x, int y, wchar const *fmt, ...);
+	void debug_text(Vec2f const &pos, char const *fmt, ...);
+	void debug_text(Vec2f const &pos, wchar const *fmt, ...);
 
 	// 3D
 
@@ -40,6 +42,8 @@ namespace DX
 	// 2D
 
 	void debug_line2d(Vec2f const &a, Vec2f const &b, Color color);
+	void debug_solid_triangle2d(Vec2f const &a, Vec2f const &b, Vec2f const &c, Color color);
+	void debug_outline_triangle2d(Vec2f const &a, Vec2f const &b, Vec2f const &c, Color color);
 	void debug_solid_quad2d(Vec2f const *p, Color color);
 	void debug_outline_quad2d(Vec2f const *p, Color color);
 	void debug_solid_rect2d(Vec2f const &topLeft, Vec2f const &bottomRight, Color color);

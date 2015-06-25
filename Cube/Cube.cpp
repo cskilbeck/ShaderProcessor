@@ -1394,15 +1394,30 @@ void MyDXWindow::OnFrame()
 				j = k;
 			}
 
-			Color c = Color::BrightBlue;
-			if(PointInConcaveShape(p.data(), n, Mouse::Position))
+			if((1 || Keyboard::Held('T')) && p.size() > 2)
 			{
-				c = Color::White;
+				vector<int> index((p.size() - 2) * 3);
+				int numTris = TriangulatePolygon(p.data(), (uint)p.size(), index.data());
+				for(int i = 0; i < numTris * 3; i += 3)
+				{
+					Vec2f const &a = p[index[i + 0]];
+					Vec2f const &b = p[index[i + 1]];
+					Vec2f const &c = p[index[i + 2]];
+					debug_solid_triangle2d(a, b, c, 0x60ff0000);
+					debug_outline_triangle2d(a, b, c, Color::Cyan);
+				}
 			}
-			Vec2f s(5, 5);
-			debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
+
+			//Color c = Color::BrightBlue;
+			//if(PointInConcaveShape(p.data(), n, Mouse::Position))
+			//{
+			//	c = Color::White;
+			//}
+			//Vec2f s(5, 5);
+			//debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
 		}
 	}
+
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
 //	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera->yaw), (int)Rad2Deg(camera->pitch), (int)Rad2Deg(camera->roll));

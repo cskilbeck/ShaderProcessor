@@ -910,53 +910,35 @@ namespace DX
 		};
 
 		//////////////////////////////////////////////////////////////////////
+		// TODO (charlie): enable textured shape (use Size.x & y for texture extents)
 
 		struct Shape: Element
 		{
 			vector<Vec2f>	mPoints;
 			Color			mColor;
+			Flags32			mShapeFlags;
+
+			enum
+			{
+				ePointsChanged = 1,
+				eIsConvex = 2
+			};
+
+			Shape()
+				: mShapeFlags(0)
+			{
+			}
 
 			void AddPoint(Vec2f const &p)
 			{
 				mPoints.push_back(p);
+				mShapeFlags.Set(ePointsChanged);
 			}
 
 			uint NumPoints() const
 			{
 				return (uint)mPoints.size();
 			}
-
-			void ClearPoints()
-			{
-				mPoints.clear();
-			}
-
-			bool Pick(Message const *m)
-			{
-				if(m->IsMouseMessage())
-				{
-					MouseMessage const *mm = (MouseMessage const *)m;
-					for(int i = 0, l = NumPoints(); i <= l; ++i)
-					{
-						int n = (i + 1) % l;
-						Vec2f const &a = mPoints[i];
-						Vec2f const &b = mPoints[n];
-						if(UnscaledDistanceToLine(a, b, mm->mPosition) < 0)
-						{
-							return false;
-						}
-					}
-				}
-				else
-				{
-					return false;
-				}
-			}
-		};
-
-		struct FilledShape: Shape
-		{
-			Color mColor;
 
 			void SetColor(Color c)
 			{
@@ -968,8 +950,104 @@ namespace DX
 				return mColor;
 			}
 
+			virtual void ClearPoints()
+			{
+				mPoints.clear();
+			}
+
+			void GetConvexity()
+			{
+				if(IsShapeConvex(mPoints.data(), mPoints.size()))
+				{
+					mShapeFlags.Set(eIsConvex);
+				}
+				else
+				{
+					mShapeFlags.Clear(eIsConvex);
+				}
+			}
+
+			virtual void UpdateShape()
+			{
+				if(mPoints.size() > 2)
+				{
+					if(mShapeFlags.IsAnySet(ePointsChanged))
+					{
+						mShapeFlags.Clear(ePointsChanged);
+						GetConvexity();
+					}
+				}
+			}
+
+			bool Pick(Message const *m) const override
+			{
+				if(NumPoints() > 2 && m->IsMouseMessage())
+				{
+					MouseMessage const *mm = (MouseMessage const *)m;
+					if(mShapeFlags.IsAnySet(eIsConvex))
+					{
+						return PointInConvexShape(mPoints.data(), mPoints.size(), mm->mPosition);
+					}
+					else
+					{
+						return PointInConcaveShape(mPoints.data(), mPoints.size(), mm->mPosition);
+					}
+				}
+				else
+				{
+					return false;
+				}
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
+		struct FilledShape: Shape
+		{
+			vector<uint16>	mIndices;
+			uint			mNumTriangles;
+
+			FilledShape()
+				: Shape()
+				, mNumTriangles(0)
+			{
+			}
+
+			void ClearPoints() override
+			{
+				Shape::ClearPoints();
+				mIndices.clear();
+			}
+
+			void UpdateShape() override
+			{
+				if(mPoints.size() > 2)
+				{
+					if(mShapeFlags.IsAnySet(ePointsChanged))
+					{
+						mShapeFlags.Clear(ePointsChanged);
+						GetConvexity();
+						mIndices.resize((mPoints.size() - 2) * 3);
+						if(mShapeFlags.IsAnySet(eIsConvex))
+						{
+							mNumTriangles = TriangulateConvexPolygon(mPoints.data(), mPoints.size, mIndices.data());
+						}
+						else
+						{
+							mNumTriangles = TriangulateConcavePolygon(mPoints.data(), mPoints.size, mIndices.data());
+						}
+					}
+				}
+				else
+				{
+					mNumTriangles = 0;
+				}
+			}
+
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
+
+		//////////////////////////////////////////////////////////////////////
 
 		struct OutlineShape: Shape
 		{
@@ -982,6 +1060,8 @@ namespace DX
 			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
+		//////////////////////////////////////////////////////////////////////
+
 		struct Triangle: FilledShape
 		{
 			Color		mOutlineColor;
@@ -993,7 +1073,7 @@ namespace DX
 				AddPoint({ 0, 0 });
 				AddPoint({ f, f });
 				AddPoint({ 0, 1 });
-				AddPoint({ 0, 0 });
+				UpdateShape();
 			}
 
 			void SetLineColor(Color c)

@@ -380,6 +380,138 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// works with arbitrary winding order
+
+	bool PointInTriangleUnordered(Vec2f const& p0, Vec2f const& p1, Vec2f const& p2, Vec2f const& pp)
+	{
+		Vec2f v0 = p1 - p0;
+		Vec2f v1 = p2 - p0;
+		Vec2f v2 = pp - p0;
+		float dot00 = v0.Dot(v0);
+		float dot01 = v0.Dot(v1);
+		float dot02 = v0.Dot(v2);
+		float dot11 = v1.Dot(v1);
+		float dot12 = v1.Dot(v2);
+		float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+		dot11 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+		dot00 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+		return (dot11 > 0) && (dot00 > 0) && (dot11 + dot00 < 1);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// CW ordering required
+
+	bool PointInTriangle(Vec2f const &a, Vec2f const &b, Vec2f const &c, Vec2f const &point)
+	{
+		return
+			UnscaledDistanceToLine(a, b, point) < 0 &&
+			UnscaledDistanceToLine(b, c, point) < 0 &&
+			UnscaledDistanceToLine(c, a, point) < 0;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// winding order must be clockwise and there can be no holes in it
+	// results must be at least (numPoints - 2) * 3
+
+	namespace
+	{
+		struct index: list_node
+		{
+			uint i;
+		};
+
+		linked_list<index> indices;
+
+		index *nxt(index *i)
+		{
+			index *j = indices.next(i);
+			if(j == indices.end())
+			{
+				j = indices.next(j);
+			}
+			return j;
+		}
+
+		index *prv(index *i)
+		{
+			index *j = indices.prev(i);
+			if(j == indices.end())
+			{
+				j = indices.prev(j);
+			}
+			return j;
+		}
+	}
+
+	int TriangulateConvexPolygon(Vec2f const *points, uint numPoints, uint16 *results)
+	{
+		uint16 *r = results;
+		int t = 0;
+		for(uint i = 1; i < numPoints-1; ++i)
+		{
+			*r++ = 0;
+			*r++ = i;
+			*r++ = i + 1;
+			++t;
+		}
+		return t;
+	}
+
+	int TriangulateConcavePolygon(Vec2f const *points, uint numPoints, uint16 *results)
+	{
+		int triangles = 0;
+		indices.clear();
+		Ptr<index> idx(new index[numPoints]);
+		uint16 *r = results;
+		for(uint i = 0; i < numPoints; ++i)
+		{
+			index *p = idx.get() + i;
+			p->i = i;
+			indices.push_back(p);
+		}
+
+		while(true)
+		{
+			int ot = triangles;
+			for(index *c = indices.head(), *cn = indices.next(c); c != indices.end(); c = cn, cn = indices.next(c))
+			{
+				index *p = prv(c);
+				index *n = nxt(c);
+				Vec2f const &vc = points[c->i];
+				Vec2f const &vp = points[p->i];
+				Vec2f const &vn = points[n->i];
+				if((vc - vp).Cross(vn - vc) > 0)
+				{
+					bool valid = true;
+					index *o = nxt(n);
+					while(o != p)
+					{
+						if(PointInTriangle(vp, vc, vn, points[o->i]))
+						{
+							valid = false;
+							break;
+						}
+						o = nxt(o);
+					}
+					if(valid)
+					{
+						*r++ = (uint16)p->i;
+						*r++ = (uint16)c->i;
+						*r++ = (uint16)n->i;
+						indices.remove(c);
+						++triangles;
+					}
+				}
+			}
+			if(ot == triangles)
+			{
+				break;
+			}
+		}
+		return triangles;
+	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	bool IsShapeConvex(Vec2f const *points, uint numPoints)
 	{

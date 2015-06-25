@@ -212,6 +212,26 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
+	void debug_text(Vec2f const &pos, char const *fmt, ...)
+	{
+		va_list v;
+		va_start(v, fmt);
+		string s = Format_V(fmt, v);
+		fontInstance.DrawString(s.c_str(), pos);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_text(Vec2f const &pos, wchar const *fmt, ...)
+	{
+		va_list v;
+		va_start(v, fmt);
+		string s = StringFromWideString(Format_V(fmt, v));
+		fontInstance.DrawString(s.c_str(), pos);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void debug_line(CVec4f start, CVec4f end, Color color)
 	{
 		debug3D.AddLine(start, end, color);
@@ -340,20 +360,44 @@ namespace DX
 			, color);
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
 	void debug_line2d(Vec2f const &a, Vec2f const &b, Color color)
 	{
 		debug2D.AddLine(a, b, color);
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void debug_solid_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
 	{
 		debug2D.AddQuad(tl, { br.x, tl.y }, br, { tl.x, br.y }, color);
 	}
 
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_solid_triangle2d(Vec2f const &a, Vec2f const &b, Vec2f const &c, Color color)
+	{
+		debug2D.AddTriangle(a, b, c, color);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	void debug_outline_triangle2d(Vec2f const &a, Vec2f const &b, Vec2f const &c, Color color)
+	{
+		debug_line2d(a, b, color);
+		debug_line2d(b, c, color);
+		debug_line2d(c, a, color);
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
 	void debug_solid_quad2d(Vec2f const *p, Color color)
 	{
 		debug2D.AddQuad(p[0], p[1], p[2], p[3], color);
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void debug_outline_quad2d(Vec2f const *p, Color color)
 	{
@@ -362,6 +406,8 @@ namespace DX
 		debug_line2d(p[2], p[3], color);
 		debug_line2d(p[3], p[0], color);
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void debug_outline_rect2d(Vec2f const &tl, Vec2f const &br, Color color)
 	{
@@ -372,6 +418,8 @@ namespace DX
 		debug_line2d(br, bl, color);
 		debug_line2d(bl, tl, color);
 	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	void debug_outline_solid_rect2d(Vec2f const &tl, Vec2f const &br, Color fillColor, Color lineColor)
 	{

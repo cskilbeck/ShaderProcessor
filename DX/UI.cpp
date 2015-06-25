@@ -462,6 +462,39 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void FilledShape::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			drawList.SetShader(context, &colorShader, &colorVB);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+			drawList.BeginTriangleList();
+			uint16 *r = mIndices.data();
+			for(uint i = 0; i < mNumTriangles; ++i)
+			{
+				colorVB.AddVertex({ mPoints[*r++], mColor });
+				colorVB.AddVertex({ mPoints[*r++], mColor });
+				colorVB.AddVertex({ mPoints[*r++], mColor });
+			}
+			drawList.End();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void OutlineShape::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
+		{
+			drawList.SetShader(context, &colorShader, &colorVB);
+			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
+			drawList.BeginLineStrip();
+			Vec2f *r = mPoints.data();
+			for(uint i = 0; i < mPoints.size(); ++i)
+			{
+				colorVB.AddVertex({ *r++, mColor });
+			}
+			colorVB.AddVertex({ mPoints[0], mColor });
+			drawList.End();
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
 		void Label::OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList)
 		{
 			if(mColor)
