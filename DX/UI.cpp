@@ -484,12 +484,12 @@ namespace DX
 			drawList.SetShader(context, &colorShader, &colorVB);
 			drawList.SetConstantData(Vertex, Transpose(matrix), DXShaders::Color2D::VS::g_VertConstants2D_index);
 			drawList.BeginLineStrip();
-			Vec2f *r = mPoints.data();
+			Vec2f *r = mPoints.data() + mPoints.size() - 1;
 			for(uint i = 0; i < mPoints.size(); ++i)
 			{
-				colorVB.AddVertex({ *r++, mColor });
+				colorVB.AddVertex({ *r, mColor });
+				r = mPoints.data() + i;
 			}
-			colorVB.AddVertex({ mPoints[0], mColor });
 			drawList.End();
 		}
 

@@ -591,16 +591,16 @@ namespace DX
 
 			Vec2f LocalToScreen(Vec2f point) const
 			{
-				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mTransformMatrix);
-				return Vec2f(GetX(p), GetY(p));
+				v4 p = TransformPoint(point, mTransformMatrix);
+				return { p.x, p.y };
 			}
 
 			//////////////////////////////////////////////////////////////////////
 			
 			Vec2f ScreenToLocal(Vec2f point) const
 			{
-				Vec4f p = TransformPoint(Vec4(point.x, point.y, 0, 1), mInverseMatrix);
-				return Vec2f(GetX(p), GetY(p));
+				v4 p = TransformPoint(point, mInverseMatrix);
+				return { p.x, p.y };
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -957,21 +957,34 @@ namespace DX
 
 			void GetConvexity()
 			{
-				if(IsShapeConvex(mPoints.data(), mPoints.size()))
+				mShapeFlags.Set(eIsConvex, IsShapeConvex(mPoints.data(), (uint)mPoints.size()));
+			}
+
+			// Changes Position, Size and Pivot
+
+			void ShrinkToFit()
+			{
+				if(!mPoints.empty())
 				{
-					mShapeFlags.Set(eIsConvex);
-				}
-				else
-				{
-					mShapeFlags.Clear(eIsConvex);
+					Vec2f const &pos = GetPosition();
+					Vec2f mn = mPoints[0] + pos;
+					Vec2f mx = mPoints[0] + pos;
+					for(uint i = 1; i < mPoints.size(); ++i)
+					{
+						mn = Min(mPoints[i] + pos, mn);
+						mx = Max(mPoints[i] + pos, mx);
+					}
+					SetPosition(mn);
+					SetSize(mx - mn);
+					SetPivot((pos - mn) / GetSize());
 				}
 			}
 
 			virtual void UpdateShape()
 			{
-				if(mPoints.size() > 2)
+				if(mShapeFlags(ePointsChanged))
 				{
-					if(mShapeFlags.IsAnySet(ePointsChanged))
+					if(mPoints.size() > 2)
 					{
 						mShapeFlags.Clear(ePointsChanged);
 						GetConvexity();
@@ -984,13 +997,14 @@ namespace DX
 				if(NumPoints() > 2 && m->IsMouseMessage())
 				{
 					MouseMessage const *mm = (MouseMessage const *)m;
-					if(mShapeFlags.IsAnySet(eIsConvex))
+					Vec2f sp = ScreenToLocal(mm->mPosition);
+					if(mShapeFlags(eIsConvex))
 					{
-						return PointInConvexShape(mPoints.data(), mPoints.size(), mm->mPosition);
+						return PointInConvexShape(mPoints.data(), (uint)mPoints.size(), sp);
 					}
 					else
 					{
-						return PointInConcaveShape(mPoints.data(), mPoints.size(), mm->mPosition);
+						return PointInConcaveShape(mPoints.data(), (uint)mPoints.size(), sp);
 					}
 				}
 				else
@@ -1023,18 +1037,18 @@ namespace DX
 			{
 				if(mPoints.size() > 2)
 				{
-					if(mShapeFlags.IsAnySet(ePointsChanged))
+					if(mShapeFlags(ePointsChanged))
 					{
 						mShapeFlags.Clear(ePointsChanged);
 						GetConvexity();
 						mIndices.resize((mPoints.size() - 2) * 3);
-						if(mShapeFlags.IsAnySet(eIsConvex))
+						if(mShapeFlags(eIsConvex))
 						{
-							mNumTriangles = TriangulateConvexPolygon(mPoints.data(), mPoints.size, mIndices.data());
+							mNumTriangles = TriangulateConvexPolygon(mPoints.data(), (uint)mPoints.size(), mIndices.data());
 						}
 						else
 						{
-							mNumTriangles = TriangulateConcavePolygon(mPoints.data(), mPoints.size, mIndices.data());
+							mNumTriangles = TriangulateConcavePolygon(mPoints.data(), (uint)mPoints.size(), mIndices.data());
 						}
 					}
 				}

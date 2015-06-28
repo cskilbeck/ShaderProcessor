@@ -313,7 +313,22 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// parallel lines never return true, even if horizontal or vertical...
 
-	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3, Vec2f *intersectionPoint)
+	namespace
+	{
+		float ccw(Vec2f const &a, Vec2f const &b, Vec2f const &c)
+		{
+			return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+		}
+	}
+
+	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3)
+	{
+		if(ccw(p0, p1, p2) * ccw(p0, p1, p3) > 0) return false;
+		if(ccw(p2, p3, p0) * ccw(p2, p3, p1) > 0) return false;
+		return true;
+	}
+
+	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3, Vec2f &intersectionPoint)
 	{
 		Vec2f s10 = p1 - p0;
 		Vec2f s32 = p3 - p2;
@@ -334,10 +349,7 @@ namespace DX
 		{
 			return false;
 		}
-		if(intersectionPoint != null)
-		{
-			*intersectionPoint = p0 + ((t / d) * s10);
-		}
+		intersectionPoint = p0 + ((t / d) * s10);
 		return true;
 	}
 
@@ -360,9 +372,7 @@ namespace DX
 		}
 		// is intersection to the right of the point?
 		Vec2f d = *x - *y;
-		float slope = d.x / d.y;
-		float offsetX = p.y - x->y;
-		return (x->x + offsetX * slope) > p.x;
+		return (x->x + (p.y - x->y) * (d.x / d.y)) > p.x;
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -418,6 +428,11 @@ namespace DX
 		struct index: list_node
 		{
 			uint i;
+
+			operator uint() const
+			{
+				return i;
+			}
 		};
 
 		linked_list<index> indices;
@@ -477,16 +492,16 @@ namespace DX
 			{
 				index *p = prv(c);
 				index *n = nxt(c);
-				Vec2f const &vc = points[c->i];
-				Vec2f const &vp = points[p->i];
-				Vec2f const &vn = points[n->i];
+				Vec2f const &vc = points[*c];
+				Vec2f const &vp = points[*p];
+				Vec2f const &vn = points[*n];
 				if((vc - vp).Cross(vn - vc) > 0)
 				{
 					bool valid = true;
 					index *o = nxt(n);
 					while(o != p)
 					{
-						if(PointInTriangle(vp, vc, vn, points[o->i]))
+						if(PointInTriangle(vp, vc, vn, points[*o]))
 						{
 							valid = false;
 							break;
@@ -495,9 +510,9 @@ namespace DX
 					}
 					if(valid)
 					{
-						*r++ = (uint16)p->i;
-						*r++ = (uint16)c->i;
-						*r++ = (uint16)n->i;
+						*r++ = (uint16)(*p);
+						*r++ = (uint16)(*c);
+						*r++ = (uint16)(*n);
 						indices.remove(c);
 						++triangles;
 					}
@@ -512,6 +527,7 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
+	// assumes CW winding order
 
 	bool IsShapeConvex(Vec2f const *points, uint numPoints)
 	{
@@ -538,10 +554,11 @@ namespace DX
 		for(uint i = 0; i < numPoints; ++i)
 		{
 			Vec2f const *k = points + i;
-			if(UnscaledDistanceToLine(*j, *k, point) < 0)
+			if(UnscaledDistanceToLine(*j, *k, point) > 0)
 			{
 				return false;
 			}
+			j = k;
 		}
 		return true;
 	}
@@ -584,17 +601,22 @@ namespace DX
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// Return minimum distance between line segment ab and point p
 
-	float DistanceToLineSegmentSquared(Vec2f const &v, Vec2f const &w, Vec2f const &c)
+	Vec2f ClosestPointOnLineSegment(Vec2f const &v, Vec2f const &w, Vec2f const &c)
 	{
-		Vec2f vw(w - v);
+		Vec2f vw = w - v;
 		float t = (c - v).Dot(vw) / vw.LengthSquared();
-		return (((t <= 0) ? v : (t >= 1) ? w : (v + t * vw)) - c).LengthSquared();
+		return (t <= 0) ? v : (t >= 1) ? w : (v + t * vw);
 	}
 
 	//////////////////////////////////////////////////////////////////////
-	// Return minimum distance between line segment ab and point p
+
+	float DistanceToLineSegmentSquared(Vec2f const &v, Vec2f const &w, Vec2f const &c)
+	{
+		return (ClosestPointOnLineSegment(v, w, c) - c).LengthSquared();
+	}
+
+	//////////////////////////////////////////////////////////////////////
 
 	float DistanceToLineSegment(Vec2f const &a, Vec2f const &b, Vec2f const &p)
 	{
@@ -617,12 +639,10 @@ namespace DX
 		for(uint i = 0; i < 4; ++i)
 		{
 			uint j = (i + 1) % 4;
-			Vec2f sidea = a[j] - a[i];
 			for(uint k = 0; k < 4; ++k)
 			{
 				uint l = (k + 1) % 4;
-				Vec2f sideb = b[l] - b[k];
-				if(LineIntersect(a[i], a[j], b[k], b[l], null))
+				if(LineIntersect(a[i], a[j], b[k], b[l]))
 				{
 					return true;
 				}

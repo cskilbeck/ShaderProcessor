@@ -60,6 +60,7 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	UI::ClipRectangle clipRect;
 	UI::ListBox listBox;
 	UI::Rectangle rect;
+	UI::FilledShape shape;
 
 	float deltaTime;
 	float oldDeltaTime;

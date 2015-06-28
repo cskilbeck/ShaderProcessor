@@ -28,14 +28,17 @@ namespace DX
 
 		T Set(T mask)
 		{
-			bits |= mask;
-			return bits;
+			return bits |= mask;
+		}
+
+		T Set(T mask, bool b)
+		{
+			return bits = (bits & ~mask) | (~((T)b - 1) & mask);
 		}
 
 		T Clear(T mask)
 		{
-			bits &= ~mask;
-			return bits;
+			return bits &= ~mask;
 		}
 
 		bool operator() (T mask) const

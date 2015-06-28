@@ -874,6 +874,39 @@ bool MyDXWindow::OnCreate()
 		b->SetText("PRESSED!");
 	};
 
+	root.AddChild(shape);
+	float s = sqrtf(2);
+	shape.SetPosition({ 550, 550 });
+	shape.AddPoint({ 0, 0 });
+	shape.AddPoint({ 50, 50 });
+	shape.AddPoint({ 0, 100 });
+	shape.SetColor(0xffb0c0d0);
+	shape.UpdateShape();
+	shape.SetSize({ 100, 100 });
+	shape.SetPivot({ 0.5f, 0.5f });
+
+	static bool toggle = false;
+
+	shape.Updating += [&] (UI::UIEvent const &m)
+	{
+	};
+
+	shape.Clicked += [&] (UI::UIEvent const &m)
+	{
+		toggle = !toggle;
+		shape.SetRotation(toggle ? PI / 2 : 0);
+	};
+
+	shape.MouseEntered += [&] (UI::MouseEvent const &m)
+	{
+		shape.SetColor(0xff000000);
+	};
+
+	shape.MouseLeft += [&] (UI::MouseEvent const &m)
+	{
+		shape.SetColor(0xffff0000);
+	};
+
 	lightPos = Vec4(0, -15, 20, 0);
 
 	DXB(uiShader.Create());
@@ -1042,7 +1075,7 @@ void MyDXWindow::OnFrame()
 		car.Reset();
 	}
 
-	if(Keyboard::Pressed('N'))
+	if(Keyboard::Pressed('Q'))
 	{
 		Random r;
 		for(int i = 0; i < numBoxes; ++i)
@@ -1340,20 +1373,20 @@ void MyDXWindow::OnFrame()
 	//	debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
 	//}
 
-	//{
-	//	Vec2f a(500, 100);
-	//	Vec2f b(600, 700);
-	//	Vec2f c(550, 50);
-	//	Vec2f d(Mouse::Position);
-	//	Vec2f i;
-	//	bool x = LineIntersect(a, b, c, d, &i);
-	//	debug_line2d(a, b, Color::Yellow);
-	//	debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
-	//	if(x)
-	//	{
-	//		debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
-	//	}
-	//}
+	{
+		Vec2f a(500, 100);
+		Vec2f b(600, 700);
+		Vec2f c(550, 50);
+		Vec2f d(Mouse::Position);
+		Vec2f i;
+		bool x = LineIntersect(a, b, c, d);
+		debug_line2d(a, b, Color::Yellow);
+		debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
+		//if(x)
+		//{
+		//	debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
+		//}
+	}
 
 	//{
 	//	Vec2f a(300, 300);
@@ -1390,31 +1423,42 @@ void MyDXWindow::OnFrame()
 			for(uint i = 0; i < n; ++i)
 			{
 				Vec2f const *k = p.data() + i;
-				debug_line2d(*j, *k, isConvex ? Color::BrightGreen : Color::BrightRed);
+				debug_line2d(*j, *k, isConvex ? Color::BrightGreen : Color::BrightBlue);
 				j = k;
 			}
 
-			if((1 || Keyboard::Held('T')) && p.size() > 2)
+			if((1 || Keyboard::Held('T')) && n > 2)
 			{
-				vector<int> index((p.size() - 2) * 3);
-				int numTris = TriangulatePolygon(p.data(), (uint)p.size(), index.data());
+				vector<uint16> index((n - 2) * 3);
+				bool in;
+				int numTris;
+				if(isConvex)
+				{
+					numTris = TriangulateConvexPolygon(p.data(), n, index.data());
+					in = PointInConvexShape(p.data(), n, Mouse::Position);
+				}
+				else
+				{
+					numTris = TriangulateConcavePolygon(p.data(), n, index.data());
+					in = PointInConcaveShape(p.data(), n, Mouse::Position);
+				}
+				Color clr = Color::Cyan;
+				if((numTris * 3) < index.size())
+				{
+					clr = Color::BrightRed;
+				}
 				for(int i = 0; i < numTris * 3; i += 3)
 				{
 					Vec2f const &a = p[index[i + 0]];
 					Vec2f const &b = p[index[i + 1]];
 					Vec2f const &c = p[index[i + 2]];
-					debug_solid_triangle2d(a, b, c, 0x60ff0000);
-					debug_outline_triangle2d(a, b, c, Color::Cyan);
+					debug_solid_triangle2d(a, b, c, isConvex ? 0x600000ff : 0x60ff0000);
+					debug_outline_triangle2d(a, b, c, clr);
 				}
+				Color c = in ? Color::White : Color::BrightBlue;
+				Vec2f s(5, 5);
+				debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
 			}
-
-			//Color c = Color::BrightBlue;
-			//if(PointInConcaveShape(p.data(), n, Mouse::Position))
-			//{
-			//	c = Color::White;
-			//}
-			//Vec2f s(5, 5);
-			//debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
 		}
 	}
 

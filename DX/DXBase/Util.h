@@ -55,9 +55,11 @@ namespace DX
 
 	bool PointInTriangleUnordered(Vec2f const& p0, Vec2f const& p1, Vec2f const& p2, Vec2f const& pp);
 	bool PointInTriangle(Vec2f const &a, Vec2f const &b, Vec2f const &c, Vec2f const &point);
-	bool LineIntersect(Vec2f const &a1, Vec2f const &a2, Vec2f const &b1, Vec2f const &b2, Vec2f *intersectionPoint);
+	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3);
+	bool LineIntersect(Vec2f const &a1, Vec2f const &a2, Vec2f const &b1, Vec2f const &b2, Vec2f &intersectionPoint);
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4]);
 	bool PointInRectangle(Vec2f const &point, Vec2f const r[4], float const margins[4]);
+	Vec2f ClosestPointOnLineSegment(Vec2f const &v, Vec2f const &w, Vec2f const &c);
 	float DistanceToLineSegmentSquared(Vec2f const &a, Vec2f const &b, Vec2f const &p);
 	float DistanceToLineSegment(Vec2f const &a, Vec2f const &b, Vec2f const &point);
 	bool RectanglesOverlap(Vec2f const a[4], Vec2f const b[4]);
