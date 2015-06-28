@@ -1373,20 +1373,20 @@ void MyDXWindow::OnFrame()
 	//	debug_text((int)p.x, (int)p.y - 20, "%f", n.Dot(p - q[0]));
 	//}
 
-	{
-		Vec2f a(500, 100);
-		Vec2f b(600, 700);
-		Vec2f c(550, 50);
-		Vec2f d(Mouse::Position);
-		Vec2f i;
-		bool x = LineIntersect(a, b, c, d);
-		debug_line2d(a, b, Color::Yellow);
-		debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
-		//if(x)
-		//{
-		//	debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
-		//}
-	}
+	//{
+	//	Vec2f a(500, 100);
+	//	Vec2f b(600, 700);
+	//	Vec2f c(550, 50);
+	//	Vec2f d(Mouse::Position);
+	//	Vec2f i;
+	//	bool x = LineIntersect(a, b, c, d);
+	//	debug_line2d(a, b, Color::Yellow);
+	//	debug_line2d(c, d, x ? Color::Cyan : Color::Yellow);
+	//	//if(x)
+	//	//{
+	//	//	debug_solid_rect2d(i - Vec2f { 2, 2 }, i + Vec2f { 2, 2 }, Color::White);
+	//	//}
+	//}
 
 	//{
 	//	Vec2f a(300, 300);
@@ -1460,6 +1460,27 @@ void MyDXWindow::OnFrame()
 				debug_solid_rect2d(Mouse::Position - s, Mouse::Position + s, c);
 			}
 		}
+	}
+
+	{
+		float w = 16;
+		Vec2f a { 500, 500 };
+		Vec2f b { 600, 600 };
+		Vec2f c = Mouse::Position;
+		Vec2f ab = (b - a).Normalize();
+		Vec2f bc = (c - b).Normalize();
+		debug_line2d(a, b, Color::White);
+		debug_line2d(b, c, Color::White);
+		float t = (acosf(ab.Dot(bc)) - PI);
+		float u = tanf(t / 2 - PI / 2) / 1.414f + 1;
+		u *= w;
+		Vec2f an = Vec2f(-ab.y, ab.x ) * w;
+		Vec2f cn = Vec2f(-bc.y, bc.x ) * w;
+		Vec2f bn = (an + cn).Normalize() * u;
+//		debug_line2d(b, b + bn, Color::BrightGreen);
+		debug_line2d(a + an, b + bn, Color::Cyan);
+		debug_line2d(b + bn, c + cn, Color::Cyan);
+		debug_text(c - Vec2f(0, 20), "%f (%f)", t * 180 / PI, u);
 	}
 
 
