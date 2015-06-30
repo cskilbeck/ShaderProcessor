@@ -321,6 +321,17 @@ namespace DX
 		}
 	}
 
+	bool NormalLinesIntersect(Vec2f const &p0, Vec2f const &n0, Vec2f const &p1, Vec2f const &n1, Vec2f &intersection)
+	{
+		float d = n0.Cross(n1);
+		if(d != 0)
+		{
+			intersection = p0 + ((n1.Cross(p0 - p1) / d) * n0);
+			return true;
+		}
+		return false;
+	}
+
 	bool LineIntersect(Vec2f const &p0, Vec2f const &p1, Vec2f const &p2, Vec2f const &p3)
 	{
 		if(ccw(p0, p1, p2) * ccw(p0, p1, p3) > 0) return false;

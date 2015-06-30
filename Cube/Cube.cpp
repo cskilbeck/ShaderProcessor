@@ -1467,20 +1467,32 @@ void MyDXWindow::OnFrame()
 		Vec2f a { 500, 500 };
 		Vec2f b { 600, 600 };
 		Vec2f c = Mouse::Position;
+
+		Vec2f intersection;
+		bool v;
+
 		Vec2f ab = (b - a).Normalize();
-		Vec2f bc = (c - b).Normalize();
-		debug_line2d(a, b, Color::White);
-		debug_line2d(b, c, Color::White);
-		float t = (acosf(ab.Dot(bc)) - PI);
-		float u = tanf(t / 2 - PI / 2) / 1.414f + 1;
-		u *= w;
-		Vec2f an = Vec2f(-ab.y, ab.x ) * w;
-		Vec2f cn = Vec2f(-bc.y, bc.x ) * w;
-		Vec2f bn = (an + cn).Normalize() * u;
-//		debug_line2d(b, b + bn, Color::BrightGreen);
-		debug_line2d(a + an, b + bn, Color::Cyan);
-		debug_line2d(b + bn, c + cn, Color::Cyan);
-		debug_text(c - Vec2f(0, 20), "%f (%f)", t * 180 / PI, u);
+		Vec2f cb = (b - c).Normalize();
+		Vec2f am = Vec2f(ab.y, -ab.x) * w;
+		Vec2f cm = Vec2f(cb.y, -cb.x) * w;
+		Vec2f ap = a + am;
+		Vec2f cp = c - cm;
+		if(fabsf(ab.Dot(cb) + 1.0f) < FLT_EPSILON)	// in a straight line?
+		{
+			v = true;
+			intersection = b + am;
+		}
+		else
+		{
+			v = NormalLinesIntersect(ap, ab, cp, cb, intersection);
+		}
+		if(v)
+		{
+			debug_solid_triangle2d(a, ap, intersection, Color::Cyan);
+			debug_solid_triangle2d(intersection, b, a, Color::Cyan);
+			debug_solid_triangle2d(cp, c, intersection, Color::Cyan);
+			debug_solid_triangle2d(c, b, intersection, Color::Cyan);
+		}
 	}
 
 
