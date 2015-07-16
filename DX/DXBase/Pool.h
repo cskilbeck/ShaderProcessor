@@ -19,7 +19,7 @@ namespace DX
 		static_assert(sizeof(T) >= sizeof(list_node), "Pooled objects must be at least as big as list_node");
 		static_assert(sizeof(Dummy) == sizeof(list_node), "Compiler has inserted some data which isn't helping...");
 
-		linked_list<Dummy>		mFreeList;
+		chs::linked_list<Dummy>		mFreeList;
 		T *						mPool;
 
 		Pool(uint n)
