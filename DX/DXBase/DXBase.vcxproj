@@ -43,6 +43,7 @@
     <ClInclude Include="Flags.h" />
     <ClInclude Include="Half.h" />
     <ClInclude Include="HLSLTypes.h" />
+    <ClInclude Include="LinearAlloc.h" />
     <ClInclude Include="linked_list.h" />
     <ClInclude Include="Macros.h" />
     <ClInclude Include="Matrix.h" />

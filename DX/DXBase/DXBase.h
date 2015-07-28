@@ -68,6 +68,7 @@ using chs::list_node;
 using chs::linked_list;
 
 #include "Pool.h"
+#include "LinearAlloc.h"
 #include "RefCounted.h"
 #include "Half.h"
 #include "Vec4.h"

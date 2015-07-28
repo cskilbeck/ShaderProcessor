@@ -42,7 +42,7 @@ namespace DX
 		MouseMessage *AddMouseMessage(Message::Type type, Vec2f const &point)
 		{
 			MouseMessage *m = new MouseMessage();	// Hmm - need a pool allocator for these... but they're all different sizes...
-			m->mType = type;
+			m->mType = type;						// But - they can all be freed every frame loop, so you could have a linear buffer thing
 			m->mPosition = point;
 			messages.push_back(m);
 			return m;
