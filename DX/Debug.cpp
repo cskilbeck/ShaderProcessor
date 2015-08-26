@@ -186,7 +186,7 @@ namespace DX
 	{
 		va_list v;
 		va_start(v, fmt);
-		string s = StringFromWideString(Format_V(fmt, v));
+		string s = String(Format_V(fmt, v));
 		fontInstance.DrawString(s.c_str(), cursorPos, &cursorPos);
 	}
 
@@ -206,7 +206,7 @@ namespace DX
 	{
 		va_list v;
 		va_start(v, fmt);
-		string s = StringFromWideString(Format_V(fmt, v));
+		string s = String(Format_V(fmt, v));
 		fontInstance.DrawString(s.c_str(), Vec2f((float)x, (float)y));
 	}
 
@@ -226,7 +226,7 @@ namespace DX
 	{
 		va_list v;
 		va_start(v, fmt);
-		string s = StringFromWideString(Format_V(fmt, v));
+		string s = String(Format_V(fmt, v));
 		fontInstance.DrawString(s.c_str(), pos);
 	}
 

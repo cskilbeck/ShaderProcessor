@@ -491,7 +491,7 @@ void SetDebugInfo(ID3D11Resource **texture, ID3D11ShaderResourceView **textureVi
 {
 #if defined(_DEBUG) || defined(PROFILE)
 
-	string s = StringFromTString(GetFilename(TStringFromWideString(wstring(pstrName)).c_str()));
+	string s = String(GetFilename(TString(wstring(pstrName)).c_str()));
 
 	if(texture != null && *texture != null)
 	{
@@ -650,7 +650,7 @@ HRESULT CreateWICTextureFromFile(_In_z_		DX::FileBase *file,
 
 	DXR(CreateTextureFromWIC(context.get(), frame.get(), texture, textureView, maxsize, createMipMaps));
 
-	SetDebugInfo(texture, textureView, DX::WideStringFromTString(file->Name()).c_str());
+	SetDebugInfo(texture, textureView, DX::WString(file->Name()).c_str());
 
 	return S_OK;
 }

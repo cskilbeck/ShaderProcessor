@@ -47,7 +47,7 @@ bool CompileFile(string &file, char const *filename, char const *mainFunction, c
 	}
 	string refname = ToLower(desc->refName);
 	string shader = Format("%s_%s", refname.c_str(), shaderModel);	// eg vs_4_0
-	wstring fname = WideStringFromString(filename);
+	wstring fname = WString(filename);
 	uint flags = GetCompilerOptionFlags();
 	//string output = SetExtension(filename, TEXT(".cso"));
 	ID3DBlob *compiledShader;

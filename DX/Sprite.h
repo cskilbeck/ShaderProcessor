@@ -226,7 +226,7 @@ namespace DX
 
 			mName = GetFilename(filename);
 
-			tstring textureName = TStringFromWideString(GetValue(root, L"imagePath"));
+			tstring textureName = TString(GetValue(root, L"imagePath"));
 
 			textureName = GetPath(filename) + textureName;
 
@@ -264,7 +264,7 @@ namespace DX
 				s.Size = size;
 				s.UVa = pos / tsize;
 				s.UVb = (pos + size) / tsize;
-				string name = StringFromWideString(GetValue(spriteNode, L"n"));
+				string name = String(GetValue(spriteNode, L"n"));
 				mSprites.push_back(s);
 				mSheet[name] = index++;
 			}

@@ -648,7 +648,7 @@ HRESULT HLSLShader::CreateBindings()
 
 HLSLShader::HLSLShader(tstring const &filename)
 	: mStartIndex(0)
-	, mName(StringFromTString(filename))
+	, mName(String(filename))
 	, mConstBuffers(0)
 	, mSamplers(0)
 	, mResources(0)

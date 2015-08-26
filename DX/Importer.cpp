@@ -94,7 +94,7 @@ namespace
 
 		bool Exists(char const *pFile) const override
 		{
-			tstring s = DX::TStringFromString(pFile);
+			tstring s = DX::TString(pFile);
 			return DX::AssetManager::FileExists(s.c_str());
 		}
 

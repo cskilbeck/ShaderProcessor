@@ -154,32 +154,21 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	wstring WideStringFromTString(tstring const &str)
+	tstring TString(wstring const &str)
 	{
 #ifdef UNICODE
 		return str;
 #else
-		return WideStringFromString(str);
+		return String(str);
 #endif
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	tstring TStringFromWideString(wstring const &str)
+	tstring TString(string const &str)
 	{
 #ifdef UNICODE
-		return str;
-#else
-		return StringFromWideString(str);
-#endif
-	}
-
-	//////////////////////////////////////////////////////////////////////
-
-	string StringFromTString(tstring const &str)
-	{
-#ifdef UNICODE
-		return StringFromWideString(str);
+		return WString(str);
 #else
 		return str;
 #endif
@@ -187,38 +176,44 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	tstring TStringFromString(string const &str)
+	wstring WString(wstring const &str)
 	{
-#ifdef UNICODE
-		return WideStringFromString(str);
-#else
 		return str;
-#endif
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	wstring WideStringFromString(string const &str)
+	string String(string const &str)
+	{
+		return str;
+	}
+
+	//////////////////////////////////////////////////////////////////////
+
+	wstring WString(string const &str)
 	{
 		vector<wchar> temp;
-		temp.resize(str.size() + 1);
-		temp[0] = (wchar)0;
-		MultiByteToWideChar(CP_ACP, 0, str.c_str(), (int)str.size(), &temp[0], (int)str.size());
-		temp[str.size()] = 0;
-		return wstring(&temp[0]);
+		int bufSize = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, null, 0);
+		if (bufSize > 0)
+		{
+			temp.resize(bufSize);
+			MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, temp.data(), bufSize);
+			return wstring(temp.data());
+		}
+		return wstring();
 	}
 
 	//////////////////////////////////////////////////////////////////////
 
-	string StringFromWideString(wstring const &str)
+	string String(wstring const &str)
 	{
 		vector<char> temp;
-		int bufSize = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), (int)str.size() + 1, NULL, 0, NULL, FALSE);
-		if(bufSize > 0)
+		int bufSize = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, NULL, 0, NULL, FALSE);
+		if (bufSize > 0)
 		{
 			temp.resize(bufSize);
-			WideCharToMultiByte(CP_UTF8, 0, str.c_str(), (int)str.size() + 1, &temp[0], bufSize, NULL, FALSE);
-			return string(&temp[0]);
+			WideCharToMultiByte(CP_UTF8, 0, str.c_str(), -1, &temp[0], bufSize, NULL, FALSE);
+			return string(temp.data());
 		}
 		return string();
 	}

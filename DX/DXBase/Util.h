@@ -31,14 +31,14 @@ namespace DX
 
 //	HRESULT LoadResource(uint32 resourceID, void **data, size_t *size = null);
 
-	wstring WideStringFromTString(tstring const &str);
-	wstring WideStringFromString(string const &str);
+	string String(tstring const &str);
+	wstring WString(tstring const &str);
 
-	tstring TStringFromWideString(wstring const &str);
-	tstring TStringFromString(string const &str);
+	string String(wstring const &str);
+	wstring WString(string const &str);
 
-	string StringFromTString(tstring const &str);
-	string StringFromWideString(wstring const &str);
+	tstring TString(wstring const &str);
+	tstring TString(string const &str);
 
 	wstring Format(wchar const *fmt, ...);
 	string Format(char const *fmt, ...);

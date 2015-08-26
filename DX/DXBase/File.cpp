@@ -75,7 +75,7 @@ namespace DX
 
 	int CreateFolder(tchar const *name)
 	{
-		int r = SHCreateDirectory(null, WideStringFromTString(name).c_str());
+		int r = SHCreateDirectory(null, WString(name).c_str());
 		return (r == ERROR_SUCCESS ||
 				r == ERROR_ALREADY_EXISTS ||
 				r == ERROR_FILE_EXISTS)

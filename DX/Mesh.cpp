@@ -152,7 +152,7 @@ HRESULT Scene::Load(tchar const *filename)
 			{
 				texture = SetExtension(texture.c_str(), ".png");
 			}
-			tstring texturePath = GetPath(filename) + TStringFromString(texture);
+			tstring texturePath = GetPath(filename) + TString(texture);
 			ps.picTexture = new Texture();
 			ps.picTexture->Load(texturePath.c_str());
 			ps.tex1Sampler = new Sampler();
