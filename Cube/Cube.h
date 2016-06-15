@@ -73,6 +73,10 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 
 	DrawList drawList;
 
+	vector<Vec4f> mGyro;
+	vector<Vec4f> mAccel;
+	vector<uint64> mTimes;	//16:16:12.873
+
 	Shaders::UI uiShader;
 	VertexBuilder<Shaders::UI::InputVertex> UIVerts;
 	Texture uiTexture;
@@ -161,6 +165,8 @@ struct MyDXWindow: DXWindow, iPhysicsRenderer
 	//////////////////////////////////////////////////////////////////////
 
 	MyDXWindow();
+
+	bool LoadCSV();
 
 	void OnKeyDown(int key, uintptr flags) override;
 	bool OnCreate() override;

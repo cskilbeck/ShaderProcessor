@@ -681,12 +681,81 @@ int MyDXWindow::LoadTrack(btTransform &carTransform)
 	return S_OK;
 }
 
+//////////////////////////////////////////////////////////////////////
+
+bool MyDXWindow::LoadCSV()
+{
+	int ignored = 0;
+	int lines = 0;
+
+	uint64 timebase;
+
+	DiskFile f;
+	DXB(f.Open(TEXT("Data\\DataSet1 -- log_20151209_161631.csv"), DiskFile::ForReading));
+	while (true)
+	{
+		tstring line;
+		HRESULT hr = f.ReadLine(line);			// get a line from the file
+		if (FAILED(hr) || hr == ERROR_HANDLE_EOF)
+		{
+			break;
+		}
+		vector<tstring> tok;
+		tokenize(line, tok, TEXT(","));			// split on the commas
+		if (lines > 0)							// ignore header line
+		{
+			if (tok.size() != 8)				// ignore any with != 6 values
+			{
+				ignored++;
+			}
+			else
+			{
+				float f[8];
+				int i = 0;
+				for (auto &t : tok)
+				{
+					t = Trim(t);
+					f[i++] = (float)atof(t.c_str());		// trim the values and convert to floats
+				}
+				mGyro.push_back(Vec4(f[2], f[3], f[4]));		// get the gyro
+				mAccel.push_back(Vec4(f[5], f[6], f[7]));	// get the accel
+
+				uint h, m, s, ms;
+
+				_stscanf_s(tok[1].c_str(), TEXT("%d:%d:%d.%d"), &h, &m, &s, &ms);	// get the time
+
+				uint64 total = (uint64)ms + (uint64)s * 1000 + (uint64)m * 60 * 1000 + (uint64)h * 60 * 60 * 1000;
+
+				if (lines == 1)
+				{
+					timebase = total;
+				}
+				total -= timebase;							// offset to zero based milliseconds
+
+				mTimes.push_back(total);
+
+				TRACE(TEXT("Gyro: %f,%f,%f, Accel: %f,%f,%f, Time: %I64d\n"),
+					GetX(mGyro.back()), GetY(mGyro.back()), GetZ(mGyro.back()),
+					GetX(mAccel.back()), GetY(mAccel.back()), GetZ(mAccel.back()),
+					mTimes.back());
+			}
+		}
+		++lines;
+	}
+	if (ignored > 0)
+	{
+		MessageBox(NULL, Format(TEXT("Warning, %d lines ignored..."), ignored).c_str(), TEXT("Loading file"), MB_ICONEXCLAMATION);
+	}
+	return true;
+}
 
 //////////////////////////////////////////////////////////////////////
 
 bool MyDXWindow::OnCreate()
 {
 	TRACE("=== OnCreate() ===\n");
+
+	LoadCSV();
 
 	if(!DXWindow::OnCreate())
 	{

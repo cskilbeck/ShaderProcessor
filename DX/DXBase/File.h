@@ -413,6 +413,38 @@ namespace DX
 			return S_OK;
 		}
 
+		//uint64 got;
+		//DXR(Read(&b, (size_t)sizeof(b), &got));
+		//return (got == sizeof(b)) ? S_OK : E_FAIL;
+		int ReadLine(tstring &str)
+		{
+			str.clear();
+			while (true)
+			{
+				tchar c;
+				uint64 got;
+				HRESULT hr = Read(&c, (size_t)sizeof(c), &got);
+				if (FAILED(hr))
+				{
+					return hr;
+				}
+				if(got != sizeof(c))
+				{
+					return ERROR_HANDLE_EOF;
+				}
+				if (c == 0x0d)
+				{
+					continue;
+				}
+				if(c == 0x0a)
+				{
+					break;
+				}
+				str.push_back(c);
+			}
+			return S_OK;
+		}
+
 		int Write(void const *buffer, uint64 size, uint64 *wrote = null) override
 		{
 			uint64 total = 0;
