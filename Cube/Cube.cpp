@@ -683,6 +683,36 @@ int MyDXWindow::LoadTrack(btTransform &carTransform)
 
 //////////////////////////////////////////////////////////////////////
 
+static float sinc(float f)
+{
+	f *= PI;	// hmmm
+	return sinf(f) / f;
+}
+
+// fill in the gaps, just linear for now
+
+static vector<Vec4f> linear_interpolate(vector<Vec4f> &v, vector<uint64> &times)
+{
+	assert(times.size() == v.size());
+	assert(times.size() > 1);
+	assert(times.back() < 65536);
+	vector<Vec4f> t(times.back() + 1);
+	int index = 0;
+	for(int i=0; i<v.size() - 1; ++i)
+	{
+		Vec4f s = v[i];
+		Vec4f d = v[i + 1] - s;
+		int64 dt = times[i + 1] - times[i];
+		for(int64 j=0; j<dt; ++j)
+		{
+			float r = j / (float)dt;
+			t[index++] = s + d * r;
+		}
+	}
+	t[index++] = v.back();	// tack on the last one
+	return t;
+}
+
 bool MyDXWindow::LoadCSV()
 {
 	int ignored = 0;
@@ -746,6 +776,12 @@ bool MyDXWindow::LoadCSV()
 	{
 		MessageBox(NULL, Format(TEXT("Warning, %d lines ignored..."), ignored).c_str(), TEXT("Loading file"), MB_ICONEXCLAMATION);
 	}
+
+	// now create interpolated data at Nms intervals
+	// and for fancy pants mode, use sin(x)/x
+	vector<Vec4f> lg;
+	vector<Vec4f> la;
+
 	return true;
 }
 
