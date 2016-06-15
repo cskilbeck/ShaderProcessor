@@ -72,10 +72,10 @@ namespace
 		if(AssetManager::LoadFile(filename, f) == S_OK)
 		{
 			size_t len;
-			if(UTF8ToWide((byte *)f.Data(), f.Size(), &len, null) && len > 0)
+			if(UTF8ToWide((byte *)f.Data(), (size_t)f.Size(), &len, null) && len > 0)
 			{
 				str.resize(len + 1);
-				UTF8ToWide((byte *)f.Data(), f.Size(), &len, &str[0]);
+				UTF8ToWide((byte *)f.Data(), (size_t)f.Size(), &len, &str[0]);
 				str[len] = '\0';
 				rc = true;
 			}

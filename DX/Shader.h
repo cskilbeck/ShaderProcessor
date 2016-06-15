@@ -209,7 +209,7 @@ namespace DX
 			uint32 *off = (uint32 *)f.Data();
 			size_t offset = off[type];
 			ptr = (byte *)f.Data() + offset;
-			size = ((type == NumShaderTypes - 1) ? f.Size() : off[type + 1]) - offset;
+			size = (size_t)(((type == NumShaderTypes - 1) ? f.Size() : off[type + 1]) - offset);
 		}
 
 		//////////////////////////////////////////////////////////////////////
@@ -220,7 +220,7 @@ namespace DX
 
 		virtual HRESULT Create(Resource &r)
 		{
-			DXR(D3DCreate(r.Data(), r.Size()));
+			DXR(D3DCreate(r.Data(), (size_t)r.Size()));
 			return S_OK;
 		}
 	};

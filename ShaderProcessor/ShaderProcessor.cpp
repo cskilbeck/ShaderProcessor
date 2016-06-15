@@ -147,7 +147,7 @@ int CreateSOB(MemoryFile &memFile)
 		currentOffset += sizes[i];
 	}
 
-	memFile.Reset(totalSize);
+	memFile.Reset((size_t)totalSize);
 
 	// write the offsets
 	uint64 wrote;

@@ -172,7 +172,7 @@ namespace DX
 
 			// stubs
 			int Write(void const *buffer, uint64 size, uint64 *wrote = null) override;
-			int Seek(size_t offset, int seekType, intptr *newPosition = null) override;
+			int Seek(uint64 offset, int seekType, intptr *newPosition = null) override;
 			int Reopen(FileBase **other) override;
 			int GetPosition(uint64 &position) override;
 			tstring Name() override;

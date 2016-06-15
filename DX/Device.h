@@ -396,6 +396,10 @@ namespace DX
 			};
 
 #if defined(_DEBUG)
+//#define D3D_DEBUG
+#endif
+
+#if defined(D3D_DEBUG)
 			UINT flags = D3D11_CREATE_DEVICE_DEBUG;
 #else
 			UINT flags = 0;
@@ -603,7 +607,7 @@ namespace DX
 			mContext.Release();
 			DX::Context = null;
 
-#			if defined(_DEBUG)
+#			if defined(D3D_DEBUG)
 			DXPtr<ID3D11Debug> D3DDebug;
 			DX::Device->QueryInterface(__uuidof(ID3D11Debug), (void **)&D3DDebug);
 #			endif
@@ -613,7 +617,7 @@ namespace DX
 			mDevice.Release();
 			DX::Device = null;
 
-#			if defined(_DEBUG)
+#			if defined(D3D_DEBUG)
 			D3DDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
 			D3DDebug.Release();
 #			endif

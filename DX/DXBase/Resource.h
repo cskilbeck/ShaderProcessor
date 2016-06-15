@@ -65,18 +65,18 @@ namespace DX
 
 		Blob(uint64 size)
 			: mSize(size)
-			, mData(new Aligned_byte[size])
+			, mData(new Aligned_byte[(uint)size])
 		{
 		}
 
 		void Fill(void *data, uint64 size)
 		{
-			memcpy(mData.get(), data, min(size, mSize));
+			memcpy(mData.get(), data, (uint32)(min(size, mSize)));
 		}
 
 		void Reset(uint64 size)
 		{
-			mData.reset(new Aligned_byte[size]);
+			mData.reset(new Aligned_byte[(uint32)size]);
 			mSize = size;
 		}
 

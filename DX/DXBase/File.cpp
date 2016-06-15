@@ -11,7 +11,7 @@ namespace DX
 	//////////////////////////////////////////////////////////////////////
 	// Load a binary resource from the exe
 
-	HRESULT LoadResource(uint32 resourceid, void **data, size_t *size)
+	HRESULT LoadResource(uint32 resourceid, void **data, uint64 *size)
 	{
 	    HRSRC myResource = ::FindResource(NULL, MAKEINTRESOURCE(resourceid), RT_RCDATA);
 	    if(myResource == null)
@@ -31,7 +31,7 @@ namespace DX
 			return HRESULT_FROM_WIN32(ERROR_RESOURCE_NOT_AVAILABLE);
 	    }
 
-	    size_t s = (size_t)SizeofResource(GetModuleHandle(null), myResource);
+		uint64 s = (uint64)SizeofResource(GetModuleHandle(null), myResource);
 	    if(s == 0)
 	    {
 			return HRESULT_FROM_WIN32(ERROR_RESOURCE_FAILED);

@@ -132,7 +132,7 @@ namespace DX
 		{
 			Resource r = FindShaderInSOBFile(f, ShaderType::Vertex);
 			DXR(Shader::Create(r));
-			DXR(Device->CreateInputLayout(inputElements, inputElementCount, r.Data(), r.Size(), &mInputLayout));
+			DXR(Device->CreateInputLayout(inputElements, inputElementCount, r.Data(), (size_t)r.Size(), &mInputLayout));
 			return S_OK;
 		}
 

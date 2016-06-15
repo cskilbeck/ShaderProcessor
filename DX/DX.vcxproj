@@ -150,7 +150,8 @@
       </DataRoot>
     </SPOCK>
     <SPOCK Include="Shaders\Font.shader">
-      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">gsMain</GeometryShaderFunction>
+      <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">gsMain</GeometryShaderFunction>
       <GeometryShaderFunction Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </GeometryShaderFunction>

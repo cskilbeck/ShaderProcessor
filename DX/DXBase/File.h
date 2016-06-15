@@ -59,7 +59,7 @@ namespace DX
 		{
 			uint64 size;
 			DXR(GetSize(size));
-			Ptr<byte> buffer(new byte[size]);
+			Ptr<byte> buffer(new byte[(size_t)size]);
 			uint64 got;
 			DXR(Read(buffer.get(), size, &got));
 			result.Set(buffer.release(), size);
@@ -69,14 +69,14 @@ namespace DX
 		template<typename T> int Put(T &b)
 		{
 			uint64 put;
-			DXR(Write(&b, (uint32)sizeof(b), &put));
+			DXR(Write(&b, (size_t)sizeof(b), &put));
 			return (put == sizeof(b)) ? S_OK : E_FAIL;
 		}
 
 		template<typename T> int Get(T &b)
 		{
 			uint64 got;
-			DXR(Read(&b, (uint32)sizeof(b), &got));
+			DXR(Read(&b, (size_t)sizeof(b), &got));
 			return (got == sizeof(b)) ? S_OK : E_FAIL;
 		}
 
@@ -113,15 +113,15 @@ namespace DX
 
 	struct MemoryFile: FileBase
 	{
-		MemoryFile(size_t s)
-			: ptr(new byte[s])
+		MemoryFile(uint64 s)
+			: ptr(new byte[(size_t)s])
 			, size(s)
 			, pos(ptr)
 			, own(true)
 		{
 		}
 
-		MemoryFile(void *p = null, size_t s = 0)
+		MemoryFile(void *p = null, uint64 s = 0)
 			: ptr((byte *)p)
 			, size(s)
 			, pos(ptr)
@@ -231,7 +231,7 @@ namespace DX
 			DXR(GetPosition(position));
 			uint64 remain = size - position;
 			uint64 get = min(remain, size);
-			memcpy(buffer, pos, get);
+			memcpy(buffer, pos, (size_t)get);
 			pos += get;
 			if(got != null)
 			{
@@ -244,7 +244,7 @@ namespace DX
 		{
 			uint64 position;
 			DXR(GetPosition(position));
-			size_t remain = min(amount, size - position);
+			size_t remain = (size_t)min(amount, size - position);
 			memcpy(pos, buffer, remain);
 			pos += remain;
 			if(wrote != null)
@@ -394,8 +394,8 @@ namespace DX
 			while(total < size)
 			{
 				DWORD localGot;
-				uint32 get = (uint32)min(size, MAXUINT32);
-				if(ReadFile(h, buffer, get, &localGot, null) == 0)
+				size_t get = (size_t)min(size, MAXUINT32);
+				if(ReadFile(h, buffer, (DWORD)get, &localGot, null) == 0)
 				{
 					error = GetLastError();
 					return HRESULT_FROM_WIN32(error);
@@ -477,7 +477,7 @@ namespace DX
 		DWORD error;
 	};
 
-	HRESULT LoadResource(uint32 resourceid, void **data, size_t *size);
+	HRESULT LoadResource(uint32 resourceid, void **data, uint64 *size);
 
 	int LoadFile(tchar const *filename, MemoryFile &data);
 	int SaveFile(tchar const *filename, void const *data, uint32 size);

@@ -194,3 +194,5 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 Cube/camera.bin
+.VC.db
+*.VC.db
