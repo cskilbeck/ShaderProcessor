@@ -246,7 +246,6 @@ namespace DX
 			Event<DrawEvent>		Drawing;
 			Event<UIEvent>			Closing;
 			Event<UIEvent>			Closed;
-			Event<UIEvent>			Moved;
 			Event<ClickedEvent>		Clicked;
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
@@ -449,7 +448,6 @@ namespace DX
 			void SetX(float x)
 			{
 				SetPosition({ x, mPosition.y });
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -457,7 +455,6 @@ namespace DX
 			void SetY(float y)
 			{
 				SetPosition({ mPosition.x, y });
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -466,7 +463,6 @@ namespace DX
 			{
 				mPosition = pos;
 				Set(eDirtyMatrix);
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -511,7 +507,6 @@ namespace DX
 				mSize = size;
 				Set(eDirtyMatrix);
 				Resized.Invoke(this);
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -527,7 +522,6 @@ namespace DX
 			{
 				mPivot = pivot;
 				Set(eDirtyMatrix);
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -576,7 +570,6 @@ namespace DX
 			{
 				mScale = scale;
 				Set(eDirtyMatrix);
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -592,7 +585,6 @@ namespace DX
 			{
 				mAngle = angle;
 				Set(eDirtyMatrix);
-				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1432,22 +1424,6 @@ namespace DX
 
 				mVerticalScrollBar.Hide();
 				mVerticalScrollBar.Hide();
-
-				mHorizontalScrollBar.Moved += [this](UIEvent const &e)
-				{
-					float sw = mHorizontalScrollBar.Width();
-					float sd = Width() - sw;
-					float sp = ClientWidth() - sw;
-					SetClientPosition({ mHorizontalScrollBar.GetPosition().x / sd * sp, mOrigin.y });
-				};
-
-				mVerticalScrollBar.Moved += [this](UIEvent const &e)
-				{
-					float sh = mVerticalScrollBar.Height();
-					float sd = Height() - sh;
-					float sp = ClientHeight() - sh;
-					SetClientPosition({ mOrigin.x, mVerticalScrollBar.GetPosition().y / sd * sp });
-				};
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1532,8 +1508,10 @@ namespace DX
 
 			void ScrollTo(Vec2f const &o)
 			{
-				TRACE(TEXT("Scroll To "), o.x, o.y);
-				SetClientPosition(o);
+				Vec2f s(ClientSize() - GetSize());
+				Vec2f sp = Max(Vec2f::zero, Min(o, s));
+				mScrollTarget = mOrigin = sp;
+				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
 				UpdateScrollbars();
 			}
 

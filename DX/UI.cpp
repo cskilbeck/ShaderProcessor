@@ -574,13 +574,13 @@ namespace DX
 						{
 							case Vertical:
 							{
-								SetPosition({ mPosition.x, Min(Max(0.0f, e.mMousePosition.y - mDragOffset.y), mParent->mSize.y - mSize.y) });
+								MoveTo({ mPosition.x, e.mMousePosition.y - mDragOffset.y });
 							}
 							break;
 
 							case Horizontal:
 							{
-								SetPosition({ e.mMousePosition.x - mDragOffset.x, mPosition.y });
+								MoveTo({ e.mMousePosition.x - mDragOffset.x, mPosition.y });
 							}
 							break;
 						}
@@ -604,9 +604,34 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		void ScrollBar::MoveTo(Vec2f const &position)
+		{
+			Window *p = (Window *)mParent;
+			switch(mOrientation)
+			{
+				case Vertical:
+				{
+					float sd = p->Height() - Height();
+					float sp = p->ClientHeight() - p->Height();
+					p->ScrollTo({ p->mOrigin.x, position.y / sd * sp });
+				}
+				break;
+
+				case Horizontal:
+				{
+					float sd = p->Width() - Width();
+					float sp = p->ClientWidth() - p->Width();
+					p->ScrollTo({ position.x / sd * sp, p->mOrigin.y });
+				}
+				break;
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		void ScrollBar::Move(Vec2f const &delta)
 		{
-			SetPosition(mPosition + delta);
+			MoveTo(mPosition + delta);
 		}
 
 		//////////////////////////////////////////////////////////////////////
