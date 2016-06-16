@@ -16,6 +16,4 @@
 using namespace DX;
 
 #include "FPSCamera.h"
-#include "FollowCamera.h"
-#include "Vehicle.h"
 #include "Cube.h"
