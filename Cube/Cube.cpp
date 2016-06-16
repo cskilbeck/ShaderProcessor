@@ -44,8 +44,8 @@ int MyDXWindow::CreateGrid()
 		{
 			t *= 10;
 		}
-		Color cx = 0x40FFFFFF;
-		Color cy = 0x40FFFFFF;
+		Color cx = 0x20FFFFFF;
+		Color cy = 0x20FFFFFF;
 		if(x == 0)
 		{
 			cx = Color::BrightRed;
@@ -159,8 +159,8 @@ bool MyDXWindow::LoadCSV()
 
 	// now create interpolated data at Nms intervals
 	// and for fancy pants mode, use sin(x)/x
-	vector<Vec4f> lg;
-	vector<Vec4f> la;
+	mGyroInterpolated = linear_interpolate(mGyro, mTimes);
+	mAccelInterpolated = linear_interpolate(mAccel, mTimes);
 
 	return true;
 }
@@ -312,6 +312,8 @@ bool MyDXWindow::OnCreate()
 
 	TRACE("=== End of OnCreate() ===\n");
 
+	mCurrentTime.Reset();
+
 	return true;
 }
 
@@ -334,7 +336,7 @@ void MyDXWindow::OnFrame()
 	//debug_rect2d({ 100, 100 }, { 200, 200 }, Color::Random());
 	//debug_filled_rect2d({ 100, 100 }, { 600, 400 }, 0x80ff0000, 0xff00ff00);
 
-	Clear(Color(32, 64, 128));
+	Clear(Color(16, 32, 64));
 	ClearDepth(DepthOnly, 1.0f, 0);
 
 	// Draw grid
@@ -347,9 +349,20 @@ void MyDXWindow::OnFrame()
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
 
-	UI::Update(&root, deltaTime);
-	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
+	float gscale = 0.01f;
+	float ascale = 0.0004f;
+	float yscale = 0.01f;
 
+	UI::Update(&root, deltaTime);
+//	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
+	const int rate = 32;
+
+	for (int i = 1; i < mGyroInterpolated.size(); ++i)
+	{
+		Vec4f const &s = mGyroInterpolated[i - 1] * gscale + Vec4(0, (i - 1) * yscale, 1);
+		Vec4f const &e = mGyroInterpolated[i] * gscale + Vec4(0, i * yscale, 1);
+		debug_line(s, e, Color::BrightRed);
+	}
 	drawList.Execute();
 
 	//debug_quad(Vec4(-60, 20, 0), Vec4(-50, 20, 0), Vec4(-50, 30, 0), Vec4(-60, 30, 0), Color::Cyan);
@@ -357,6 +370,32 @@ void MyDXWindow::OnFrame()
 	// Draw some sprites immediate mode
 
 	debug_end();
+
+	debug_begin();
+	debug_set_camera(*camera);
+	for (int i = 1; i < mAccelInterpolated.size(); ++i)
+	{
+		Vec4f const &s = mAccelInterpolated[i - 1] * ascale + Vec4(0, (i - 1) * yscale, 1);
+		Vec4f const &e = mAccelInterpolated[i] * ascale + Vec4(0, i * yscale, 1);
+		debug_line(s, e, Color::SeaGreen);
+	}
+
+	// draw a little blob at the right time
+
+	int ms = (int)(mTimer.WallTime() * 1000.0) % mAccelInterpolated.size();
+	Vec4f sz = Vec4(0.5f, 0.5f, 0.5f);
+	Vec4f pos = mAccelInterpolated[ms] * ascale + Vec4(0, ms * yscale, 1);
+	debug_cube(pos - sz, pos + sz, Color::White);
+
+	pos = mGyroInterpolated[ms] * gscale + Vec4(0, ms * yscale, 1);
+	debug_cube(pos - sz, pos + sz, Color::Yellow);
+
+	mTimer.Update();
+
+	drawList.Execute();
+	debug_end();
+
+	mFrame = ++mFrame % (mAccelInterpolated.size() / rate);
 
 }
 

@@ -43,7 +43,15 @@ struct MyDXWindow: DXWindow
 
 	vector<Vec4f> mGyro;
 	vector<Vec4f> mAccel;
+
+	Timer		mCurrentTime;
+
 	vector<uint64> mTimes;	//16:16:12.873
+
+	vector<Vec4f> mGyroInterpolated;
+	vector<Vec4f> mAccelInterpolated;
+
+	int mFrame;
 
 	Shaders::UI uiShader;
 	VertexBuilder<Shaders::UI::InputVertex> UIVerts;

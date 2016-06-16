@@ -30,7 +30,7 @@ namespace
 		HRESULT Create()
 		{
 			DXR(mShader.Create());
-			DXR(mVertexBuilder.Create(32768));
+			DXR(mVertexBuilder.Create(65536));
 			return S_OK;
 		}
 
