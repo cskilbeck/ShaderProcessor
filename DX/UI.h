@@ -246,6 +246,7 @@ namespace DX
 			Event<DrawEvent>		Drawing;
 			Event<UIEvent>			Closing;
 			Event<UIEvent>			Closed;
+			Event<UIEvent>			Moved;
 			Event<ClickedEvent>		Clicked;
 			Event<PressedEvent>		Pressed;
 			Event<ReleasedEvent>	Released;
@@ -351,7 +352,7 @@ namespace DX
 				if(!Is(eClosed))
 				{
 					Set(eClosed);
-					Closing.Invoke(UIEvent(this));
+					Closing.Invoke(this);
 				}
 			}
 
@@ -448,6 +449,7 @@ namespace DX
 			void SetX(float x)
 			{
 				SetPosition({ x, mPosition.y });
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -455,6 +457,7 @@ namespace DX
 			void SetY(float y)
 			{
 				SetPosition({ mPosition.x, y });
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -463,6 +466,7 @@ namespace DX
 			{
 				mPosition = pos;
 				Set(eDirtyMatrix);
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -506,7 +510,8 @@ namespace DX
 			{
 				mSize = size;
 				Set(eDirtyMatrix);
-				Resized.Invoke(UIEvent(this));
+				Resized.Invoke(this);
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -522,6 +527,7 @@ namespace DX
 			{
 				mPivot = pivot;
 				Set(eDirtyMatrix);
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -570,6 +576,7 @@ namespace DX
 			{
 				mScale = scale;
 				Set(eDirtyMatrix);
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -585,6 +592,7 @@ namespace DX
 			{
 				mAngle = angle;
 				Set(eDirtyMatrix);
+				Moved.Invoke(this);
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -783,7 +791,7 @@ namespace DX
 				if(Is(eClosed))
 				{
 					mParent->RemoveChild(*this);
-					Closed.Invoke(UIEvent(this));
+					Closed.Invoke(this);
 				}
 				else if(!Is(eInActive))
 				{
@@ -1382,6 +1390,21 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
+		struct Slider: Rectangle
+		{
+			ScrollBar					mScrollBar;
+
+			Slider()
+				: Rectangle()
+				, mScrollBar(ScrollBar::Horizontal)
+			{
+				AddChild(mScrollBar);
+				mScrollBar.mColor = Color::White;
+			}
+		};
+
+		//////////////////////////////////////////////////////////////////////
+
 		struct Window: FilledRectangle
 		{
 			ClipRectangle				mClipRectangle;			// clipper
@@ -1406,8 +1429,25 @@ namespace DX
 				SetColor(0x80000000);
 				mVerticalScrollBar.SetSize({ 8, 8 });
 				mHorizontalScrollBar.SetSize({ 8, 8 });
+
 				mVerticalScrollBar.Hide();
 				mVerticalScrollBar.Hide();
+
+				mHorizontalScrollBar.Moved += [this](UIEvent const &e)
+				{
+					float sw = mHorizontalScrollBar.Width();
+					float sd = Width() - sw;
+					float sp = ClientWidth() - sw;
+					SetClientPosition({ mHorizontalScrollBar.GetPosition().x / sd * sp, mOrigin.y });
+				};
+
+				mVerticalScrollBar.Moved += [this](UIEvent const &e)
+				{
+					float sh = mVerticalScrollBar.Height();
+					float sd = Height() - sh;
+					float sp = ClientHeight() - sh;
+					SetClientPosition({ mOrigin.x, mVerticalScrollBar.GetPosition().y / sd * sp });
+				};
 			}
 
 			//////////////////////////////////////////////////////////////////////
@@ -1453,6 +1493,7 @@ namespace DX
 						{
 							mScrollTarget.x = mOrigin.x;
 						}
+						TRACE(TEXT("Update %f,%f\n"), o.x, o.y);
 					}
 					mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
 					UpdateScrollbars();
@@ -1479,12 +1520,20 @@ namespace DX
 
 			//////////////////////////////////////////////////////////////////////
 
-			void ScrollTo(Vec2f const &o)
+			void SetClientPosition(Vec2f const &o)
 			{
 				Vec2f s(ClientSize() - GetSize());
 				Vec2f sp = Max(Vec2f::zero, Min(o, s));
 				mScrollTarget = mOrigin = sp;
 				mClipRectangle.mClientTransform = TranslationMatrix(Vec4(floorf(-mOrigin.x), floorf(-mOrigin.y), 0));
+			}
+
+			//////////////////////////////////////////////////////////////////////
+
+			void ScrollTo(Vec2f const &o)
+			{
+				TRACE(TEXT("Scroll To "), o.x, o.y);
+				SetClientPosition(o);
 				UpdateScrollbars();
 			}
 

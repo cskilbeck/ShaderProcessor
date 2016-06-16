@@ -33,6 +33,7 @@ struct MyDXWindow: DXWindow
 	UI::ListBox listBox;
 	UI::Rectangle rect;
 	UI::FilledShape shape;
+	UI::Slider slider;
 
 	float deltaTime;
 	float oldDeltaTime;
@@ -50,8 +51,6 @@ struct MyDXWindow: DXWindow
 
 	vector<Vec4f> mGyroInterpolated;
 	vector<Vec4f> mAccelInterpolated;
-
-	int mFrame;
 
 	Shaders::UI uiShader;
 	VertexBuilder<Shaders::UI::InputVertex> UIVerts;

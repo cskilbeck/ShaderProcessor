@@ -243,6 +243,13 @@ bool MyDXWindow::OnCreate()
 	outlineRectangle.SetPivot(Vec2f::half);
 	outlineRectangle.SetPosition(FClientSize() / 2);
 
+	slider.SetColor(0x80ff00ff);
+	slider.SetLineColor(Color::White);
+	slider.mScrollBar.SetColor(Color::BrightGreen);
+	slider.mScrollBar.SetWidth(14);
+	slider.mScrollBar.SetHeight(14);
+	slider.mScrollBar.SetPosition(Vec2f(1, 1));
+
 	root.AddChild(outlineRectangle);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
@@ -354,13 +361,13 @@ void MyDXWindow::OnFrame()
 	float yscale = 0.01f;
 
 	UI::Update(&root, deltaTime);
-//	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
+	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 	const int rate = 32;
 
 	for (int i = 1; i < mGyroInterpolated.size(); ++i)
 	{
-		Vec4f const &s = mGyroInterpolated[i - 1] * gscale + Vec4(0, (i - 1) * yscale, 1);
-		Vec4f const &e = mGyroInterpolated[i] * gscale + Vec4(0, i * yscale, 1);
+		Vec4f const &s = mGyroInterpolated[i - 1] * gscale + Vec4(0, (i - 1) * yscale, 0);
+		Vec4f const &e = mGyroInterpolated[i] * gscale + Vec4(0, i * yscale, 0);
 		debug_line(s, e, Color::BrightRed);
 	}
 	drawList.Execute();
@@ -375,28 +382,27 @@ void MyDXWindow::OnFrame()
 	debug_set_camera(*camera);
 	for (int i = 1; i < mAccelInterpolated.size(); ++i)
 	{
-		Vec4f const &s = mAccelInterpolated[i - 1] * ascale + Vec4(0, (i - 1) * yscale, 1);
-		Vec4f const &e = mAccelInterpolated[i] * ascale + Vec4(0, i * yscale, 1);
+		Vec4f const &s = mAccelInterpolated[i - 1] * ascale + Vec4(0, (i - 1) * yscale, 0);
+		Vec4f const &e = mAccelInterpolated[i] * ascale + Vec4(0, i * yscale, 0);
 		debug_line(s, e, Color::SeaGreen);
 	}
 
-	// draw a little blob at the right time
+	// draw little lines/cubes at the current time
 
 	int ms = (int)(mTimer.WallTime() * 1000.0) % mAccelInterpolated.size();
 	Vec4f sz = Vec4(0.5f, 0.5f, 0.5f);
-	Vec4f pos = mAccelInterpolated[ms] * ascale + Vec4(0, ms * yscale, 1);
+	Vec4f pos = mAccelInterpolated[ms] * ascale + Vec4(0, ms * yscale, 0);
 	debug_cube(pos - sz, pos + sz, Color::White);
+	debug_line(pos, Vec4(0, ms * yscale, 0), Color::Cyan);
 
-	pos = mGyroInterpolated[ms] * gscale + Vec4(0, ms * yscale, 1);
+	pos = mGyroInterpolated[ms] * gscale + Vec4(0, ms * yscale, 0);
 	debug_cube(pos - sz, pos + sz, Color::Yellow);
+	debug_line(pos, Vec4(0, ms * yscale, 0), Color::Cyan);
 
 	mTimer.Update();
 
 	drawList.Execute();
 	debug_end();
-
-	mFrame = ++mFrame % (mAccelInterpolated.size() / rate);
-
 }
 
 //////////////////////////////////////////////////////////////////////
