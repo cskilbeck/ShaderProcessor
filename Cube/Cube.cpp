@@ -242,15 +242,15 @@ bool MyDXWindow::OnCreate()
 	outlineRectangle.SetSize(filledRectangle.GetSize());
 	outlineRectangle.SetPivot(Vec2f::half);
 	outlineRectangle.SetPosition(FClientSize() / 2);
-
-	slider.SetColor(0x80ff00ff);
-	slider.SetLineColor(Color::White);
-	slider.mScrollBar.SetColor(Color::BrightGreen);
-	slider.mScrollBar.SetWidth(14);
-	slider.mScrollBar.SetHeight(14);
-	slider.mScrollBar.SetPosition(Vec2f(1, 1));
-
 	root.AddChild(outlineRectangle);
+
+	slider.SetFont(font);
+	slider.SetText("Hello");
+	slider.SetRange(0, 100);
+	slider.SetPosition({ 10, 600 });
+	slider.SetWidth(200);
+	slider.SetValue(50);
+	root.AddChild(slider);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
 	{

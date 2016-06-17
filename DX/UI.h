@@ -1083,9 +1083,9 @@ namespace DX
 			Triangle()
 				: FilledShape()
 			{
-				float f = sqrtf(2);
+				float f = sqrtf(2) / 2;
 				AddPoint({ 0, 0 });
-				AddPoint({ f, f });
+				AddPoint({ f, 0.5f });
 				AddPoint({ 0, 1 });
 				UpdateShape();
 			}
@@ -1099,8 +1099,6 @@ namespace DX
 			{
 				return mOutlineColor;
 			}
-
-			void OnDraw(Matrix const &matrix, ID3D11DeviceContext *context, DrawList &drawList) override;
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -1382,16 +1380,105 @@ namespace DX
 
 		//////////////////////////////////////////////////////////////////////
 
-		struct Slider: Rectangle
+		struct Slider: Element
 		{
-			ScrollBar					mScrollBar;
+			Line		mLine;
+			Label		mText;
+			Label		mValueLabel;
+			Triangle	mSlider;
+			Vec2f		mRange;
+			float		mValue;
+			bool		mDrag;
 
 			Slider()
-				: Rectangle()
-				, mScrollBar(ScrollBar::Horizontal)
+				: Element()
+				, mValue(0)
+				, mDrag(false)
+				, mRange({ 0, 100 })
 			{
-				AddChild(mScrollBar);
-				mScrollBar.mColor = Color::White;
+				AddChild(mLine);
+				AddChild(mText);
+				AddChild(mValueLabel);
+				AddChild(mSlider);
+				mLine.SetColor(Color::White);
+				mSlider.SetColor(Color::Yellow);
+				Resized += [this] (UIEvent const &e)
+				{
+					mText.SetPosition({ 0, 0 });
+					mText.SetPivot(Vec2f(0, 1));
+					mValueLabel.SetPosition({ Width(), 0 });
+					mValueLabel.SetPivot({ 1, 1 });
+					mLine.SetWidth(Width());
+					MoveSlider();
+				};
+				mSlider.MouseEntered += [this] (MouseEvent const &e)
+				{
+					mSlider.SetColor(Color::BrightRed);
+				};
+				mSlider.MouseLeft += [this] (MouseEvent const &e)
+				{
+					mSlider.SetColor(Color::Yellow);
+				};
+				mSlider.Pressed += [this] (MouseEvent const &e)
+				{
+					mDrag = true;
+					mSlider.SetCapture();
+					TRACE("Clicked!\n");
+				};
+				mSlider.Released += [this] (MouseEvent const &e)
+				{
+					mDrag = false;
+					mSlider.ReleaseCapture();
+					TRACE("Released!\n");
+				};
+				mSlider.MouseMoved += [this] (MouseEvent const &e)
+				{
+					if(mDrag)
+					{
+						SetValue(Min(mRange.y, Max(mRange.x, (e.mMousePosition.x - GetPosition().x) / Width() * Range())));
+					}
+				};
+			}
+
+			void SetFont(Typeface *f)
+			{
+				mValueLabel.SetFont(f);
+				mText.SetFont(f);
+			}
+
+			float GetValue() const
+			{
+				return mValue;
+			}
+
+			void SetValue(float v)
+			{
+				mValue = v;
+				mValueLabel.SetText(Format("%f", mValue).c_str());
+				MoveSlider();
+			}
+
+			void SetRange(float minimum, float maximum)
+			{
+				mRange = Vec2f { minimum, maximum };
+				mValue = (minimum + maximum) / 2;
+			}
+
+			void SetText(char const *text)
+			{
+				mText.SetText(text);
+			}
+
+			float Range() const
+			{
+				return mRange.y - mRange.x;
+			}
+
+			void MoveSlider()
+			{
+				mSlider.SetScale({ 16, 16 });
+				mSlider.SetRotation(-PI / 2);
+				mSlider.SetPosition({ mValue * Width() / Range() - 8, 12 });
 			}
 		};
 
