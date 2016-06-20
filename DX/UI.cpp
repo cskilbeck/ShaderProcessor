@@ -36,6 +36,7 @@ namespace DX
 		//////////////////////////////////////////////////////////////////////
 
 		Element *Element::sCapturedElement = null;
+		DX::Window *sWindow = null;
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -81,6 +82,8 @@ namespace DX
 			DXR(image2DVertBuffer.Create(8192));
 			DXR(fontVB.Create(8192));
 			DXR(colorVB.Create(8192));
+
+			sWindow = w;
 
 			clipPlanesBuffer = colorShader.vs.FindConstBuffer("g_ClipPlanes2D");
 
@@ -355,6 +358,7 @@ namespace DX
 					return;
 				}
 				Drawing.Invoke(this);
+				TRACE("Drawing %s\n", Name());
 				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{
@@ -362,6 +366,22 @@ namespace DX
 				}
 				OnDrawComplete(drawList);
 			}
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Element::SetCapture()
+		{
+			sCapturedElement = this;
+			::SetCapture(sWindow->Handle());
+		}
+
+		//////////////////////////////////////////////////////////////////////
+
+		void Element::ReleaseCapture()
+		{
+			sCapturedElement = null;
+			::ReleaseCapture();
 		}
 
 		//////////////////////////////////////////////////////////////////////

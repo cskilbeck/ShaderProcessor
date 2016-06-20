@@ -10,6 +10,78 @@
 
 //////////////////////////////////////////////////////////////////////
 
+static Shaders::Phong::InputVertex verts[24] =
+{
+	{ { -1, +1, +1 }, { 0, 0 }, 0xffffffff, { 0, 0, +1 } },// 00
+	{ { +1, +1, +1 }, { 1, 0 }, 0xffffffff, { 0, 0, +1 } },// 01
+	{ { +1, -1, +1 }, { 1, 1 }, 0xffffffff, { 0, 0, +1 } },// 02
+	{ { -1, -1, +1 }, { 0, 1 }, 0xffffffff, { 0, 0, +1 } },// 03
+	{ { -1, -1, +1 }, { 0, 0 }, 0xffffffff, { 0, -1, 0 } },// 04
+	{ { +1, -1, +1 }, { 1, 0 }, 0xffffffff, { 0, -1, 0 } },// 05
+	{ { +1, -1, -1 }, { 1, 1 }, 0xffffffff, { 0, -1, 0 } },// 06
+	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, { 0, -1, 0 } },// 07
+	{ { -1, -1, -1 }, { 0, 0 }, 0xffffffff, { 0, 0, -1 } },// 08
+	{ { +1, -1, -1 }, { 1, 0 }, 0xffffffff, { 0, 0, -1 } },// 09
+	{ { +1, +1, -1 }, { 1, 1 }, 0xffffffff, { 0, 0, -1 } },// 10
+	{ { -1, +1, -1 }, { 0, 1 }, 0xffffffff, { 0, 0, -1 } },// 11
+	{ { -1, +1, -1 }, { 0, 0 }, 0xffffffff, { 0, +1, 0 } },// 12
+	{ { +1, +1, -1 }, { 1, 0 }, 0xffffffff, { 0, +1, 0 } },// 13
+	{ { +1, +1, +1 }, { 1, 1 }, 0xffffffff, { 0, +1, 0 } },// 14
+	{ { -1, +1, +1 }, { 0, 1 }, 0xffffffff, { 0, +1, 0 } },// 15
+	{ { +1, +1, +1 }, { 0, 0 }, 0xffffffff, { +1, 0, 0 } },// 16
+	{ { +1, +1, -1 }, { 1, 0 }, 0xffffffff, { +1, 0, 0 } },// 17
+	{ { +1, -1, -1 }, { 1, 1 }, 0xffffffff, { +1, 0, 0 } },// 18
+	{ { +1, -1, +1 }, { 0, 1 }, 0xffffffff, { +1, 0, 0 } },// 19
+	{ { -1, +1, -1 }, { 0, 0 }, 0xffffffff, { -1, 0, 0 } },// 20
+	{ { -1, +1, +1 }, { 1, 0 }, 0xffffffff, { -1, 0, 0 } },// 21
+	{ { -1, -1, +1 }, { 1, 1 }, 0xffffffff, { -1, 0, 0 } },// 22
+	{ { -1, -1, -1 }, { 0, 1 }, 0xffffffff, { -1, 0, 0 } } // 23
+};
+
+//////////////////////////////////////////////////////////////////////
+
+static Shaders::Instanced::InputVertex iCube[24] =
+{
+	{ { -1, +1, +1 } },// 00
+	{ { +1, +1, +1 } },// 01
+	{ { +1, -1, +1 } },// 02
+	{ { -1, -1, +1 } },// 03
+	{ { -1, -1, +1 } },// 04
+	{ { +1, -1, +1 } },// 05
+	{ { +1, -1, -1 } },// 06
+	{ { -1, -1, -1 } },// 07
+	{ { -1, -1, -1 } },// 08
+	{ { +1, -1, -1 } },// 09
+	{ { +1, +1, -1 } },// 10
+	{ { -1, +1, -1 } },// 11
+	{ { -1, +1, -1 } },// 12
+	{ { +1, +1, -1 } },// 13
+	{ { +1, +1, +1 } },// 14
+	{ { -1, +1, +1 } },// 15
+	{ { +1, +1, +1 } },// 16
+	{ { +1, +1, -1 } },// 17
+	{ { +1, -1, -1 } },// 18
+	{ { +1, -1, +1 } },// 19
+	{ { -1, +1, -1 } },// 20
+	{ { -1, +1, +1 } },// 21
+	{ { -1, -1, +1 } },// 22
+	{ { -1, -1, -1 } } // 23
+};
+
+//////////////////////////////////////////////////////////////////////
+
+static uint16 indices[36] =
+{
+	0, 1, 2, 0, 2, 3,
+	4, 5, 6, 4, 6, 7,
+	8, 9, 10, 8, 10, 11,
+	12, 13, 14, 12, 14, 15,
+	16, 17, 18, 16, 18, 19,
+	20, 21, 22, 20, 22, 23
+};
+
+//////////////////////////////////////////////////////////////////////
+
 MyDXWindow::MyDXWindow()
 	: DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
 {
@@ -24,6 +96,25 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 	{
 		Close();
 	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MyDXWindow::DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture)
+{
+	auto &vc = *cubeShader.vs.VertConstants;
+	vc.TransformMatrix = Transpose(camera->GetTransformMatrix(m));
+	vc.ModelMatrix = Transpose(m);
+	vc.Update(Context());
+	auto &ps = *cubeShader.ps.Camera;
+	ps.cameraPos = camera->position;
+	ps.Update(Context());
+	cubeShader.ps.picTexture = &texture;
+	cubeShader.Activate(Context());
+	cubeShader.vs.SetVertexBuffers(Context(), 1, &cubeVerts);
+	cubeIndices.Activate(Context());
+	Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	Context()->DrawIndexed(cubeIndices.Count(), 0, 0);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -127,8 +218,8 @@ bool MyDXWindow::LoadCSV()
 					t = Trim(t);
 					f[i++] = (float)atof(t.c_str());		// trim the values and convert to floats
 				}
-				mGyro.push_back(Vec4(f[2], f[3], f[4]));		// get the gyro
-				mAccel.push_back(Vec4(f[5], f[6], f[7]));	// get the accel
+				mAccel.push_back(Vec4(f[2], f[4], f[3]));		// get the gyro
+				mGyro.push_back(Vec4(f[5], f[7], f[6]));		// get the accel
 
 				uint h, m, s, ms;
 
@@ -196,6 +287,16 @@ bool MyDXWindow::OnCreate()
 	AssetManager::AddFolder("Data");
 	AssetManager::AddArchive("data.zip");
 
+	DXB(cubeShader.Create());
+	DXB(cubeTexture.Load(TEXT("temp.jpg")));
+	Sampler::Options o;
+	o.Filter = anisotropic;
+	DXB(cubeSampler.Create(o));
+	cubeShader.ps.picTexture = &cubeTexture;
+	cubeShader.ps.tex1Sampler = &cubeSampler;
+	DXB(cubeIndices.Create(_countof(indices), indices, StaticUsage));
+	DXB(cubeVerts.Create(_countof(verts), verts, StaticUsage));
+
 	UI::Open(this);
 
 	DXB(FontManager::Open(this));
@@ -220,37 +321,94 @@ bool MyDXWindow::OnCreate()
 		root.SetSize(FClientSize());
 	};
 
-	filledRectangle.SetColor(0x800000ff);
-	filledRectangle.SetSize({ 200, 200 });
-	filledRectangle.SetPivot(Vec2f::half);
-	filledRectangle.SetPosition(FClientSize() / 2);
-	root.AddChild(filledRectangle);
+	//filledRectangle.SetColor(0x800000ff);
+	//filledRectangle.SetSize({ 200, 200 });
+	//filledRectangle.SetPivot(Vec2f::half);
+	//filledRectangle.SetPosition(FClientSize() / 2);
+	//root.AddChild(filledRectangle);
 
-	clipRect.SetPivot(Vec2f::half);
-	clipRect.SetSize({ 200, 200 });
-	clipRect.SetPosition(FClientSize() / 2);
-	root.AddChild(clipRect);
+	//clipRect.SetPivot(Vec2f::half);
+	//clipRect.SetSize({ 200, 200 });
+	//clipRect.SetPosition(FClientSize() / 2);
+	//root.AddChild(clipRect);
 
-	button.SetFont(font);
-	button.SetText("Click Me !");
-	button.SetImage(&buttonTexture);
-	button.SetSampler(&cubeSampler);
-	button.SetPosition({ 100, 100 });
-	clipRect.AddChild(button);
+	//button.SetFont(font);
+	//button.SetText("Click Me !");
+	//button.SetImage(&buttonTexture);
+	//button.SetSampler(&cubeSampler);
+	//button.SetPosition({ 100, 100 });
+	//clipRect.AddChild(button);
 
-	outlineRectangle.SetColor(Color::BrightGreen);
-	outlineRectangle.SetSize(filledRectangle.GetSize());
-	outlineRectangle.SetPivot(Vec2f::half);
-	outlineRectangle.SetPosition(FClientSize() / 2);
-	root.AddChild(outlineRectangle);
+	//outlineRectangle.SetColor(Color::BrightGreen);
+	//outlineRectangle.SetSize(filledRectangle.GetSize());
+	//outlineRectangle.SetPivot(Vec2f::half);
+	//outlineRectangle.SetPosition(FClientSize() / 2);
+	//root.AddChild(outlineRectangle);
 
-	slider.SetFont(font);
-	slider.SetText("Hello");
-	slider.SetRange(0, 100);
-	slider.SetPosition({ 10, 600 });
-	slider.SetWidth(200);
-	slider.SetValue(50);
-	root.AddChild(slider);
+	config_element.SetPosition({ 10, 500 });
+
+	struct
+	{
+		char const *name;
+		float value;
+		Color color;
+	}
+	setup[3] = {
+		{ "X Scale", 0, Color::BrightRed },
+		{ "Y Scale", 0.005f, Color::BrightGreen },
+		{ "Z Scale", 0, Color::Cyan },
+	};
+	for(int i = 0; i < 3; ++i)
+	{
+		scale_slider[i].SetFont(font);
+		scale_slider[i].SetText(setup[i].name);
+		scale_slider[i].SetRange(0, 0.01f);
+		scale_slider[i].SetPosition({ 0, (float)i * 30 });
+		scale_slider[i].SetWidth(200);
+		scale_slider[i].SetValue(setup[i].value);
+		scale_slider[i].SetColor(setup[i].color);
+		config_element.AddChild(scale_slider[i]);
+	}
+
+	speed_slider.SetFont(font);
+	speed_slider.SetText("Speed");
+	speed_slider.SetRange(0, 1.0f);
+	speed_slider.SetPosition({ 0, 90 });
+	speed_slider.SetWidth(200);
+	speed_slider.SetValue(1);
+	config_element.AddChild(speed_slider);
+
+	position_slider.SetFont(font);
+	position_slider.SetText("T");
+	position_slider.SetRange(0, (float)mAccelInterpolated.size() - 1);
+	position_slider.SetPosition({ 0, 120 });
+	position_slider.SetWidth(1200);
+	position_slider.SetValue(0);
+	config_element.AddChild(position_slider);
+
+	trim_slider.SetFont(font);
+	trim_slider.SetText("Trim");
+	trim_slider.SetRange(0, 1000);
+	trim_slider.SetPosition({ 0, 150 });
+	trim_slider.SetWidth(1200);
+	trim_slider.SetValue(0);
+	config_element.AddChild(trim_slider);
+
+	mPaused = false;
+
+	pause_button.SetFont(font);
+	pause_button.SetText("Pause");
+	pause_button.SetPosition({ 350, 0 });
+	pause_button.SetImage(&buttonTexture);
+	pause_button.SetSampler(&cubeSampler);
+	pause_button.Clicked += [this] (UI::ClickedEvent e)
+	{
+		mPaused = !mPaused;
+		pause_button.SetText(mPaused ? "Play" : "Pause");
+	};
+	config_element.AddChild(pause_button);
+
+	root.AddChild(config_element);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
 	{
@@ -268,41 +426,41 @@ bool MyDXWindow::OnCreate()
 		e.mElement->Close();
 	};
 
-	listBox.SetPosition({ 200, 200 });
-	listBox.SetSize({ 200, 300 });
+	//listBox.SetPosition({ 200, 200 });
+	//listBox.SetSize({ 200, 300 });
 
-	for(int i = 0; i < 30; ++i)
-	{
-		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
-		e->Clicked += remover;
-	}
+	//for(int i = 0; i < 30; ++i)
+	//{
+	//	UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
+	//	e->Clicked += remover;
+	//}
 
-	KeyPressed += [this, &remover] (KeyboardEvent const &k)
-	{
-		UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
-		e->Clicked += remover;
-	};
-	root.AddChild(listBox);
+	//KeyPressed += [this, &remover] (KeyboardEvent const &k)
+	//{
+	//	UI::Element *e = listBox.AddString(Format("Hello %*d", Random::UInt32() & 31, Random::UInt32()).c_str(), font);
+	//	e->Clicked += remover;
+	//};
+	//root.AddChild(listBox);
 
-	button.MouseEntered += [] (UI::MouseEvent e)
-	{
-		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
-		b->SetScale(Vec2f(1.1f, 1.1f));
-		b->SetText("ENTER!");
-	};
+	//button.MouseEntered += [] (UI::MouseEvent e)
+	//{
+	//	UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+	//	b->SetScale(Vec2f(1.1f, 1.1f));
+	//	b->SetText("ENTER!");
+	//};
 
-	button.MouseLeft += [] (UI::MouseEvent e)
-	{
-		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
-		b->SetScale(Vec2f(1, 1));
-		b->SetText("LEAVE!");
-	};
+	//button.MouseLeft += [] (UI::MouseEvent e)
+	//{
+	//	UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+	//	b->SetScale(Vec2f(1, 1));
+	//	b->SetText("LEAVE!");
+	//};
 
-	button.Pressed += [] (UI::PressedEvent e)
-	{
-		UI::LabelButton *b = (UI::LabelButton *)e.mElement;
-		b->SetText("PRESSED!");
-	};
+	//button.Pressed += [] (UI::PressedEvent e)
+	//{
+	//	UI::LabelButton *b = (UI::LabelButton *)e.mElement;
+	//	b->SetText("PRESSED!");
+	//};
 
 	lightPos = Vec4(0, -15, 20, 0);
 
@@ -334,9 +492,13 @@ void MyDXWindow::OnFrame()
 	deltaTime = (float)mTimer.Delta();
 	float time = (float)mTimer.WallTime();
 
+	mTimer.Update();
+
 	camera->Process(deltaTime);
 
 	debug_set_camera(*camera);
+
+	float const gyro_scale = PI / 180 / (65536.0f / 500.0f);
 
 	//debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 	//debug_line2d({ 0, 0 }, FClientSize() * 0.6666f, Color::Random());
@@ -356,19 +518,47 @@ void MyDXWindow::OnFrame()
 
 	debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
 
-	float gscale = 0.01f;
-	float ascale = 0.0004f;
-	float yscale = 0.01f;
+	float ascale = 0.01f;
+	float gscale = 0.0004f;
+	Vec4f scale = Vec4(scale_slider[0].GetValue(), scale_slider[1].GetValue(), scale_slider[2].GetValue());
+
+	float t = (float)mTimer.WallTime() * 1000.0f;
+
+	if(!mPaused)
+	{
+		position_slider.SetValue(fmodf(mTimer.WallTime() * 1000.0f, mAccelInterpolated.size()));
+	}
+	else
+	{
+		t = position_slider.GetValue() + trim_slider.GetValue();
+	}
 
 	UI::Update(&root, deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 	const int rate = 32;
 
-	for (int i = 1; i < mGyroInterpolated.size(); ++i)
+	auto gyroMatrix = [&] (Vec4f g)
 	{
-		Vec4f const &s = mGyroInterpolated[i - 1] * gscale + Vec4(0, (i - 1) * yscale, 0);
-		Vec4f const &e = mGyroInterpolated[i] * gscale + Vec4(0, i * yscale, 0);
+		Vec4f s = g * gyro_scale;
+		Matrix x = DirectX::XMMatrixRotationX(GetX(s));
+		Matrix y = DirectX::XMMatrixRotationY(GetY(s));
+		Matrix z = DirectX::XMMatrixRotationZ(GetZ(s));
+		return z * y * x;
+	};
+
+	auto gyro2ypr = [&gyroMatrix] (Vec4f g)
+	{
+		return TransformPoint(Vec4(0, 10, 0), gyroMatrix(g));
+	};
+
+	Vec4f gorg = Vec4(30, 0, 0);
+
+	Vec4f s = gyro2ypr(mGyroInterpolated[0]) + gorg;
+	for(int i = 1; i < mGyroInterpolated.size(); ++i)
+	{
+		Vec4f e = gyro2ypr(mGyroInterpolated[i]) + scale * (float)i + gorg;
 		debug_line(s, e, Color::BrightRed);
+		s = e;
 	}
 	drawList.Execute();
 
@@ -380,28 +570,44 @@ void MyDXWindow::OnFrame()
 
 	debug_begin();
 	debug_set_camera(*camera);
-	for (int i = 1; i < mAccelInterpolated.size(); ++i)
+	s = mAccelInterpolated[0] * ascale;
+	for(int i = 1; i < mAccelInterpolated.size(); ++i)
 	{
-		Vec4f const &s = mAccelInterpolated[i - 1] * ascale + Vec4(0, (i - 1) * yscale, 0);
-		Vec4f const &e = mAccelInterpolated[i] * ascale + Vec4(0, i * yscale, 0);
-		debug_line(s, e, Color::SeaGreen);
+		Vec4f e = mAccelInterpolated[i] * ascale + scale * (float)i;
+		debug_line(s, e, 0xFF40FF80);
+		s = e;
 	}
 
 	// draw little lines/cubes at the current time
 
-	int ms = (int)(mTimer.WallTime() * 1000.0) % mAccelInterpolated.size();
+	int ms = (int)fmodf(t, mAccelInterpolated.size());
 	Vec4f sz = Vec4(0.5f, 0.5f, 0.5f);
-	Vec4f pos = mAccelInterpolated[ms] * ascale + Vec4(0, ms * yscale, 0);
+	Vec4f pos = mAccelInterpolated[ms] * ascale + scale * (float)ms;
 	debug_cube(pos - sz, pos + sz, Color::White);
-	debug_line(pos, Vec4(0, ms * yscale, 0), Color::Cyan);
+	debug_line(pos, scale * (float)ms, Color::Cyan);
 
-	pos = mGyroInterpolated[ms] * gscale + Vec4(0, ms * yscale, 0);
+	pos = gyro2ypr(mGyroInterpolated[ms]) + scale * (float)ms + gorg;
 	debug_cube(pos - sz, pos + sz, Color::Yellow);
-	debug_line(pos, Vec4(0, ms * yscale, 0), Color::Cyan);
-
-	mTimer.Update();
+	debug_line(pos, scale * (float)ms + gorg, Color::Cyan);
 
 	drawList.Execute();
+
+	float wt = mTimer.WallTime();
+	Vec4f cubeRot = Vec4(wt, wt * 0.357f, wt * 1.123f);
+	Vec4f cubeScale = Vec4(5, 5, 5);
+	Vec4f cubePos = Vec4(100, 0, 0);
+
+	{
+		auto &l = *cubeShader.ps.Light;
+		l.lightPos = lightPos;
+		l.ambientColor = Float3(0.3f, 0.3f, 0.3f);
+		l.diffuseColor = Float3(0.7f, 0.7f, 0.7f);
+		l.specColor = Float3(5, 5, 5);
+		l.Update(Context());
+	}
+
+	DrawCube(gyroMatrix(mGyroInterpolated[ms]) * ScaleMatrix(Vec4(5, 5, 5)) * TranslationMatrix(Vec4(50, 0, 0)), cubeVerts, cubeTexture);
+
 	debug_end();
 }
 
@@ -416,6 +622,12 @@ void MyDXWindow::OnDestroy()
 	UI::Close();
 
 	debug_close();
+
+	cubeShader.Release();
+	cubeVerts.Destroy();
+	cubeIndices.Destroy();
+	cubeTexture.Release();
+	cubeSampler.Release();
 
 	buttonTexture.Release();
 	fontVB.Destroy();
@@ -445,22 +657,42 @@ void MyDXWindow::OnDestroy()
 
 void FPSCamera::Process(float deltaTime)
 {
-	float moveSpeed = 50.0f * deltaTime;
-	float strafeSpeed = 50.0f * deltaTime;
+	float moveSpeed = 200.0f * deltaTime;
+	float strafeSpeed = 200.0f * deltaTime;
 
 	if(Keyboard::Held(VK_SHIFT))
 	{
-		moveSpeed *= 0.1f;
-		strafeSpeed *= 0.1f;
+		moveSpeed *= 0.01f;
+		strafeSpeed *= 0.01f;
 	}
 
 	v4 move = v4::zero();
-	if(Keyboard::Held('A')) { move.x += -strafeSpeed; }
+	if(Keyboard::Held('A')) {
+		move.x += -strafeSpeed;
+	}
 	if(Keyboard::Held('D')) { move.x += strafeSpeed; }
 	if(Keyboard::Held('W')) { move.y += moveSpeed; }
 	if(Keyboard::Held('S')) { move.y += -moveSpeed; }
 	if(Keyboard::Held('R')) { move.z += strafeSpeed; }
 	if(Keyboard::Held('F')) { move.z += -strafeSpeed; }
+
+	if(Keyboard::Pressed('X'))
+	{
+		position = Vec4(0, 200, 0);
+		this->LookAt(Vec4(0, 0, 0));
+	}
+
+	if(Keyboard::Pressed('Y'))
+	{
+		position = Vec4(200, 0, 0);
+		this->LookAt(Vec4(0, 0, 0));
+	}
+
+	if(Keyboard::Pressed('Z'))
+	{
+		position = Vec4(0, 0, 200);
+		this->LookAt(Vec4(0, 0, 0));
+	}
 
 	Move(move);
 
@@ -504,4 +736,3 @@ void MyDXWindow::Save()
 		camera->Write(f);
 	}
 }
-

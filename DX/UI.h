@@ -38,6 +38,8 @@ namespace DX
 		struct KeyboardMessage;
 		struct Message;
 
+		extern DX::Window *sWindow;
+
 		//////////////////////////////////////////////////////////////////////
 		// A Mouse or Keyboard (or whatever) message
 
@@ -528,17 +530,8 @@ namespace DX
 			// All mouse messages go to this control until ReleaseCapture() is called
 			// or some other control calls SetCapture()
 
-			void SetCapture()
-			{
-				sCapturedElement = this;
-			}
-
-			//////////////////////////////////////////////////////////////////////
-
-			void ReleaseCapture()
-			{
-				sCapturedElement = null;
-			}
+			void SetCapture();
+			void ReleaseCapture();
 
 			//////////////////////////////////////////////////////////////////////
 
@@ -1099,6 +1092,11 @@ namespace DX
 			{
 				return mOutlineColor;
 			}
+
+			char const *Name() const override
+			{
+				return "Triangle";
+			}
 		};
 
 		//////////////////////////////////////////////////////////////////////
@@ -1389,6 +1387,7 @@ namespace DX
 			Vec2f		mRange;
 			float		mValue;
 			bool		mDrag;
+			Color		mSliderColor;
 
 			Slider()
 				: Element()
@@ -1401,35 +1400,36 @@ namespace DX
 				AddChild(mValueLabel);
 				AddChild(mSlider);
 				mLine.SetColor(Color::White);
-				mSlider.SetColor(Color::Yellow);
+				mSlider.SetColor(Color::White);
+				mSliderColor = Color::White;
 				Resized += [this] (UIEvent const &e)
 				{
-					mText.SetPosition({ 0, 0 });
-					mText.SetPivot(Vec2f(0, 1));
-					mValueLabel.SetPosition({ Width(), 0 });
+					mText.SetPivot({ 0, 1 });
+					mText.SetPosition({ 0, -5 });
 					mValueLabel.SetPivot({ 1, 1 });
+					mValueLabel.SetPosition({ Width(), -5 });
 					mLine.SetWidth(Width());
 					MoveSlider();
 				};
 				mSlider.MouseEntered += [this] (MouseEvent const &e)
 				{
-					mSlider.SetColor(Color::BrightRed);
+					mSlider.SetColor(Color::White);
 				};
 				mSlider.MouseLeft += [this] (MouseEvent const &e)
 				{
-					mSlider.SetColor(Color::Yellow);
+					mSlider.SetColor(mSliderColor);
 				};
 				mSlider.Pressed += [this] (MouseEvent const &e)
 				{
 					mDrag = true;
 					mSlider.SetCapture();
-					TRACE("Clicked!\n");
 				};
 				mSlider.Released += [this] (MouseEvent const &e)
 				{
 					mDrag = false;
 					mSlider.ReleaseCapture();
-					TRACE("Released!\n");
+					SetColor(mSliderColor);
+					TRACE("YOINK!\n");
 				};
 				mSlider.MouseMoved += [this] (MouseEvent const &e)
 				{
@@ -1438,6 +1438,11 @@ namespace DX
 						SetValue(Min(mRange.y, Max(mRange.x, (e.mMousePosition.x - GetPosition().x) / Width() * Range())));
 					}
 				};
+			}
+
+			char const *Name() const override
+			{
+				return "Slider";
 			}
 
 			void SetFont(Typeface *f)
@@ -1451,10 +1456,17 @@ namespace DX
 				return mValue;
 			}
 
+			void SetColor(Color c)
+			{
+				mSliderColor = c;
+				mSlider.SetColor(c);
+			}
+
 			void SetValue(float v)
 			{
 				mValue = v;
 				mValueLabel.SetText(Format("%f", mValue).c_str());
+				mValueLabel.SetPivot({ 1, 1 });
 				MoveSlider();
 			}
 
@@ -1467,6 +1479,7 @@ namespace DX
 			void SetText(char const *text)
 			{
 				mText.SetText(text);
+				mText.SetPivot({ 0, 1 });
 			}
 
 			float Range() const

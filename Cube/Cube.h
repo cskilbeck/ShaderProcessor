@@ -15,6 +15,10 @@ struct MyDXWindow: DXWindow
 	void Load();
 	void Save();
 
+	Shaders::Phong cubeShader;
+	Shaders::Phong::VertBuffer cubeVerts;
+	IndexBuffer<uint16> cubeIndices;
+	Texture cubeTexture;
 	Sampler cubeSampler;
 
 	Shaders::Simple simpleShader;
@@ -33,7 +37,17 @@ struct MyDXWindow: DXWindow
 	UI::ListBox listBox;
 	UI::Rectangle rect;
 	UI::FilledShape shape;
-	UI::Slider slider;
+	
+	UI::Element config_element;
+	UI::Slider scale_slider[3];
+	UI::Slider speed_slider;
+	UI::Slider position_slider;
+	UI::Slider trim_slider;
+	UI::LabelButton pause_button;
+
+	void DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture);
+
+	bool mPaused;
 
 	float deltaTime;
 	float oldDeltaTime;
