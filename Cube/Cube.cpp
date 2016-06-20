@@ -498,7 +498,7 @@ void MyDXWindow::OnFrame()
 
 	debug_set_camera(*camera);
 
-	float const gyro_scale = PI / 180 / (65536.0f / 500.0f);
+	float const gyro_scale = PI / 180 / (65536.0f / 50.0f);
 
 	//debug_cylinder(Vec4(10, 10, 10), Vec4(50, 10, 10 + sinf(time) * 50), 2, Color::BrightRed);
 	//debug_line2d({ 0, 0 }, FClientSize() * 0.6666f, Color::Random());
