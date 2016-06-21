@@ -358,7 +358,7 @@ namespace DX
 					return;
 				}
 				Drawing.Invoke(this);
-				TRACE("Drawing %s\n", Name());
+//				TRACE("Drawing %s\n", Name());
 				OnDraw(mTransformMatrix * ortho, context, drawList);
 				for(auto &r : mChildren)
 				{

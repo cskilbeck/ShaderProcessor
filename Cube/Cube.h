@@ -48,11 +48,11 @@ struct MyDXWindow: DXWindow
 	void DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture);
 
 	bool mPaused;
-
-	float deltaTime;
-	float oldDeltaTime;
-
+	double deltaTime;
+	double oldDeltaTime;
 	bool mouseClicked;
+
+	double mPlaybackTime;
 
 	DrawList drawList;
 

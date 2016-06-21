@@ -475,9 +475,11 @@ bool MyDXWindow::OnCreate()
 	uiShader.ps.pConstants->Color = Float4(1, 1, 1, 1);
 	DXB(uiShader.ps.pConstants->Update());
 
+
 	TRACE("=== End of OnCreate() ===\n");
 
 	mCurrentTime.Reset();
+	mPlaybackTime = 0.0;
 
 	return true;
 }
@@ -489,12 +491,15 @@ void MyDXWindow::OnFrame()
 	debug_begin();
 
 	oldDeltaTime = deltaTime;
-	deltaTime = (float)mTimer.Delta();
+
+	deltaTime = mTimer.Delta();
+
+	mPlaybackTime += deltaTime * speed_slider.GetValue();
 	float time = (float)mTimer.WallTime();
 
 	mTimer.Update();
 
-	camera->Process(deltaTime);
+	camera->Process((float)deltaTime);
 
 	debug_set_camera(*camera);
 
@@ -522,18 +527,18 @@ void MyDXWindow::OnFrame()
 	float gscale = 0.0004f;
 	Vec4f scale = Vec4(scale_slider[0].GetValue(), scale_slider[1].GetValue(), scale_slider[2].GetValue());
 
-	float t = (float)mTimer.WallTime() * 1000.0f;
+	float t = (float)mPlaybackTime * 1000.0f;
 
 	if(!mPaused)
 	{
-		position_slider.SetValue(fmodf(mTimer.WallTime() * 1000.0f, mAccelInterpolated.size()));
+		position_slider.SetValue(fmodf((float)(mPlaybackTime * 1000.0), (float)mAccelInterpolated.size()));
 	}
 	else
 	{
 		t = position_slider.GetValue() + trim_slider.GetValue();
 	}
 
-	UI::Update(&root, deltaTime);
+	UI::Update(&root, (float)deltaTime);
 	UI::Draw(&root, Context(), drawList, OrthoProjection2D(ClientWidth(), ClientHeight()));
 	const int rate = 32;
 
@@ -580,7 +585,7 @@ void MyDXWindow::OnFrame()
 
 	// draw little lines/cubes at the current time
 
-	int ms = (int)fmodf(t, mAccelInterpolated.size());
+	int ms = (int)fmodf(t, (float)mAccelInterpolated.size());
 	Vec4f sz = Vec4(0.5f, 0.5f, 0.5f);
 	Vec4f pos = mAccelInterpolated[ms] * ascale + scale * (float)ms;
 	debug_cube(pos - sz, pos + sz, Color::White);
@@ -591,11 +596,6 @@ void MyDXWindow::OnFrame()
 	debug_line(pos, scale * (float)ms + gorg, Color::Cyan);
 
 	drawList.Execute();
-
-	float wt = mTimer.WallTime();
-	Vec4f cubeRot = Vec4(wt, wt * 0.357f, wt * 1.123f);
-	Vec4f cubeScale = Vec4(5, 5, 5);
-	Vec4f cubePos = Vec4(100, 0, 0);
 
 	{
 		auto &l = *cubeShader.ps.Light;
