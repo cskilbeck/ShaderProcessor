@@ -408,6 +408,24 @@ bool MyDXWindow::OnCreate()
 	};
 	config_element.AddChild(pause_button);
 
+	for(int i=0; i<3; ++i)
+	{
+		clamp_button[i].SetFont(font);
+		clamp_button[i].SetImage(&buttonTexture);
+		clamp_button[i].SetText(Format("Clamp %c", 'X' + i).c_str());
+		clamp_button[i].SetPosition({ 350, 40 + i * 30.0f });
+		clamp_button[i].SetSampler(&cubeSampler);
+		clamp_button[i].mTag = i;
+		clamp[i] = false;
+		clamp_button[i].Clicked += [this](UI::ClickedEvent e)
+		{
+			UI::LabelButton &l = (UI::LabelButton &)*e.mElement;
+			clamp[l.mTag] = !clamp[l.mTag];
+			l.SetText(Format("%s %c", clamp[l.mTag] ? "Unclamp" : "Clamp", 'X' + l.mTag).c_str());
+		};
+		config_element.AddChild(clamp_button[i]);
+	}
+
 	root.AddChild(config_element);
 
 	root.Pressed += [this] (UI::MouseEvent const &m)
@@ -545,9 +563,9 @@ void MyDXWindow::OnFrame()
 	auto gyroMatrix = [&] (Vec4f g)
 	{
 		Vec4f s = g * gyro_scale;
-		Matrix x = DirectX::XMMatrixRotationX(GetX(s));
-		Matrix y = DirectX::XMMatrixRotationY(GetY(s));
-		Matrix z = DirectX::XMMatrixRotationZ(GetZ(s));
+		Matrix x = clamp[0] ? IdentityMatrix : DirectX::XMMatrixRotationX(GetX(s));
+		Matrix y = clamp[1] ? IdentityMatrix : DirectX::XMMatrixRotationY(GetY(s));
+		Matrix z = clamp[2] ? IdentityMatrix : DirectX::XMMatrixRotationZ(GetZ(s));
 		return z * y * x;
 	};
 

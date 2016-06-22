@@ -242,6 +242,7 @@ namespace DX
 			float					mPickMargins[4];
 			Vec2f					mScreenMin;
 			Vec2f					mScreenMax;
+			uintptr					mTag;
 
 			// Events
 

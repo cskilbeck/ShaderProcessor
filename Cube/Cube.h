@@ -4,6 +4,10 @@
 
 //////////////////////////////////////////////////////////////////////
 
+#include "Graph.h"
+
+//////////////////////////////////////////////////////////////////////
+
 struct MyDXWindow: DXWindow
 {
 	//////////////////////////////////////////////////////////////////////
@@ -37,7 +41,9 @@ struct MyDXWindow: DXWindow
 	UI::ListBox listBox;
 	UI::Rectangle rect;
 	UI::FilledShape shape;
-	
+
+	UI::LabelButton clamp_button[3];
+
 	UI::Element config_element;
 	UI::Slider scale_slider[3];
 	UI::Slider speed_slider;
@@ -51,6 +57,8 @@ struct MyDXWindow: DXWindow
 	double deltaTime;
 	double oldDeltaTime;
 	bool mouseClicked;
+
+	bool clamp[3];
 
 	double mPlaybackTime;
 
