@@ -62,7 +62,7 @@ bool CompileFile(string &file, char const *filename, char const *mainFunction, c
 	}
 	if(errors != null)
 	{
-		printf("%s", errors->GetBufferPointer());
+		printf("%s", (char *)errors->GetBufferPointer());
 	}
 	else
 	{

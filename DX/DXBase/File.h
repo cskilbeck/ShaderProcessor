@@ -438,7 +438,9 @@ namespace DX
 
 		int Seek(uint64 offset, int seekType, intptr *newPosition) override
 		{
-			LARGE_INTEGER l = { offset & MAXUINT32, offset >> 32 };
+			auto lo = static_cast<DWORD>(offset & MAXUINT32);
+			auto hi = static_cast<LONG>(offset >> 32);
+			LARGE_INTEGER l = { lo, hi };
 			if(SetFilePointerEx(h, l, (PLARGE_INTEGER)newPosition, (DWORD)seekType) == 0)
 			{
 				error = GetLastError();
