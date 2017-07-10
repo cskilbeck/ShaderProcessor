@@ -198,3 +198,4 @@ Cube/camera.bin
 *.VC.db
 *.lib
 *.exe
+*.opendb
