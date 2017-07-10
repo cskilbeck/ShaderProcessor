@@ -571,7 +571,7 @@ void AddToBindingRun(vector<HLSLShader::BindingRun> &runs, uint bindPoint)
 	if(startRun)
 	{
 		// start a new run
-		runs.push_back({ bindPoint, 1 });
+		runs.push_back({ static_cast<uint16>(bindPoint), 1 });
 	}
 	else
 	{
