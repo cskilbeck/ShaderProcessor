@@ -18,6 +18,7 @@
 //////////////////////////////////////////////////////////////////////
 // D3D
 
+#include <mmintrin.h>
 #include <d3d11.h>
 #pragma warning(push)
 #pragma warning(disable:4838)
@@ -56,6 +57,8 @@
 
 //////////////////////////////////////////////////////////////////////
 // DX
+
+#include <immintrin.h>
 
 #include "Aligned.h"
 #include "Types.h"

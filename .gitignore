@@ -197,3 +197,6 @@ Cube/camera.bin
 .VC.db
 *.VC.db
 *.opendb
+.vs/
+*.iobj
+*.ipdb

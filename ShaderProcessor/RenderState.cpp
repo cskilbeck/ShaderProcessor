@@ -770,7 +770,7 @@ tstring GetCLPath()
 	if(!got)
 	{
 		got = true;
-		tstring version = "12.0";
+		tstring version = "14.0";
 		if(RegistryKey::GetString(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
 		   RegistryKey::GetString(HKEY_CURRENT_USER, TEXT("SOFTWARE\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
 		   RegistryKey::GetString(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Wow6432Node\\Microsoft\\VisualStudio\\SxS\\VC7"), version.c_str(), vcPath) == 0 ||
