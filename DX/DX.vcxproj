@@ -126,6 +126,7 @@
     <SPOCK Include="Shaders\Color.shader">
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Release|x64'">DXShaders</Namespace>
+      <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">DXShaders</Namespace>
     </SPOCK>
     <SPOCK Include="Shaders\Color2D.shader">
       <Namespace Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">DXShaders</Namespace>

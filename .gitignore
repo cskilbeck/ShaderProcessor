@@ -200,3 +200,6 @@ Cube/camera.bin
 .vs/
 *.iobj
 *.ipdb
+*.exe
+*.lib
+*.zip

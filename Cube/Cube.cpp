@@ -791,7 +791,7 @@ bool MyDXWindow::OnCreate()
 {
 	TRACE("=== OnCreate() ===\n");
 
-	LoadCSV();
+	//LoadCSV();
 
 	if(!DXWindow::OnCreate())
 	{
