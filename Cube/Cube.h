@@ -4,191 +4,185 @@
 
 //////////////////////////////////////////////////////////////////////
 
-struct MyDXWindow: DXWindow, iPhysicsRenderer
+struct MyDXWindow : DXWindow, iPhysicsRenderer
 {
-	//////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////
 
-	DynamicCamera *cameras[2];
-	DynamicCamera *camera;
-	int currentCamera;
-	Camera dashCam;
+    DynamicCamera *cameras[2];
+    DynamicCamera *camera;
+    int currentCamera;
+    Camera dashCam;
 
-	void Load();
-	void Save();
+    void Load();
+    void Save();
 
-	Shaders::Phong cubeShader;
-	Shaders::Phong::VertBuffer cubeVerts;
-	Shaders::Phong::VertBuffer diceVertBuffer;
-	IndexBuffer<uint16> cubeIndices;
-	Texture cubeTexture;
-	Texture diceTexture;
-	Sampler cubeSampler;
+    Shaders::Phong cubeShader;
+    Shaders::Phong::VertBuffer cubeVerts;
+    Shaders::Phong::VertBuffer diceVertBuffer;
+    IndexBuffer<uint16> cubeIndices;
+    Texture cubeTexture;
+    Texture diceTexture;
+    Sampler cubeSampler;
 
-	Shaders::Sphere sphereShader;
-	Shaders::Sphere::VertBuffer sphereVerts;
-	Texture sphereTexture;
+    Shaders::Sphere sphereShader;
+    Shaders::Sphere::VertBuffer sphereVerts;
+    Texture sphereTexture;
 
-	Shaders::Phong::VertBuffer cylinderVerts;
-	IndexBuffer<uint16> cylinderIndices;
+    Shaders::Phong::VertBuffer cylinderVerts;
+    IndexBuffer<uint16> cylinderIndices;
 
-	Shaders::Simple simpleShader;
-	Shaders::Simple::VertBuffer gridVB;
-	Shaders::Simple::VertBuffer octahedronVB;
-	
-	VertexBuilder<Shaders::Simple::InputVertex> simpleVB;
-	
-	IndexBuffer<uint16> octahedronIB;
+    Shaders::Simple simpleShader;
+    Shaders::Simple::VertBuffer gridVB;
+    Shaders::Simple::VertBuffer octahedronVB;
 
-	Shaders::Instanced instancedShader;
-	Shaders::Instanced::VertBuffer0 instancedVB0;
-	Shaders::Instanced::VertBuffer1 instancedVB1;
+    VertexBuilder<Shaders::Simple::InputVertex> simpleVB;
 
-	Vec4f cubePos;
-	Vec4f cubeScale;
-	Vec4f cubeRot;
+    IndexBuffer<uint16> octahedronIB;
 
-	Vec4f lightPos;
+    Shaders::Instanced instancedShader;
+    Shaders::Instanced::VertBuffer0 instancedVB0;
+    Shaders::Instanced::VertBuffer1 instancedVB1;
 
-	Scene scene;
+    Vec4f cubePos;
+    Vec4f cubeScale;
+    Vec4f cubeRot;
 
-	Texture buttonTexture;
+    Vec4f lightPos;
 
-	UI::Element root;
-	UI::LabelButton button;
-	UI::FilledRectangle filledRectangle;
-	UI::OutlineRectangle outlineRectangle;
-	UI::ClipRectangle clipRect;
-	UI::ListBox listBox;
-	UI::Rectangle rect;
-	UI::FilledShape shape;
+    Scene scene;
 
-	float deltaTime;
-	float oldDeltaTime;
+    Texture buttonTexture;
 
-	bool debugPhysics;
+    UI::Element root;
+    UI::LabelButton button;
+    UI::FilledRectangle filledRectangle;
+    UI::OutlineRectangle outlineRectangle;
+    UI::ClipRectangle clipRect;
+    UI::ListBox listBox;
+    UI::Rectangle rect;
+    UI::FilledShape shape;
 
-	bool mouseClicked;
+    float deltaTime;
+    float oldDeltaTime;
 
-	Vehicle car;
+    bool debugPhysics;
 
-	DrawList drawList;
+    bool mouseClicked;
 
-	vector<Vec4f> mGyro;
-	vector<Vec4f> mAccel;
-	vector<uint64> mTimes;	//16:16:12.873
+    Vehicle car;
 
-	Shaders::UI uiShader;
-	VertexBuilder<Shaders::UI::InputVertex> UIVerts;
-	Texture uiTexture;
-	Sampler uiSampler;
+    DrawList drawList;
 
-	DXPtr<Typeface> font;
-	DXPtr<Typeface> bigFont;
+    vector<Vec4f> mGyro;
+    vector<Vec4f> mAccel;
+    vector<uint64> mTimes;    // 16:16:12.873
 
-	Font::VB fontVB;
-	Font::VB bigFontVB;
+    Shaders::UI uiShader;
+    VertexBuilder<Shaders::UI::InputVertex> UIVerts;
+    Texture uiTexture;
+    Sampler uiSampler;
 
-	Shaders::Sprite spriteShader;
-	Shaders::Sprite::VertBuffer spriteVerts;
-	Texture spriteTexture;
-	Sampler spriteSampler;
+    DXPtr<Typeface> font;
+    DXPtr<Typeface> bigFont;
 
-	Shaders::Splat splatShader;
-	Shaders::Splat::VertBuffer splatVB;
+    Font::VB fontVB;
+    Font::VB bigFontVB;
 
-	RenderTarget fpsGraph;
-	Sampler fpsSampler;
+    Shaders::Sprite spriteShader;
+    Shaders::Sprite::VertBuffer spriteVerts;
+    Texture spriteTexture;
+    Sampler spriteSampler;
 
-	SpriteSheet spriteSheet;
+    Shaders::Splat splatShader;
+    Shaders::Splat::VertBuffer splatVB;
 
-	RenderTarget renderTarget;
-	Shaders::Blit blitShader;
-	Shaders::Blit::VertBuffer blitVB;
+    RenderTarget fpsGraph;
+    Sampler fpsSampler;
 
-	struct Box
-	{
-		Box()
-			: mShape(null)
-			, mBody(null)
-		{
-		}
+    SpriteSheet spriteSheet;
 
-		void Create(Vec4f pos);
-		void Destroy();
-		void Draw(MyDXWindow *window);
+    RenderTarget renderTarget;
+    Shaders::Blit blitShader;
+    Shaders::Blit::VertBuffer blitVB;
 
-		btBoxShape *mShape;
-		btRigidBody *mBody;
-	};
+    struct Box
+    {
+        Box() : mShape(null), mBody(null)
+        {
+        }
 
-	void SetupBoxes();
-	void DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture);
-	void DrawCylinder(Matrix const &m, Texture &texture);
-	void DrawSphere(Matrix const &m, Texture &texture);
+        void Create(Vec4f pos);
+        void Destroy();
+        void Draw(MyDXWindow *window);
 
-	enum
-	{
-		numBoxes = 25
-	};
-	static Box box[numBoxes];
+        btBoxShape *mShape;
+        btRigidBody *mBody;
+    };
 
-	btBoxShape *mGroundShape;
-	btRigidBody *mGroundRigidBody;
+    void SetupBoxes();
+    void DrawCube(Matrix const &m, VertexBuffer<Shaders::Phong::InputVertex> &cubeVerts, Texture &texture);
+    void DrawCylinder(Matrix const &m, Texture &texture);
+    void DrawSphere(Matrix const &m, Texture &texture);
 
-	struct PhysicalVertex
-	{
-		Float3 position;
-		Float3 normal;
-	};
+    enum
+    {
+        numBoxes = 50
+    };
+    static Box box[numBoxes];
 
-	PhysicalVertex *mRampVerts;
-	int32 *mRampIndices;
-	btTriangleIndexVertexArray *mRampArray;
-	btBvhTriangleMeshShape *mRampShape;
-	btRigidBody *mRampBody;
+    btBoxShape *mGroundShape;
+    btRigidBody *mGroundRigidBody;
 
-	btCylinderShape *mCylinder;
+    struct PhysicalVertex
+    {
+        Float3 position;
+        Float3 normal;
+    };
 
-	void SweepTest();
+    PhysicalVertex *mRampVerts;
+    int32 *mRampIndices;
+    btTriangleIndexVertexArray *mRampArray;
+    btBvhTriangleMeshShape *mRampShape;
+    btRigidBody *mRampBody;
 
-	Physics::World track;
+    btCylinderShape *mCylinder;
 
-	Delegate<KeyboardEvent> mKeyPressed;
-	Delegate<WindowSizedEvent> mWindowSized;
+    void SweepTest();
 
-	int fpsWidth;
-	int fpsHeight;
-	float fpsLeft;
-	float fpsTop;
-	uint fpsScroll;
+    Physics::World track;
 
-	//////////////////////////////////////////////////////////////////////
+    Delegate<KeyboardEvent> mKeyPressed;
+    Delegate<WindowSizedEvent> mWindowSized;
 
-	MyDXWindow();
+    int fpsWidth;
+    int fpsHeight;
+    float fpsLeft;
+    float fpsTop;
+    uint fpsScroll;
 
-	bool LoadCSV();
+    //////////////////////////////////////////////////////////////////////
 
-	void OnKeyDown(int key, uintptr flags) override;
-	bool OnCreate() override;
-	void OnFrame() override;
-	void OnDestroy() override;
+    MyDXWindow();
 
-	int CreateSphere(int steps);
-	int CreateCylinder(int steps);
-	int CreateGrid();
-	int CreateOctahedron();
-	int CreateRamp();
+    int LoadTrack(btTransform &carTransform);
 
-	int LoadTrack(btTransform &carTransform);
+    void OnKeyDown(int key, uintptr flags) override;
+    bool OnCreate() override;
+    void OnFrame() override;
+    void OnDestroy() override;
 
-	// iPhysicsRenderer
+    int CreateSphere(int steps);
+    int CreateCylinder(int steps);
+    int CreateGrid();
+    int CreateOctahedron();
+    int CreateRamp();
 
-	void DrawCube(Matrix const &m) override;
-	void DrawCylinder(Matrix const &m) override;
-	void DrawSphere(Matrix const &m) override;
-	void DrawCapsule(Matrix const &m) override;
-	void DrawTorus(Matrix const &m) override;
-	void DrawCone(Matrix const &m) override;
-	void DrawConvexMesh(Matrix const &m, btBvhTriangleMeshShape const *mesh) override;
-	void DrawTetrahedron(Matrix const &m) override;
+    void DrawCube(Matrix const &m) override;
+    void DrawCylinder(Matrix const &m) override;
+    void DrawSphere(Matrix const &m) override;
+    void DrawCapsule(Matrix const &m) override;
+    void DrawTorus(Matrix const &m) override;
+    void DrawCone(Matrix const &m) override;
+    void DrawConvexMesh(Matrix const &m, btBvhTriangleMeshShape const *mesh) override;
+    void DrawTetrahedron(Matrix const &m) override;
 };
