@@ -5,13 +5,8 @@
 //////////////////////////////////////////////////////////////////////
 // Deal with MSVC internal compiler error, this can be removed when a fix is available
 
-#pragma push_macro("VC_WORKAROUND")
-#undef VC_WORKAROUND
-#if defined(_MSC_VER)
-#define VC_WORKAROUND NODE
-#else
-#define VC_WORKAROUND (list_node T::*)nullptr != NODE
-#endif
+#pragma push_macro("NODE_IDENT")
+#define NODE_IDENT (list_node T::*)nullptr != NODE
 
 #include <functional>
 
@@ -87,14 +82,14 @@ namespace chs
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T, list_node T::*NODE = nullptr> class linked_list: protected list_base < T, NODE, VC_WORKAROUND >
+	template <typename T, list_node T::*NODE = nullptr> class linked_list: protected list_base < T, NODE, NODE_IDENT >
 	{
 	public:
 
 		//////////////////////////////////////////////////////////////////////
 
-		using list_base<T, NODE, VC_WORKAROUND>::offset;
-		using list_base<T, NODE, VC_WORKAROUND>::node;
+		using list_base<T, NODE, NODE_IDENT>::offset;
+		using list_base<T, NODE, NODE_IDENT>::node;
 
 		//////////////////////////////////////////////////////////////////////
 
@@ -1062,6 +1057,7 @@ namespace chs
 
 #pragma warning(push)
 #pragma warning(disable: 4602)        // disable spurious warning
-#pragma pop_macro("VC_WORKAROUND")
+
+#pragma pop_macro("NODE_IDENT")
 #pragma warning(pop)
 

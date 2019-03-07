@@ -232,8 +232,8 @@ namespace DX
 
 			Vec2f tsize(GetFloat(root, L"width"), GetFloat(root, L"height"));
 
-			DiskFile *page;
-			DXR(AssetManager::Open(textureName.c_str(), (FileBase **)&page));
+			FileBase *page;
+			DXR(AssetManager::Open(textureName.c_str(), &page));
 			HRESULT r = mPage.Load(page);
 			page->Close();
 
