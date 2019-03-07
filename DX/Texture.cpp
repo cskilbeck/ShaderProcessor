@@ -218,10 +218,7 @@ namespace DX
 
 	HRESULT Texture::Load(FileBase *file, tchar const *name)
 	{
-		if(name == null)
-		{
-			mName = file->Name();
-		}
+        mName = (name != null) ? name : file->Name();
 		if(_stricmp(GetExtension(mName.c_str()).c_str(), ".dds") == 0)
 		{
 			FileResource r;
@@ -250,8 +247,7 @@ namespace DX
 		FileBase *d;
 		DXR(AssetManager::Open(name, &d));
 		Ptr<FileBase> filep(d);
-		DXR(Load(filep.get()));
-		mName = name;
+		DXR(Load(filep.get(), name));
 		return S_OK;
 	}
 
