@@ -324,19 +324,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="argh.h" />
+    <ClInclude Include="args.h" />
+    <ClInclude Include="Controller.h" />
     <ClInclude Include="Cube.h" />
+    <ClInclude Include="Debug.h" />
     <ClInclude Include="FollowCamera.h" />
     <ClInclude Include="FPSCamera.h" />
+    <ClInclude Include="Log.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Vehicle.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="args.cpp" />
+    <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Cube.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ShaderProcessorOnly|Win32'">Create</PrecompiledHeader>

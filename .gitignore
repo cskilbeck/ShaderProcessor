@@ -10,6 +10,7 @@
 *.tlog
 *.lst
 *.idb
+*.lnk
 
 # Build results
 [Dd]ebug/

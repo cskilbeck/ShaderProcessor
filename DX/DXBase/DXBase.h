@@ -21,9 +21,12 @@
 #include <mmintrin.h>
 #include <d3d11.h>
 #pragma warning(push)
-#pragma warning(disable:4838)
+#pragma warning(disable : 4838)
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include <Xinput.h>
+#include <dwrite_2.h>
+#include <d2d1_2.h>
 #pragma warning(pop)
 
 #pragma pack(pop, n)
@@ -67,8 +70,8 @@
 #include "Win32.h"
 #include "linked_list.h"
 
-using chs::list_node;
 using chs::linked_list;
+using chs::list_node;
 
 #include "Pool.h"
 #include "LinearAlloc.h"
@@ -90,6 +93,5 @@ using chs::linked_list;
 #include "Size.h"
 #include "Rect.h"
 #include "D3D.h"
+#include "D2D.h"
 #include "Registry.h"
-
-
