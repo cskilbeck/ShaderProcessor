@@ -159,6 +159,7 @@ namespace DX
 		virtual void OnWindowPosChanging(WINDOWPOS *pos);
 		virtual void OnWindowPosChanged(WINDOWPOS *pos);
 		virtual void OnNCMouseMove(MousePos pos, uintptr hitTestValue);
+        virtual void OnNCHitTest(MousePos pos, uintptr *hitTestValue);
 
 		bool Open();
 		void Close();

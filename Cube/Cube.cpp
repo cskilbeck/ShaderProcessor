@@ -250,7 +250,9 @@ static uint16 indices[36] = { 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 1
 
 //////////////////////////////////////////////////////////////////////
 
-MyDXWindow::MyDXWindow() : DXWindow(1280, 720, TEXT("Cube"), DepthBufferEnabled, Windowed)
+MyDXWindow::MyDXWindow()
+    : DXWindow(params.window_width, params.window_height, params.titlebar ? TEXT("Cube") : null, DepthBufferEnabled, params.fullscreen ? FullScreen : Windowed,
+               BackBufferCount(params.triple_buffered ? 3 : 2), params.swap_effect, params.titlebar ? WithWindowBorder : WithoutWindowBorder, params.vsync_frames)
 {
     mouseClicked = false;
 }
@@ -1150,7 +1152,7 @@ void MyDXWindow::OnFrame()
 
     // Controller flashing box
     if(true) {
-        if(XInput::is_ready()) { 
+        if(XInput::is_ready()) {
             XINPUT_STATE pad;
             Color c = Color::Black;
             if(XInput::get_state(0, &pad) == S_OK) {

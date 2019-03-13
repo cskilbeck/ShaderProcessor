@@ -86,14 +86,14 @@ std::string string_from_button_mask(uint32 mask)
 // it doesn't complain about unrecognized arguments
 // it doesn't show a usage message
 
-void process_arguments(LPWSTR lpCmdLine)
+void process_arguments(LPSTR lpCmdLine)
 {
     LOG_Context("Args");
 
     wchar const *env_var_name = L"dx11_blank_command_line";
     char const *env_var_nameA = "dx11_blank_command_line";
 
-    std::wstring command_line(lpCmdLine);
+    std::wstring command_line(stringToWide(CP_ACP, lpCmdLine));
 
     // if config.ini exists and has a command line in it, get it from there...
     std::ifstream f("config.ini", std::ifstream::in);
@@ -222,10 +222,4 @@ void process_arguments(LPWSTR lpCmdLine)
     LOG_Verbose("BlankColor = %06x", params.blank_color);
     LOG_Verbose("FlashColor = %06x", params.flash_color);
     LOG_Verbose("Window Size = %dx%d", params.window_width, params.window_height);
-
-    float flash_color[4];
-    float blank_color[4];
-
-    rgb24_to_floats(params.flash_color, flash_color);
-    rgb24_to_floats(params.blank_color, blank_color);
 }

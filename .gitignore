@@ -11,6 +11,7 @@
 *.lst
 *.idb
 *.lnk
+log.txt
 
 # Build results
 [Dd]ebug/

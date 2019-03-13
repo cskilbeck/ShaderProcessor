@@ -4,58 +4,56 @@
 
 //////////////////////////////////////////////////////////////////////
 
-namespace DX
+namespace DX {
+struct DXWindow : Window
 {
-	struct DXWindow: Window
-	{
-		DXWindow(int width, int height,
-				 tchar const *caption = TEXT("DXWindow"),
-				 DepthBufferOption depthBufferOption = DX::DepthBufferDisabled,
-				 FullScreenOption fullScreenOption = DX::Windowed,
-				 BackBufferCount backBufferCount = BackBufferCount(2));
+    DXWindow(int width, int height, tchar const *caption = TEXT("DXWindow"), DepthBufferOption depthBufferOption = DX::DepthBufferDisabled,
+             FullScreenOption fullScreenOption = DX::Windowed, BackBufferCount backBufferCount = BackBufferCount(2), DXGI_SWAP_EFFECT swap_effect = DXGI_SWAP_EFFECT_DISCARD,
+             WindowBorderOption window_border_option = WithWindowBorder, int vsync_frames = 1);
 
-		virtual ~DXWindow();
+    virtual ~DXWindow();
 
-		void Clear(DX::Color color);
-		void ClearDepth(DepthClearOption option, float z = 1.0f, byte stencil = 0);
+    void Clear(DX::Color color);
+    void ClearDepth(DepthClearOption option, float z = 1.0f, byte stencil = 0);
 
-		void ResetRenderTargetView();
-		void ResetViewport();
+    void ResetRenderTargetView();
+    void ResetViewport();
 
-		virtual void OnFrame();
+    virtual void OnFrame();
 
-		void OnPaint(PAINTSTRUCT &ps) override;
-		bool OnUpdate() override;
-		bool OnCreate() override;
-		void OnResized() override;
-		void OnDestroy() override;
-		void OnActivate() override;
-		void OnDeactivate() override;
-		void OnEnterSizeLoop() override;
-		void OnExitSizeLoop() override;
-		void OnWindowPosChanging(WINDOWPOS *pos) override;
-		void OnWindowPosChanged(WINDOWPOS *pos) override;
-		void OnNCMouseMove(MousePos pos, uintptr hitTestValue) override;
+    void OnPaint(PAINTSTRUCT &ps) override;
+    bool OnUpdate() override;
+    bool OnCreate() override;
+    void OnResized() override;
+    void OnDestroy() override;
+    void OnActivate() override;
+    void OnDeactivate() override;
+    void OnEnterSizeLoop() override;
+    void OnExitSizeLoop() override;
+    void OnWindowPosChanging(WINDOWPOS *pos) override;
+    void OnWindowPosChanged(WINDOWPOS *pos) override;
+    void OnNCMouseMove(MousePos pos, uintptr hitTestValue) override;
+    void OnNCHitTest(MousePos pos, uintptr *hitTestValue) override;
 
-		void Present();
+    void Present();
 
-		ID3D11Device *Device()
-		{
-			return mD3D.mDevice;
-		}
+    ID3D11Device *Device()
+    {
+        return mD3D.mDevice;
+    }
 
-		ID3D11DeviceContext *Context()
-		{
-			return mD3D.mContext;
-		}
+    ID3D11DeviceContext *Context()
+    {
+        return mD3D.mContext;
+    }
 
-		D3DDevice	mD3D;
-		HWND		mDXWindow;
-		int			mFrame;
-		Timer		mTimer;
-		float		mBaseAspectRatio;
+    D3DDevice mD3D;
+    HWND mDXWindow;
+    int mFrame;
+    Timer mTimer;
+    float mBaseAspectRatio;
 
-		Delegate<KeyboardEvent>	mSysKeyPressedDelegate;
-	};
+    Delegate<KeyboardEvent> mSysKeyPressedDelegate;
+};
 
-}
+}    // namespace DX

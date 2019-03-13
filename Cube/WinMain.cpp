@@ -4,8 +4,10 @@
 
 //////////////////////////////////////////////////////////////////////
 
-int APIENTRY _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
+int APIENTRY _tWinMain(HINSTANCE, HINSTANCE, LPTSTR argv, int)
 {
+    process_arguments(argv);
+
     MyDXWindow w;
 
     while(w.Update()) {

@@ -17,3 +17,5 @@ struct params_t
 };
 
 extern params_t params;
+
+void process_arguments(LPSTR lpCmdLine);
