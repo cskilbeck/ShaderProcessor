@@ -2,8 +2,7 @@
 
 LOG_Context("XInput");
 
-namespace
-{
+namespace {
 
 typedef DWORD(WINAPI *XInputGetState_t)(DWORD, XINPUT_STATE *);
 
@@ -30,8 +29,7 @@ XInputGetState_t XInputGetState_fn()
 
 }    // namespace
 
-namespace XInput
-{
+namespace XInput {
 
 bool is_connected()
 {
@@ -48,7 +46,7 @@ void cleanup()
     opened = false;
 }
 
-DWORD WINAPI GetState(DWORD d, XINPUT_STATE *state)
+DWORD WINAPI get_state(DWORD d, XINPUT_STATE *state)
 {
     auto p = XInputGetState_fn();
     if(p != null) {

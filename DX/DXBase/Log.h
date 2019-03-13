@@ -216,4 +216,4 @@ template <typename T> void Log(int level, __loginfo_t const &info, T const *msg,
 
 #endif
 
-} // namespace DX
+}    // namespace DX

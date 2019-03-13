@@ -6,9 +6,8 @@
 
 int APIENTRY _tWinMain(HINSTANCE, HINSTANCE, LPTSTR, int)
 {
-	MyDXWindow w;
+    MyDXWindow w;
 
-	while(w.Update())
-	{
-	}
+    while(w.Update()) {
+    }
 }
