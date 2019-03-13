@@ -31,9 +31,9 @@ XInputGetState_t XInputGetState_fn()
 
 namespace XInput {
 
-bool is_connected()
+bool is_ready()
 {
-    return XInputGetStatePtr != null;
+    return XInputGetState_fn() != null;
 }
 
 void cleanup()

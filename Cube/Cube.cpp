@@ -1148,6 +1148,25 @@ void MyDXWindow::OnFrame()
     Context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Context()->DrawIndexed(octahedronIB.Count(), 0, 0);
 
+    // Controller flashing box
+    if(true) {
+        if(XInput::is_ready()) { 
+            XINPUT_STATE pad;
+            Color c = Color::Black;
+            if(XInput::get_state(0, &pad) == S_OK) {
+                debug_text(0, 100, "#ff00ff00#Controller OK");
+                if((pad.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0) {
+                    c = Color::White;
+                }
+            } else {
+                debug_text(0, 100, "#ffff0000#No Controller");
+            }
+            debug_solid_rect2d({ 0, 0 }, { 100, 100 }, c);
+        } else {
+            debug_text(0, 100, "#ffff0000#No XInput?!");
+        }
+    }
+
     // Drawlist UI elements
 
     if(false) {

@@ -95,5 +95,4 @@ using chs::list_node;
 #include "Size.h"
 #include "Rect.h"
 #include "D3D.h"
-#include "D2D.h"
 #include "Registry.h"

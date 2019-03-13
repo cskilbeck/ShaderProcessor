@@ -2,7 +2,7 @@
 
 namespace XInput {
 
-bool is_connected();
+bool is_ready();
 void cleanup();
 DWORD WINAPI get_state(DWORD d, XINPUT_STATE *state);
 
