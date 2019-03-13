@@ -146,6 +146,11 @@ void debug_begin()
     debug3D.Begin(mainWindow->Context());
     debug2D.Begin(mainWindow->Context());
     debug2D.SetTransform(Transpose(OrthoProjection2D(mainWindow->ClientWidth(), mainWindow->ClientHeight())), DXShaders::Debug2D::VS::VertConstants_index);
+
+    // RESET the f***ing clip planes to start with
+    DXShaders::Font::VS::g_ClipPlanes2D_t c;
+    memset(&c, 0, sizeof(c));
+    fontInstance.mDrawList->SetConstantData(ShaderType::Vertex, c);
 }
 
 //////////////////////////////////////////////////////////////////////

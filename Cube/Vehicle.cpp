@@ -202,8 +202,8 @@ void Vehicle::Update(float deltaTime)
     mVehicle->setBrake(handBrake, 2);
     mVehicle->setBrake(handBrake, 3);
 
-    debug_text(0, 300, "Speed: %f", currentSpeed);
-    debug_text(0, 315, "Angle: %f", mSteerAngle);
+    //debug_text(0, 300, "Speed: %f", currentSpeed);
+    //debug_text(0, 315, "Angle: %f", mSteerAngle);
 }
 
 //////////////////////////////////////////////////////////////////////

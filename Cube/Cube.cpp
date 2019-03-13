@@ -129,6 +129,8 @@
 
 #include "stdafx.h"
 
+LOG_Context("Cube");
+
 //////////////////////////////////////////////////////////////////////
 
 static Shaders::Phong::InputVertex verts[24] = {
@@ -681,8 +683,8 @@ bool MyDXWindow::OnCreate()
 
     Physics::Open(this);
 
-    btTransform carTransform;
-    DXB(LoadTrack(carTransform));
+    btTransform carTransform = btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 5));
+    // DXB(LoadTrack(carTransform));
 
     mCylinder = new btCylinderShape(btVector3(2, 0.25f, 2));
 
@@ -957,6 +959,7 @@ void MyDXWindow::SweepTest()
 
 void MyDXWindow::OnFrame()
 {
+    LOG_Verbose("Client Height: %d", ClientHeight());
     debug_begin();
 
     oldDeltaTime = deltaTime;
@@ -1152,20 +1155,21 @@ void MyDXWindow::OnFrame()
 
     // Controller flashing box
     if(true) {
+        Vec2f pos{ 0, ClientHeight() - 40.0f };
         if(XInput::is_ready()) {
             XINPUT_STATE pad;
-            Color c = Color::Black;
+            Color c = params.blank_color | 0xff000000;
             if(XInput::get_state(0, &pad) == S_OK) {
-                debug_text(0, 100, "#ff00ff00#Controller OK");
-                if((pad.Gamepad.wButtons & XINPUT_GAMEPAD_A) != 0) {
-                    c = Color::White;
+                debug_text(pos, "#ff00ff00#Controller OK");
+                if((pad.Gamepad.wButtons & params.flash_buttons) != 0) {
+                    c = params.flash_color | 0xff000000;
                 }
             } else {
-                debug_text(0, 100, "#ffff0000#No Controller");
+                debug_text(pos, "#ffff0000#No Controller");
             }
             debug_solid_rect2d({ 0, 0 }, { 100, 100 }, c);
         } else {
-            debug_text(0, 100, "#ffff0000#No XInput?!");
+            debug_text(pos, "#ffff0000#No XInput?!");
         }
     }
 
@@ -1413,7 +1417,7 @@ void MyDXWindow::OnFrame()
     }
 
 
-    debug_text("DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
+    debug_text({ 0, ClientHeight() - 20.0f }, "DeltaTime % 8.2fms (% 3dfps)\n", deltaTime * 1000, (int)(1 / deltaTime));
     //	debug_text("Yaw: %4d, Pitch: %4d, Roll: %4d\n", (int)Rad2Deg(camera->yaw), (int)Rad2Deg(camera->pitch), (int)Rad2Deg(camera->roll));
 
     // UI test
@@ -1433,7 +1437,6 @@ void MyDXWindow::OnFrame()
 
     // Draw some sprites immediate mode
     if(false) {
-
         debug_quad(Vec4(-60, 20, 0), Vec4(-50, 20, 0), Vec4(-50, 30, 0), Vec4(-60, 30, 0), Color::Cyan);
 
         spriteShader.gs.vConstants->Get()->TransformMatrix = Transpose(OrthoProjection2D(ClientWidth(), ClientHeight()));
@@ -1441,7 +1444,7 @@ void MyDXWindow::OnFrame()
         Sprite *v;
         spriteVerts.Map(Context(), (Shaders::Sprite::InputVertex *&)v);
 
-        v[0].Position = { ClientWidth() - 100.0f, ClientHeight() - 100.0f };
+        v[0].Position = { ClientHeight() - 100.0f, ClientHeight() - 100.0f };
         v[0].Size = { 100, 100 };
         v[0].Color = 0xffffffff;
         v[0].Rotation = time;
@@ -1554,8 +1557,10 @@ void MyDXWindow::OnFrame()
         Physics::DebugEnd();
     }
 
-    //	track.DrawNormals();
-    track.Draw();
+    // track.DrawNormals();
+    // track.Draw();
+
+    ResetViewport();
 
     debug_end();
 

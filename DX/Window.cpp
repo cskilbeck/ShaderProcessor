@@ -58,8 +58,9 @@ Window::Window(int width, int height, tchar const *caption, uint32 windowStyle, 
     , mCreated(false)
 {
     mWindowInfo.cbSize = sizeof(WINDOWINFO);
-    mWindowInfo.rcWindow = mWindowInfo.rcClient = Rect2D(0, 0, width, height);
-    AdjustWindowRectEx(&mWindowInfo.rcWindow, windowStyle, false, 0);
+    Rect2D r(0, 0, width, height);
+    AdjustWindowRectEx(&r, windowStyle, false, 0);
+    mWindowInfo.rcWindow = r;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -117,7 +118,10 @@ bool Window::Init(int width, int height)
 
     assert((mParentHWND != null) == ((mWindowStyle & WS_CHILD) != 0));
 
-    mHWND = CreateWindowEx(0, mClassName.c_str(), mCaption.c_str(), mWindowStyle, CW_USEDEFAULT, 0, width, height, mParentHWND, null, mHINST, this);
+    Rect2D r{ 0, 0, width, height };
+    CentreRectInDefaultMonitor(r);
+
+    mHWND = CreateWindowEx(0, mClassName.c_str(), mCaption.c_str(), mWindowStyle, r.left, r.top, r.Width(), r.Height(), mParentHWND, null, mHINST, this);
     if(mHWND == null) {
         DWORD err = GetLastError();
         ErrorMessageBox(TEXT("Failed to create window (%08x) - %s"), err, Win32ErrorMessage(err).c_str());

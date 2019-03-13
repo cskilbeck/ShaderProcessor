@@ -134,7 +134,7 @@ void DXWindow::OnWindowPosChanged(WINDOWPOS *pos)
 
 void DXWindow::OnNCHitTest(MousePos pos, uintptr *hitTestValue)
 {
-    // can modify it or leave it, it will be default value to start with
+    // hold alt key to drag window by the client area
     if((GetAsyncKeyState(VK_MENU) & 0x8000) != 0) {
         *hitTestValue = HTCAPTION;
     }
