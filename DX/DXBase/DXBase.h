@@ -9,7 +9,7 @@
 #define _WIN32_WINNT 0x0601
 #endif
 
-#pragma pack(push, n)
+struct IUnknown;
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -20,6 +20,7 @@
 
 #include <mmintrin.h>
 #include <d3d11.h>
+#include <dxgi.h>
 #pragma warning(push)
 #pragma warning(disable : 4838)
 #include <DirectXMath.h>
@@ -28,8 +29,6 @@
 #include <dwrite_2.h>
 #include <d2d1_2.h>
 #pragma warning(pop)
-
-#pragma pack(pop, n)
 
 //////////////////////////////////////////////////////////////////////
 // c libs
@@ -57,6 +56,8 @@
 #include <map>
 #include <exception>
 #include <cstdarg>
+#include <fstream>
+#include <iostream>
 
 //////////////////////////////////////////////////////////////////////
 // DX
@@ -65,6 +66,7 @@
 
 #include "Aligned.h"
 #include "Types.h"
+#include "Log.h"
 #include "Macros.h"
 #include "Flags.h"
 #include "Win32.h"

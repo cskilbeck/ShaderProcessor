@@ -16,9 +16,9 @@
 using namespace DX;
 
 #include "Debug.h"
+#include "str.h"
 #include "argh.h"
 #include "args.h"
-#include "Log.h"
 #include "Controller.h"
 #include "FPSCamera.h"
 #include "FollowCamera.h"

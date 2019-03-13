@@ -22,6 +22,7 @@
     <ProjectGuid>{47142322-8005-884F-8559-911A3ABD7E36}</ProjectGuid>
     <RootNamespace>BulletCollision</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

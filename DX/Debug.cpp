@@ -44,7 +44,7 @@ namespace
 		{
 			mVertexBuilder.Map(context);
 			mDrawList.SetShader(context, &mShader, &mVertexBuilder);
-			mPrimType = None;
+			mPrimType = primType::None;
 		}
 
 		void End(ID3D11DeviceContext *context)
@@ -124,7 +124,7 @@ namespace DX
 		debug2D.Create();
 		fontInstance.Init(debugFont, &debugTextDrawList, &fontVB);
 		mainWindow = w;
-		currentPrimType = None;
+		currentPrimType = primType::None;
 		return S_OK;
 	}
 

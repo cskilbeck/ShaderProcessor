@@ -10,7 +10,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	extern std::map<int, string> D3DLevelNames;
+	extern ::std::map<int, string> D3DLevelNames;
 
 #if defined(_DEBUG)
 	void SetDebugName(ID3D11DeviceChild *child, tchar const *name);
@@ -38,7 +38,7 @@ namespace DX
 
 		DXPtr(DXPtr &&ptr) : p(nullptr)
 		{
-			std::swap(p, ptr.p);
+			::std::swap(p, ptr.p);
 		}
 
 		DXPtr &operator=(DXPtr const &ptr)
@@ -51,7 +51,7 @@ namespace DX
 
 		DXPtr &operator=(DXPtr&& ptr)
 		{
-			std::swap(p, ptr.p);
+			::std::swap(p, ptr.p);
 			return *this;
 		}
 
@@ -127,7 +127,7 @@ namespace DX
 		T *p;
 	};
 
-	inline LONG GetRefCount(IUnknown *p)
+	inline LONG GetRefCount(::IUnknown *p)
 	{
 		p->AddRef();
 		return p->Release();

@@ -171,7 +171,7 @@ namespace DX
 	inline string ToLower(string const &s)
 	{
 		string r(s);
-		std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+		::std::transform(r.begin(), r.end(), r.begin(), ::tolower);
 		return r;
 	}
 
@@ -180,7 +180,7 @@ namespace DX
 	inline wstring ToLower(wstring const &s)
 	{
 		wstring r(s);
-		std::transform(r.begin(), r.end(), r.begin(), ::tolower);
+		::std::transform(r.begin(), r.end(), r.begin(), ::tolower);
 		return r;
 	}
 
@@ -304,7 +304,7 @@ namespace DX
 
 	//////////////////////////////////////////////////////////////////////
 
-	template <typename T> std::basic_string<T> Trim(std::basic_string<T> str)
+	template <typename T> ::std::basic_string<T> Trim(::std::basic_string<T> str)
 	{
 		str.erase(0, str.find_first_not_of(" \t\r\n"));
 		str.erase(str.find_last_not_of(" \t\r\n") + 1);
@@ -518,4 +518,169 @@ namespace DX
 	////////////////////////////////////////////////////////////////////////
 
 	Vec4f GetPlane(CVec4f p1, CVec4f p2, CVec4f p3);
-}
+
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline ::std::string wideToString(UINT codePage, const wchar_t *wstr)
+    {
+        const int requiredSize = WideCharToMultiByte(codePage, 0, wstr, -1, nullptr, 0, nullptr, nullptr);
+        if(requiredSize > 0) {
+            ::std::vector<char> buffer(requiredSize);
+            WideCharToMultiByte(codePage, 0, wstr, -1, &buffer[0], requiredSize, nullptr, nullptr);
+            return ::std::string().assign(buffer.begin(), buffer.end() - 1);
+        }
+        return {};
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline ::std::wstring stringToWide(UINT codePage, const char *str)
+    {
+        const int requiredSize = MultiByteToWideChar(codePage, 0, str, -1, nullptr, 0);
+        if(requiredSize > 0) {
+            ::std::vector<wchar_t> buffer(requiredSize);
+            MultiByteToWideChar(codePage, 0, str, -1, &buffer[0], requiredSize);
+            return ::std::wstring().assign(buffer.begin(), buffer.end() - 1);
+        }
+        return {};
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    template <typename T> void COM_Release(T *&p)
+    {
+        if(p != null) {
+            p->Release();
+            p = null;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline ::std::string str_to_upper(::std::string const &s)
+    {
+        ::std::string u;
+        ::std::transform(s.begin(), s.end(), ::std::back_inserter(u), ::toupper);
+        return u;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline bool str_icompare(::std::string const &s, char const *p)
+    {
+        return _strnicmp(s.c_str(), p, s.size()) == 0;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline bool hex_from_char(char c, int &r)
+    {
+        if(c >= '0' && c <= '9') {
+            r = c - '0';
+            return true;
+        }
+        c = toupper(c);
+        if(c >= 'A' && c <= 'F') {
+            r = c - 'A' + 10;
+            return true;
+        }
+        return false;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    inline bool rgb24_from_string(::std::string const &s, uint32 &c)
+    {
+        // LOG_Context("");
+
+        if(s.size() != 6) {
+            // LOG_Error("Wrong length for RRGGBB color string: %s", s.c_str());
+            return false;
+        }
+        uint32 r = 0;
+        for(auto c : s) {
+            int n;
+            if(!hex_from_char(c, n)) {
+                // LOG_Error("Error, can't parse hex string for RRGGBB: %s", s.c_str());
+                return false;
+            }
+            r = (r << 4) | n;
+        }
+        c = r;
+        return true;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // it leaves the alpha as-is
+
+    inline void rgb24_to_floats(uint32 rgb24, float f[4])
+    {
+        for(int i = 2; i >= 0; --i) {
+            f[i] = (rgb24 & 0xff) / 255.0f;
+            rgb24 >>= 8;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    template <typename M, typename K, typename R> bool map_find(M const &map, K const &key, R &result)
+    {
+        auto it = map.find(key);
+        bool found = it != map.end();
+        if(found) {
+            result = (R)it->second;
+        }
+        return found;
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    // if it fails, a type-default is returned, usually 0 or empty string or whatever
+    // it's really slow, only for use on teensy little maps
+
+    template <typename M, typename F> auto map_reverse_find(M const &map, F const &finder)
+    {
+        for(auto const &f : map) {
+            if(f.second == finder) {
+                return f.first;
+            }
+        }
+        return M::key_type();
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+    enum tokenize_option
+    {
+        discard_empty = false,
+        keep_empty = true
+    };
+
+    template <typename container_t, typename string_t, typename char_t>
+    void tokenize(string_t const &str, container_t &tokens, char_t const *delimiters, tokenize_option option = keep_empty)
+    {
+        typename string_t::size_type end = 0, start = 0, len = str.size();
+        while(end < len) {
+            end = str.find_first_of(delimiters, start);
+            if(end == string_t::npos) {
+                end = len;
+            }
+            if(end != start || option == keep_empty) {
+                tokens.push_back(container_t::value_type(str.data() + start, end - start));
+            }
+            start = end + 1;
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+
+#define HR(x)                                  \
+    {                                          \
+        HRESULT hr = (x);                      \
+        if(FAILED(hr)) {                       \
+            LOG_Error(#x " FAILED: %08x", hr); \
+            return hr;                         \
+        }                                      \
+    }
+    
+}    // namespace DX
