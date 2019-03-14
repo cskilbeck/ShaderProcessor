@@ -348,7 +348,7 @@ int MyDXWindow::CreateRamp()
     for(int i = 0; i < NUM_VERTS_X; i++) {
         for(int j = 0; j < NUM_VERTS_Y; j++) {
             float height = sinf(PI * 1.5f + j * PI * 2 / NUM_VERTS_Y) * ramp_height + ramp_height;
-            mRampVerts[i + j * NUM_VERTS_X].position = { (i - NUM_VERTS_X * 2 + 3.5f) * TRIANGLE_SIZE, j * TRIANGLE_SIZE + 5.0f, height };
+            mRampVerts[i + j * NUM_VERTS_X].position = { (i - NUM_VERTS_X * 2 + 3.5f) * TRIANGLE_SIZE * 4, j * TRIANGLE_SIZE + 5.0f, height };
         }
     }
 
