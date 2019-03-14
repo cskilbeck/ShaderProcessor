@@ -144,7 +144,7 @@ void process_arguments(LPSTR lpCmdLine)
     }
 
     // parse into arguments
-    argh::parser args({ "swap_effect", "vsync_frames", "flash_buttons", "blank_color", "flash_color", "window_size", "log_level" });
+    argh::parser args({ "swap_effect", "vsync_frames", "flash_buttons", "blank_color", "flash_color", "window_size", "log_level", "num_cubes" });
     args.parse(argc, utf8_argv.data());
 
     // log level first!
@@ -170,6 +170,7 @@ void process_arguments(LPSTR lpCmdLine)
     auto blank_color_arg = args("blank_color");
     auto flash_color_arg = args("flash_color");
     auto window_size_arg = args("window_size");
+    auto num_cubes_arg = args("num_cubes");
 
     if(swap_effect_arg) {
         if(!map_find(swap_effect_names, str_to_upper(swap_effect_arg.str()), params.swap_effect)) {
@@ -210,8 +211,18 @@ void process_arguments(LPSTR lpCmdLine)
         }
     }
 
-    wstring swap_effect_name = stringToWide(CP_UTF7, map_reverse_find(swap_effect_names, params.swap_effect).c_str());
-    wstring buttons_string = stringToWide(CP_UTF7, string_from_button_mask(params.flash_buttons).c_str());
+    if(num_cubes_arg) {
+        int cubes;
+        num_cubes_arg >> cubes;
+        if(cubes < 1 || cubes > 10000) {
+            LOG_Warn("Warning, num_cubes (%d) out of range (1..10000), defaulting to %d", cubes, params.num_cubes);
+        } else {
+            params.num_cubes = cubes;
+        }
+    }
+
+    string swap_effect_name = map_reverse_find(swap_effect_names, params.swap_effect);
+    string buttons_string = string_from_button_mask(params.flash_buttons);
 
     LOG_Verbose("Fullscreen = %s", params.fullscreen ? "true" : "false");
     LOG_Verbose("TripleBuffered = %s", params.triple_buffered ? "true" : "false");

@@ -23,7 +23,7 @@ int PhysicsDebug::Create(DX::DXWindow *window)
 {
 	mWindow = window;
 	DXR(mShader.Create());
-	DXR(mVertexBuffer.Create(8192));
+	DXR(mVertexBuffer.Create(16384));
 	return S_OK;
 }
 

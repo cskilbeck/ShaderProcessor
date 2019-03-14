@@ -14,6 +14,7 @@ struct params_t
     uint32 flash_color = 0xffffff;
     int window_width = 1280;
     int window_height = 720;
+    int num_cubes = 128;
 };
 
 extern params_t params;

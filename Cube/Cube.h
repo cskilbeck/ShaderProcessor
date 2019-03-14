@@ -65,6 +65,8 @@ struct MyDXWindow : DXWindow, iPhysicsRenderer
     float deltaTime;
     float oldDeltaTime;
 
+    Vec3f walls_rotation;
+
     bool debugPhysics;
 
     bool mouseClicked;
@@ -124,11 +126,7 @@ struct MyDXWindow : DXWindow, iPhysicsRenderer
     void DrawCylinder(Matrix const &m, Texture &texture);
     void DrawSphere(Matrix const &m, Texture &texture);
 
-    enum
-    {
-        numBoxes = 50
-    };
-    static Box box[numBoxes];
+    static std::vector<Box> box;
 
     btBoxShape *mGroundShape;
     btRigidBody *mGroundRigidBody;
@@ -144,6 +142,12 @@ struct MyDXWindow : DXWindow, iPhysicsRenderer
     btTriangleIndexVertexArray *mRampArray;
     btBvhTriangleMeshShape *mRampShape;
     btRigidBody *mRampBody;
+
+    PhysicalVertex *mWallVerts;
+    int32 *mWallIndices;
+    btTriangleIndexVertexArray *mWallArray;
+    btBvhTriangleMeshShape *mWallShape;
+    btRigidBody *mWallBody;
 
     btCylinderShape *mCylinder;
 
@@ -176,6 +180,7 @@ struct MyDXWindow : DXWindow, iPhysicsRenderer
     int CreateGrid();
     int CreateOctahedron();
     int CreateRamp();
+    int CreateWalls();
 
     void DrawCube(Matrix const &m) override;
     void DrawCylinder(Matrix const &m) override;

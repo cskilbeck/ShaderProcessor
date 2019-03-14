@@ -173,7 +173,7 @@ float dx2 = 0.5f;
 float dx3 = 1.0f;
 }    // namespace
 
-static Shaders::Phong::InputVertex diceVerts[24] = {
+static Shaders::Phong::InputVertex cube_verts[24] = {
     // TOP 1
 
     { { -1, +1, +1 }, { dx1, dy1 }, Color::BrightRed, { 0, 0, +1 } },    // 00
@@ -248,7 +248,7 @@ static Shaders::Instanced::InputVertex iCube[24] = {
 
 //////////////////////////////////////////////////////////////////////
 
-static uint16 indices[36] = { 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23 };
+static uint16 cube_indices[36] = { 0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23 };
 
 //////////////////////////////////////////////////////////////////////
 
@@ -270,7 +270,7 @@ void MyDXWindow::OnKeyDown(int key, uintptr flags)
 
 //////////////////////////////////////////////////////////////////////
 
-MyDXWindow::Box MyDXWindow::box[MyDXWindow::numBoxes];
+std::vector<MyDXWindow::Box> MyDXWindow::box;
 
 //////////////////////////////////////////////////////////////////////
 
@@ -281,9 +281,10 @@ void MyDXWindow::Box::Create(Vec4f pos)
     mShape = new btBoxShape(btVector3(4, 4, 4));
     mBody = Physics::CreateRigidBody(500.0f, bodyTransform, mShape);
     Physics::AddRigidBody(mBody, Physics::GroundMask, -1);
-    mBody->setFriction(0.5);
+    mBody->setFriction(0.25f);
     mBody->setRestitution(0.0f);
-    mBody->setDamping(0.01f, 0.1f);
+    mBody->setDamping(0.2f, 0.2f);
+    mBody->setActivationState(DISABLE_DEACTIVATION);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -333,20 +334,21 @@ int MyDXWindow::CreateRamp()
 
     // 2 lines of verts
 
-    const int TRIANGLE_SIZE = 40;
-    const int NUM_VERTS_X = 2;
-    const int NUM_VERTS_Y = 200;
-    const int totalVerts = NUM_VERTS_X * NUM_VERTS_Y;
+    int const TRIANGLE_SIZE = 10;
+    int const NUM_VERTS_X = 2;
+    int const NUM_VERTS_Y = 50;
+    int const totalVerts = NUM_VERTS_X * NUM_VERTS_Y;
+    int const ramp_height = 30;
 
-    const int totalTriangles = 2 * (NUM_VERTS_X - 1) * (NUM_VERTS_Y - 1);
+    int const totalTriangles = 2 * (NUM_VERTS_X - 1) * (NUM_VERTS_Y - 1);
 
     mRampVerts = new PhysicalVertex[totalVerts];
     mRampIndices = new int32[totalTriangles * 3];
 
     for(int i = 0; i < NUM_VERTS_X; i++) {
         for(int j = 0; j < NUM_VERTS_Y; j++) {
-            float height = sinf(j * PI * 8 / NUM_VERTS_Y) * 120;
-            mRampVerts[i + j * NUM_VERTS_X].position = { (i - NUM_VERTS_X * 2 + 3.5f) * TRIANGLE_SIZE, j * TRIANGLE_SIZE + 50.0f, height };
+            float height = sinf(PI * 1.5f + j * PI * 2 / NUM_VERTS_Y) * ramp_height + ramp_height;
+            mRampVerts[i + j * NUM_VERTS_X].position = { (i - NUM_VERTS_X * 2 + 3.5f) * TRIANGLE_SIZE, j * TRIANGLE_SIZE + 5.0f, height };
         }
     }
 
@@ -375,12 +377,67 @@ int MyDXWindow::CreateRamp()
 
 //////////////////////////////////////////////////////////////////////
 
+int MyDXWindow::CreateWalls()
+{
+    int vertStride = sizeof(PhysicalVertex);
+    int indexStride = 3 * sizeof(uint32);
+    mWallVerts = new PhysicalVertex[24];
+    mWallIndices = new int32[36];
+
+    float const walls_wide = 100;
+    float const walls_deep = 100;
+    float const walls_high = 100;
+
+    // Hijack the cube_verts and cube_indices
+    for(int i = 0; i < 24; ++i) {
+        Float3 &m = mWallVerts[i].normal;
+        Float3 &n = cube_verts[i].Normal;
+        Float3 &p = mWallVerts[i].position;
+        Float3 &c = cube_verts[i].Position;
+        m.x = -n.x;
+        m.y = -n.y;
+        m.z = -n.z;
+        p.x = c.x * walls_wide;
+        p.y = c.y * walls_deep;
+        p.z = c.z * walls_high;
+    }
+
+    for(int i = 0; i < 36; ++i) {
+        mWallIndices[i] = cube_indices[i];
+    }
+
+    mWallArray = new btTriangleIndexVertexArray(36 / 3, mWallIndices, indexStride, 24, (btScalar *)mWallVerts, vertStride);
+    bool useQuantizedAabbCompression = true;
+    mWallShape = new btBvhTriangleMeshShape(mWallArray, useQuantizedAabbCompression);
+    btTransform t(btQuaternion(0, 0, 0), btVector3(0, 0, 0));
+    mWallBody = Physics::CreateRigidBody(0, t, mWallShape);
+    Physics::AddRigidBody(mWallBody, Physics::GroundMask, -1);
+    mWallBody->setFriction(0.05f);
+    mWallBody->setRestitution(0.0f);
+
+    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void MyDXWindow::SetupBoxes()
 {
-    for(int i = 0; i < numBoxes; ++i) {
-        box[i].Create(Vec4(50, 90, (float)i * 8 + 4));
+    {
+        Vec3f walls_origin{ 120, 150, 500 };
+        walls_rotation = Vec3f(0, 0, 0);
+        btTransform t(btQuaternion(0, 0, 0), btVector3(walls_origin.x, walls_origin.y, walls_origin.z));
+        mWallBody->setWorldTransform(t);
+    }
+    box.resize(params.num_cubes);
+    int gx = 6;
+    int gy = 6;
+    int gz = gx * gy;
+    for(int i = 0; i < params.num_cubes; ++i) {
+        box[i].Create(Vec4(50.0f + (i % gx) * 10, 90.0f + ((i / gx) % gy) * 10, (float)((i / gz) * 10 + 4 + 450)));
     }
 }
+
+//////////////////////////////////////////////////////////////////////
 
 int MyDXWindow::CreateSphere(int steps)
 {
@@ -696,9 +753,6 @@ bool MyDXWindow::OnCreate()
     mGroundRigidBody->setFriction(1);
     Physics::AddRigidBody(mGroundRigidBody, -1, -1);
 
-    // Create some boxes
-    SetupBoxes();
-
     DXB(scene.Load(TEXT("duck.dae")));
 
     DXB(FontManager::Open(this));
@@ -722,7 +776,11 @@ bool MyDXWindow::OnCreate()
 
     DXB(sphereShader.Create());
 
-    // DXB(CreateRamp());
+    DXB(CreateRamp());
+    DXB(CreateWalls());
+
+    // Create some boxes
+    SetupBoxes();
 
     DXB(cubeShader.Create());
     DXB(cubeTexture.Load(TEXT("temp.jpg")));
@@ -733,9 +791,9 @@ bool MyDXWindow::OnCreate()
     DXB(cubeSampler.Create(o));
     cubeShader.ps.picTexture = &cubeTexture;
     cubeShader.ps.tex1Sampler = &cubeSampler;
-    DXB(cubeIndices.Create(_countof(indices), indices, StaticUsage));
+    DXB(cubeIndices.Create(_countof(cube_indices), cube_indices, StaticUsage));
     DXB(cubeVerts.Create(_countof(verts), verts, StaticUsage));
-    DXB(diceVertBuffer.Create(_countof(diceVerts), diceVerts, StaticUsage));
+    DXB(diceVertBuffer.Create(_countof(cube_verts), cube_verts, StaticUsage));
 
     DXB(instancedShader.Create());
     DXB(instancedVB0.Create(_countof(iCube), iCube, StaticUsage));
@@ -959,7 +1017,6 @@ void MyDXWindow::SweepTest()
 
 void MyDXWindow::OnFrame()
 {
-    LOG_Verbose("Client Height: %d", ClientHeight());
     debug_begin();
 
     oldDeltaTime = deltaTime;
@@ -983,6 +1040,16 @@ void MyDXWindow::OnFrame()
 
     car.Update(deltaTime);
 
+    // mWallBody->getWorldTransform().setRotation(btQuaternion(time, 0.0f, time));
+    {
+        walls_rotation.x += deltaTime * 0.18f;
+        walls_rotation.y += deltaTime * 0.13f;
+        walls_rotation.z += deltaTime * 0.15f;
+        Vec3f walls_origin{ 120, 150, 500 };
+        btTransform t(btQuaternion(walls_rotation.x, walls_rotation.y, walls_rotation.z), btVector3(walls_origin.x, walls_origin.y, walls_origin.z));
+        mWallBody->setWorldTransform(t);
+    }
+
     if(Keyboard::Pressed('B')) {
         SetupBoxes();
     }
@@ -996,14 +1063,14 @@ void MyDXWindow::OnFrame()
 
     if(Keyboard::Pressed('Q')) {
         Random r;
-        for(int i = 0; i < numBoxes; ++i) {
+        for(int i = 0; i < params.num_cubes; ++i) {
             box[i].mBody->activate(true);
             box[i].mBody->applyCentralImpulse(btVector3(0, 0, r.Ranged(20000) + 10000.0f));
             box[i].mBody->applyTorqueImpulse(btVector3(r.Ranged(10000) + 15000.0f, r.Ranged(10000) + 15000.0f, r.Ranged(10000) + 5000.0f));
         }
     }
 
-    Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 20, 1 / 120.0f);
+    Physics::DynamicsWorld->stepSimulation(deltaTime * 4, 40, 1 / 120.0f);
 
     // debug_text(100, 400, "%8.4f %8.4f %8.4f",
     //		   Length(car.mVehicle->m_wheelInfo[0].m_worldTransform.getBasis().getRow(0).mVec128),
@@ -1019,7 +1086,7 @@ void MyDXWindow::OnFrame()
 
     // SweepTest();
 
-    for(int i = 0; i < numBoxes; ++i) {
+    for(int i = 0; i < params.num_cubes; ++i) {
         box[i].Draw(this);
     }
 
